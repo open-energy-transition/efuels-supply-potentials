@@ -15,6 +15,10 @@ warnings.filterwarnings("ignore")
 
 # get the base working directory
 BASE_PATH = os.path.abspath(os.path.join(__file__, "../.."))
+PLOTS_DIR = BASE_PATH + "/plots/results/"
+DATA_DIR = BASE_PATH + "/data/"
+
+LINE_OPTS = {"2021": "copt"}
 
 
 def load_network(filepath):
@@ -109,10 +113,13 @@ def mock_snakemake(rule_name, **wildcards):
 def update_config_from_wildcards(config, w):
     if w.get("planning_horizon"):
         planning_horizon = w.planning_horizon
-        config["plotting"]["planning_horizon"] = planning_horizon
+        config["validation"]["planning_horizon"] = planning_horizon
     if w.get("clusters"):
         clusters = w.clusters
-        config["plotting"]["clusters"] = clusters
+        config["validation"]["clusters"] = clusters
+    if w.get("countries"):
+        countries = w.countries
+        config["validation"]["countries"] = countries
     return config
 
 

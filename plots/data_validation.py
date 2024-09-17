@@ -1,5 +1,8 @@
+# SPDX-FileCopyrightText:  Open Energy Transition gGmbH
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 import os
-import pypsa
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -488,7 +491,7 @@ def get_generation_capacity_ember_detail(data, three_country_code, year):
     return generation_ember
 
 
-def plot_demand_validation(demand_ember, pypsa_demand, EIA_demand, horizon, country_code):
+def plot_demand_validation(demand_ember, pypsa_demand, EIA_demand, horizon, country_code, plot_dir):
     plt.figure(figsize=(8, 6))  # Set figure size
     bars = plt.bar(["Ember", "PyPSA", "EIA"], [
                    demand_ember, pypsa_demand, EIA_demand], color=['#1f77b4', '#ff7f0e', '#2ca02c'])
@@ -501,10 +504,10 @@ def plot_demand_validation(demand_ember, pypsa_demand, EIA_demand, horizon, coun
         plt.text(bar.get_x() + bar.get_width() / 2, height, f'{height:.2f}',
                  ha='center', va='bottom', fontsize=12)
     plt.tight_layout()
-    plt.savefig(f"results/plots/demand_validation_ember_{country_code}.png")
+    plt.savefig(f"{plot_dir}/demand_validation_ember_{country_code}.png")
 
 
-def plot_detailed_generation_validation(generation_df_, horizon, country_code):
+def plot_detailed_generation_validation(generation_df_, horizon, country_code, plot_dir):
     ax = generation_df_.plot(kind="bar", figsize=(12, 7), width=0.8)
     plt.title(
         f"Comparison of Generation: EMBER vs PyPSA vs EIA, {horizon}", fontsize=16)
@@ -515,10 +518,10 @@ def plot_detailed_generation_validation(generation_df_, horizon, country_code):
     plt.legend(["EMBER", "PyPSA", "EIA"], loc="upper right", fontsize=12)
     plt.tight_layout()
     plt.savefig(
-        f"results/plots/generation_validation_ember_{country_code}_detailed.png")
+        f"{plot_dir}/generation_validation_ember_{country_code}_detailed.png")
 
 
-def plot_capacity_validation(installed_capacity_df, horizon, country_code):
+def plot_capacity_validation(installed_capacity_df, horizon, country_code, plot_dir):
     ax = installed_capacity_df.plot(kind="bar", figsize=(12, 7), width=0.8)
     plt.title(
         f"Comparison of Installed Capacity: EMBER vs PyPSA vs EIA, {horizon}", fontsize=16)
@@ -528,10 +531,10 @@ def plot_capacity_validation(installed_capacity_df, horizon, country_code):
     plt.grid(True, which='both', axis='y', linestyle='--', linewidth=0.5)
     plt.legend(["EMBER", "PyPSA", "EIA"], loc="upper right", fontsize=12)
     plt.tight_layout()
-    plt.savefig(f"results/plots/capacity_validation_ember_{country_code}.png")
+    plt.savefig(f"{plot_dir}/capacity_validation_ember_{country_code}.png")
 
 
-def plot_generation_validation(generation_df, horizon, country_code):
+def plot_generation_validation(generation_df, horizon, country_code, plot_dir):
     ax = generation_df.plot(kind="bar", figsize=(12, 7), width=0.8)
     plt.title(
         f"Comparison of Generation: EMBER vs PyPSA vs EIA, {horizon}", fontsize=16)
@@ -542,11 +545,13 @@ def plot_generation_validation(generation_df, horizon, country_code):
     plt.legend(["EMBER", "PyPSA", "EIA"], loc="upper right", fontsize=12)
     plt.tight_layout()
     plt.savefig(
-        f"results/plots/generation_validation_ember_{country_code}.png")
+        f"{plot_dir}/generation_validation_ember_{country_code}.png")
 
 
 def run(country_code, scenario_folder, horizon):
-    # os.getcwd(), f"submodules/pypsa-earth/results/{scenario_folder}/networks")
+    """
+    Run the data validation workflow for the specified country and year.
+    """
     # Get EIA data
     EIA_demand_path = os.path.join(
         os.getcwd(), "data/validation", "EIA_demands.csv")
@@ -564,13 +569,20 @@ def run(country_code, scenario_folder, horizon):
     network = load_pypsa_network(scenario_folder)
 
     three_country_code = convert_two_country_code_to_three(country_code)
-    build_directory("results/plots")
+
+    # Plots directory
+    plots_dir = "results/plots"
+    build_directory(plots_dir)
+
+    ####### DEMAND #######
 
     demand_ember = get_demand_ember(ember_data, three_country_code, horizon)
     pypsa_demand = get_demand_pypsa(network)
 
     EIA_demand = get_data_EIA(EIA_demand_path, country_code, horizon)
     EIA_demand = EIA_demand.iloc[0, 1]
+
+    ####### INSTALLED CAPACITY #######
 
     installed_capacity_ember = get_installed_capacity_ember(
         ember_data, three_country_code, horizon)
@@ -582,6 +594,9 @@ def run(country_code, scenario_folder, horizon):
 
     installed_capacity_df = pd.concat(
         [installed_capacity_ember, pypsa_capacity, EIA_inst_capacities], axis=1).fillna(0)
+
+    ####### GENERATION #######
+
     generation_data_ember = get_generation_capacity_ember(
         ember_data, three_country_code, horizon)
     pypsa_generation = get_generation_capacity_pypsa(network)
@@ -604,10 +619,12 @@ def run(country_code, scenario_folder, horizon):
 
     # Plots
     plot_demand_validation(demand_ember, pypsa_demand,
-                           EIA_demand, horizon, country_code)
-    plot_detailed_generation_validation(generation_df_, horizon, country_code)
-    plot_capacity_validation(installed_capacity_df, horizon, country_code)
-    plot_generation_validation(generation_df, horizon, country_code)
+                           EIA_demand, horizon, country_code, plots_dir)
+    plot_detailed_generation_validation(
+        generation_df_, horizon, country_code, plots_dir)
+    plot_capacity_validation(installed_capacity_df,
+                             horizon, country_code, plots_dir)
+    plot_generation_validation(generation_df, horizon, country_code, plots_dir)
 
 
 if __name__ == "__main__":

@@ -1,2 +1,5 @@
 scripts/__pycache__/
 plots/__pycache__/
+.snakemake/
+gurobi.log
+plots/results/

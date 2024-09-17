@@ -5,6 +5,6 @@
 validation:
   countries: ["US"]
   clusters: [10]
-  planning_horizon: [2021]
+  planning_horizon: [2020]
   opts: [Co2L-1H]
 

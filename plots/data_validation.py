@@ -3,14 +3,18 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import pycountry
 import logging
 import warnings
-from scripts._helpers import build_directory, load_pypsa_network
 warnings.filterwarnings("ignore")
+from scripts._helpers import mock_snakemake, update_config_from_wildcards, build_directory, \
+                             load_pypsa_network, PLOTS_DIR, DATA_DIR
+
 
 
 def load_ember_data():
@@ -21,7 +25,7 @@ def load_ember_data():
         pd.DataFrame: Ember data in long format.
     """
     ember_data_path = os.path.join(
-        os.getcwd(), "data/validation/ember_yearly_full_release_long_format.csv")
+        DATA_DIR, "validation/ember_yearly_full_release_long_format.csv")
     ember_data = pd.read_csv(ember_data_path)
     return ember_data
 
@@ -491,10 +495,10 @@ def get_generation_capacity_ember_detail(data, three_country_code, year):
     return generation_ember
 
 
-def plot_demand_validation(demand_ember, pypsa_demand, EIA_demand, horizon, country_code, plot_dir):
+def plot_demand_validation(demand_ember, pypsa_demand, EIA_demand, horizon, country_code, clusters):
     plt.figure(figsize=(8, 6))  # Set figure size
-    bars = plt.bar(["Ember", "PyPSA", "EIA"], [
-                   demand_ember, pypsa_demand, EIA_demand], color=['#1f77b4', '#ff7f0e', '#2ca02c'])
+    bars = plt.bar(["Ember", "PyPSA", "EIA"], [demand_ember, pypsa_demand, EIA_demand], 
+                   color=['#1f77b4', '#ff7f0e', '#2ca02c'])
     plt.title(f"Demand Validation in {country_code}, {horizon}")
     plt.ylabel("Demand (TWh)", fontsize=12)
     plt.xlabel("Data Source", fontsize=12)
@@ -504,10 +508,10 @@ def plot_demand_validation(demand_ember, pypsa_demand, EIA_demand, horizon, coun
         plt.text(bar.get_x() + bar.get_width() / 2, height, f'{height:.2f}',
                  ha='center', va='bottom', fontsize=12)
     plt.tight_layout()
-    plt.savefig(f"{plot_dir}/demand_validation_ember_{country_code}.png")
+    plt.savefig(f"{PLOTS_DIR}/demand_validation_{clusters}_{country_code}_{horizon}.png")
 
 
-def plot_detailed_generation_validation(generation_df_, horizon, country_code, plot_dir):
+def plot_detailed_generation_validation(generation_df_, horizon, country_code, clusters):
     ax = generation_df_.plot(kind="bar", figsize=(12, 7), width=0.8)
     plt.title(
         f"Comparison of Generation: EMBER vs PyPSA vs EIA, {horizon}", fontsize=16)
@@ -518,10 +522,10 @@ def plot_detailed_generation_validation(generation_df_, horizon, country_code, p
     plt.legend(["EMBER", "PyPSA", "EIA"], loc="upper right", fontsize=12)
     plt.tight_layout()
     plt.savefig(
-        f"{plot_dir}/generation_validation_ember_{country_code}_detailed.png")
+        f"{PLOTS_DIR}/generation_validation_detailed_{clusters}_{country_code}_{horizon}.png")
 
 
-def plot_capacity_validation(installed_capacity_df, horizon, country_code, plot_dir):
+def plot_capacity_validation(installed_capacity_df, horizon, country_code, clusters):
     ax = installed_capacity_df.plot(kind="bar", figsize=(12, 7), width=0.8)
     plt.title(
         f"Comparison of Installed Capacity: EMBER vs PyPSA vs EIA, {horizon}", fontsize=16)
@@ -531,10 +535,10 @@ def plot_capacity_validation(installed_capacity_df, horizon, country_code, plot_
     plt.grid(True, which='both', axis='y', linestyle='--', linewidth=0.5)
     plt.legend(["EMBER", "PyPSA", "EIA"], loc="upper right", fontsize=12)
     plt.tight_layout()
-    plt.savefig(f"{plot_dir}/capacity_validation_ember_{country_code}.png")
+    plt.savefig(f"{PLOTS_DIR}/capacity_validation_{clusters}_{country_code}_{horizon}.png")
 
 
-def plot_generation_validation(generation_df, horizon, country_code, plot_dir):
+def plot_generation_validation(generation_df, horizon, country_code, clusters):
     ax = generation_df.plot(kind="bar", figsize=(12, 7), width=0.8)
     plt.title(
         f"Comparison of Generation: EMBER vs PyPSA vs EIA, {horizon}", fontsize=16)
@@ -545,20 +549,20 @@ def plot_generation_validation(generation_df, horizon, country_code, plot_dir):
     plt.legend(["EMBER", "PyPSA", "EIA"], loc="upper right", fontsize=12)
     plt.tight_layout()
     plt.savefig(
-        f"{plot_dir}/generation_validation_ember_{country_code}.png")
+        f"{PLOTS_DIR}/generation_validation_{clusters}_{country_code}_{horizon}.png")
 
 
-def run(country_code, scenario_folder, horizon):
+def run(country_code, scenario_folder, horizon, clusters):
     """
     Run the data validation workflow for the specified country and year.
     """
     # Get EIA data
     EIA_demand_path = os.path.join(
-        os.getcwd(), "data/validation", "EIA_demands.csv")
+        DATA_DIR, "validation", "EIA_demands.csv")
     EIA_installed_capacities_path = os.path.join(
-        os.getcwd(), "data/validation", "EIA_installed_capacities.csv")
+        DATA_DIR, "validation", "EIA_installed_capacities.csv")
     EIA_generation_path = os.path.join(
-        os.getcwd(), "data/validation", "EIA_electricity_generation.csv")
+        DATA_DIR, "validation", "EIA_electricity_generation.csv")
 
     # Load Ember data
     ember_data = load_ember_data()
@@ -571,8 +575,7 @@ def run(country_code, scenario_folder, horizon):
     three_country_code = convert_two_country_code_to_three(country_code)
 
     # Plots directory
-    plots_dir = "results/plots"
-    build_directory(plots_dir)
+    build_directory(PLOTS_DIR)
 
     ####### DEMAND #######
 
@@ -619,23 +622,33 @@ def run(country_code, scenario_folder, horizon):
 
     # Plots
     plot_demand_validation(demand_ember, pypsa_demand,
-                           EIA_demand, horizon, country_code, plots_dir)
-    plot_detailed_generation_validation(
-        generation_df_, horizon, country_code, plots_dir)
+                           EIA_demand, horizon, country_code, clusters)
+    plot_detailed_generation_validation(generation_df_, 
+                                        horizon, country_code, clusters)
     plot_capacity_validation(installed_capacity_df,
-                             horizon, country_code, plots_dir)
-    plot_generation_validation(generation_df, horizon, country_code, plots_dir)
+                             horizon, country_code, clusters)
+    plot_generation_validation(generation_df, horizon, country_code, clusters)
 
 
 if __name__ == "__main__":
+    if "snakemake" not in globals():
+        snakemake = mock_snakemake(
+            "validate",
+            countries="US", 
+            clusters="10",
+            planning_horizon="2020",
+        )
+    # update config based on wildcards
+    config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
 
-    # Choose the country and the year for validation
-    # Country code should be in ISO 3166-1 alpha-2 format which is 2 country code letters.
-    # For example, Germany is DE, France is FR, etc.
-    country_code = "US"
-    scenario_folder = "US_2021"
-    horizon = 2020
+
+    # country, planning horizon, and number of clusters from config.plot.yaml
+    country_code = config["validation"]["countries"]
+    planning_horizon = config["validation"]["planning_horizon"]
+    clusters = config["validation"]["clusters"]
+    scenario_folder = f"{country_code}_{int(planning_horizon)+1}"
+    data_horizon = int(planning_horizon)
 
     # Run the data validation
-    run(country_code, scenario_folder, horizon)
+    run(country_code, scenario_folder, data_horizon, clusters)
     logging.info("Data validation completed successfully.")

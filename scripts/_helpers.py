@@ -152,7 +152,7 @@ def get_solved_network_path(scenario_folder):
     filenames = os.listdir(results_dir)
 
     # Ensure only one network file exists
-    if len(filenames) == 1:
+    if len(filenames) != 1:
         logging.warning(f"Only 1 network per scenario is allowed currently!")
     filepath = os.path.join(results_dir, filenames[0])
 

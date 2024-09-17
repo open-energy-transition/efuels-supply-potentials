@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 
 
 # get the base working directory
-BASE_PATH = os.path.abspath(os.path.join(__file__ ,"../.."))
+BASE_PATH = os.path.abspath(os.path.join(__file__, "../.."))
 
 
 def load_network(filepath):
@@ -132,3 +132,41 @@ def build_directory(path, just_parent_directory=True):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
     else:
         Path(path).mkdir(parents=True, exist_ok=True)
+
+
+def get_solved_network_path(scenario_folder):
+    """
+    Get the full path to the PyPSA network file from the specified scenario folder.
+    Assumes that only one network file exists in the folder.
+
+    Args:
+        scenario_folder (str): Folder containing the scenario data.
+
+    Returns:
+        str: Full path to the network file.
+    """
+    results_dir = os.path.join(
+        os.getcwd(), f"submodules/pypsa-earth/results/{scenario_folder}/networks")
+    filenames = os.listdir(results_dir)
+
+    # Ensure only one network file exists
+    if len(filenames) == 1:
+        logging.warning(f"Only 1 network per scenario is allowed currently!")
+    filepath = os.path.join(results_dir, filenames[0])
+
+    return filepath
+
+
+def load_pypsa_network(scenario_folder):
+    """
+    Load a PyPSA network from a specific scenario folder.
+
+    Args:
+        scenario_folder (str): Folder containing the scenario data.
+
+    Returns:
+        pypsa.Network: The loaded PyPSA network object.
+    """
+    network_path = get_solved_network_path(scenario_folder)
+    network = pypsa.Network(network_path)
+    return network

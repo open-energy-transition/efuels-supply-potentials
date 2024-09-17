@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pycountry
 import logging
 import warnings
+from scripts._helpers import build_directory, load_pypsa_network
 warnings.filterwarnings("ignore")
 
 
@@ -22,42 +23,6 @@ def load_ember_data():
     return ember_data
 
 
-def get_network_path(scenario_folder):
-    """
-    Get the full path to the PyPSA network file from the specified scenario folder.
-    Assumes that only one network file exists in the folder.
-
-    Args:
-        scenario_folder (str): Folder containing the scenario data.
-
-    Returns:
-        str: Full path to the network file.
-
-    Raises:
-        AssertionError: If more than one network file exists in the folder.
-    """
-    results_dir = os.path.join(
-        os.getcwd(), f"workflow/pypsa-earth/results/{scenario_folder}/networks")
-    filenames = os.listdir(results_dir)
-
-    # Ensure only one network file exists
-    if len(filenames) == 1:
-        logging.warning(f"Only 1 network per scenario is allowed currently!")
-    filepath = os.path.join(results_dir, filenames[0])
-
-    return filepath
-
-
-def create_results_dir():
-    """
-    Create a results directory if it does not already exist.
-    This is where output data will be stored.
-    """
-    # Create the folder if it doesn't exist
-    if not os.path.exists("results/plots"):
-        os.makedirs("results/plots")
-
-
 def convert_two_country_code_to_three(country_code):
     """
     Convert a two-letter country code to a three-letter ISO country code.
@@ -70,21 +35,6 @@ def convert_two_country_code_to_three(country_code):
     """
     country = pycountry.countries.get(alpha_2=country_code)
     return country.alpha_3
-
-
-def load_pypsa_network(scenario_folder):
-    """
-    Load a PyPSA network from a specific scenario folder.
-
-    Args:
-        scenario_folder (str): Folder containing the scenario data.
-
-    Returns:
-        pypsa.Network: The loaded PyPSA network object.
-    """
-    network_path = get_network_path(scenario_folder)
-    network = pypsa.Network(network_path)
-    return network
 
 
 def get_demand_ember(data, country_code, year):
@@ -596,7 +546,7 @@ def plot_generation_validation(generation_df, horizon, country_code):
 
 
 def run(country_code, scenario_folder, horizon):
-    # os.getcwd(), f"workflow/pypsa-earth/results/{scenario_folder}/networks")
+    # os.getcwd(), f"submodules/pypsa-earth/results/{scenario_folder}/networks")
     # Get EIA data
     EIA_demand_path = os.path.join(
         os.getcwd(), "data/validation", "EIA_demands.csv")
@@ -614,7 +564,7 @@ def run(country_code, scenario_folder, horizon):
     network = load_pypsa_network(scenario_folder)
 
     three_country_code = convert_two_country_code_to_three(country_code)
-    create_results_dir()
+    build_directory("results/plots")
 
     demand_ember = get_demand_ember(ember_data, three_country_code, horizon)
     pypsa_demand = get_demand_pypsa(network)

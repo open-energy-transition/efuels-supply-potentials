@@ -54,11 +54,6 @@ def mock_snakemake(rule_name, **wildcards):
     """
 
     script_dir = Path(__file__).parent.resolve()
-    print(script_dir)
-    print(Path.cwd().resolve())
-    assert (
-        Path.cwd().resolve() == script_dir
-    ), f"mock_snakemake has to be run from the repository scripts directory {script_dir}"
     os.chdir(script_dir.parent)
     for p in sm.SNAKEFILE_CHOICES:
         if Path(p).exists():
@@ -153,7 +148,7 @@ def get_solved_network_path(scenario_folder):
         str: Full path to the network file.
     """
     results_dir = os.path.join(
-        os.getcwd(), f"submodules/pypsa-earth/results/{scenario_folder}/networks")
+        BASE_PATH, f"submodules/pypsa-earth/results/{scenario_folder}/networks")
     filenames = os.listdir(results_dir)
 
     # Ensure only one network file exists

@@ -3,15 +3,22 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 RESULTS_DIR = "plots/results/"
+PYPSA_EARTH_DIR = "submodules/pypsa-earth/"
 
 
+configfile: "submodules/pypsa-earth/config.default.yaml"
+configfile: "submodules/pypsa-earth/configs/bundle_config.yaml"
 configfile: "configs/config.main.yaml"
 
 
 wildcard_constraints:
-    countries="[A-Z]{2}",
-    clusters="[0-9]+",
+    simpl="[a-zA-Z0-9]*|all",
+    clusters="[0-9]+(m|flex)?|all|min",
+    ll="(v|c)([0-9\.]+|opt|all)|all",
+    opts="[-+a-zA-Z0-9\.]*",
+    unc="[-+a-zA-Z0-9\.]*",
     planning_horizon="[0-9]{4}",
+    countries="[A-Z]{2}",
 
 
 localrules:
@@ -52,3 +59,14 @@ rule validate_all:
             + "generation_validation_detailed_{clusters}_{countries}_{planning_horizon}.png",
             **config["validation"],
         ),
+
+
+rule retrieve_cutouts:
+    params:
+        countries=config["countries"],
+    output:
+        cutouts=PYPSA_EARTH_DIR+"cutouts/cutout-2013-era5.nc"
+    resources:
+        mem_mb=16000,
+    script:
+        "scripts/retrieve_cutouts.py"

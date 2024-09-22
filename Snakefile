@@ -5,7 +5,7 @@
 RESULTS_DIR = "plots/results/"
 
 
-configfile: "configs/config.plot.yaml"
+configfile: "configs/config.main.yaml"
 
 
 wildcard_constraints:

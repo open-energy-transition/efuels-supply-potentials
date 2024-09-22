@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import os
+import sys
 from pathlib import Path
 import pypsa
 import logging
@@ -17,6 +18,8 @@ warnings.filterwarnings("ignore")
 BASE_PATH = os.path.abspath(os.path.join(__file__, "../.."))
 PLOTS_DIR = BASE_PATH + "/plots/results/"
 DATA_DIR = BASE_PATH + "/data/"
+# get pypsa-earth submodule directory path
+PYPSA_EARTH_DIR = BASE_PATH + "/submodules/pypsa-earth"
 
 LINE_OPTS = {"2021": "copt"}
 
@@ -172,3 +175,15 @@ def load_pypsa_network(scenario_folder):
     network_path = get_solved_network_path(scenario_folder)
     network = pypsa.Network(network_path)
     return network
+
+
+def create_logger(logger_name, level=logging.INFO):
+    """
+    Create a logger for a module and adds a handler needed to capture in logs
+    traceback from exceptions emerging during the workflow.
+    """
+    logger_instance = logging.getLogger(logger_name)
+    logger_instance.setLevel(level)
+    handler = logging.StreamHandler(stream=sys.stdout)
+    logger_instance.addHandler(handler)
+    return logger_instance

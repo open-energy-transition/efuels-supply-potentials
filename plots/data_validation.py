@@ -12,8 +12,8 @@ import pycountry
 import logging
 import warnings
 warnings.filterwarnings("ignore")
-from scripts._helpers import mock_snakemake, update_config_from_wildcards, build_directory, \
-                             load_pypsa_network, PLOTS_DIR, DATA_DIR
+from scripts._helper import mock_snakemake, update_config_from_wildcards, build_directory, \
+                            load_pypsa_network, PLOTS_DIR, DATA_DIR
 
 
 

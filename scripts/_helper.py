@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import os
+import sys
 from pathlib import Path
 import pypsa
 import logging
@@ -15,6 +16,12 @@ warnings.filterwarnings("ignore")
 
 # get the base working directory
 BASE_PATH = os.path.abspath(os.path.join(__file__, "../.."))
+PLOTS_DIR = BASE_PATH + "/plots/results/"
+DATA_DIR = BASE_PATH + "/data/"
+# get pypsa-earth submodule directory path
+PYPSA_EARTH_DIR = BASE_PATH + "/submodules/pypsa-earth"
+
+LINE_OPTS = {"2021": "copt"}
 
 
 def load_network(filepath):
@@ -50,11 +57,6 @@ def mock_snakemake(rule_name, **wildcards):
     """
 
     script_dir = Path(__file__).parent.resolve()
-    print(script_dir)
-    print(Path.cwd().resolve())
-    assert (
-        Path.cwd().resolve() == script_dir
-    ), f"mock_snakemake has to be run from the repository scripts directory {script_dir}"
     os.chdir(script_dir.parent)
     for p in sm.SNAKEFILE_CHOICES:
         if Path(p).exists():
@@ -109,10 +111,13 @@ def mock_snakemake(rule_name, **wildcards):
 def update_config_from_wildcards(config, w):
     if w.get("planning_horizon"):
         planning_horizon = w.planning_horizon
-        config["plotting"]["planning_horizon"] = planning_horizon
+        config["validation"]["planning_horizon"] = planning_horizon
     if w.get("clusters"):
         clusters = w.clusters
-        config["plotting"]["clusters"] = clusters
+        config["validation"]["clusters"] = clusters
+    if w.get("countries"):
+        countries = w.countries
+        config["validation"]["countries"] = countries
     return config
 
 
@@ -146,11 +151,11 @@ def get_solved_network_path(scenario_folder):
         str: Full path to the network file.
     """
     results_dir = os.path.join(
-        os.getcwd(), f"submodules/pypsa-earth/results/{scenario_folder}/networks")
+        BASE_PATH, f"submodules/pypsa-earth/results/{scenario_folder}/networks")
     filenames = os.listdir(results_dir)
 
     # Ensure only one network file exists
-    if len(filenames) == 1:
+    if len(filenames) != 1:
         logging.warning(f"Only 1 network per scenario is allowed currently!")
     filepath = os.path.join(results_dir, filenames[0])
 
@@ -170,3 +175,15 @@ def load_pypsa_network(scenario_folder):
     network_path = get_solved_network_path(scenario_folder)
     network = pypsa.Network(network_path)
     return network
+
+
+def create_logger(logger_name, level=logging.INFO):
+    """
+    Create a logger for a module and adds a handler needed to capture in logs
+    traceback from exceptions emerging during the workflow.
+    """
+    logger_instance = logging.getLogger(logger_name)
+    logger_instance.setLevel(level)
+    handler = logging.StreamHandler(stream=sys.stdout)
+    logger_instance.addHandler(handler)
+    return logger_instance

@@ -2,18 +2,16 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, PYPSA_EARTH_DIR
+import warnings
+from zipfile import ZipFile
+import re
+from google_drive_downloader import GoogleDriveDownloader as gdd
+from pathlib import Path
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
-from pathlib import Path
-from google_drive_downloader import GoogleDriveDownloader as gdd
-import re
-from zipfile import ZipFile
-import yaml
-import logging
-import warnings
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 warnings.filterwarnings("ignore")
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, PYPSA_EARTH_DIR
 
 
 logger = create_logger(__name__)
@@ -74,7 +72,7 @@ def download_and_unzip_gdrive(config, disable_progress=False):
         logger.info(f"Download resource '{resource}' from cloud '{url}'.")
 
         return True
-    
+
     except Exception as e:
         logger.error(f"Failed to download or extract the file: {str(e)}")
         return False
@@ -88,7 +86,8 @@ if __name__ == "__main__":
             countries=["US"]
         )
     # update config based on wildcards
-    config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
+    config = update_config_from_wildcards(
+        snakemake.config, snakemake.wildcards)
 
     # load cutouts configuration
     config_cutouts = config["custom_databundles"]["bundle_cutouts_USA"]

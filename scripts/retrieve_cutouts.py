@@ -61,9 +61,9 @@ def download_and_unzip_gdrive(config, disable_progress=False):
         with ZipFile(file_path, "r") as zipObj:
             bad_file = zipObj.testzip()
             if bad_file:
-                print(f"Corrupted file found: {bad_file}")
+                logger.info(f"Corrupted file found: {bad_file}")
             else:
-                print("No errors found in the zip file.")
+                logger.info("No errors found in the zip file.")
             # Extract all the contents of zip file in current directory
             zipObj.extractall(path=destination)
         # remove tempfile.zip

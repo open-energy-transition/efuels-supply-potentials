@@ -2,18 +2,17 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+from scripts._helper import mock_snakemake, update_config_from_wildcards, build_directory, \
+    load_pypsa_network, PLOTS_DIR, DATA_DIR
+import warnings
+import logging
+import pycountry
+import matplotlib.pyplot as plt
+import pandas as pd
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
-import pandas as pd
-import matplotlib.pyplot as plt
-import pycountry
-import logging
-import warnings
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 warnings.filterwarnings("ignore")
-from scripts._helper import mock_snakemake, update_config_from_wildcards, build_directory, \
-                            load_pypsa_network, PLOTS_DIR, DATA_DIR
-
 
 
 def load_ember_data():
@@ -496,7 +495,7 @@ def get_generation_capacity_ember_detail(data, three_country_code, year):
 
 def plot_demand_validation(demand_ember, pypsa_demand, EIA_demand, horizon, country_code, clusters):
     plt.figure(figsize=(8, 6))  # Set figure size
-    bars = plt.bar(["Ember", "PyPSA", "EIA"], [demand_ember, pypsa_demand, EIA_demand], 
+    bars = plt.bar(["PyPSA", "Ember",  "EIA"], [pypsa_demand, demand_ember, EIA_demand],
                    color=['#1f77b4', '#ff7f0e', '#2ca02c'])
     plt.title(f"Demand Validation in {country_code}, {horizon}")
     plt.ylabel("Demand (TWh)", fontsize=12)
@@ -507,45 +506,50 @@ def plot_demand_validation(demand_ember, pypsa_demand, EIA_demand, horizon, coun
         plt.text(bar.get_x() + bar.get_width() / 2, height, f'{height:.2f}',
                  ha='center', va='bottom', fontsize=12)
     plt.tight_layout()
-    plt.savefig(f"{PLOTS_DIR}/demand_validation_{clusters}_{country_code}_{horizon}.png")
+    plt.savefig(
+        f"{PLOTS_DIR}/demand_validation_{clusters}_{country_code}_{horizon}.png")
 
 
 def plot_detailed_generation_validation(generation_df_, horizon, country_code, clusters):
-    ax = generation_df_.plot(kind="bar", figsize=(12, 7), width=0.8)
+    ax = generation_df_.plot(kind="bar", figsize=(12, 7), width=0.8, color=[
+                             '#1f77b4', '#ff7f0e', '#2ca02c'])
     plt.title(
-        f"Comparison of Generation: EMBER vs PyPSA vs EIA, {horizon}", fontsize=16)
+        f"Comparison of Generation: PyPSA vs EMBER vs EIA, {horizon}", fontsize=16)
     plt.xlabel("Generation Type", fontsize=12)
     plt.ylabel("Generation (TWh)", fontsize=12)
     ax.set_xticklabels(ax.get_xticklabels(), ha="right", fontsize=10)
     plt.grid(True, which='both', axis='y', linestyle='--', linewidth=0.5)
-    plt.legend(["EMBER", "PyPSA", "EIA"], loc="upper right", fontsize=12)
+    plt.legend(["PyPSA", "EMBER", "EIA"], loc="upper right", fontsize=12)
     plt.tight_layout()
     plt.savefig(
         f"{PLOTS_DIR}/generation_validation_detailed_{clusters}_{country_code}_{horizon}.png")
 
 
 def plot_capacity_validation(installed_capacity_df, horizon, country_code, clusters):
-    ax = installed_capacity_df.plot(kind="bar", figsize=(12, 7), width=0.8)
+    ax = installed_capacity_df.plot(kind="bar", figsize=(
+        12, 7), width=0.8, color=['#1f77b4', '#ff7f0e', '#2ca02c'])
     plt.title(
-        f"Comparison of Installed Capacity: EMBER vs PyPSA vs EIA, {horizon}", fontsize=16)
+        f"Comparison of Installed Capacity: PyPSA vs EMBER vs EIA, {horizon}", fontsize=16)
     plt.xlabel("Technology", fontsize=12)
     plt.ylabel("Capacity (GW)", fontsize=12)
     ax.set_xticklabels(ax.get_xticklabels(), ha="right", fontsize=10)
     plt.grid(True, which='both', axis='y', linestyle='--', linewidth=0.5)
-    plt.legend(["EMBER", "PyPSA", "EIA"], loc="upper right", fontsize=12)
+    plt.legend(["PyPSA", "EMBER", "EIA"], loc="upper right", fontsize=12)
     plt.tight_layout()
-    plt.savefig(f"{PLOTS_DIR}/capacity_validation_{clusters}_{country_code}_{horizon}.png")
+    plt.savefig(
+        f"{PLOTS_DIR}/capacity_validation_{clusters}_{country_code}_{horizon}.png")
 
 
 def plot_generation_validation(generation_df, horizon, country_code, clusters):
-    ax = generation_df.plot(kind="bar", figsize=(12, 7), width=0.8)
+    ax = generation_df.plot(kind="bar", figsize=(12, 7), width=0.8, color=[
+                            '#1f77b4', '#ff7f0e', '#2ca02c'])
     plt.title(
-        f"Comparison of Generation: EMBER vs PyPSA vs EIA, {horizon}", fontsize=16)
+        f"Comparison of Generation: PyPSA vs EMBER vs EIA, {horizon}", fontsize=16)
     plt.xlabel("Generation Type", fontsize=12)
     plt.ylabel("Generation (TWh)", fontsize=12)
     ax.set_xticklabels(ax.get_xticklabels(), ha="right", fontsize=10)
     plt.grid(True, which='both', axis='y', linestyle='--', linewidth=0.5)
-    plt.legend(["EMBER", "PyPSA", "EIA"], loc="upper right", fontsize=12)
+    plt.legend(["PyPSA", "EMBER", "EIA"], loc="upper right", fontsize=12)
     plt.tight_layout()
     plt.savefig(
         f"{PLOTS_DIR}/generation_validation_{clusters}_{country_code}_{horizon}.png")
@@ -595,7 +599,7 @@ def run(country_code, scenario_folder, horizon, clusters):
     EIA_inst_capacities = preprocess_eia_data(EIA_inst_capacities)
 
     installed_capacity_df = pd.concat(
-        [installed_capacity_ember, pypsa_capacity, EIA_inst_capacities], axis=1).fillna(0)
+        [pypsa_capacity, installed_capacity_ember, EIA_inst_capacities], axis=1).fillna(0)
 
     ####### GENERATION #######
 
@@ -607,7 +611,7 @@ def run(country_code, scenario_folder, horizon, clusters):
     EIA_generation = preprocess_eia_data(EIA_generation)
 
     generation_df = pd.concat(
-        [generation_data_ember, pypsa_generation, EIA_generation], axis=1).fillna(0)
+        [pypsa_generation, generation_data_ember, EIA_generation], axis=1).fillna(0)
     generation_df
 
     generation_data_ember_ = get_generation_capacity_ember_detail(
@@ -617,12 +621,12 @@ def run(country_code, scenario_folder, horizon, clusters):
     pypsa_generation_ = get_generation_capacity_pypsa_detail(network)
 
     generation_df_ = pd.concat(
-        [generation_data_ember_, pypsa_generation_, EIA_generation_], axis=1).fillna(0)
+        [pypsa_generation_, generation_data_ember_, EIA_generation_], axis=1).fillna(0)
 
     # Plots
     plot_demand_validation(demand_ember, pypsa_demand,
                            EIA_demand, horizon, country_code, clusters)
-    plot_detailed_generation_validation(generation_df_, 
+    plot_detailed_generation_validation(generation_df_,
                                         horizon, country_code, clusters)
     plot_capacity_validation(installed_capacity_df,
                              horizon, country_code, clusters)
@@ -633,13 +637,13 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "validate",
-            countries="US", 
+            countries="US",
             clusters="10",
             planning_horizon="2020",
         )
     # update config based on wildcards
-    config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
-
+    config = update_config_from_wildcards(
+        snakemake.config, snakemake.wildcards)
 
     # country, planning horizon, and number of clusters from config.plot.yaml
     country_code = config["validation"]["countries"]

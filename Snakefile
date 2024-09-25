@@ -2,6 +2,10 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import sys
+sys.path.append("submodules/pypsa-earth")
+sys.path.append("submodules/pypsa-earth/scripts")
+
 RESULTS_DIR = "plots/results/"
 PYPSA_EARTH_DIR = "submodules/pypsa-earth/"
 
@@ -19,6 +23,21 @@ wildcard_constraints:
     unc="[-+a-zA-Z0-9\.]*",
     planning_horizon="[0-9]{4}",
     countries="[A-Z]{2}",
+
+
+run = config["run"]
+RDIR = run["name"] + "/" if run.get("name") else ""
+CDIR = RDIR if not run.get("shared_cutouts") else ""
+
+
+module pypsa_earth:
+    snakefile:
+        "submodules/pypsa-earth/Snakefile"
+    config:
+        config
+
+
+use rule * from pypsa_earth
 
 
 localrules:

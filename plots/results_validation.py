@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-from scripts._helper import mock_snakemake, update_config_from_wildcards, build_directory, \
-    load_pypsa_network, PLOTS_DIR, DATA_DIR
 import warnings
 import logging
 import pycountry
@@ -12,7 +10,10 @@ import pandas as pd
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
+from scripts._helper import mock_snakemake, update_config_from_wildcards, build_directory, \
+                            load_pypsa_network, PLOTS_DIR, DATA_DIR
 warnings.filterwarnings("ignore")
+
 
 # TODO
 # Create another plot to compare generation, capacity in details.

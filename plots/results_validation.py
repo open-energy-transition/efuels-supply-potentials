@@ -510,8 +510,7 @@ def plot_demand_validation(demand_ember, pypsa_demand, EIA_demand, horizon, coun
         plt.text(bar.get_x() + bar.get_width() / 2, height, f'{height:.2f}',
                  ha='center', va='bottom', fontsize=12)
     plt.tight_layout()
-    plt.savefig(
-        f"{PLOTS_DIR}/demand_validation_{clusters}_{country_code}_{horizon}.png")
+    plt.savefig(snakemake.output.demand)
 
 
 def plot_detailed_generation_validation(generation_df_, horizon, country_code, clusters):
@@ -525,8 +524,7 @@ def plot_detailed_generation_validation(generation_df_, horizon, country_code, c
     plt.grid(True, which='both', axis='y', linestyle='--', linewidth=0.5)
     plt.legend(["PyPSA", "EMBER", "EIA"], loc="upper right", fontsize=12)
     plt.tight_layout()
-    plt.savefig(
-        f"{PLOTS_DIR}/generation_validation_detailed_{clusters}_{country_code}_{horizon}.png")
+    plt.savefig(snakemake.output.generation_detailed)
 
 
 def plot_capacity_validation(installed_capacity_df, horizon, country_code, clusters):
@@ -540,8 +538,7 @@ def plot_capacity_validation(installed_capacity_df, horizon, country_code, clust
     plt.grid(True, which='both', axis='y', linestyle='--', linewidth=0.5)
     plt.legend(["PyPSA", "EMBER", "EIA"], loc="upper right", fontsize=12)
     plt.tight_layout()
-    plt.savefig(
-        f"{PLOTS_DIR}/capacity_validation_{clusters}_{country_code}_{horizon}.png")
+    plt.savefig(snakemake.output.capacity)
 
 
 def plot_generation_validation(generation_df, horizon, country_code, clusters):
@@ -555,8 +552,7 @@ def plot_generation_validation(generation_df, horizon, country_code, clusters):
     plt.grid(True, which='both', axis='y', linestyle='--', linewidth=0.5)
     plt.legend(["PyPSA", "EMBER", "EIA"], loc="upper right", fontsize=12)
     plt.tight_layout()
-    plt.savefig(
-        f"{PLOTS_DIR}/generation_validation_{clusters}_{country_code}_{horizon}.png")
+    plt.savefig(snakemake.output.generation)
 
 
 def save_csv_output(data, output_name, index=False):
@@ -567,7 +563,7 @@ def save_csv_output(data, output_name, index=False):
     returns:
         str: Message indicating the success of the operation
     """
-    data.to_csv(f"{PLOTS_DIR}/{output_name}.csv", index=f"{index}")
+    data.to_csv(output_name, index=f"{index}")
     return "Data saved successfully."
 
 
@@ -607,8 +603,7 @@ def run(country_code, scenario_folder, horizon, clusters):
     # Save the output as a CSV file
     demand_df = pd.DataFrame(
         {"PyPSA data": [pypsa_demand], "Ember data": [demand_ember], "EIA data": [EIA_demand]})
-    save_csv_output(
-        demand_df, f"demand_validation_{country_code}_{horizon}", index=True)
+    save_csv_output(demand_df, snakemake.output.demand_csv, index=True)
 
     ####### INSTALLED CAPACITY #######
 
@@ -624,8 +619,7 @@ def run(country_code, scenario_folder, horizon, clusters):
         [pypsa_capacity, installed_capacity_ember, EIA_inst_capacities], axis=1).fillna(0)
 
     # Save the output as a CSV file
-    save_csv_output(installed_capacity_df,
-                    f"installed_capacity_validation_{country_code}_{horizon}", index=True)
+    save_csv_output(installed_capacity_df, snakemake.output.capacity_csv, index=True)
 
     ####### GENERATION #######
 
@@ -641,8 +635,7 @@ def run(country_code, scenario_folder, horizon, clusters):
     generation_df
 
     # Save the output as a CSV file
-    save_csv_output(
-        generation_df, f"generation_validation_{country_code}_{horizon}", index=True)
+    save_csv_output(generation_df, snakemake.output.generation_csv, index=True)
 
     generation_data_ember_ = get_generation_capacity_ember_detail(
         ember_data, three_country_code, horizon).round(2)
@@ -655,8 +648,7 @@ def run(country_code, scenario_folder, horizon, clusters):
         [pypsa_generation_, generation_data_ember_, EIA_generation_], axis=1).fillna(0)
 
     # Save the output as a CSV file
-    save_csv_output(
-        generation_df_, f"generation_validation_detail_{country_code}_{horizon}", index=True)
+    save_csv_output(generation_df_, snakemake.output.generation_detailed_csv, index=True)
 
     # Plots
     plot_demand_validation(demand_ember, pypsa_demand,

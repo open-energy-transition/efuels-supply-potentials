@@ -35,10 +35,15 @@ rule validate:
         capacity=RESULTS_DIR + "capacity_validation_{clusters}_{countries}_{planning_horizon}.png",
         generation=RESULTS_DIR + "generation_validation_{clusters}_{countries}_{planning_horizon}.png",
         generation_detailed=RESULTS_DIR + "generation_validation_detailed_{clusters}_{countries}_{planning_horizon}.png",
+        demand_csv=RESULTS_DIR + "demand_validation_{clusters}_{countries}_{planning_horizon}.csv",
+        capacity_csv=RESULTS_DIR + "capacity_validation_{clusters}_{countries}_{planning_horizon}.csv",
+        generation_csv=RESULTS_DIR + "generation_validation_{clusters}_{countries}_{planning_horizon}.csv",
+        generation_detailed_csv=RESULTS_DIR + "generation_validation_detailed_{clusters}_{countries}_{planning_horizon}.csv",
+
     resources:
         mem_mb=16000,
     script:
-        "plots/data_validation.py"
+        "plots/results_validation.py"
 
 
 rule validate_all:
@@ -57,6 +62,22 @@ rule validate_all:
         ),
         expand(RESULTS_DIR
             + "generation_validation_detailed_{clusters}_{countries}_{planning_horizon}.png",
+            **config["validation"],
+        ),
+        expand(RESULTS_DIR
+            + "demand_validation_{clusters}_{countries}_{planning_horizon}.csv",
+            **config["validation"],
+        ),
+        expand(RESULTS_DIR
+            + "capacity_validation_{clusters}_{countries}_{planning_horizon}.csv",
+            **config["validation"],
+        ),
+        expand(RESULTS_DIR
+            + "generation_validation_{clusters}_{countries}_{planning_horizon}.csv",
+            **config["validation"],
+        ),
+        expand(RESULTS_DIR
+            + "generation_validation_detailed_{clusters}_{countries}_{planning_horizon}.csv",
             **config["validation"],
         ),
 

@@ -14,6 +14,9 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 warnings.filterwarnings("ignore")
 
+# TODO
+# Create another plot to compare generation, capacity in details.
+
 
 def load_ember_data():
     """
@@ -343,7 +346,7 @@ def preprocess_eia_data(data):
     data.set_index("country", inplace=True)
 
     # Rename columns to provide clarity
-    data.columns = ["EIA Data"]
+    data.columns = ["EIA data"]
 
     # Rename specific rows to match more standard terms
     data.rename(index={"Hydroelectricity": "Hydro",
@@ -379,7 +382,7 @@ def preprocess_eia_data_detail(data):
     data.set_index("country", inplace=True)
 
     # Rename columns to provide clarity
-    data.columns = ["EIA Data"]
+    data.columns = ["EIA data"]
 
     # Rename specific rows to match more standard terms
     data.rename(index={"Hydroelectricity": "Hydro",
@@ -555,6 +558,18 @@ def plot_generation_validation(generation_df, horizon, country_code, clusters):
         f"{PLOTS_DIR}/generation_validation_{clusters}_{country_code}_{horizon}.png")
 
 
+def save_csv_output(data, output_name, index=False):
+    """
+    Args:
+        data (pd.DataFrame): DataFrame to save as a CSV file.
+        output_name (str): Name of the output CSV file.
+    returns:
+        str: Message indicating the success of the operation
+    """
+    data.to_csv(f"{PLOTS_DIR}/{output_name}.csv", index=f"{index}")
+    return "Data saved successfully."
+
+
 def run(country_code, scenario_folder, horizon, clusters):
     """
     Run the data validation workflow for the specified country and year.
@@ -588,40 +603,59 @@ def run(country_code, scenario_folder, horizon, clusters):
     EIA_demand = get_data_EIA(EIA_demand_path, country_code, horizon)
     EIA_demand = EIA_demand.iloc[0, 1]
 
+    # Save the output as a CSV file
+    demand_df = pd.DataFrame(
+        {"PyPSA data": [pypsa_demand], "Ember data": [demand_ember], "EIA data": [EIA_demand]})
+    save_csv_output(
+        demand_df, f"demand_validation_{country_code}_{horizon}", index=True)
+
     ####### INSTALLED CAPACITY #######
 
     installed_capacity_ember = get_installed_capacity_ember(
-        ember_data, three_country_code, horizon)
-    pypsa_capacity = get_installed_capacity_pypsa(network)
+        ember_data, three_country_code, horizon).round(2)
+    pypsa_capacity = get_installed_capacity_pypsa(network).round(2)
 
     EIA_inst_capacities = get_data_EIA(
         EIA_installed_capacities_path, country_code, horizon)
-    EIA_inst_capacities = preprocess_eia_data(EIA_inst_capacities)
+    EIA_inst_capacities = preprocess_eia_data(EIA_inst_capacities).round(2)
 
     installed_capacity_df = pd.concat(
         [pypsa_capacity, installed_capacity_ember, EIA_inst_capacities], axis=1).fillna(0)
 
+    # Save the output as a CSV file
+    save_csv_output(installed_capacity_df,
+                    f"installed_capacity_validation_{country_code}_{horizon}", index=True)
+
     ####### GENERATION #######
 
     generation_data_ember = get_generation_capacity_ember(
-        ember_data, three_country_code, horizon)
-    pypsa_generation = get_generation_capacity_pypsa(network)
+        ember_data, three_country_code, horizon).round(2)
+    pypsa_generation = get_generation_capacity_pypsa(network).round(2)
 
     EIA_generation = get_data_EIA(EIA_generation_path, country_code, horizon)
-    EIA_generation = preprocess_eia_data(EIA_generation)
+    EIA_generation = preprocess_eia_data(EIA_generation).round(2)
 
     generation_df = pd.concat(
         [pypsa_generation, generation_data_ember, EIA_generation], axis=1).fillna(0)
     generation_df
 
+    # Save the output as a CSV file
+    save_csv_output(
+        generation_df, f"generation_validation_{country_code}_{horizon}", index=True)
+
     generation_data_ember_ = get_generation_capacity_ember_detail(
-        ember_data, three_country_code, horizon)
+        ember_data, three_country_code, horizon).round(2)
     EIA_generation_ = get_data_EIA(EIA_generation_path, country_code, horizon)
-    EIA_generation_ = preprocess_eia_data_detail(EIA_generation_)
-    pypsa_generation_ = get_generation_capacity_pypsa_detail(network)
+    EIA_generation_ = preprocess_eia_data_detail(EIA_generation_).round(2)
+
+    pypsa_generation_ = get_generation_capacity_pypsa_detail(network).round(2)
 
     generation_df_ = pd.concat(
         [pypsa_generation_, generation_data_ember_, EIA_generation_], axis=1).fillna(0)
+
+    # Save the output as a CSV file
+    save_csv_output(
+        generation_df_, f"generation_validation_detail_{country_code}_{horizon}", index=True)
 
     # Plots
     plot_demand_validation(demand_ember, pypsa_demand,

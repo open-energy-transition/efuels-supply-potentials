@@ -38,7 +38,7 @@ rule validate:
     resources:
         mem_mb=16000,
     script:
-        "plots/data_validation.py"
+        "plots/results_validation.py"
 
 
 rule validate_all:

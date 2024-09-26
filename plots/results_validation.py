@@ -555,7 +555,7 @@ def plot_generation_validation(generation_df, horizon, country_code, clusters):
     plt.savefig(snakemake.output.generation)
 
 
-def save_csv_output(data, output_name, index=False):
+def save_csv_output(data, output_name, index=False, index_name=None):
     """
     Args:
         data (pd.DataFrame): DataFrame to save as a CSV file.
@@ -563,6 +563,7 @@ def save_csv_output(data, output_name, index=False):
     returns:
         str: Message indicating the success of the operation
     """
+    data.index.name = index_name
     data.to_csv(output_name, index=f"{index}")
     return "Data saved successfully."
 
@@ -603,6 +604,7 @@ def run(country_code, scenario_folder, horizon, clusters):
     # Save the output as a CSV file
     demand_df = pd.DataFrame(
         {"PyPSA data": [pypsa_demand], "Ember data": [demand_ember], "EIA data": [EIA_demand]})
+    demand_df.index = ["Demand [TWh]"]
     save_csv_output(demand_df, snakemake.output.demand_csv, index=True)
 
     ####### INSTALLED CAPACITY #######
@@ -619,7 +621,8 @@ def run(country_code, scenario_folder, horizon, clusters):
         [pypsa_capacity, installed_capacity_ember, EIA_inst_capacities], axis=1).fillna(0)
 
     # Save the output as a CSV file
-    save_csv_output(installed_capacity_df, snakemake.output.capacity_csv, index=True)
+    save_csv_output(installed_capacity_df, snakemake.output.capacity_csv,
+                    index=True, index_name="Installed capacities [GW]")
 
     ####### GENERATION #######
 
@@ -635,7 +638,8 @@ def run(country_code, scenario_folder, horizon, clusters):
     generation_df
 
     # Save the output as a CSV file
-    save_csv_output(generation_df, snakemake.output.generation_csv, index=True)
+    save_csv_output(generation_df, snakemake.output.generation_csv,
+                    index=True, index_name="Generation [TWh]")
 
     generation_data_ember_ = get_generation_capacity_ember_detail(
         ember_data, three_country_code, horizon).round(2)
@@ -648,7 +652,8 @@ def run(country_code, scenario_folder, horizon, clusters):
         [pypsa_generation_, generation_data_ember_, EIA_generation_], axis=1).fillna(0)
 
     # Save the output as a CSV file
-    save_csv_output(generation_df_, snakemake.output.generation_detailed_csv, index=True)
+    save_csv_output(generation_df_, snakemake.output.generation_detailed_csv,
+                    index=True, index_name="Generation [TWh]")
 
     # Plots
     plot_demand_validation(demand_ember, pypsa_demand,

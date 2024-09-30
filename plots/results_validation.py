@@ -2,18 +2,21 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import warnings
+import logging
+import pycountry
+import matplotlib.pyplot as plt
+import pandas as pd
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
-import pandas as pd
-import matplotlib.pyplot as plt
-import pycountry
-import logging
-import warnings
-warnings.filterwarnings("ignore")
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 from scripts._helper import mock_snakemake, update_config_from_wildcards, build_directory, \
                             load_pypsa_network, PLOTS_DIR, DATA_DIR
+warnings.filterwarnings("ignore")
 
+
+# TODO
+# Create another plot to compare generation, capacity in details.
 
 
 def load_ember_data():
@@ -344,7 +347,7 @@ def preprocess_eia_data(data):
     data.set_index("country", inplace=True)
 
     # Rename columns to provide clarity
-    data.columns = ["EIA Data"]
+    data.columns = ["EIA data"]
 
     # Rename specific rows to match more standard terms
     data.rename(index={"Hydroelectricity": "Hydro",
@@ -380,7 +383,7 @@ def preprocess_eia_data_detail(data):
     data.set_index("country", inplace=True)
 
     # Rename columns to provide clarity
-    data.columns = ["EIA Data"]
+    data.columns = ["EIA data"]
 
     # Rename specific rows to match more standard terms
     data.rename(index={"Hydroelectricity": "Hydro",
@@ -496,7 +499,7 @@ def get_generation_capacity_ember_detail(data, three_country_code, year):
 
 def plot_demand_validation(demand_ember, pypsa_demand, EIA_demand, horizon, country_code, clusters):
     plt.figure(figsize=(8, 6))  # Set figure size
-    bars = plt.bar(["Ember", "PyPSA", "EIA"], [demand_ember, pypsa_demand, EIA_demand], 
+    bars = plt.bar(["PyPSA", "Ember",  "EIA"], [pypsa_demand, demand_ember, EIA_demand],
                    color=['#1f77b4', '#ff7f0e', '#2ca02c'])
     plt.title(f"Demand Validation in {country_code}, {horizon}")
     plt.ylabel("Demand (TWh)", fontsize=12)
@@ -507,48 +510,62 @@ def plot_demand_validation(demand_ember, pypsa_demand, EIA_demand, horizon, coun
         plt.text(bar.get_x() + bar.get_width() / 2, height, f'{height:.2f}',
                  ha='center', va='bottom', fontsize=12)
     plt.tight_layout()
-    plt.savefig(f"{PLOTS_DIR}/demand_validation_{clusters}_{country_code}_{horizon}.png")
+    plt.savefig(snakemake.output.demand)
 
 
 def plot_detailed_generation_validation(generation_df_, horizon, country_code, clusters):
-    ax = generation_df_.plot(kind="bar", figsize=(12, 7), width=0.8)
+    ax = generation_df_.plot(kind="bar", figsize=(12, 7), width=0.8, color=[
+                             '#1f77b4', '#ff7f0e', '#2ca02c'])
     plt.title(
-        f"Comparison of Generation: EMBER vs PyPSA vs EIA, {horizon}", fontsize=16)
+        f"Comparison of Generation: PyPSA vs EMBER vs EIA, {horizon}", fontsize=16)
     plt.xlabel("Generation Type", fontsize=12)
     plt.ylabel("Generation (TWh)", fontsize=12)
     ax.set_xticklabels(ax.get_xticklabels(), ha="right", fontsize=10)
     plt.grid(True, which='both', axis='y', linestyle='--', linewidth=0.5)
-    plt.legend(["EMBER", "PyPSA", "EIA"], loc="upper right", fontsize=12)
+    plt.legend(["PyPSA", "EMBER", "EIA"], loc="upper right", fontsize=12)
     plt.tight_layout()
-    plt.savefig(
-        f"{PLOTS_DIR}/generation_validation_detailed_{clusters}_{country_code}_{horizon}.png")
+    plt.savefig(snakemake.output.generation_detailed)
 
 
 def plot_capacity_validation(installed_capacity_df, horizon, country_code, clusters):
-    ax = installed_capacity_df.plot(kind="bar", figsize=(12, 7), width=0.8)
+    ax = installed_capacity_df.plot(kind="bar", figsize=(
+        12, 7), width=0.8, color=['#1f77b4', '#ff7f0e', '#2ca02c'])
     plt.title(
-        f"Comparison of Installed Capacity: EMBER vs PyPSA vs EIA, {horizon}", fontsize=16)
+        f"Comparison of Installed Capacity: PyPSA vs EMBER vs EIA, {horizon}", fontsize=16)
     plt.xlabel("Technology", fontsize=12)
     plt.ylabel("Capacity (GW)", fontsize=12)
     ax.set_xticklabels(ax.get_xticklabels(), ha="right", fontsize=10)
     plt.grid(True, which='both', axis='y', linestyle='--', linewidth=0.5)
-    plt.legend(["EMBER", "PyPSA", "EIA"], loc="upper right", fontsize=12)
+    plt.legend(["PyPSA", "EMBER", "EIA"], loc="upper right", fontsize=12)
     plt.tight_layout()
-    plt.savefig(f"{PLOTS_DIR}/capacity_validation_{clusters}_{country_code}_{horizon}.png")
+    plt.savefig(snakemake.output.capacity)
 
 
 def plot_generation_validation(generation_df, horizon, country_code, clusters):
-    ax = generation_df.plot(kind="bar", figsize=(12, 7), width=0.8)
+    ax = generation_df.plot(kind="bar", figsize=(12, 7), width=0.8, color=[
+                            '#1f77b4', '#ff7f0e', '#2ca02c'])
     plt.title(
-        f"Comparison of Generation: EMBER vs PyPSA vs EIA, {horizon}", fontsize=16)
+        f"Comparison of Generation: PyPSA vs EMBER vs EIA, {horizon}", fontsize=16)
     plt.xlabel("Generation Type", fontsize=12)
     plt.ylabel("Generation (TWh)", fontsize=12)
     ax.set_xticklabels(ax.get_xticklabels(), ha="right", fontsize=10)
     plt.grid(True, which='both', axis='y', linestyle='--', linewidth=0.5)
-    plt.legend(["EMBER", "PyPSA", "EIA"], loc="upper right", fontsize=12)
+    plt.legend(["PyPSA", "EMBER", "EIA"], loc="upper right", fontsize=12)
     plt.tight_layout()
-    plt.savefig(
-        f"{PLOTS_DIR}/generation_validation_{clusters}_{country_code}_{horizon}.png")
+    plt.savefig(snakemake.output.generation)
+
+
+def save_csv_output(data, output_name, index=False, index_name=None):
+    """
+    Args:
+        data (pd.DataFrame): DataFrame to save as a CSV file.
+        output_name (str): Name of the output CSV file.
+    returns:
+        str: Message indicating the success of the operation
+    """
+    data.index.name = index_name
+    data.to_csv(output_name, index=f"{index}")
+    return "Data saved successfully."
 
 
 def run(country_code, scenario_folder, horizon, clusters):
@@ -584,45 +601,64 @@ def run(country_code, scenario_folder, horizon, clusters):
     EIA_demand = get_data_EIA(EIA_demand_path, country_code, horizon)
     EIA_demand = EIA_demand.iloc[0, 1]
 
+    # Save the output as a CSV file
+    demand_df = pd.DataFrame(
+        {"PyPSA data": [pypsa_demand], "Ember data": [demand_ember], "EIA data": [EIA_demand]})
+    demand_df.index = ["Demand [TWh]"]
+    save_csv_output(demand_df, snakemake.output.demand_csv, index=True)
+
     ####### INSTALLED CAPACITY #######
 
     installed_capacity_ember = get_installed_capacity_ember(
-        ember_data, three_country_code, horizon)
-    pypsa_capacity = get_installed_capacity_pypsa(network)
+        ember_data, three_country_code, horizon).round(2)
+    pypsa_capacity = get_installed_capacity_pypsa(network).round(2)
 
     EIA_inst_capacities = get_data_EIA(
         EIA_installed_capacities_path, country_code, horizon)
-    EIA_inst_capacities = preprocess_eia_data(EIA_inst_capacities)
+    EIA_inst_capacities = preprocess_eia_data(EIA_inst_capacities).round(2)
 
     installed_capacity_df = pd.concat(
-        [installed_capacity_ember, pypsa_capacity, EIA_inst_capacities], axis=1).fillna(0)
+        [pypsa_capacity, installed_capacity_ember, EIA_inst_capacities], axis=1).fillna(0)
+
+    # Save the output as a CSV file
+    save_csv_output(installed_capacity_df, snakemake.output.capacity_csv,
+                    index=True, index_name="Installed capacities [GW]")
 
     ####### GENERATION #######
 
     generation_data_ember = get_generation_capacity_ember(
-        ember_data, three_country_code, horizon)
-    pypsa_generation = get_generation_capacity_pypsa(network)
+        ember_data, three_country_code, horizon).round(2)
+    pypsa_generation = get_generation_capacity_pypsa(network).round(2)
 
     EIA_generation = get_data_EIA(EIA_generation_path, country_code, horizon)
-    EIA_generation = preprocess_eia_data(EIA_generation)
+    EIA_generation = preprocess_eia_data(EIA_generation).round(2)
 
     generation_df = pd.concat(
-        [generation_data_ember, pypsa_generation, EIA_generation], axis=1).fillna(0)
+        [pypsa_generation, generation_data_ember, EIA_generation], axis=1).fillna(0)
     generation_df
 
+    # Save the output as a CSV file
+    save_csv_output(generation_df, snakemake.output.generation_csv,
+                    index=True, index_name="Generation [TWh]")
+
     generation_data_ember_ = get_generation_capacity_ember_detail(
-        ember_data, three_country_code, horizon)
+        ember_data, three_country_code, horizon).round(2)
     EIA_generation_ = get_data_EIA(EIA_generation_path, country_code, horizon)
-    EIA_generation_ = preprocess_eia_data_detail(EIA_generation_)
-    pypsa_generation_ = get_generation_capacity_pypsa_detail(network)
+    EIA_generation_ = preprocess_eia_data_detail(EIA_generation_).round(2)
+
+    pypsa_generation_ = get_generation_capacity_pypsa_detail(network).round(2)
 
     generation_df_ = pd.concat(
-        [generation_data_ember_, pypsa_generation_, EIA_generation_], axis=1).fillna(0)
+        [pypsa_generation_, generation_data_ember_, EIA_generation_], axis=1).fillna(0)
+
+    # Save the output as a CSV file
+    save_csv_output(generation_df_, snakemake.output.generation_detailed_csv,
+                    index=True, index_name="Generation [TWh]")
 
     # Plots
     plot_demand_validation(demand_ember, pypsa_demand,
                            EIA_demand, horizon, country_code, clusters)
-    plot_detailed_generation_validation(generation_df_, 
+    plot_detailed_generation_validation(generation_df_,
                                         horizon, country_code, clusters)
     plot_capacity_validation(installed_capacity_df,
                              horizon, country_code, clusters)
@@ -633,13 +669,13 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "validate",
-            countries="US", 
+            countries="US",
             clusters="10",
             planning_horizon="2020",
         )
     # update config based on wildcards
-    config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
-
+    config = update_config_from_wildcards(
+        snakemake.config, snakemake.wildcards)
 
     # country, planning horizon, and number of clusters from config.plot.yaml
     country_code = config["validation"]["countries"]

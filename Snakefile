@@ -5,6 +5,7 @@
 import sys
 sys.path.append("submodules/pypsa-earth")
 sys.path.append("submodules/pypsa-earth/scripts")
+from scripts._helper import BASE_PATH
 
 RESULTS_DIR = "plots/results/"
 PYPSA_EARTH_DIR = "submodules/pypsa-earth/"
@@ -110,3 +111,14 @@ rule retrieve_cutouts:
         mem_mb=16000,
     script:
         "scripts/retrieve_cutouts.py"
+
+
+rule use_osm_data:
+    input:
+        generators_csv=BASE_PATH + "/submodules/pypsa-earth/resources/" + RDIR + "osm/clean/all_clean_generators.csv",
+    output:
+        output_csv="resources/" + RDIR + "osm/clean/all_clean_generators.csv",
+    resources:
+        mem_mb=16000,
+    script:
+        "scripts/use_osm_data.py"

@@ -1,13 +1,23 @@
-import pandas as pd
-import numpy as np
-import geopandas as gpd
-import matplotlib.pyplot as plt
-import pypsa
-import re
-import plotly.express as px
-import plotly.graph_objects as go
+# SPDX-FileCopyrightText:  Open Energy Transition gGmbH
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
 
 import warnings
+import logging
+import pycountry
+import matplotlib.pyplot as plt
+import pandas as pd
+import geopandas as gpd
+import pypsa
+import plotly.express as px
+import plotly.graph_objects as go
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
+from scripts._helper import mock_snakemake, update_config_from_wildcards, build_directory, \
+    load_pypsa_network, PLOTS_DIR, DATA_DIR, PYPSA_EARTH_DIR
+    
+warnings.filterwarnings("ignore")
 warnings.simplefilter(action='ignore', category=FutureWarning)
 # warnings.simplefilter(action='ignore', category=UserWarning)
 
@@ -75,10 +85,12 @@ def preprocess_eia_capacity(path, year):
 
 def load_pypsa_network(is_alternative_clustering):
     if is_alternative_clustering:
-        network = pypsa.Network(
-            "../submodules/pypsa-earth/networks/US_2021/elec_s_10.nc")
+        network_path = os.path.join(PYPSA_EARTH_DIR, "networks",
+                                    "US_2021", "elec_s_10.nc")
+        network = pypsa.Network(network_path)
     else:
-        network = pypsa.Network("../data/validation/usa_mapped.nc")
+        mapped_network = os.path.join(DATA_DIR, "validation", "usa_mapped.nc")
+        network = pypsa.Network(mapped_network)
     return network
 
 
@@ -125,29 +137,91 @@ def preprocess_gadm(path):
     return gadm_state
 
 
+def preprocess_pypsa_demand(network_path, time_res, gadm_us):
+    network = pypsa.Network(network_path)
+    df = network.loads_t.p.sum() / 1e6 * time_res
+    usa_state_dict = dict(gadm_us.values)
+
+    df.index = df.index.str.replace("_AC", "")
+    df.index = df.index.str.replace("_DC", "")
+    df.index = df.index.map(usa_state_dict)
+
+    df = df.reset_index().groupby('Load').sum()
+    df.index.name = 'State'
+    df.columns = ["PyPSA"]
+    return df
+
+
+def preprocess_eia_demand(path):
+    statewise_df = pd.read_excel(path, sheet_name="Data")
+
+    demand_df = statewise_df.loc[statewise_df['MSN'] == 'ESTXP']
+    demand_df.set_index('State', inplace=True)
+
+    # data is in million kWh (GWh) - hence dividing by 1e3 to get the data in TWh
+    demand_df_2021 = demand_df[2021] / 1e3
+    demand_df_2021 = demand_df_2021.to_frame()
+    demand_df_2021.columns = ["EIA"]
+
+    demand_df_2021.drop(["US"], axis=0, inplace=True)
+    return demand_df_2021
+
+
 if __name__ == "__main__":
+    if "snakemake" not in globals():
+        snakemake = mock_snakemake(
+            "statewise_validate",
+            countries="US",
+            clusters="10",
+            planning_horizon="2020",
+        )
+
+    # update config based on wildcards
+    config = update_config_from_wildcards(
+        snakemake.config, snakemake.wildcards)
+
+    planning_horizon = config["validation"]["planning_horizon"]
+    data_horizon = int(planning_horizon)
+
+    ################ PATHS ################
+    eia_statewise_demand_path = os.path.join(
+        DATA_DIR, "validation", "EIA_statewise_data", "use_all_phy.xlsx")
+    eia_installed_capacity_by_state_path = os.path.join(
+        DATA_DIR, "validation", "existcapacity_annual.xlsx")
+    gadm_usa_json_path = os.path.join(DATA_DIR, "validation", "gadm41_USA_1.json")
+    demand_pypsa_network_path = os.path.join(PYPSA_EARTH_DIR, "results", 
+        "US_2021", "networks", "elec_s_10_ec_lcopt_Co2L-24H.nc")
 
     alternative_clustering = True
+    time_res = 24
+    plot_scale = 1.5
 
-    eia_installed_capacity_by_state_path = "../data/validation/existcapacity_annual.xlsx"
     eia_installed_capacity_by_state_year = preprocess_eia_capacity(
-        eia_installed_capacity_by_state_path, 2021)
-
+        eia_installed_capacity_by_state_path, data_horizon)
     network = load_pypsa_network(alternative_clustering)
-
-    gadm_usa_json_path = "data/gadm41_USA_1.json"
     gadm_gdp_usa_state = preprocess_gadm(gadm_usa_json_path)
-
     pypsa_merged_df = preprocess_pypsa_cap(network, gadm_gdp_usa_state)
+
+    eia_statewise_demand = preprocess_eia_demand(eia_statewise_demand_path)
+    pypsa_statewise_demand = preprocess_pypsa_demand(
+        demand_pypsa_network_path, time_res, gadm_gdp_usa_state)
+    demand_total = pd.concat(
+        [eia_statewise_demand, pypsa_statewise_demand], axis=1)
 
     ################ PLOTS ################
     fig1 = px.bar(pypsa_merged_df, barmode='stack', text_auto='.1f')
     fig1.update_layout(width=1000, yaxis_title='Installed capacity PyPSA (GW)')
     fig1.write_image(
-        f"../plots/installed_capacity_pypsa_countrywise.png", scale=1.5)
+        snakemake.output.statewise_installed_capacity_pypsa, scale=plot_scale)
 
     fig2 = px.bar(eia_installed_capacity_by_state_year,
                   barmode='stack', text_auto='.1f')
     fig2.update_layout(width=1000, yaxis_title='Installed capacity EIA (GW)')
     fig2.write_image(
-        f"../plots/installed_capacity_eia_countrywise.png", scale=1.5)
+        snakemake.output.statewise_installed_capacity_eia, scale=plot_scale)
+
+    fig3 = px.bar(demand_total, barmode='group')
+    fig3.update_layout(
+        width=1000, yaxis_title='Annual electricity demand (TWh)')
+    fig3.write_image(
+        snakemake.output.demand_statewise_comparison, scale=plot_scale)

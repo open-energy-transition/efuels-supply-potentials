@@ -45,6 +45,22 @@ rule validate:
     script:
         "plots/results_validation.py"
 
+rule statewise_validate:
+    params:
+        countries=config["validation"]["countries"],
+        clusters=config["validation"]["clusters"],
+        planning_horizon=config["validation"]["planning_horizon"]
+    output:
+        demand_statewise_comparison=RESULTS_DIR + "total_demand_statewise_{clusters}_{countries}_{planning_horizon}.png",
+        statewise_installed_capacity_pypsa=RESULTS_DIR + "installed_capacity_pypsa_statewise_{clusters}_{countries}_{planning_horizon}.png",
+        statewise_installed_capacity_eia=RESULTS_DIR + "installed_capacity_eia_statewise_{clusters}_{countries}_{planning_horizon}.png",
+
+    resources:
+        mem_mb=16000,
+    script:
+        "plots/state_analysis.py"
+
+
 
 rule validate_all:
     input:
@@ -78,6 +94,18 @@ rule validate_all:
         ),
         expand(RESULTS_DIR
             + "generation_validation_detailed_{clusters}_{countries}_{planning_horizon}.csv",
+            **config["validation"],
+        ),
+        expand(RESULTS_DIR
+            + "total_demand_statewise_{clusters}_{countries}_{planning_horizon}.png",
+            **config["validation"],
+        ),
+        expand(RESULTS_DIR
+            + "installed_capacity_pypsa_statewise_{clusters}_{countries}_{planning_horizon}.png",
+            **config["validation"],
+        ),
+        expand(RESULTS_DIR
+            + "installed_capacity_eia_statewise_{clusters}_{countries}_{planning_horizon}.png",
             **config["validation"],
         ),
 

@@ -11,7 +11,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 from scripts._helper import mock_snakemake, update_config_from_wildcards, build_directory, \
-                            load_pypsa_network, PLOTS_DIR, DATA_DIR
+                            load_pypsa_network, load_network, PLOTS_DIR, DATA_DIR
 warnings.filterwarnings("ignore")
 
 
@@ -497,7 +497,7 @@ def get_generation_capacity_ember_detail(data, three_country_code, year):
     return generation_ember
 
 
-def plot_demand_validation(demand_ember, pypsa_demand, EIA_demand, horizon, country_code, clusters):
+def plot_demand_validation(demand_ember, pypsa_demand, EIA_demand, horizon, country_code):
     plt.figure(figsize=(8, 6))  # Set figure size
     bars = plt.bar(["PyPSA", "Ember",  "EIA"], [pypsa_demand, demand_ember, EIA_demand],
                    color=['#1f77b4', '#ff7f0e', '#2ca02c'])
@@ -513,7 +513,7 @@ def plot_demand_validation(demand_ember, pypsa_demand, EIA_demand, horizon, coun
     plt.savefig(snakemake.output.demand)
 
 
-def plot_detailed_generation_validation(generation_df_, horizon, country_code, clusters):
+def plot_detailed_generation_validation(generation_df_, horizon):
     ax = generation_df_.plot(kind="bar", figsize=(12, 7), width=0.8, color=[
                              '#1f77b4', '#ff7f0e', '#2ca02c'])
     plt.title(
@@ -527,7 +527,7 @@ def plot_detailed_generation_validation(generation_df_, horizon, country_code, c
     plt.savefig(snakemake.output.generation_detailed)
 
 
-def plot_capacity_validation(installed_capacity_df, horizon, country_code, clusters):
+def plot_capacity_validation(installed_capacity_df, horizon):
     ax = installed_capacity_df.plot(kind="bar", figsize=(
         12, 7), width=0.8, color=['#1f77b4', '#ff7f0e', '#2ca02c'])
     plt.title(
@@ -541,7 +541,7 @@ def plot_capacity_validation(installed_capacity_df, horizon, country_code, clust
     plt.savefig(snakemake.output.capacity)
 
 
-def plot_generation_validation(generation_df, horizon, country_code, clusters):
+def plot_generation_validation(generation_df, horizon):
     ax = generation_df.plot(kind="bar", figsize=(12, 7), width=0.8, color=[
                             '#1f77b4', '#ff7f0e', '#2ca02c'])
     plt.title(
@@ -568,7 +568,7 @@ def save_csv_output(data, output_name, index=False, index_name=None):
     return "Data saved successfully."
 
 
-def run(country_code, scenario_folder, horizon, clusters):
+def run(country_code, horizon):
     """
     Run the data validation workflow for the specified country and year.
     """
@@ -584,9 +584,7 @@ def run(country_code, scenario_folder, horizon, clusters):
     ember_data = load_ember_data()
 
     # Load PyPSA network
-    # Note: you can also load the network directly using """network = pypsa.Network(network_path)"""
-    ### Fix: let the scenario folder point to the results file in pypsa-earth ###
-    network = load_pypsa_network(scenario_folder)
+    network = load_network(snakemake.input.solved_network)
 
     three_country_code = convert_two_country_code_to_three(country_code)
 
@@ -657,33 +655,35 @@ def run(country_code, scenario_folder, horizon, clusters):
 
     # Plots
     plot_demand_validation(demand_ember, pypsa_demand,
-                           EIA_demand, horizon, country_code, clusters)
+                           EIA_demand, horizon, country_code)
     plot_detailed_generation_validation(generation_df_,
-                                        horizon, country_code, clusters)
+                                        horizon)
     plot_capacity_validation(installed_capacity_df,
-                             horizon, country_code, clusters)
-    plot_generation_validation(generation_df, horizon, country_code, clusters)
+                             horizon)
+    plot_generation_validation(generation_df, horizon)
 
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "validate",
-            countries="US",
+            configfile="configs/calibration/config.base.yaml",
+            simpl="",
+            ll="copt",
+            opts="Co2L-24H",
             clusters="10",
-            planning_horizon="2020",
         )
     # update config based on wildcards
     config = update_config_from_wildcards(
         snakemake.config, snakemake.wildcards)
 
     # country, planning horizon, and number of clusters from config.plot.yaml
-    country_code = config["validation"]["countries"]
-    planning_horizon = config["validation"]["planning_horizon"]
-    clusters = config["validation"]["clusters"]
-    scenario_folder = f"{country_code}_{int(planning_horizon)+1}"
+    country_code = snakemake.params.countries[0]
+    planning_horizon = snakemake.params.planning_horizon[0]
+
+    # get planning horizon
     data_horizon = int(planning_horizon)
 
     # Run the data validation
-    run(country_code, scenario_folder, data_horizon, clusters)
+    run(country_code, data_horizon)
     logging.info("Data validation completed successfully.")

@@ -253,3 +253,11 @@ if __name__ == "__main__":
 
     # plot demands
     plot_demand(demand_total)
+
+    ################ TABLE ################
+    pypsa_installed_capacity_by_state.index.name = "capacities [GW]"
+    pypsa_installed_capacity_by_state.to_csv(snakemake.output.table_statewise_installed_capacity_pypsa)
+    eia_installed_capacity_by_state.index.name = "capacities [GW]"
+    eia_installed_capacity_by_state.to_csv(snakemake.output.table_statewise_installed_capacity_eia)
+    demand_total.index.name = "demand [TWh]"
+    demand_total.to_csv(snakemake.output.table_demand_statewise_comparison)

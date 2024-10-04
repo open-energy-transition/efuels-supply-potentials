@@ -61,6 +61,9 @@ rule statewise_validate:
         demand_statewise_comparison=RESULTS_DIR + RDIR + "total_demand_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
         statewise_installed_capacity_pypsa=RESULTS_DIR + RDIR + "installed_capacity_pypsa_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
         statewise_installed_capacity_eia=RESULTS_DIR + RDIR + "installed_capacity_eia_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+        table_demand_statewise_comparison=RESULTS_DIR + RDIR + "total_demand_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+        table_statewise_installed_capacity_pypsa=RESULTS_DIR + RDIR + "installed_capacity_pypsa_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+        table_statewise_installed_capacity_eia=RESULTS_DIR + RDIR + "installed_capacity_eia_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
     resources:
         mem_mb=16000,
     script:
@@ -80,6 +83,18 @@ if config["cluster_options"]["alternative_clustering"]:
             ),
             expand(RESULTS_DIR + RDIR
                 + "installed_capacity_eia_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+                **config["validation"],
+            ),
+            expand(RESULTS_DIR + RDIR
+                + "total_demand_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+                **config["validation"],
+            ),
+            expand(RESULTS_DIR + RDIR
+                + "installed_capacity_pypsa_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+                **config["validation"],
+            ),
+            expand(RESULTS_DIR + RDIR
+                + "installed_capacity_eia_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
                 **config["validation"],
             ),
 

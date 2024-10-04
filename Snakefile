@@ -32,19 +32,19 @@ localrules:
 
 rule validate:
     params:
-        countries=config["validation"]["countries"],
-        clusters=config["validation"]["clusters"],
+        countries=config["countries"],
         planning_horizon=config["validation"]["planning_horizon"],
+    input:
+        solved_network=PYPSA_EARTH_DIR + "results/" + RDIR + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
     output:
-        demand=RESULTS_DIR + "demand_validation_{clusters}_{countries}_{planning_horizon}.png",
-        capacity=RESULTS_DIR + "capacity_validation_{clusters}_{countries}_{planning_horizon}.png",
-        generation=RESULTS_DIR + "generation_validation_{clusters}_{countries}_{planning_horizon}.png",
-        generation_detailed=RESULTS_DIR + "generation_validation_detailed_{clusters}_{countries}_{planning_horizon}.png",
-        demand_csv=RESULTS_DIR + "demand_validation_{clusters}_{countries}_{planning_horizon}.csv",
-        capacity_csv=RESULTS_DIR + "capacity_validation_{clusters}_{countries}_{planning_horizon}.csv",
-        generation_csv=RESULTS_DIR + "generation_validation_{clusters}_{countries}_{planning_horizon}.csv",
-        generation_detailed_csv=RESULTS_DIR + "generation_validation_detailed_{clusters}_{countries}_{planning_horizon}.csv",
-
+        demand=RESULTS_DIR + RDIR + "demand_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+        capacity=RESULTS_DIR + RDIR + "capacity_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+        generation=RESULTS_DIR + RDIR + "generation_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+        generation_detailed=RESULTS_DIR + RDIR + "generation_validation_detailed_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+        demand_csv=RESULTS_DIR + RDIR + "demand_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+        capacity_csv=RESULTS_DIR + RDIR + "capacity_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+        generation_csv=RESULTS_DIR + RDIR + "generation_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+        generation_detailed_csv=RESULTS_DIR + RDIR + "generation_validation_detailed_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
     resources:
         mem_mb=16000,
     script:
@@ -100,37 +100,37 @@ if config["cluster_options"]["alternative_clustering"]:
 
 rule validate_all:
     input:
-        expand(RESULTS_DIR
-            + "demand_validation_{clusters}_{countries}_{planning_horizon}.png",
-            **config["validation"],
+        expand(RESULTS_DIR + RDIR
+            + "demand_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+            **config["scenario"],
         ),
-        expand(RESULTS_DIR
-            + "capacity_validation_{clusters}_{countries}_{planning_horizon}.png",
-            **config["validation"],
+        expand(RESULTS_DIR + RDIR
+            + "capacity_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+            **config["scenario"],
         ),
-        expand(RESULTS_DIR
-            + "generation_validation_{clusters}_{countries}_{planning_horizon}.png",
-            **config["validation"],
+        expand(RESULTS_DIR + RDIR
+            + "generation_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+            **config["scenario"],
         ),
-        expand(RESULTS_DIR
-            + "generation_validation_detailed_{clusters}_{countries}_{planning_horizon}.png",
-            **config["validation"],
+        expand(RESULTS_DIR + RDIR
+            + "generation_validation_detailed_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+            **config["scenario"],
         ),
-        expand(RESULTS_DIR
-            + "demand_validation_{clusters}_{countries}_{planning_horizon}.csv",
-            **config["validation"],
+        expand(RESULTS_DIR + RDIR
+            + "demand_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+            **config["scenario"],
         ),
-        expand(RESULTS_DIR
-            + "capacity_validation_{clusters}_{countries}_{planning_horizon}.csv",
-            **config["validation"],
+        expand(RESULTS_DIR + RDIR
+            + "capacity_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+            **config["scenario"],
         ),
-        expand(RESULTS_DIR
-            + "generation_validation_{clusters}_{countries}_{planning_horizon}.csv",
-            **config["validation"],
+        expand(RESULTS_DIR + RDIR
+            + "generation_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+            **config["scenario"],
         ),
-        expand(RESULTS_DIR
-            + "generation_validation_detailed_{clusters}_{countries}_{planning_horizon}.csv",
-            **config["validation"],
+        expand(RESULTS_DIR + RDIR
+            + "generation_validation_detailed_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+            **config["scenario"],
         ),
 
 

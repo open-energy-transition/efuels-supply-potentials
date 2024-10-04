@@ -119,19 +119,19 @@ def update_config_from_wildcards(config, w):
         config["validation"]["planning_horizon"] = planning_horizon
     if w.get("clusters"):
         clusters = w.clusters
-        config["validation"]["clusters"] = clusters
+        config["scenario"]["clusters"] = clusters
     if w.get("countries"):
         countries = w.countries
-        config["validation"]["countries"] = countries
+        config["scenario"]["countries"] = countries
     if w.get("simpl"):
         simpl = w.simpl
-        config["validation"]["simpl"] = simpl
+        config["scenario"]["simpl"] = simpl
     if w.get("opts"):
         opts = w.opts
-        config["validation"]["opts"] = opts
+        config["scenario"]["opts"] = opts
     if w.get("ll"):
         ll = w.ll
-        config["validation"]["ll"] = ll
+        config["scenario"]["ll"] = ll
     return config
 
 
@@ -188,6 +188,14 @@ def load_pypsa_network(scenario_folder):
     """
     network_path = get_solved_network_path(scenario_folder)
     network = pypsa.Network(network_path)
+    return network
+
+
+def load_network(path):
+    """
+    Loads a PyPSA network from a path
+    """
+    network = pypsa.Network(path)
     return network
 
 

@@ -52,8 +52,7 @@ rule validate:
 
 rule statewise_validate:
     params:
-        countries=config["validation"]["countries"],
-        clusters=config["validation"]["clusters"],
+        alternative_clustering=config["cluster_options"]["alternative_clustering"],
         planning_horizon=config["validation"]["planning_horizon"]
     input:
         solved_network=PYPSA_EARTH_DIR + "results/" + RDIR + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
@@ -75,27 +74,27 @@ if config["cluster_options"]["alternative_clustering"]:
         input:
             expand(RESULTS_DIR + RDIR
                 + "total_demand_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
-                **config["validation"],
+                **config["scenario"],
             ),
             expand(RESULTS_DIR + RDIR
                 + "installed_capacity_pypsa_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
-                **config["validation"],
+                **config["scenario"],
             ),
             expand(RESULTS_DIR + RDIR
                 + "installed_capacity_eia_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
-                **config["validation"],
+                **config["scenario"],
             ),
             expand(RESULTS_DIR + RDIR
                 + "total_demand_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
-                **config["validation"],
+                **config["scenario"],
             ),
             expand(RESULTS_DIR + RDIR
                 + "installed_capacity_pypsa_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
-                **config["validation"],
+                **config["scenario"],
             ),
             expand(RESULTS_DIR + RDIR
                 + "installed_capacity_eia_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
-                **config["validation"],
+                **config["scenario"],
             ),
 
 

@@ -210,9 +210,8 @@ if __name__ == "__main__":
     config = update_config_from_wildcards(
         snakemake.config, snakemake.wildcards)
 
-    planning_horizon = config["validation"]["planning_horizon"]
-    data_horizon = int(planning_horizon[0])
-    country_code = config["validation"]["countries"]
+    # get planning horizon
+    data_horizon = snakemake.params.planning_horizon[0]
 
     ################ PATHS ################
     eia_statewise_demand_path = os.path.join(
@@ -221,14 +220,14 @@ if __name__ == "__main__":
         DATA_DIR, "validation", "existcapacity_annual.xlsx")
     gadm_usa_json_path = os.path.join(DATA_DIR, "validation", "gadm41_USA_1.json")
 
-    alternative_clustering = config["cluster_options"]["alternative_clustering"]
     plot_scale = 1.5
 
     # get bus to state name mapping
     state_mapping = get_state_mapping(gadm_usa_json_path)
 
     # load solved network
-    network = load_pypsa_network(alternative_clustering, snakemake.input.solved_network)
+    network = load_pypsa_network(snakemake.params.alternative_clustering, 
+                                 snakemake.input.solved_network)
 
     # get installed capacities from EIA dataset
     eia_installed_capacity_by_state = preprocess_eia_capacity(

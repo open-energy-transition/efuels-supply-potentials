@@ -21,6 +21,11 @@ wildcard_constraints:
     countries="[A-Z]{2}",
 
 
+run = config["run"]
+RDIR = run["name"] + "/" if run.get("name") else ""
+CDIR = RDIR if not run.get("shared_cutouts") else ""
+
+
 localrules:
     all,
 
@@ -50,16 +55,33 @@ rule statewise_validate:
         countries=config["validation"]["countries"],
         clusters=config["validation"]["clusters"],
         planning_horizon=config["validation"]["planning_horizon"]
+    input:
+        solved_network=PYPSA_EARTH_DIR + "results/" + RDIR + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
     output:
-        demand_statewise_comparison=RESULTS_DIR + "total_demand_statewise_{clusters}_{countries}_{planning_horizon}.png",
-        statewise_installed_capacity_pypsa=RESULTS_DIR + "installed_capacity_pypsa_statewise_{clusters}_{countries}_{planning_horizon}.png",
-        statewise_installed_capacity_eia=RESULTS_DIR + "installed_capacity_eia_statewise_{clusters}_{countries}_{planning_horizon}.png",
-
+        demand_statewise_comparison=RESULTS_DIR + RDIR + "total_demand_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+        statewise_installed_capacity_pypsa=RESULTS_DIR + RDIR + "installed_capacity_pypsa_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+        statewise_installed_capacity_eia=RESULTS_DIR + RDIR + "installed_capacity_eia_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
     resources:
         mem_mb=16000,
     script:
         "plots/state_analysis.py"
 
+
+if config["cluster_options"]["alternative_clustering"]:
+    rule statewise_validate_all:
+        input:
+            expand(RESULTS_DIR + RDIR
+                + "total_demand_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+                **config["validation"],
+            ),
+            expand(RESULTS_DIR + RDIR
+                + "installed_capacity_pypsa_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+                **config["validation"],
+            ),
+            expand(RESULTS_DIR + RDIR
+                + "installed_capacity_eia_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+                **config["validation"],
+            ),
 
 
 rule validate_all:
@@ -94,18 +116,6 @@ rule validate_all:
         ),
         expand(RESULTS_DIR
             + "generation_validation_detailed_{clusters}_{countries}_{planning_horizon}.csv",
-            **config["validation"],
-        ),
-        expand(RESULTS_DIR
-            + "total_demand_statewise_{clusters}_{countries}_{planning_horizon}.png",
-            **config["validation"],
-        ),
-        expand(RESULTS_DIR
-            + "installed_capacity_pypsa_statewise_{clusters}_{countries}_{planning_horizon}.png",
-            **config["validation"],
-        ),
-        expand(RESULTS_DIR
-            + "installed_capacity_eia_statewise_{clusters}_{countries}_{planning_horizon}.png",
             **config["validation"],
         ),
 

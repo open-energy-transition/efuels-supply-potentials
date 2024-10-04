@@ -5,6 +5,7 @@
 import os
 import sys
 from pathlib import Path
+import yaml
 import pypsa
 import logging
 import snakemake as sm
@@ -39,7 +40,7 @@ def load_network(filepath):
     return n
 
 
-def mock_snakemake(rule_name, **wildcards):
+def mock_snakemake(rule_name, configfile=None, **wildcards):
     """
     This function is expected to be executed from the "scripts"-directory of "
     the snakemake project. It returns a snakemake.script.Snakemake object,
@@ -62,8 +63,12 @@ def mock_snakemake(rule_name, **wildcards):
         if Path(p).exists():
             snakefile = p
             break
+    if isinstance(configfile, str):
+        with open(configfile, 'r') as file:
+            configfile = yaml.safe_load(file)
+
     workflow = sm.Workflow(
-        snakefile, overwrite_configfiles=[], rerun_triggers=[]
+        snakefile, overwrite_configfiles=[], rerun_triggers=[], overwrite_config=configfile
     )  # overwrite_config=config
     workflow.include(snakefile)
     workflow.global_resources = {}
@@ -118,6 +123,15 @@ def update_config_from_wildcards(config, w):
     if w.get("countries"):
         countries = w.countries
         config["validation"]["countries"] = countries
+    if w.get("simpl"):
+        simpl = w.simpl
+        config["validation"]["simpl"] = simpl
+    if w.get("opts"):
+        opts = w.opts
+        config["validation"]["opts"] = opts
+    if w.get("ll"):
+        ll = w.ll
+        config["validation"]["ll"] = ll
     return config
 
 

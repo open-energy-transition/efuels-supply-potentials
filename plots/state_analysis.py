@@ -180,10 +180,10 @@ def plot_installed_capacities(df, name):
     # Save the figure
     if name == "PyPSA":
         ax1.set_title("PyPSA")
-        fig1.savefig(snakemake.output.statewise_installed_capacity_pypsa, dpi=plot_scale * 100)
+        fig1.savefig(snakemake.output.statewise_installed_capacity_pypsa, dpi=plot_scale * 100, bbox_inches = 'tight')
     elif name == "EIA":
         ax1.set_title("EIA")
-        fig1.savefig(snakemake.output.statewise_installed_capacity_eia, dpi=plot_scale * 100)
+        fig1.savefig(snakemake.output.statewise_installed_capacity_eia, dpi=plot_scale * 100, bbox_inches = 'tight')
 
 
 def plot_demand(df):
@@ -192,7 +192,7 @@ def plot_demand(df):
     ax1.set_ylabel('Demand (TWh)')
 
     # Save the figure
-    fig1.savefig(snakemake.output.demand_statewise_comparison, dpi=plot_scale * 100)
+    fig1.savefig(snakemake.output.demand_statewise_comparison, dpi=plot_scale * 100, bbox_inches = 'tight')
 
 
 if __name__ == "__main__":

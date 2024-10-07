@@ -55,7 +55,7 @@ def preprocess_eia_capacity(path, year):
 
     eia_cap = pd.read_excel(path, skiprows=1)
 
-    eia_cap_year = eia_cap.loc[eia_cap["Year"] == 2021]
+    eia_cap_year = eia_cap.loc[eia_cap["Year"] == year]
     eia_cap_year = eia_cap_year[[
         "State Code", "Fuel Source", "Nameplate Capacity (Megawatts)", "Producer Type"]]
 

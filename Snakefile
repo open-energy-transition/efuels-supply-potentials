@@ -130,6 +130,17 @@ rule use_osm_data:
         "scripts/use_osm_data.py"
 
 
+rule test_modify_prenetwork:
+    input:
+        prenetwork=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
+    output:
+        network=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_mod.nc",
+    resources:
+        mem_mb=16000,
+    script:
+        "scripts/test_modify_network.py"
+
+
 #use rule prepare_network from pypsa_earth with:
 #    input:
 #        **{k: v for k, v in rules.prepare_network.input.items() if k != "tech_costs"},

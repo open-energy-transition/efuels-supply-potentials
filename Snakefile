@@ -2,9 +2,13 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+from snakemake.utils import min_version
+min_version("6.0")
+
 import sys
 sys.path.append("submodules/pypsa-earth")
 sys.path.append("submodules/pypsa-earth/scripts")
+
 from scripts._helper import BASE_PATH
 
 RESULTS_DIR = "plots/results/"
@@ -36,6 +40,8 @@ module pypsa_earth:
         "submodules/pypsa-earth/Snakefile"
     config:
         config
+    prefix:
+        "submodules/pypsa-earth"
 
 
 use rule * from pypsa_earth
@@ -122,3 +128,15 @@ rule use_osm_data:
         mem_mb=16000,
     script:
         "scripts/use_osm_data.py"
+
+
+#use rule prepare_network from pypsa_earth with:
+#    input:
+#        **{k: v for k, v in rules.prepare_network.input.items() if k != "tech_costs"},
+
+
+#use rule add_extra_components from pypsa_earth with:
+#    input:
+#        **{k: v for k, v in rules.add_extra_components.input.items()},
+
+

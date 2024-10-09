@@ -178,6 +178,12 @@ def plot_installed_capacities(df, name, color):
     for idx, total in enumerate(bar_totals):
         ax1.text(idx, total + 0.5, f'{total:.1f}', ha='center', va='bottom', fontsize=8)
 
+    # reverse the handles and add legend
+    handles, labels = ax1.get_legend_handles_labels()
+    handles.reverse()
+    labels.reverse()
+    ax1.legend(handles, labels, ncol=1, loc="upper right")
+
     # Save the figure
     if name == "PyPSA":
         ax1.set_title("PyPSA")

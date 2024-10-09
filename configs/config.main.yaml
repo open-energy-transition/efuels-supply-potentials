@@ -3,10 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 validation:
-  countries: ["US"]
-  clusters: [10]
   planning_horizon: [2020]
-  opts: [Co2L-1H]
 
 
 custom_databundles:

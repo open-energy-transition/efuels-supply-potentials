@@ -168,7 +168,7 @@ rule retrieve_cutouts:
         "scripts/retrieve_cutouts.py"
 
 
-rule use_osm_data:
+rule test_use_osm_data:
     input:
         generators_csv=BASE_PATH + "/submodules/pypsa-earth/resources/" + RDIR + "osm/clean/all_clean_generators.csv",
     output:
@@ -176,7 +176,7 @@ rule use_osm_data:
     resources:
         mem_mb=16000,
     script:
-        "scripts/use_osm_data.py"
+        "scripts/test_use_osm_data.py"
 
 
 rule test_modify_prenetwork:

@@ -17,8 +17,8 @@ logger = create_logger(__name__)
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
-            "use_osm_data",
-            configfile="configs/calibration/config.usa_PE.yaml",
+            "test_use_osm_data",
+            configfile="configs/calibration/config.base.yaml",
         )
     # update config based on wildcards
     config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)

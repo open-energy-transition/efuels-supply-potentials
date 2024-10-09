@@ -53,7 +53,8 @@ rule validate:
 rule statewise_validate:
     params:
         alternative_clustering=config["cluster_options"]["alternative_clustering"],
-        planning_horizon=config["validation"]["planning_horizon"]
+        planning_horizon=config["validation"]["planning_horizon"],
+        plots_config=config["plotting"],
     input:
         solved_network=PYPSA_EARTH_DIR + "results/" + RDIR + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
     output:

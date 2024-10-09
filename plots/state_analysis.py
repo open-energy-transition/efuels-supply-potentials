@@ -166,9 +166,10 @@ def preprocess_eia_demand(path):
     return demand_df_2021
 
 
-def plot_installed_capacities(df, name):
+def plot_installed_capacities(df, name, color):
+    col_idx = df.columns
     fig1, ax1 = plt.subplots(figsize=(16,6))
-    df.plot(kind='bar', stacked=True, ax=ax1)
+    df.plot(kind='bar', stacked=True, ax=ax1, color=[color[c] for c in col_idx])
     ax1.set_ylabel('Installed capacity (GW)')
     # Calculate the total height for each bar and annotate at the top
     bar_totals = df.sum(axis=1)  # Sum across columns for each row
@@ -209,6 +210,8 @@ if __name__ == "__main__":
     # update config based on wildcards
     config = update_config_from_wildcards(
         snakemake.config, snakemake.wildcards)
+    
+    plot_colors = snakemake.params.plots_config["tech_colors"]
 
     # get planning horizon
     data_horizon = snakemake.params.planning_horizon[0]
@@ -247,8 +250,8 @@ if __name__ == "__main__":
 
     ################ PLOTS ################
     # plot installed capacities
-    plot_installed_capacities(pypsa_installed_capacity_by_state, name="PyPSA")
-    plot_installed_capacities(eia_installed_capacity_by_state, name="EIA")
+    plot_installed_capacities(pypsa_installed_capacity_by_state, "PyPSA", plot_colors)
+    plot_installed_capacities(eia_installed_capacity_by_state, "EIA", plot_colors)
 
     # plot demands
     plot_demand(demand_total)

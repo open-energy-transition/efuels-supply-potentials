@@ -502,6 +502,7 @@ plotting:
     "h2 fuel cell": '#c251ae'
     "h2 electrolysis": '#ff29d9'
     "csp": "#fdd404"
+    "wind": "#6895dd"
   nice_names:
     OCGT: "Open-Cycle Gas"
     CCGT: "Combined-Cycle Gas"

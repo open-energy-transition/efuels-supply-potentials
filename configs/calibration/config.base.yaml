@@ -406,25 +406,16 @@ monte_carlo:
 
 solving:
   options:
-    formulation: kirchhoff
     load_shedding: false
-    noisy_costs: true
-    min_iterations: 4
-    max_iterations: 6
-    clip_p_max_pu: 0.01
-    skip_iterations: true
-    track_iterations: false
-    #nhours: 10
   solver:
-    name: cbc
-    # threads: 1
-    # method: 2 # barrier (=ipm)
-    # crossover: 0
-    # BarConvTol: 1.e-5
-    # FeasibilityTol: 1.e-6
-    # AggFill: 0
-    # PreDual: 0
-    # GURO_PAR_BARDENSETHRESH: 200
+    name: gurobi
+    options: gurobi-default
+  solver_options:
+    gurobi-default:
+      threads: 8
+      method: 2 # barrier
+      crossover: 0
+      BarConvTol: 1.e-5
 
 
 plotting:

@@ -2,6 +2,15 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+from snakemake.utils import min_version
+min_version("6.0")
+
+import sys
+sys.path.append("submodules/pypsa-earth")
+sys.path.append("submodules/pypsa-earth/scripts")
+
+from scripts._helper import BASE_PATH
+
 RESULTS_DIR = "plots/results/"
 PYPSA_EARTH_DIR = "submodules/pypsa-earth/"
 
@@ -24,6 +33,18 @@ wildcard_constraints:
 run = config["run"]
 RDIR = run["name"] + "/" if run.get("name") else ""
 CDIR = RDIR if not run.get("shared_cutouts") else ""
+
+
+module pypsa_earth:
+    snakefile:
+        "submodules/pypsa-earth/Snakefile"
+    config:
+        config
+    prefix:
+        "submodules/pypsa-earth"
+
+
+use rule * from pypsa_earth
 
 
 localrules:
@@ -49,6 +70,7 @@ rule validate:
         mem_mb=16000,
     script:
         "plots/results_validation.py"
+
 
 rule statewise_validate:
     params:
@@ -144,3 +166,37 @@ rule retrieve_cutouts:
         mem_mb=16000,
     script:
         "scripts/retrieve_cutouts.py"
+
+
+rule test_use_osm_data:
+    input:
+        generators_csv=BASE_PATH + "/submodules/pypsa-earth/resources/" + RDIR + "osm/clean/all_clean_generators.csv",
+    output:
+        output_csv="resources/" + RDIR + "osm/clean/all_clean_generators.csv",
+    resources:
+        mem_mb=16000,
+    script:
+        "scripts/test_use_osm_data.py"
+
+
+rule test_modify_prenetwork:
+    input:
+        prenetwork=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
+    output:
+        network=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_mod.nc",
+    resources:
+        mem_mb=16000,
+    script:
+        "scripts/test_modify_network.py"
+
+
+#use rule prepare_network from pypsa_earth with:
+#    input:
+#        **{k: v for k, v in rules.prepare_network.input.items() if k != "tech_costs"},
+
+
+#use rule add_extra_components from pypsa_earth with:
+#    input:
+#        **{k: v for k, v in rules.add_extra_components.input.items()},
+
+

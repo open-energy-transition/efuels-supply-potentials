@@ -16,3 +16,8 @@ custom_databundles:
     output: [cutouts/cutout-2013-era5.nc]
     disable_by_opt:
       build_cutout: [all]
+
+
+databundles:
+  bundle_cutouts_northamerica:
+    countries: []

@@ -10,8 +10,6 @@ enable:
   retrieve_cost_data: true  # true: retrieves cost data from technology data and saves in resources/costs.csv, false: uses cost data in data/costs.csv
   download_osm_data: false  # If 'true', OpenStreetMap data will be downloaded for the above given countries
 
-custom_rules: []  # Default empty [] or link to custom rule file e.g. ["my_folder/my_rules.smk"] that add rules to Snakefile
-
 run:
   name: "US_2021_AC" # use this to keep track of runs with different settings
   sector_name: "US_2021_AC/sector"
@@ -32,6 +30,7 @@ build_shape_options:
 electricity:
   co2limit: 1.4728e+9 # 0.8 * 1.841e+9
   co2base: 226.86e+6 #base_from_2020 Locations of the 250 MMmt of CO2 emissions from the WECC 2021.
+  
   extendable_carriers:
     Generator: []
     Store: [battery, H2]
@@ -60,8 +59,8 @@ solving:
   options:
     load_shedding: false
   solver:
-    name: cplex
-    options: cplex-default
+    name: gurobi
+    options: gurobi-default
   solver_options:
     gurobi-default:
       threads: 8

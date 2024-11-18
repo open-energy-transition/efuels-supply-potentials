@@ -13,7 +13,7 @@ enable:
 
 run:
   name: "US_2021" # use this to keep track of runs with different settings
-  sector_name: "US_2021/sector"
+  sector_name: "US_2021"
 
 scenario:
   simpl: ['']

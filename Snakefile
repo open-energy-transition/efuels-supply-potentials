@@ -157,7 +157,7 @@ rule validate_all:
         ),
 
 
-if config["countries"] == "US":
+if config["countries"] == ["US"]:
     rule retrieve_cutouts:
         params:
             countries=config["countries"],

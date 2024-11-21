@@ -5,6 +5,7 @@
 import warnings
 import logging
 import pandas as pd
+import numpy as np
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
@@ -26,6 +27,8 @@ def get_capacity_factor(n, alternative_clustering):
         capacity_factor.columns = capacity_factor.columns.map(lambda x: x.split("_AC")[0])
         if alternative_clustering:
             capacity_factor.columns = capacity_factor.columns.map(gadm_state)
+        if np.any(pd.isna(capacity_factor.columns)):
+            capacity_factor = capacity_factor.drop(columns=[np.nan])
         capacity_factor = capacity_factor.sort_index(axis=1)
         capacity_factor.loc[:, "USA"] = capacity_factor.mean(axis=1)
         capacity_factor.loc["Annual average", :] = capacity_factor.mean(axis=0)

@@ -92,6 +92,28 @@ rule statewise_validate:
         "plots/state_analysis.py"
 
 
+rule get_capacity_factor:
+    params:
+        alternative_clustering=config["cluster_options"]["alternative_clustering"],
+    input:
+        unsolved_network=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
+        gadm="data/validation/gadm41_USA_1.json"
+    output:
+        capacity_factors=RESULTS_DIR + RDIR + "capacity_factors_s{simpl}_{clusters}_ec_l{ll}_{opts}.xlsx",
+    resources:
+        mem_mb=8000,
+    script:
+        "plots/capacity_factors.py"
+
+
+rule get_capacity_factors:
+    input:
+        expand(RESULTS_DIR + RDIR
+            + "capacity_factors_s{simpl}_{clusters}_ec_l{ll}_{opts}.xlsx",
+            **config["scenario"],
+        ),
+
+
 if config["cluster_options"]["alternative_clustering"]:
     rule statewise_validate_all:
         input:

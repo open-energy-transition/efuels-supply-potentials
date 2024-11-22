@@ -92,6 +92,28 @@ rule statewise_validate:
         "plots/state_analysis.py"
 
 
+rule get_capacity_factor:
+    params:
+        alternative_clustering=config["cluster_options"]["alternative_clustering"],
+    input:
+        unsolved_network=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
+        gadm="data/validation/gadm41_USA_1.json"
+    output:
+        capacity_factors=RESULTS_DIR + RDIR + "capacity_factors_s{simpl}_{clusters}_ec_l{ll}_{opts}.xlsx",
+    resources:
+        mem_mb=8000,
+    script:
+        "plots/capacity_factors.py"
+
+
+rule get_capacity_factors:
+    input:
+        expand(RESULTS_DIR + RDIR
+            + "capacity_factors_s{simpl}_{clusters}_ec_l{ll}_{opts}.xlsx",
+            **config["scenario"],
+        ),
+
+
 if config["cluster_options"]["alternative_clustering"]:
     rule statewise_validate_all:
         input:
@@ -172,26 +194,16 @@ rule process_airport_data:
         "plots/airport_data_postprocessing.py"
 
 
-rule retrieve_cutouts:
-    params:
-        countries=config["countries"],
-    output:
-        cutouts=PYPSA_EARTH_DIR+"cutouts/cutout-2013-era5.nc"
-    resources:
-        mem_mb=16000,
-    script:
-        "scripts/retrieve_cutouts.py"
-
-
-rule test_use_osm_data:
-    input:
-        generators_csv=BASE_PATH + "/submodules/pypsa-earth/resources/" + RDIR + "osm/clean/all_clean_generators.csv",
-    output:
-        output_csv="resources/" + RDIR + "osm/clean/all_clean_generators.csv",
-    resources:
-        mem_mb=16000,
-    script:
-        "scripts/test_use_osm_data.py"
+if config["countries"] == ["US"]:
+    rule retrieve_cutouts:
+        params:
+            countries=config["countries"],
+        output:
+            cutouts=PYPSA_EARTH_DIR+"cutouts/cutout-2013-era5.nc"
+        resources:
+            mem_mb=16000,
+        script:
+            "scripts/retrieve_cutouts.py"
 
 
 rule test_modify_prenetwork:

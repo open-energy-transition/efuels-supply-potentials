@@ -157,6 +157,21 @@ rule validate_all:
         ),
 
 
+rule process_airport_data:
+    input:
+        fuel_data="data/airport_data/fuel_jf.csv",
+        airport_data="data/airport_data/airports.csv",
+        passengers_data="data/airport_data/T100_Domestic_Market_and_Segment_Data_-3591723781169319541.csv",
+    output:
+        statewise_output="plots/results/passengers_vs_consumption.csv",
+        consumption_per_passenger="plots/results/consumption_per_passenger.png",
+        correlation_matrix="plots/results/correlation_matrix.png",
+    resources:
+        mem_mb=3000,
+    script:
+        "plots/airport_data_postprocessing.py"
+
+
 rule retrieve_cutouts:
     params:
         countries=config["countries"],

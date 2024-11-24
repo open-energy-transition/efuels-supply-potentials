@@ -55,4 +55,5 @@ snakemake -call statewise_validate_all --configfile configs/calibration/config.b
 |`statewise_validate_all` |`config.base_AC.yaml`                    |Performs statewise validation comparing with EIA data|
 |`get_capacity_factors`   |Any base or scenario config file         |Estimates capacity factors for renewables|
 |`retrieve_cutouts`       |Any base or scenario config file         |Retrieves US cutouts from google drive|
+|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table| 
 |`test_modify_prenetwork` |Any base or scenario config file         |Example rule that performs modiification of pre-network| 

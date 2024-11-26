@@ -188,6 +188,7 @@ rule process_airport_data:
         statewise_output="plots/results/passengers_vs_consumption.csv",
         consumption_per_passenger="plots/results/consumption_per_passenger.png",
         correlation_matrix="plots/results/correlation_matrix.png",
+        comparision_consumption_passengers="plots/results/comparision_consumption_passengers.png",
     resources:
         mem_mb=3000,
     script:

@@ -23,6 +23,23 @@ def plot_consumption_per_passenger(final_data):
     plt.savefig(snakemake.output.consumption_per_passenger, bbox_inches='tight', dpi=300)
     logging.info(f"{snakemake.output.consumption_per_passenger} was saved")
 
+def plot_comparision_consumption_passengers(df):
+    fig, ax1 = plt.subplots(figsize=(15, 4))
+    bar_width = 0.8
+    bars = ax1.bar(df['State'], df['Passengers'], width=bar_width, alpha=0.5, color='skyblue', label='Passengers')
+    ax2 = ax1.twinx()
+    line = ax2.plot(df['State'], df['Consumption (thousand barrels)'], color='red', marker='o', label='Consumption')
+    ax1.set_xlabel('State')
+    ax1.set_ylabel('Passengers')
+    ax2.set_ylabel('Consumption (thousand barrels)')
+    plt.title('State-wise Comparison of Passengers and Fuel Consumption', pad=20, fontsize=14)
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.savefig(snakemake.output.comparision_consumption_passengers, bbox_inches='tight', dpi=300)
+    logging.info(f"{snakemake.output.comparision_consumption_passengers} was saved")
 
 def calculate_correlation(final_data):
     corr = final_data[["Consumption (thousand barrels)", "Passengers"]].corr()
@@ -146,6 +163,7 @@ if __name__ == "__main__":
 
     # Plot Consumption per Passenger for each state
     plot_consumption_per_passenger(final_data)
+    plot_comparision_consumption_passengers(final_data)
 
     # Calculate correlation coefficient between Consumption and Passengers
     correlation_coefficient = calculate_correlation(final_data)

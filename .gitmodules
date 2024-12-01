@@ -1,7 +1,3 @@
 [submodule "submodules/pypsa-earth"]
 	path = submodules/pypsa-earth
 	url = https://github.com/open-energy-transition/pypsa-earth.git
-
-[submodule "submodules/technology-data"]
-	path = submodules/technology-data
-	url = https://github.com/open-energy-transition/technology-data.git

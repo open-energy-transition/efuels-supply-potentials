@@ -9,7 +9,10 @@ import sys
 sys.path.append("submodules/pypsa-earth")
 sys.path.append("submodules/pypsa-earth/scripts")
 
+from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
 from scripts._helper import BASE_PATH
+
+HTTP = HTTPRemoteProvider()
 
 RESULTS_DIR = "plots/results/"
 PYPSA_EARTH_DIR = "submodules/pypsa-earth/"
@@ -206,6 +209,15 @@ if config["countries"] == ["US"]:
             mem_mb=16000,
         script:
             "scripts/retrieve_cutouts.py"
+
+
+use rule retrieve_cost_data_flexible from pypsa_earth with:
+    input:
+        HTTP.remote(
+            f"raw.githubusercontent.com/open-energy-transition/technology-data/nrel_atb_usa_costs/outputs/US/costs"
+            + "_{planning_horizons}.csv",
+            keep_local=True,
+        ),
 
 
 rule test_modify_prenetwork:

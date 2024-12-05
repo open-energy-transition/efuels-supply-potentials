@@ -24,20 +24,20 @@ def plot_consumption_per_passenger(final_data):
     logging.info(f"{snakemake.output.consumption_per_passenger} was saved")
 
 def plot_comparision_consumption_passengers(df):
-    fig, ax1 = plt.subplots(figsize=(15, 4))
+    fig, ax1 = plt.subplots(figsize=(12, 3))
     bar_width = 0.8
     bars = ax1.bar(df['State'], df['Passengers'], width=bar_width, alpha=0.5, color='skyblue', label='Passengers')
     ax2 = ax1.twinx()
-    line = ax2.plot(df['State'], df['Consumption (thousand barrels)'], color='red', marker='o', label='Consumption')
-    ax1.set_xlabel('State')
-    ax1.set_ylabel('Passengers')
-    ax2.set_ylabel('Consumption (thousand barrels)')
-    plt.title('State-wise Comparison of Passengers and Fuel Consumption', pad=20, fontsize=14)
+    line = ax2.plot(df['State'], df['Consumption (thousand barrels)']/1e3, color='red', marker='o', label='Consumption')
+    ax1.set_xlabel('State', fontsize=10)
+    ax1.set_ylabel('Passengers', fontsize=10)
+    ax2.set_ylabel('Consumption (million barrels)', fontsize=10)
+    plt.title('State-wise Comparison of Passengers and Fuel Consumption', pad=5, fontsize=11)
     lines1, labels1 = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
-    plt.xticks(rotation=45, ha='right')
-    plt.tight_layout()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right', fontsize=9)
+    ax1.set_xticklabels(df["State"], rotation=0, ha='center', fontsize=7.5)
+    ax1.margins(x=0.01)
     plt.savefig(snakemake.output.comparision_consumption_passengers, bbox_inches='tight', dpi=300)
     logging.info(f"{snakemake.output.comparision_consumption_passengers} was saved")
 
@@ -85,6 +85,27 @@ def get_percentage_information(final_data):
 
     return final_data
 
+def merge_airport_data(airports_df, passengers_df):
+    # Merge the airports and passengers data
+    merged_data = pd.merge(
+        airports_df,
+        passengers_df,
+        left_on='iata_code',
+        right_on='origin',
+        how='left',
+    )
+
+    passengers_total = merged_data["passengers"].sum()
+    merged_data["fraction"] = merged_data["passengers"] / passengers_total
+
+    merged_data = merged_data.drop(columns=["OBJECTID"])
+    merged_data["fraction"] = merged_data["fraction"].fillna(0)
+
+    merged_data.to_csv(snakemake.output.merged_data, index=False)
+    logging.info(f"merged data saved to {snakemake.output.merged_data}")
+
+    return merged_data
+
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -105,6 +126,8 @@ if __name__ == "__main__":
 
     # Remove the 'US-' prefix from 'iso_region'
     airports_us['iso_region'] = airports_us['iso_region'].str.replace('US-', '', regex=False)
+
+    merge_airport_data(airports_us, market_data)
 
     # Merge `market_data` with `airports_us` to get the ISO region for each airport
     merged_check = pd.merge(

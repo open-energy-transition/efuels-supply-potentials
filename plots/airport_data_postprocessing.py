@@ -85,6 +85,27 @@ def get_percentage_information(final_data):
 
     return final_data
 
+def merge_airport_data(airports_df, passengers_df):
+    # Merge the airports and passengers data
+    merged_data = pd.merge(
+        airports_df,
+        passengers_df,
+        left_on='iata_code',
+        right_on='origin',
+        how='left',
+    )
+
+    passengers_total = merged_data["passengers"].sum()
+    merged_data["fraction"] = merged_data["passengers"] / passengers_total
+
+    merged_data = merged_data.drop(columns=["OBJECTID"])
+    merged_data["fraction"] = merged_data["fraction"].fillna(0)
+
+    merged_data.to_csv(snakemake.output.merged_data, index=False)
+    logging.info(f"merged data saved to {snakemake.output.merged_data}")
+
+    return merged_data
+
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -105,6 +126,8 @@ if __name__ == "__main__":
 
     # Remove the 'US-' prefix from 'iso_region'
     airports_us['iso_region'] = airports_us['iso_region'].str.replace('US-', '', regex=False)
+
+    merge_airport_data(airports_us, market_data)
 
     # Merge `market_data` with `airports_us` to get the ISO region for each airport
     merged_check = pd.merge(

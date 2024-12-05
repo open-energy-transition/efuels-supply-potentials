@@ -8,6 +8,10 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Integrated **US-specific cost assumptions** from NREL ATB to workflow: [PR #14](https://github.com/open-energy-transition/efuels-supply-potentials/pull/14) and technology-data [PR #1](https://github.com/open-energy-transition/technology-data/pull/1)
+
+* Prepared **merged airports** dataset: [PR #16](https://github.com/open-energy-transition/efuels-supply-potentials/pull/16)
+
 * Analyzed statewise **passengers and fuel consumption data** for fuel demand disaggregation for airports: [PR #9](https://github.com/open-energy-transition/efuels-supply-potentials/pull/9) 
 
 * Facilitated **PyPSA-Earth sector run**: PyPSA-Earth [PR #1134](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1134), [PR #1143](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1143), [PR #1145](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1145), [PR #1165](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1165), [PR #1166](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1166)

@@ -5,11 +5,12 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import shutil
 import logging
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
-from scripts._helper import mock_snakemake, update_config_from_wildcards
+from scripts._helper import mock_snakemake, update_config_from_wildcards, PYPSA_EARTH_DIR
 
 
 def plot_consumption_per_passenger(final_data):
@@ -102,6 +103,8 @@ def merge_airport_data(airports_df, passengers_df):
     merged_data["fraction"] = merged_data["fraction"].fillna(0)
 
     merged_data.to_csv(snakemake.output.merged_data, index=False)
+    shutil.copy(snakemake.output.merged_data, PYPSA_EARTH_DIR + "/data/airports.csv")
+    # merged_data.to_csv(snakemake.output.replaced_data, index=False)
     logging.info(f"merged data saved to {snakemake.output.merged_data}")
 
     return merged_data

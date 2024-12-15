@@ -103,7 +103,7 @@ def merge_airport_data(airports_df, passengers_df):
     merged_data["fraction"] = merged_data["fraction"].fillna(0)
 
     merged_data.to_csv(snakemake.output.merged_data, index=False)
-    shutil.copy(snakemake.output.merged_data, PYPSA_EARTH_DIR + "/data/airports.csv")
+    shutil.copy(snakemake.output.merged_data, PYPSA_EARTH_DIR + "/data/custom/airports.csv")
     # merged_data.to_csv(snakemake.output.replaced_data, index=False)
     logging.info(f"merged data saved to {snakemake.output.merged_data}")
 

@@ -93,7 +93,7 @@ def merge_airport_data(airports_df, passengers_df):
         passengers_df,
         left_on='iata_code',
         right_on='origin',
-        how='left',
+        how='inner',
     )
 
     passengers_total = merged_data["passengers"].sum()
@@ -104,7 +104,6 @@ def merge_airport_data(airports_df, passengers_df):
 
     merged_data.to_csv(snakemake.output.merged_data, index=False)
     shutil.copy(snakemake.output.merged_data, PYPSA_EARTH_DIR + "/data/custom/airports.csv")
-    # merged_data.to_csv(snakemake.output.replaced_data, index=False)
     logging.info(f"merged data saved to {snakemake.output.merged_data}")
 
     return merged_data

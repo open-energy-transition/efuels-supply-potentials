@@ -46,9 +46,6 @@ electricity:
 costs:
   year: 2030
 
-custom_data:
-  airports: true
-
 sector:
   conventional_generation: # generator : carrier
     OCGT: gas

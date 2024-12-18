@@ -47,7 +47,7 @@ costs:
   year: 2030
 
 custom_data:
-  airports: false
+  airports: true
 
 sector:
   conventional_generation: # generator : carrier

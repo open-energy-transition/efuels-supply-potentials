@@ -199,7 +199,10 @@ rule process_airport_data:
     script:
         "plots/airport_data_postprocessing.py"
 
-ruleorder: process_airport_data > prepare_airports
+if config["custom_data"]["airports"]:
+    ruleorder: process_airport_data > prepare_airports
+else:
+    ruleorder: prepare_airports > process_airport_data
 
 if config["countries"] == ["US"]:
     rule retrieve_cutouts:

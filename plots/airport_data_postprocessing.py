@@ -92,7 +92,7 @@ def merge_airport_data(airports_df, passengers_df):
         passengers_df,
         left_on='iata_code',
         right_on='origin',
-        how='left',
+        how='inner',
     )
 
     passengers_total = merged_data["passengers"].sum()
@@ -100,9 +100,17 @@ def merge_airport_data(airports_df, passengers_df):
 
     merged_data = merged_data.drop(columns=["OBJECTID"])
     merged_data["fraction"] = merged_data["fraction"].fillna(0)
+    merged_data.rename(columns={
+        "iso_country": "country", 
+        "longitude_deg": "x",
+        "latitude_deg": "y",
+    }, inplace=True)
 
     merged_data.to_csv(snakemake.output.merged_data, index=False)
     logging.info(f"merged data saved to {snakemake.output.merged_data}")
+
+    merged_data.to_csv(snakemake.output.custom_airports_data, index=False)
+    logging.info(f"merged data saved to {snakemake.output.custom_airports_data}")
 
     return merged_data
 

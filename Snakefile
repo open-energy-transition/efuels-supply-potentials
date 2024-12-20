@@ -193,11 +193,16 @@ rule process_airport_data:
         consumption_per_passenger="plots/results/consumption_per_passenger.png",
         correlation_matrix="plots/results/correlation_matrix.png",
         comparision_consumption_passengers="plots/results/comparision_consumption_passengers.png",
+        custom_airports_data=PYPSA_EARTH_DIR + "data/airports.csv",
     resources:
         mem_mb=3000,
     script:
         "plots/airport_data_postprocessing.py"
 
+if config["custom_data"]["airports"]:
+    ruleorder: process_airport_data > prepare_airports
+else:
+    ruleorder: prepare_airports > process_airport_data
 
 if config["countries"] == ["US"]:
     rule retrieve_cutouts:

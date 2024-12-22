@@ -18,7 +18,7 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "retrieve_cutouts",
-            configfile="configs/calibration/config.usa_PE.yaml",
+            configfile="configs/calibration/config.base_AC.yaml",
             countries=["US"]
         )
     # update config based on wildcards

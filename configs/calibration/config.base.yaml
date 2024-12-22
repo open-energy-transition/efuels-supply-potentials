@@ -50,6 +50,7 @@ custom_data:
   airports: true
 
 sector:
+  electricity_distribution_grid: true
   conventional_generation: # generator : carrier
     OCGT: gas
     CCGT: gas

@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
 import warnings
 warnings.filterwarnings("ignore")
 from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            download_and_unzip_gdrive
+                            download_and_unzip_gdrive, PYPSA_EARTH_DIR
 
 
 logger = create_logger(__name__)
@@ -27,5 +27,10 @@ if __name__ == "__main__":
     # load cutouts configuration
     config_cutouts = config["custom_databundles"]["bundle_cutouts_USA"]
 
+    # destination for cutouts
+    destination = os.path.join(PYPSA_EARTH_DIR, config_cutouts["destination"])
+
     # download cutouts
-    downloaded = download_and_unzip_gdrive(config_cutouts, logger=logger)
+    downloaded = download_and_unzip_gdrive(config_cutouts,
+                                           destination=destination,
+                                           logger=logger)

@@ -8,6 +8,9 @@ validation:
 # retrieving precomputed files from google drive and bypassing re-execution
 retrieve_from_gdrive:
   cutouts: false # if true, US cutouts are retrieved from google drive, else it is retrieved using retrieve_databundle_light if enable is true
+  osm_raw: true # if true, bypasses download_osm_data rule
+  osm_clean: true # if true, bypasses clean_osm_data rule
+  shapes: true # if true, bypass build_shapes rule
 
 custom_databundles:
   bundle_cutouts_USA:
@@ -19,3 +22,19 @@ custom_databundles:
     output: [cutouts/cutout-2013-era5.nc]
     disable_by_opt:
       build_cutout: [all]
+
+  # precomputed raw osm data
+  bundle_osm_raw_USA:
+    countries: [US]
+    category: resources
+    destination: "resources"
+    urls:
+      gdrive: https://drive.google.com/file/d/1HFz0G0FjVWOQAAfVPW8v-IsQ25G6dvCT/view?usp=sharing
+
+  # precomputed clean osm data
+  bundle_osm_clean_USA:
+    countries: [US]
+    category: resources
+    destination: "resources"
+    urls:
+      gdrive: https://drive.google.com/file/d/1wj9SieXYxvTVPWA9Ev-Kgvq5etGMePF-/view?usp=sharing

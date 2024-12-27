@@ -11,6 +11,7 @@ sys.path.append("submodules/pypsa-earth/scripts")
 
 from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
 from scripts._helper import BASE_PATH
+from scripts.retrieve_osm_raw import osm_raw_outputs
 
 HTTP = HTTPRemoteProvider()
 
@@ -35,6 +36,7 @@ wildcard_constraints:
 
 run = config["run"]
 RDIR = run["name"] + "/" if run.get("name") else ""
+SECDIR = run["sector_name"] + "/" if run.get("sector_name") else ""
 CDIR = RDIR if not run.get("shared_cutouts") else ""
 
 
@@ -206,7 +208,7 @@ else:
     ruleorder: prepare_airports > process_airport_data
 
 
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"]["cutouts"]:
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("cutouts", False):
     rule retrieve_cutouts:
         params:
             countries=config["countries"],
@@ -225,6 +227,19 @@ use rule retrieve_cost_data_flexible from pypsa_earth with:
             + "_{planning_horizons}.csv",
             keep_local=True,
         ),
+
+
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_raw", False):
+    rule retrieve_osm_raw:
+        params:
+            destination="resources/" + RDIR,
+        output:
+            expand(
+                "{PYPSA_EARTH_DIR}resources/{RDIR}{file}", PYPSA_EARTH_DIR=PYPSA_EARTH_DIR, RDIR=RDIR, file=osm_raw_outputs()),
+        script:
+            "scripts/retrieve_osm_raw.py"
+
+    ruleorder: retrieve_osm_raw > download_osm_data
 
 
 rule test_modify_prenetwork:

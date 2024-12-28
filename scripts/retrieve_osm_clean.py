@@ -14,13 +14,12 @@ from scripts._helper import mock_snakemake, update_config_from_wildcards, create
 logger = create_logger(__name__)
 
 
-def osm_raw_outputs():
+def osm_clean_outputs():
     outputs = [
-        "osm/raw/all_raw_cables.geojson",
-        "osm/raw/all_raw_generators.geojson",
-        "osm/raw/all_raw_generators.csv",
-        "osm/raw/all_raw_lines.geojson",
-        "osm/raw/all_raw_substations.geojson"
+        "osm/clean/all_clean_generators.geojson",
+        "osm/clean/all_clean_generators.csv",
+        "osm/clean/all_clean_lines.geojson",
+        "osm/clean/all_clean_substations.geojson"
     ]
     return outputs
 
@@ -28,19 +27,19 @@ def osm_raw_outputs():
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
-            "retrieve_osm_raw",
+            "retrieve_osm_clean",
             configfile="configs/calibration/config.base_AC.yaml",
         )
     # update config based on wildcards
     config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
 
-    # load osm raw configuration
-    config_osm_raw = config["custom_databundles"]["bundle_osm_raw_USA"]
+    # load osm clean configuration
+    config_osm_clean = config["custom_databundles"]["bundle_osm_clean_USA"]
 
-    # destination for osm/raw
+    # destination for osm/clean
     destination = os.path.join(PYPSA_EARTH_DIR, snakemake.params.destination, "osm")
 
-    # download osm/raw
-    downloaded = download_and_unzip_gdrive(config_osm_raw,
+    # download osm/clean
+    downloaded = download_and_unzip_gdrive(config_osm_clean,
                                            destination=destination,
                                            logger=logger)

@@ -12,6 +12,7 @@ sys.path.append("submodules/pypsa-earth/scripts")
 from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
 from scripts._helper import BASE_PATH
 from scripts.retrieve_osm_raw import osm_raw_outputs
+from scripts.retrieve_osm_clean import osm_clean_outputs
 
 HTTP = HTTPRemoteProvider()
 
@@ -240,6 +241,19 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_raw
             "scripts/retrieve_osm_raw.py"
 
     ruleorder: retrieve_osm_raw > download_osm_data
+
+
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_clean", False):
+    rule retrieve_osm_clean:
+        params:
+            destination="resources/" + RDIR,
+        output:
+            expand(
+                "{PYPSA_EARTH_DIR}resources/{RDIR}{file}", PYPSA_EARTH_DIR=PYPSA_EARTH_DIR, RDIR=RDIR, file=osm_clean_outputs()),
+        script:
+            "scripts/retrieve_osm_clean.py"
+
+    ruleorder: retrieve_osm_clean > clean_osm_data
 
 
 rule test_modify_prenetwork:

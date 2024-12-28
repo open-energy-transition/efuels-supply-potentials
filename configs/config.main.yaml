@@ -26,7 +26,7 @@ custom_databundles:
   # precomputed raw osm data
   bundle_osm_raw_USA:
     countries: [US]
-    category: resources
+    category: resources_osm_raw
     destination: "resources"
     urls:
       gdrive: https://drive.google.com/file/d/1HFz0G0FjVWOQAAfVPW8v-IsQ25G6dvCT/view?usp=sharing
@@ -34,7 +34,15 @@ custom_databundles:
   # precomputed clean osm data
   bundle_osm_clean_USA:
     countries: [US]
-    category: resources
+    category: resources_osm_clean
     destination: "resources"
     urls:
       gdrive: https://drive.google.com/file/d/1wj9SieXYxvTVPWA9Ev-Kgvq5etGMePF-/view?usp=sharing
+
+  # precomputed shapes data
+  bundle_shapes_USA:
+    countries: [US]
+    category: resources_shapes
+    destination: "resources"
+    urls:
+      gdrive: https://drive.google.com/file/d/1Ok_J3EBdaxzd_0Es-WPgFOYgKTSy19iS/view?usp=sharing

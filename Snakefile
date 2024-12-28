@@ -13,6 +13,7 @@ from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
 from scripts._helper import BASE_PATH
 from scripts.retrieve_osm_raw import osm_raw_outputs
 from scripts.retrieve_osm_clean import osm_clean_outputs
+from scripts.retrieve_shapes import shapes_outputs
 
 HTTP = HTTPRemoteProvider()
 
@@ -254,6 +255,19 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_cle
             "scripts/retrieve_osm_clean.py"
 
     ruleorder: retrieve_osm_clean > clean_osm_data
+
+
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("shapes", False):
+    rule retrieve_shapes:
+        params:
+            destination="resources/" + RDIR,
+        output:
+            expand(
+                "{PYPSA_EARTH_DIR}resources/{RDIR}{file}", PYPSA_EARTH_DIR=PYPSA_EARTH_DIR, RDIR=RDIR, file=shapes_outputs()),
+        script:
+            "scripts/retrieve_shapes.py"
+
+    ruleorder: retrieve_shapes > build_shapes
 
 
 rule test_modify_prenetwork:

@@ -14,6 +14,7 @@ from scripts._helper import BASE_PATH
 from scripts.retrieve_osm_raw import osm_raw_outputs
 from scripts.retrieve_osm_clean import osm_clean_outputs
 from scripts.retrieve_shapes import shapes_outputs
+from scripts.retrieve_osm_network import osm_network_outputs
 
 HTTP = HTTPRemoteProvider()
 
@@ -231,6 +232,7 @@ use rule retrieve_cost_data_flexible from pypsa_earth with:
         ),
 
 
+# retrieving precomputed osm/raw data and bypassing download_osm_data rule
 if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_raw", False):
     rule retrieve_osm_raw:
         params:
@@ -244,6 +246,7 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_raw
     ruleorder: retrieve_osm_raw > download_osm_data
 
 
+# retrieving precomputed osm/clean data and bypassing clean_osm_data rule
 if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_clean", False):
     rule retrieve_osm_clean:
         params:
@@ -257,6 +260,7 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_cle
     ruleorder: retrieve_osm_clean > clean_osm_data
 
 
+# retrieving shapes data and bypassing build_shapes rule
 if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("shapes", False):
     rule retrieve_shapes:
         params:
@@ -268,6 +272,20 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("shapes"
             "scripts/retrieve_shapes.py"
 
     ruleorder: retrieve_shapes > build_shapes
+
+
+# retrieving base_network data and bypassing build_osm_network rule
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("shapes", False):
+    rule retrieve_osm_network:
+        params:
+            destination="resources/" + RDIR,
+        output:
+            expand(
+                "{PYPSA_EARTH_DIR}resources/{RDIR}{file}", PYPSA_EARTH_DIR=PYPSA_EARTH_DIR, RDIR=RDIR, file=osm_network_outputs()),
+        script:
+            "scripts/retrieve_osm_network.py"
+
+    ruleorder: retrieve_osm_network > build_osm_network
 
 
 rule test_modify_prenetwork:

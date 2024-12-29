@@ -12,6 +12,7 @@ retrieve_from_gdrive:
   osm_clean: true # if true, bypasses clean_osm_data rule
   shapes: true # if true, bypasses build_shapes rule
   osm_network: true # if true, bypasses build_osm_network rule
+  base_network: true # if true, bypasses base_network rule
 
 custom_databundles:
   bundle_cutouts_USA:
@@ -55,3 +56,11 @@ custom_databundles:
     destination: "resources"
     urls:
       gdrive: https://drive.google.com/file/d/1bbN7y8iQZIw7IIRX0b6faT8ne-X6QrgG/view?usp=sharing
+
+  # precomputed base.nc
+  bundle_base_network_USA:
+    countries: [US]
+    category: resources_base_network
+    destination: "resources"
+    urls:
+      gdrive: https://drive.google.com/file/d/1N55zQySRd8D8-2pjZc6glmce4CLu-it3/view?usp=sharing

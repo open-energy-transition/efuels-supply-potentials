@@ -275,7 +275,7 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("shapes"
 
 
 # retrieving base_network data and bypassing build_osm_network rule
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("shapes", False):
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_network", False):
     rule retrieve_osm_network:
         params:
             destination="resources/" + RDIR,
@@ -286,6 +286,17 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("shapes"
             "scripts/retrieve_osm_network.py"
 
     ruleorder: retrieve_osm_network > build_osm_network
+
+
+# retrieving base.nc and bypassing base_network rule
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("base_network", False):
+    rule retrieve_base_network:
+        output:
+            PYPSA_EARTH_DIR + "networks/" + RDIR + "base.nc",
+        script:
+            "scripts/retrieve_base_network.py"
+
+    ruleorder: retrieve_base_network > base_network
 
 
 rule test_modify_prenetwork:

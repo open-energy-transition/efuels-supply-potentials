@@ -54,6 +54,13 @@ snakemake -call statewise_validate_all --configfile configs/calibration/config.b
 |`validate_all`           |`config.base.yaml`, `config.base_AC.yaml`|Performs country-level validation comparing with EIA and Ember data|
 |`statewise_validate_all` |`config.base_AC.yaml`                    |Performs statewise validation comparing with EIA data|
 |`get_capacity_factors`   |Any base or scenario config file         |Estimates capacity factors for renewables|
-|`retrieve_cutouts`       |Any base or scenario config file         |Retrieves US cutouts from google drive|
 |`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table| 
+|`retrieve_cutouts`       |Any base or scenario config file         |Retrieves US cutouts from google drive|
+|`retrieve_osm_raw`       |Any base or scenario config file         |Retrieves `resources/{RDIR}/osm/raw/` data from google drive and bypasses `download_osm_data` rule|
+|`retrieve_osm_clean`     |Any base or scenario config file         |Retrieves `resources/{RDIR}/osm/clean/` data from google drive and bypasses `clean_osm_data` rule|
+|`retrieve_shapes`        |Any base or scenario config file         |Retrieves `resources/{RDIR}/shapes/` data from google drive and bypasses `build_shapes` rule|
+|`retrieve_osm_network`   |Any base or scenario config file         |Retrieves `resources/{RDIR}/base_network/` data from google drive and bypasses `build_osm_network` rule|
+|`retrieve_base_network`  |Any base or scenario config file         |Retrieves `base.nc` data from google drive and bypasses `base_network` rule|
 |`test_modify_prenetwork` |Any base or scenario config file         |Example rule that performs modiification of pre-network| 
+
+* `RDIR` - scenario folder

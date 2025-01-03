@@ -293,7 +293,7 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("base_ne
         input:
             **{k: v for k, v in rules.base_network.input.items()},
         output:
-            **{k: v for k, v in rules.base_network.output.items()},
+            PYPSA_EARTH_DIR + "networks/" + RDIR + "base.nc",
         script:
             "scripts/retrieve_base_network.py"
 

@@ -66,5 +66,6 @@ snakemake -call statewise_validate_all --configfile configs/calibration/config.b
 |`retrieve_shapes`        |Any base or scenario config file         |Retrieves `resources/{RDIR}/shapes/` data from google drive and bypasses `build_shapes` rule|
 |`retrieve_osm_network`   |Any base or scenario config file         |Retrieves `resources/{RDIR}/base_network/` data from google drive and bypasses `build_osm_network` rule|
 |`retrieve_base_network`  |Any base or scenario config file         |Retrieves `base.nc` data from google drive and bypasses `base_network` rule|
+|`retrieve_renewable_profiles`  |Any base or scenario config file         |Retrieves `resources/{RDIR}/renewable_profiles/` data from google drive and bypasses `build_renewable_profiles` rule|
 
 * `RDIR` - scenario folder

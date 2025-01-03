@@ -10,8 +10,6 @@ sys.path.append("submodules/pypsa-earth")
 sys.path.append("submodules/pypsa-earth/scripts")
 
 from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
-from scripts._helper import osm_raw_outputs, osm_clean_outputs, shapes_outputs, \
-                            osm_network_outputs, renewable_profiles_outputs
 
 HTTP = HTTPRemoteProvider()
 
@@ -234,9 +232,10 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_raw
     rule retrieve_osm_raw:
         params:
             destination="resources/" + RDIR,
+        input:
+            **{k: v for k, v in rules.download_osm_data.input.items()},
         output:
-            expand(
-                "{PYPSA_EARTH_DIR}resources/{RDIR}{file}", PYPSA_EARTH_DIR=PYPSA_EARTH_DIR, RDIR=RDIR, file=osm_raw_outputs()),
+            **{k: v for k, v in rules.download_osm_data.output.items()},
         script:
             "scripts/retrieve_osm_raw.py"
 
@@ -248,9 +247,10 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_cle
     rule retrieve_osm_clean:
         params:
             destination="resources/" + RDIR,
+        input:
+            **{k: v for k, v in rules.clean_osm_data.input.items()},
         output:
-            expand(
-                "{PYPSA_EARTH_DIR}resources/{RDIR}{file}", PYPSA_EARTH_DIR=PYPSA_EARTH_DIR, RDIR=RDIR, file=osm_clean_outputs()),
+            **{k: v for k, v in rules.clean_osm_data.output.items()},
         script:
             "scripts/retrieve_osm_clean.py"
 
@@ -262,9 +262,10 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("shapes"
     rule retrieve_shapes:
         params:
             destination="resources/" + RDIR,
+        input:
+            **{k: v for k, v in rules.build_shapes.input.items()},
         output:
-            expand(
-                "{PYPSA_EARTH_DIR}resources/{RDIR}{file}", PYPSA_EARTH_DIR=PYPSA_EARTH_DIR, RDIR=RDIR, file=shapes_outputs()),
+            **{k: v for k, v in rules.build_shapes.output.items()},
         script:
             "scripts/retrieve_shapes.py"
 
@@ -276,9 +277,10 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_net
     rule retrieve_osm_network:
         params:
             destination="resources/" + RDIR,
+        input:
+            **{k: v for k, v in rules.build_osm_network.input.items()},
         output:
-            expand(
-                "{PYPSA_EARTH_DIR}resources/{RDIR}{file}", PYPSA_EARTH_DIR=PYPSA_EARTH_DIR, RDIR=RDIR, file=osm_network_outputs()),
+            **{k: v for k, v in rules.build_osm_network.output.items()},
         script:
             "scripts/retrieve_osm_network.py"
 
@@ -288,8 +290,10 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_net
 # retrieving base.nc and bypassing base_network rule
 if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("base_network", False):
     rule retrieve_base_network:
+        input:
+            **{k: v for k, v in rules.base_network.input.items()},
         output:
-            PYPSA_EARTH_DIR + "networks/" + RDIR + "base.nc",
+            **{k: v for k, v in rules.base_network.output.items()},
         script:
             "scripts/retrieve_base_network.py"
 
@@ -302,9 +306,10 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("renewab
         params:
             destination="resources/" + RDIR,
             alternative_clustering=config["cluster_options"]["alternative_clustering"],
+        input:
+            **{k: v for k, v in rules.build_renewable_profiles.input.items()},
         output:
-            expand(
-                "{PYPSA_EARTH_DIR}resources/{RDIR}{file}", PYPSA_EARTH_DIR=PYPSA_EARTH_DIR, RDIR=RDIR, file=renewable_profiles_outputs()),
+            **{k: v for k, v in rules.build_renewable_profiles.output.items()},
         script:
             "scripts/retrieve_renewable_profiles.py"
 

@@ -215,13 +215,14 @@ def create_logger(logger_name, level=logging.INFO):
     return logger_instance
 
 
-def download_and_unzip_gdrive(config, destination, logger, disable_progress=False):
+def download_and_unzip_gdrive(config, destination, logger, disable_progress=False, url=None):
     """
         Downloads and unzips data from custom bundle config
     """
     resource = config["category"]
     file_path = os.path.join(PYPSA_EARTH_DIR, f"tempfile_{resource}.zip")
-    url = config["urls"]["gdrive"]
+    if url is None:
+        url = config["urls"]["gdrive"]
 
     # retrieve file_id from path
     try:

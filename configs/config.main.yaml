@@ -13,6 +13,7 @@ retrieve_from_gdrive:
   shapes: true # if true, bypasses build_shapes rule
   osm_network: true # if true, bypasses build_osm_network rule
   base_network: true # if true, bypasses base_network rule
+  renewable_profiles: true # if true, bypasses build_renewable_profiles rule
 
 custom_databundles:
   bundle_cutouts_USA:
@@ -64,3 +65,12 @@ custom_databundles:
     destination: "resources"
     urls:
       gdrive: https://drive.google.com/file/d/1N55zQySRd8D8-2pjZc6glmce4CLu-it3/view?usp=sharing
+
+  # precomputed renewable_profiles data
+  bundle_renewable_profiles_USA:
+    countries: [US]
+    category: resources_renewable_profiles
+    destination: "resources"
+    urls:
+      alternative_clustering: https://drive.google.com/file/d/1gkJ85L5jzH_Xxhjbr4fDBOVZeyFl-R-v/view?usp=sharing
+      voronoi_clustering: https://drive.google.com/file/d/1znCjfy3XYQrSiFoiB7PE95j__qnvo8Zt/view?usp=sharing

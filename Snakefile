@@ -15,6 +15,7 @@ from scripts.retrieve_osm_raw import osm_raw_outputs
 from scripts.retrieve_osm_clean import osm_clean_outputs
 from scripts.retrieve_shapes import shapes_outputs
 from scripts.retrieve_osm_network import osm_network_outputs
+from scripts.retrieve_renewable_profiles import renewable_profiles_outputs
 
 HTTP = HTTPRemoteProvider()
 
@@ -297,6 +298,21 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("base_ne
             "scripts/retrieve_base_network.py"
 
     ruleorder: retrieve_base_network > base_network
+
+
+# retrieving renewable_profiles data and bypassing build_renewable_profiles rule
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("renewable_profiles", False):
+    rule retrieve_renewable_profiles:
+        params:
+            destination="resources/" + RDIR,
+            alternative_clustering=config["cluster_options"]["alternative_clustering"],
+        output:
+            expand(
+                "{PYPSA_EARTH_DIR}resources/{RDIR}{file}", PYPSA_EARTH_DIR=PYPSA_EARTH_DIR, RDIR=RDIR, file=renewable_profiles_outputs()),
+        script:
+            "scripts/retrieve_renewable_profiles.py"
+
+    ruleorder: retrieve_renewable_profiles > build_renewable_profiles
 
 
 rule test_modify_prenetwork:

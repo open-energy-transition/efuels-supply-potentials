@@ -14,17 +14,6 @@ from scripts._helper import mock_snakemake, update_config_from_wildcards, create
 logger = create_logger(__name__)
 
 
-def osm_raw_outputs():
-    outputs = [
-        "osm/raw/all_raw_cables.geojson",
-        "osm/raw/all_raw_generators.geojson",
-        "osm/raw/all_raw_generators.csv",
-        "osm/raw/all_raw_lines.geojson",
-        "osm/raw/all_raw_substations.geojson"
-    ]
-    return outputs
-
-
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(

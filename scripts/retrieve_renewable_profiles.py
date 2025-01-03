@@ -14,14 +14,6 @@ from scripts._helper import mock_snakemake, update_config_from_wildcards, create
 logger = create_logger(__name__)
 
 
-def renewable_profiles_outputs():
-    carriers = ["csp", "hydro", "offwind-ac", "offwind-dc", "onwind", "solar"]
-    outputs = [
-        "renewable_profiles/profile_" + x + ".nc" for x in carriers
-    ]
-    return outputs
-
-
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(

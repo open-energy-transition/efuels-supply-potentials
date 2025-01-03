@@ -14,16 +14,6 @@ from scripts._helper import mock_snakemake, update_config_from_wildcards, create
 logger = create_logger(__name__)
 
 
-def osm_network_outputs():
-    outputs = [
-        "base_network/all_lines_build_network.csv",
-        "base_network/all_converters_build_network.csv",
-        "base_network/all_transformers_build_network.csv",
-        "base_network/all_buses_build_network.csv"
-    ]
-    return outputs
-
-
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(

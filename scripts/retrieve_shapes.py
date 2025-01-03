@@ -14,16 +14,6 @@ from scripts._helper import mock_snakemake, update_config_from_wildcards, create
 logger = create_logger(__name__)
 
 
-def shapes_outputs():
-    outputs = [
-        "shapes/country_shapes.geojson",
-        "shapes/offshore_shapes.geojson",
-        "shapes/africa_shape.geojson",
-        "shapes/gadm_shapes.geojson"
-    ]
-    return outputs
-
-
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(

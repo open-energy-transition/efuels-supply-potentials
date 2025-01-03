@@ -274,3 +274,52 @@ def download_and_unzip_gdrive(config, destination, logger, disable_progress=Fals
     except Exception as e:
         logger.error(f"Failed to download or extract the file: {str(e)}")
         return False
+
+
+def osm_raw_outputs():
+    outputs = [
+        "osm/raw/all_raw_cables.geojson",
+        "osm/raw/all_raw_generators.geojson",
+        "osm/raw/all_raw_generators.csv",
+        "osm/raw/all_raw_lines.geojson",
+        "osm/raw/all_raw_substations.geojson"
+    ]
+    return outputs
+
+
+def osm_clean_outputs():
+    outputs = [
+        "osm/clean/all_clean_generators.geojson",
+        "osm/clean/all_clean_generators.csv",
+        "osm/clean/all_clean_lines.geojson",
+        "osm/clean/all_clean_substations.geojson"
+    ]
+    return outputs
+
+
+def shapes_outputs():
+    outputs = [
+        "shapes/country_shapes.geojson",
+        "shapes/offshore_shapes.geojson",
+        "shapes/africa_shape.geojson",
+        "shapes/gadm_shapes.geojson"
+    ]
+    return outputs
+
+
+def osm_network_outputs():
+    outputs = [
+        "base_network/all_lines_build_network.csv",
+        "base_network/all_converters_build_network.csv",
+        "base_network/all_transformers_build_network.csv",
+        "base_network/all_buses_build_network.csv"
+    ]
+    return outputs
+
+
+def renewable_profiles_outputs():
+    carriers = ["csp", "hydro", "offwind-ac", "offwind-dc", "onwind", "solar"]
+    outputs = [
+        "renewable_profiles/profile_" + x + ".nc" for x in carriers
+    ]
+    return outputs

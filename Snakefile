@@ -10,12 +10,8 @@ sys.path.append("submodules/pypsa-earth")
 sys.path.append("submodules/pypsa-earth/scripts")
 
 from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
-from scripts._helper import BASE_PATH
-from scripts.retrieve_osm_raw import osm_raw_outputs
-from scripts.retrieve_osm_clean import osm_clean_outputs
-from scripts.retrieve_shapes import shapes_outputs
-from scripts.retrieve_osm_network import osm_network_outputs
-from scripts.retrieve_renewable_profiles import renewable_profiles_outputs
+from scripts._helper import osm_raw_outputs, osm_clean_outputs, shapes_outputs, \
+                            osm_network_outputs, renewable_profiles_outputs
 
 HTTP = HTTPRemoteProvider()
 

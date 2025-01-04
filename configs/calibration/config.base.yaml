@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 countries: ["US"]
-# Can be replaced by country ["NG", "BJ"], continent ["Africa"] or user-specific region, see more at https://pypsa-earth.readthedocs.io/en/latest/configuration.html#top-level-configuration
 
 enable:
   retrieve_databundle: true  #  Recommended 'true', for the first run. Otherwise data might be missing.
@@ -21,11 +20,8 @@ scenario:
   clusters: [10]
   opts: [Co2L-24H]
 
-snapshots:
-  start: "2013-01-01"
-  end: "2014-01-01"
-  inclusive: "left" # end is not inclusive
-
+cluster_options:
+  alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes
 
 electricity:
   co2limit: 1.4728e+9 # 0.8 * 1.841e+9

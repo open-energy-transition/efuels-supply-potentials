@@ -10,6 +10,7 @@ sys.path.append("submodules/pypsa-earth")
 sys.path.append("submodules/pypsa-earth/scripts")
 
 from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
+from scripts._helper import renewable_profiles_outputs
 
 HTTP = HTTPRemoteProvider()
 
@@ -306,10 +307,9 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("renewab
         params:
             destination="resources/" + RDIR,
             alternative_clustering=config["cluster_options"]["alternative_clustering"],
-        input:
-            **{k: v for k, v in rules.build_renewable_profiles.input.items()},
         output:
-            **{k: v for k, v in rules.build_renewable_profiles.output.items()},
+            expand(
+                "{PYPSA_EARTH_DIR}resources/{RDIR}{file}", PYPSA_EARTH_DIR=PYPSA_EARTH_DIR, RDIR=RDIR, file=renewable_profiles_outputs()),
         script:
             "scripts/retrieve_renewable_profiles.py"
 

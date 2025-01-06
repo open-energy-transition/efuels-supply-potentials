@@ -5,6 +5,15 @@
 validation:
   planning_horizon: [2020]
 
+# retrieving precomputed files from google drive and bypassing re-execution
+retrieve_from_gdrive:
+  cutouts: false # if true, US cutouts are retrieved from google drive, else it is retrieved using retrieve_databundle_light if enable is true
+  osm_raw: true # if true, bypasses download_osm_data rule
+  osm_clean: true # if true, bypasses clean_osm_data rule
+  shapes: true # if true, bypasses build_shapes rule
+  osm_network: true # if true, bypasses build_osm_network rule
+  base_network: true # if true, bypasses base_network rule
+  renewable_profiles: true # if true, bypasses build_renewable_profiles rule
 
 custom_databundles:
   bundle_cutouts_USA:
@@ -17,7 +26,51 @@ custom_databundles:
     disable_by_opt:
       build_cutout: [all]
 
+  # precomputed raw osm data
+  bundle_osm_raw_USA:
+    countries: [US]
+    category: resources_osm_raw
+    destination: "resources"
+    urls:
+      gdrive: https://drive.google.com/file/d/1HFz0G0FjVWOQAAfVPW8v-IsQ25G6dvCT/view?usp=sharing
 
-databundles:
-  bundle_cutouts_northamerica:
-    countries: []
+  # precomputed clean osm data
+  bundle_osm_clean_USA:
+    countries: [US]
+    category: resources_osm_clean
+    destination: "resources"
+    urls:
+      gdrive: https://drive.google.com/file/d/1wj9SieXYxvTVPWA9Ev-Kgvq5etGMePF-/view?usp=sharing
+
+  # precomputed shapes data
+  bundle_shapes_USA:
+    countries: [US]
+    category: resources_shapes
+    destination: "resources"
+    urls:
+      gdrive: https://drive.google.com/file/d/1Ok_J3EBdaxzd_0Es-WPgFOYgKTSy19iS/view?usp=sharing
+
+  # precomputed osm network data
+  bundle_osm_network_USA:
+    countries: [US]
+    category: resources_osm_network
+    destination: "resources"
+    urls:
+      gdrive: https://drive.google.com/file/d/1bbN7y8iQZIw7IIRX0b6faT8ne-X6QrgG/view?usp=sharing
+
+  # precomputed base.nc
+  bundle_base_network_USA:
+    countries: [US]
+    category: resources_base_network
+    destination: "resources"
+    urls:
+      gdrive: https://drive.google.com/file/d/1N55zQySRd8D8-2pjZc6glmce4CLu-it3/view?usp=sharing
+
+  # precomputed renewable_profiles data
+  bundle_renewable_profiles_USA:
+    countries: [US]
+    category: resources_renewable_profiles
+    destination: "resources"
+    urls:
+      alternative_clustering: https://drive.google.com/file/d/1gkJ85L5jzH_Xxhjbr4fDBOVZeyFl-R-v/view?usp=sharing
+      voronoi_clustering: https://drive.google.com/file/d/1znCjfy3XYQrSiFoiB7PE95j__qnvo8Zt/view?usp=sharing

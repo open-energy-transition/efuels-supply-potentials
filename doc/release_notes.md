@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Enabled **retrieving precomputed output** of power model's rules (e.g. `download_osm_data`, `clean_osm_data`, `build_shapes`, `build_osm_network`, `base_network`, and `build_renewable_profiles`) within the workflow: [PR #20](https://github.com/open-energy-transition/efuels-supply-potentials/pull/20)
+
 * Integrated **US-specific cost assumptions** from NREL ATB to workflow: [PR #14](https://github.com/open-energy-transition/efuels-supply-potentials/pull/14) and technology-data [PR #1](https://github.com/open-energy-transition/technology-data/pull/1)
 
 * Prepared **merged airports** dataset: [PR #16](https://github.com/open-energy-transition/efuels-supply-potentials/pull/16)

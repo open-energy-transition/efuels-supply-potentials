@@ -11,6 +11,10 @@ import logging
 import snakemake as sm
 from pypsa.descriptors import Dict
 from snakemake.script import Snakemake
+import re
+from pathlib import Path
+from zipfile import ZipFile
+from google_drive_downloader import GoogleDriveDownloader as gdd
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -209,3 +213,113 @@ def create_logger(logger_name, level=logging.INFO):
     handler = logging.StreamHandler(stream=sys.stdout)
     logger_instance.addHandler(handler)
     return logger_instance
+
+
+def download_and_unzip_gdrive(config, destination, logger, disable_progress=False, url=None):
+    """
+        Downloads and unzips data from custom bundle config
+    """
+    resource = config["category"]
+    file_path = os.path.join(PYPSA_EARTH_DIR, f"tempfile_{resource}.zip")
+    if url is None:
+        url = config["urls"]["gdrive"]
+
+    # retrieve file_id from path
+    try:
+        # cut the part before the ending \view
+        partition_view = re.split(r"/view|\\view", str(url), 1)
+        if len(partition_view) < 2:
+            logger.error(
+                f'Resource {resource} cannot be downloaded: "\\view" not found in url {url}'
+            )
+            return False
+
+        # split url to get the file_id
+        code_split = re.split(r"\\|/", partition_view[0])
+
+        if len(code_split) < 2:
+            logger.error(
+                f'Resource {resource} cannot be downloaded: character "\\" not found in {partition_view[0]}'
+            )
+            return False
+
+        # get file id
+        file_id = code_split[-1]
+
+        # remove tempfile.zip if exists
+        Path(file_path).unlink(missing_ok=True)
+
+        # download file from google drive
+        gdd.download_file_from_google_drive(
+            file_id=file_id,
+            dest_path=file_path,
+            showsize=not disable_progress,
+            unzip=False,
+        )
+        with ZipFile(file_path, "r") as zipObj:
+            bad_file = zipObj.testzip()
+            if bad_file:
+                logger.info(f"Corrupted file found: {bad_file}")
+            else:
+                logger.info("No errors found in the zip file.")
+            # Extract all the contents of zip file in current directory
+            zipObj.extractall(path=destination)
+        # remove tempfile.zip
+        Path(file_path).unlink(missing_ok=True)
+
+        logger.info(f"Download resource '{resource}' from cloud '{url}'.")
+
+        return True
+
+    except Exception as e:
+        logger.error(f"Failed to download or extract the file: {str(e)}")
+        return False
+
+
+def osm_raw_outputs():
+    outputs = [
+        "osm/raw/all_raw_cables.geojson",
+        "osm/raw/all_raw_generators.geojson",
+        "osm/raw/all_raw_generators.csv",
+        "osm/raw/all_raw_lines.geojson",
+        "osm/raw/all_raw_substations.geojson"
+    ]
+    return outputs
+
+
+def osm_clean_outputs():
+    outputs = [
+        "osm/clean/all_clean_generators.geojson",
+        "osm/clean/all_clean_generators.csv",
+        "osm/clean/all_clean_lines.geojson",
+        "osm/clean/all_clean_substations.geojson"
+    ]
+    return outputs
+
+
+def shapes_outputs():
+    outputs = [
+        "shapes/country_shapes.geojson",
+        "shapes/offshore_shapes.geojson",
+        "shapes/africa_shape.geojson",
+        "shapes/gadm_shapes.geojson"
+    ]
+    return outputs
+
+
+def osm_network_outputs():
+    outputs = [
+        "base_network/all_lines_build_network.csv",
+        "base_network/all_converters_build_network.csv",
+        "base_network/all_transformers_build_network.csv",
+        "base_network/all_buses_build_network.csv"
+    ]
+    return outputs
+
+
+def renewable_profiles_outputs():
+    carriers = ["csp", "hydro", "offwind-ac", "offwind-dc", "onwind", "solar"]
+    outputs = [
+        "renewable_profiles/profile_" + x + ".nc" for x in carriers
+    ]
+    return outputs

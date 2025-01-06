@@ -17,20 +17,19 @@ logger = create_logger(__name__)
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
-            "retrieve_cutouts",
+            "retrieve_osm_network",
             configfile="configs/calibration/config.base_AC.yaml",
-            countries=["US"]
         )
     # update config based on wildcards
     config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
 
-    # load cutouts configuration
-    config_cutouts = config["custom_databundles"]["bundle_cutouts_USA"]
+    # load base_network configuration
+    config_osm_network = config["custom_databundles"]["bundle_osm_network_USA"]
 
-    # destination for cutouts
-    destination = os.path.join(PYPSA_EARTH_DIR, config_cutouts["destination"])
+    # destination for base_network/
+    destination = os.path.join(PYPSA_EARTH_DIR, snakemake.params.destination)
 
-    # download cutouts
-    downloaded = download_and_unzip_gdrive(config_cutouts,
+    # download base_network/
+    downloaded = download_and_unzip_gdrive(config_osm_network,
                                            destination=destination,
                                            logger=logger)

@@ -10,7 +10,7 @@ sys.path.append("submodules/pypsa-earth")
 sys.path.append("submodules/pypsa-earth/scripts")
 
 from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
-from scripts._helper import BASE_PATH
+from scripts._helper import renewable_profiles_outputs
 
 HTTP = HTTPRemoteProvider()
 
@@ -35,6 +35,7 @@ wildcard_constraints:
 
 run = config["run"]
 RDIR = run["name"] + "/" if run.get("name") else ""
+SECDIR = run["sector_name"] + "/" if run.get("sector_name") else ""
 CDIR = RDIR if not run.get("shared_cutouts") else ""
 
 
@@ -199,12 +200,14 @@ rule process_airport_data:
     script:
         "plots/airport_data_postprocessing.py"
 
+
 if config["custom_data"]["airports"]:
     ruleorder: process_airport_data > prepare_airports
 else:
     ruleorder: prepare_airports > process_airport_data
 
-if config["countries"] == ["US"]:
+
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("cutouts", False):
     rule retrieve_cutouts:
         params:
             countries=config["countries"],
@@ -223,6 +226,94 @@ use rule retrieve_cost_data_flexible from pypsa_earth with:
             + "_{planning_horizons}.csv",
             keep_local=True,
         ),
+
+
+# retrieving precomputed osm/raw data and bypassing download_osm_data rule
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_raw", False):
+    rule retrieve_osm_raw:
+        params:
+            destination="resources/" + RDIR,
+        input:
+            **{k: v for k, v in rules.download_osm_data.input.items()},
+        output:
+            **{k: v for k, v in rules.download_osm_data.output.items()},
+        script:
+            "scripts/retrieve_osm_raw.py"
+
+    ruleorder: retrieve_osm_raw > download_osm_data
+
+
+# retrieving precomputed osm/clean data and bypassing clean_osm_data rule
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_clean", False):
+    rule retrieve_osm_clean:
+        params:
+            destination="resources/" + RDIR,
+        input:
+            **{k: v for k, v in rules.clean_osm_data.input.items()},
+        output:
+            **{k: v for k, v in rules.clean_osm_data.output.items()},
+        script:
+            "scripts/retrieve_osm_clean.py"
+
+    ruleorder: retrieve_osm_clean > clean_osm_data
+
+
+# retrieving shapes data and bypassing build_shapes rule
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("shapes", False):
+    rule retrieve_shapes:
+        params:
+            destination="resources/" + RDIR,
+        input:
+            **{k: v for k, v in rules.build_shapes.input.items()},
+        output:
+            **{k: v for k, v in rules.build_shapes.output.items()},
+        script:
+            "scripts/retrieve_shapes.py"
+
+    ruleorder: retrieve_shapes > build_shapes
+
+
+# retrieving base_network data and bypassing build_osm_network rule
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_network", False):
+    rule retrieve_osm_network:
+        params:
+            destination="resources/" + RDIR,
+        input:
+            **{k: v for k, v in rules.build_osm_network.input.items()},
+        output:
+            **{k: v for k, v in rules.build_osm_network.output.items()},
+        script:
+            "scripts/retrieve_osm_network.py"
+
+    ruleorder: retrieve_osm_network > build_osm_network
+
+
+# retrieving base.nc and bypassing base_network rule
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("base_network", False):
+    rule retrieve_base_network:
+        input:
+            **{k: v for k, v in rules.base_network.input.items()},
+        output:
+            PYPSA_EARTH_DIR + "networks/" + RDIR + "base.nc",
+        script:
+            "scripts/retrieve_base_network.py"
+
+    ruleorder: retrieve_base_network > base_network
+
+
+# retrieving renewable_profiles data and bypassing build_renewable_profiles rule
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("renewable_profiles", False):
+    rule retrieve_renewable_profiles:
+        params:
+            destination="resources/" + RDIR,
+            alternative_clustering=config["cluster_options"]["alternative_clustering"],
+        output:
+            expand(
+                "{PYPSA_EARTH_DIR}resources/{RDIR}{file}", PYPSA_EARTH_DIR=PYPSA_EARTH_DIR, RDIR=RDIR, file=renewable_profiles_outputs()),
+        script:
+            "scripts/retrieve_renewable_profiles.py"
+
+    ruleorder: retrieve_renewable_profiles > build_renewable_profiles
 
 
 rule test_modify_prenetwork:

@@ -17,20 +17,26 @@ logger = create_logger(__name__)
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
-            "retrieve_cutouts",
+            "retrieve_renewable_profiles",
             configfile="configs/calibration/config.base_AC.yaml",
-            countries=["US"]
         )
     # update config based on wildcards
     config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
 
-    # load cutouts configuration
-    config_cutouts = config["custom_databundles"]["bundle_cutouts_USA"]
+    # load renewable_profiles configuration
+    config_renewable_profiles = config["custom_databundles"]["bundle_renewable_profiles_USA"]
 
-    # destination for cutouts
-    destination = os.path.join(PYPSA_EARTH_DIR, config_cutouts["destination"])
+    # destination for renewable_profiles/
+    destination = os.path.join(PYPSA_EARTH_DIR, snakemake.params.destination)
 
-    # download cutouts
-    downloaded = download_and_unzip_gdrive(config_cutouts,
+    # url for alternative or voronoi clustering
+    if snakemake.params.alternative_clustering:
+        url = config_renewable_profiles["urls"]["alternative_clustering"]
+    else:
+        url = config_renewable_profiles["urls"]["voronoi_clustering"]
+
+    # download base_network/
+    downloaded = download_and_unzip_gdrive(config_renewable_profiles,
                                            destination=destination,
-                                           logger=logger)
+                                           logger=logger,
+                                           url=url)

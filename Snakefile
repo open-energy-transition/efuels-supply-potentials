@@ -316,6 +316,29 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("renewab
     ruleorder: retrieve_renewable_profiles > build_renewable_profiles
 
 
+if (config["countries"] == ["US"] 
+    and config["retrieve_from_gdrive"].get("custom_powerplants", False) ):
+    rule retrieve_custom_powerplants:
+        output:
+            destination=PYPSA_EARTH_DIR + "data/custom_powerplants.csv",
+        script:
+            "scripts/retrieve_powerplants.py"
+
+
+use rule build_demand_profiles from pypsa_earth with:
+    input:
+        ssp2_dummy_input=PYPSA_EARTH_DIR+"data/ssp2-2.6/2030/era5_2013/NorthAmerica.csv",
+
+
+if (config["countries"] == ["US"] 
+    and config["retrieve_from_gdrive"].get("ssp2", False) ):
+    rule retrieve_ssp2:
+       output:
+            ssp2=PYPSA_EARTH_DIR+"data/ssp2-2.6/2030/era5_2013/NorthAmerica.csv",
+        script:
+            "scripts/retrieve_ssp2.py"
+
+
 rule test_modify_prenetwork:
     input:
         prenetwork=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",

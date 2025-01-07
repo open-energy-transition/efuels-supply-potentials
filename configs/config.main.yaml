@@ -82,11 +82,11 @@ custom_databundles:
     category: ssp2
     destination: "data/ssp2-2.6/2030/era5_2013"
     urls:
-      gdrive: https://drive.google.com/file/d/16zuAJbaPKmb_urNzGL7NpfjeCzOA8JbA/view?usp=sharing
+      gdrive: https://drive.google.com/file/d/1KTsVm-978FHIA43on_zNFW5rpB-vTjCw/view?usp=sharing
 
   bundle_custom_powerplants:
     countries: [US]
     category: custom_powerplants
     destination: "data"
     urls:
-      gdrive: https://drive.google.com/file/d/1e3kYZnSALUBto7APNUkkRHQ3JIQZHHMj/view?usp=sharing
+      gdrive: https://drive.google.com/file/d/1y9A4pAengZHRju7K3TiQkCCJNbolVRr2/view?usp=sharing

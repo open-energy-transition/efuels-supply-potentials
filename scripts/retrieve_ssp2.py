@@ -29,13 +29,19 @@ if __name__ == "__main__":
     # destination for NorthAmerica.csv file
     destination = os.path.join(PYPSA_EARTH_DIR, snakemake.params.destination)
 
-    # remove NorthAmerica.nc file
+    # remove NorthAmerica.nc and existing NorthAmerica.csv file
     nc_path = PYPSA_EARTH_DIR + "/data/ssp2-2.6/2030/era5_2013/NorthAmerica.nc"
+    csv_path = PYPSA_EARTH_DIR + "/data/ssp2-2.6/2030/era5_2013/NorthAmerica.csv"
     
     if os.path.isfile(nc_path):
         os.path.exists(nc_path)
         os.remove(nc_path)
         logger.info(f"Removed {nc_path} file successfully")
+
+    if os.path.isfile(csv_path):
+        os.path.exists(csv_path)
+        os.remove(csv_path)
+        logger.info(f"Removed {csv_path} file successfully")
 
     # # download ssp2
     downloaded = download_and_unzip_gdrive(config_ssp2,

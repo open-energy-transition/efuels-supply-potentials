@@ -6,7 +6,6 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
 import warnings
-import shutil
 warnings.filterwarnings("ignore")
 from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
                             download_and_unzip_gdrive, PYPSA_EARTH_DIR
@@ -27,17 +26,18 @@ if __name__ == "__main__":
     # load ssp2 configuration
     config_ssp2 = config["custom_databundles"]["bundle_ssp2"]
 
-    # destination for osm/clean
-    destination = os.path.join(PYPSA_EARTH_DIR, snakemake.output.ssp2)
+    # destination for NorthAmerica.csv file
+    destination = os.path.join(PYPSA_EARTH_DIR, snakemake.params.destination)
 
-    #TODO remove NorthAmerica.nc file
-    nc_path = "data/ssp2-2.6/2030/era5_2013/NorthAmerica.nc"
+    # remove NorthAmerica.nc file
+    nc_path = PYPSA_EARTH_DIR + "/data/ssp2-2.6/2030/era5_2013/NorthAmerica.nc"
     
-    # if os.path.isfile(nc_path):
-    #     os.remove(nc_path)
-    #     logger.info(f"Removed {nc_path} file successfully")
+    if os.path.isfile(nc_path):
+        os.path.exists(nc_path)
+        os.remove(nc_path)
+        logger.info(f"Removed {nc_path} file successfully")
 
-    # download ssp2
+    # # download ssp2
     downloaded = download_and_unzip_gdrive(config_ssp2,
                                            destination=destination,
                                            logger=logger)

@@ -319,8 +319,11 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("renewab
 if (config["countries"] == ["US"] 
     and config["retrieve_from_gdrive"].get("custom_powerplants", False) ):
     rule retrieve_custom_powerplants:
+        params:
+            destination="data/",
         output:
             destination=PYPSA_EARTH_DIR + "data/custom_powerplants.csv",
+
         script:
             "scripts/retrieve_powerplants.py"
 
@@ -330,11 +333,12 @@ use rule build_demand_profiles from pypsa_earth with:
         ssp2_dummy_input=PYPSA_EARTH_DIR+"data/ssp2-2.6/2030/era5_2013/NorthAmerica.csv",
 
 
-if (config["countries"] == ["US"] 
-    and config["retrieve_from_gdrive"].get("ssp2", False) ):
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("ssp2", False):
     rule retrieve_ssp2:
-       output:
-            ssp2=PYPSA_EARTH_DIR+"data/ssp2-2.6/2030/era5_2013/NorthAmerica.csv",
+        params:
+            destination="data/ssp2-2.6/2030/era5_2013/",
+        output:
+            ssp2=PYPSA_EARTH_DIR + "data/ssp2-2.6/2030/era5_2013/NorthAmerica.csv",
         script:
             "scripts/retrieve_ssp2.py"
 

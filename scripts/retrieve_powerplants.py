@@ -24,12 +24,12 @@ if __name__ == "__main__":
     config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
 
     # load shapes configuration
-    config_shapes = config["custom_databundles"]["bundle_custom_powerplants"]
+    config_powerplants = config["custom_databundles"]["bundle_custom_powerplants"]
 
     # destination for shapes
-    destination = os.path.join(PYPSA_EARTH_DIR, snakemake.output.destination)
+    destination = os.path.join(PYPSA_EARTH_DIR, snakemake.params.destination)
 
     # download shapes
-    downloaded = download_and_unzip_gdrive(config_shapes,
+    downloaded = download_and_unzip_gdrive(config_powerplants,
                                            destination=destination,
                                            logger=logger)

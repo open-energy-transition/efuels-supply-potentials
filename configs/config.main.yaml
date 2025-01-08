@@ -80,13 +80,13 @@ custom_databundles:
   bundle_ssp2:
     countries: [US]
     category: ssp2
-    destination: "data/ssp2-2.6/2030/era5_2013"
+    destination: "data/ssp2-2.6/2030/era5_2013/NorthAmerica.csv"
     urls:
       gdrive: https://drive.google.com/file/d/1KTsVm-978FHIA43on_zNFW5rpB-vTjCw/view?usp=sharing
 
   bundle_custom_powerplants:
     countries: [US]
     category: custom_powerplants
-    destination: "data"
+    destination: data/custom_powerplants.csv
     urls:
-      gdrive: https://drive.google.com/file/d/1y9A4pAengZHRju7K3TiQkCCJNbolVRr2/view?usp=sharing
+      gdrive: https://drive.google.com/file/d/1y9A4pAengZHRju7K3TiQkCCJNbolVRr2/view?usp=drive_link

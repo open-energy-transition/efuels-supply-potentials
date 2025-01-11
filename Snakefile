@@ -219,13 +219,13 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("cutouts
             "scripts/retrieve_cutouts.py"
 
 
-use rule retrieve_cost_data_flexible from pypsa_earth with:
-    input:
-        HTTP.remote(
-            f"raw.githubusercontent.com/open-energy-transition/technology-data/nrel_atb_usa_costs/outputs/US/costs"
-            + "_{planning_horizons}.csv",
-            keep_local=True,
-        ),
+# use rule retrieve_cost_data from pypsa_earth with:
+#     input:
+#         HTTP.remote(
+#             f"raw.githubusercontent.com/open-energy-transition/technology-data/nrel_atb_usa_costs/outputs/US/costs"
+#             + "_{year}.csv",
+#             keep_local=True,
+#         ),
 
 
 # retrieving precomputed osm/raw data and bypassing download_osm_data rule

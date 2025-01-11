@@ -102,16 +102,13 @@ def get_installed_capacity_ember(data, three_country_code, year):
         & (data["Category"] == "Capacity")
         & (data["Subcategory"] == "Fuel")][["Variable", "Value"]].reset_index(drop=True)
 
-    # Drop irrelevant rows
-    drop_row = ["Other Renewables"]
-    capacity_ember = capacity_ember[~capacity_ember["Variable"].isin(drop_row)]
-
     # Standardize fuel types
     capacity_ember = capacity_ember.replace({
         "Gas": "Fossil fuels",
         "Bioenergy": "Biomass",
         "Coal": "Fossil fuels",
-        "Other Fossil": "Fossil fuels"})
+        "Other Fossil": "Fossil fuels",
+        "Other Renewables": "Geothermal"})
 
     capacity_ember = capacity_ember.groupby("Variable").sum()
     capacity_ember.columns = ["Ember data"]
@@ -135,9 +132,9 @@ def get_installed_capacity_pypsa(network):
         pd.concat([gen_capacities, storage_capacities], axis=0) / 1e3).round(2)
 
     # Define all possible carriers
-    all_carriers = ["nuclear", "coal", "lignite", "CCGT",
+    all_carriers = ["nuclear", "coal", "lignite", "CCGT", "oil",
                     "OCGT", "hydro", "ror", "PHS", "solar", "offwind-ac",
-                    "offwind-dc", "onwind", "biomass"]
+                    "offwind-dc", "onwind", "biomass", "geothermal"]
 
     # Reindex to include missing carriers
     capacity_pypsa = capacity_pypsa.reindex(all_carriers, fill_value=0)
@@ -146,18 +143,19 @@ def get_installed_capacity_pypsa(network):
     capacity_pypsa.rename(index={
         "nuclear": "Nuclear",
         "solar": "Solar",
-        "biomass": "Biomass"}, inplace=True)
+        "biomass": "Biomass",
+        "geothermal": "Geothermal"}, inplace=True)
 
     # Aggregate fossil fuel and hydro capacities
     capacity_pypsa["Fossil fuels"] = capacity_pypsa[[
-        "coal", "lignite", "CCGT", "OCGT"]].sum()
+        "coal", "lignite", "CCGT", "OCGT", "oil"]].sum()
     capacity_pypsa["Hydro"] = capacity_pypsa[["hydro", "ror"]].sum()
     capacity_pypsa["Wind"] = capacity_pypsa[[
         "offwind-ac", "offwind-dc", "onwind"]].sum()
 
     # Filter and reformat
     capacity_pypsa = capacity_pypsa.loc[["Nuclear", "Fossil fuels", "Hydro",
-                                         "PHS", "Solar", "Wind", "Biomass"]]
+                                         "PHS", "Solar", "Wind", "Biomass", "Geothermal"]]
     capacity_pypsa.name = "PyPSA data"
     capacity_pypsa = capacity_pypsa.to_frame()
 
@@ -194,7 +192,8 @@ def get_generation_capacity_ember(data, three_country_code, year):
         "Gas": "Fossil fuels",
         "Bioenergy": "Biomass",
         "Coal": "Fossil fuels",
-        "Other Fossil": "Fossil fuels"})
+        "Other Fossil": "Fossil fuels",
+        "Other Renewables": "Geothermal"})
 
     # Group by fuel type
     generation_ember = generation_ember.groupby("Variable").sum()
@@ -227,9 +226,9 @@ def get_generation_capacity_pypsa(network):
         (pd.concat([gen_capacities, storage_capacities], axis=0)) / 1e6).round(2)
 
     # Define all possible carriers
-    all_carriers = ["nuclear", "coal", "lignite", "CCGT", "OCGT",
+    all_carriers = ["nuclear", "coal", "lignite", "CCGT", "OCGT", "oil",
                     "hydro", "ror", "PHS", "solar", "offwind-ac",
-                    "offwind-dc", "onwind", "biomass", "load"]
+                    "offwind-dc", "onwind", "biomass", "geothermal", "load"]
 
     # Reindex to include missing carriers
     generation_pypsa = generation_pypsa.reindex(all_carriers, fill_value=0)
@@ -239,11 +238,12 @@ def get_generation_capacity_pypsa(network):
         "nuclear": "Nuclear",
         "solar": "Solar",
         "biomass": "Biomass",
+        "geothermal": "Geothermal",
         "load": "Load shedding"}, inplace=True)
 
     # Aggregate fossil fuel, hydro, and wind generation
     generation_pypsa["Fossil fuels"] = generation_pypsa[[
-        "CCGT", "OCGT", "coal", "lignite"]].sum()
+        "CCGT", "OCGT", "coal", "lignite", "oil"]].sum()
     generation_pypsa["Hydro"] = generation_pypsa[["hydro", "ror"]].sum()
     generation_pypsa["Wind"] = generation_pypsa[[
         "offwind-ac", "offwind-dc", "onwind"]].sum()
@@ -253,7 +253,7 @@ def get_generation_capacity_pypsa(network):
 
     # Filter and reformat
     generation_pypsa = generation_pypsa.loc[["Nuclear", "Fossil fuels", "PHS",
-                                             "Hydro", "Solar", "Wind", "Biomass",
+                                             "Hydro", "Solar", "Wind", "Biomass", "Geothermal",
                                              "Load shedding"]]
     generation_pypsa.name = "PyPSA data"
     generation_pypsa = generation_pypsa.to_frame()
@@ -356,11 +356,11 @@ def preprocess_eia_data(data):
 
     # Drop unwanted renewable energy categories
     data.drop(index=["Renewables", "Non-hydroelectric renewables",
-                     "Geothermal", "Solar, tide, wave, fuel cell", "Tide and wave"], inplace=True)
+                     "Solar, tide, wave, fuel cell", "Tide and wave"], inplace=True)
 
     # Filter the DataFrame to only include relevant energy sources
     data = data.loc[["Nuclear", "Fossil fuels",
-                     "Hydro", "PHS", "Solar", "Wind", "Biomass"], :]
+                     "Hydro", "PHS", "Solar", "Wind", "Biomass", "Geothermal"], :]
 
     return data
 
@@ -392,11 +392,11 @@ def preprocess_eia_data_detail(data):
 
     # Drop unwanted renewable energy categories
     data.drop(index=["Fossil fuels", "Renewables", "Non-hydroelectric renewables",
-                     "Geothermal", "Solar, tide, wave, fuel cell", "Tide and wave"], inplace=True)
+                     "Solar, tide, wave, fuel cell", "Tide and wave"], inplace=True)
 
     # Filter the DataFrame to only include relevant energy sources
     data = data.loc[["Nuclear", "Coal", "Natural gas", "Oil",
-                     "Hydro", "PHS", "Solar", "Wind", "Biomass", ], :]
+                     "Hydro", "PHS", "Solar", "Wind", "Biomass", "Geothermal"], :]
     return data
 
 
@@ -423,9 +423,9 @@ def get_generation_capacity_pypsa_detail(network):
         (pd.concat([gen_capacities, storage_capacities], axis=0)) / 1e6).round(2)
 
     # Define all possible carriers
-    all_carriers = ["nuclear", "coal", "lignite", "CCGT", "OCGT",
+    all_carriers = ["nuclear", "coal", "lignite", "CCGT", "OCGT", "oil",
                     "hydro", "ror", "PHS", "solar", "offwind-ac",
-                    "offwind-dc", "onwind", "biomass", "load"]
+                    "offwind-dc", "onwind", "biomass", "geothermal", "load"]
 
     # Reindex to include missing carriers
     generation_pypsa = generation_pypsa.reindex(all_carriers, fill_value=0)
@@ -435,6 +435,8 @@ def get_generation_capacity_pypsa_detail(network):
         "nuclear": "Nuclear",
         "solar": "Solar",
         "biomass": "Biomass",
+        "geothermal": "Geothermal",
+        "oil": "Oil",
         "load": "Load shedding"}, inplace=True)
 
     # Aggregate fossil fuel, hydro, and wind generation
@@ -448,8 +450,8 @@ def get_generation_capacity_pypsa_detail(network):
     generation_pypsa["Load shedding"] /= 1e3
 
     # Filter and reformat
-    generation_pypsa = generation_pypsa.loc[["Nuclear", "Natural gas", "PHS", "Coal",
-                                             "Hydro", "Solar", "Wind", "Biomass",
+    generation_pypsa = generation_pypsa.loc[["Nuclear", "Natural gas", "PHS", "Coal", "Oil",
+                                             "Hydro", "Solar", "Wind", "Biomass", "Geothermal",
                                              "Load shedding"]]
     generation_pypsa.name = "PyPSA data"
     generation_pypsa = generation_pypsa.to_frame()
@@ -477,7 +479,7 @@ def get_generation_capacity_ember_detail(data, three_country_code, year):
     ][["Variable", "Value"]].reset_index(drop=True)
 
     # Drop irrelevant rows
-    drop_row = ["Other Renewables"]
+    drop_row = ["Other Fossil"]
     generation_ember = generation_ember[~generation_ember["Variable"].isin(
         drop_row)]
 
@@ -485,6 +487,7 @@ def get_generation_capacity_ember_detail(data, three_country_code, year):
     generation_ember = generation_ember.replace({
         "Gas": "Natural gas",
         "Bioenergy": "Biomass",
+        "Other Renewables": "Geothermal",
         # "Coal": "Fossil fuels",
         # "Other Fossil": "Fossil fuels"
     })

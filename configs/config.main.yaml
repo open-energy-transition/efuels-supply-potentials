@@ -14,8 +14,6 @@ retrieve_from_gdrive:
   osm_network: true # if true, bypasses build_osm_network rule
   base_network: true # if true, bypasses base_network rule
   renewable_profiles: true # if true, bypasses build_renewable_profiles rule
-  ssp2: true # if true, bypasses build_ssp2 rule
-  custom_powerplants: true # if true, bypasses build_custom_powerplants rule
 
 custom_databundles:
   bundle_cutouts_USA:
@@ -76,17 +74,3 @@ custom_databundles:
     urls:
       alternative_clustering: https://drive.google.com/file/d/1gkJ85L5jzH_Xxhjbr4fDBOVZeyFl-R-v/view?usp=sharing
       voronoi_clustering: https://drive.google.com/file/d/1znCjfy3XYQrSiFoiB7PE95j__qnvo8Zt/view?usp=sharing
-
-  bundle_ssp2:
-    countries: [US]
-    category: ssp2
-    destination: "data/ssp2-2.6/2030/era5_2013/NorthAmerica.csv"
-    urls:
-      gdrive: https://drive.google.com/file/d/1KTsVm-978FHIA43on_zNFW5rpB-vTjCw/view?usp=sharing
-
-  bundle_custom_powerplants:
-    countries: [US]
-    category: custom_powerplants
-    destination: data/custom_powerplants.csv
-    urls:
-      gdrive: https://drive.google.com/file/d/1y9A4pAengZHRju7K3TiQkCCJNbolVRr2/view?usp=drive_link

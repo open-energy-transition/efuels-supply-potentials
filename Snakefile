@@ -318,7 +318,7 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("renewab
 use rule build_powerplants from pypsa_earth with:
     input:
         **{k: v for k, v in rules.build_powerplants.input.items()},
-        powerplants_dummy_input="powerplants_dummy_output_log.txt",
+        powerplants_dummy_input="powerplants_dummy_output.log",
 
 
 if (config["countries"] == ["US"]):
@@ -327,7 +327,7 @@ if (config["countries"] == ["US"]):
             old_path="data/custom_powerplants.csv",
         output:
             destination=PYPSA_EARTH_DIR + "data/custom_powerplants.csv",
-            powerplants_dummy_input="powerplants_dummy_output_log.txt",
+            powerplants_dummy_input="powerplants_dummy_output.log",
         script:
             "scripts/retrieve_powerplants.py"
 
@@ -335,7 +335,7 @@ if (config["countries"] == ["US"]):
 use rule build_demand_profiles from pypsa_earth with:
     input:
         **{k: v for k, v in rules.build_demand_profiles.input.items()},
-        ssp2_dummy_input="ssp2_dummy_output_log.txt",
+        ssp2_dummy_input="ssp2_dummy_output.log",
 
 
 if config["countries"] == ["US"]:
@@ -346,7 +346,7 @@ if config["countries"] == ["US"]:
             old_path="data/NorthAmerica.csv",
         output:
             ssp2_northamerica=PYPSA_EARTH_DIR + "data/ssp2-2.6/2030/era5_2013/NorthAmerica.csv",
-            ssp2_dummy_output="ssp2_dummy_output_log.txt",
+            ssp2_dummy_output="ssp2_dummy_output.log",
         script:
             "scripts/retrieve_ssp2.py"
 

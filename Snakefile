@@ -37,6 +37,8 @@ run = config["run"]
 RDIR = run["name"] + "/" if run.get("name") else ""
 SECDIR = run["sector_name"] + "/" if run.get("sector_name") else ""
 CDIR = RDIR if not run.get("shared_cutouts") else ""
+SDIR = config["summary_dir"].strip("/") + f"/{SECDIR}"
+RESDIR = config["results_dir"].strip("/") + f"/{SECDIR}"
 
 
 module pypsa_earth:
@@ -349,7 +351,24 @@ if config["countries"] == ["US"]:
             ssp2_dummy_output=temp("ssp2_dummy_output.log"),
         script:
             "scripts/retrieve_ssp2.py"
-                     
+
+
+use rule prepare_sector_network from pypsa_earth with:
+    output:
+        PYPSA_EARTH_DIR + RESDIR
+        + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_unprepared.nc",
+
+
+if config["countries"] == ["US"]:
+    rule modify_aviation_demand:
+        input:
+            PYPSA_EARTH_DIR + RESDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_unprepared.nc",
+        output:
+            PYPSA_EARTH_DIR + RESDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}.nc",
+        script:
+            "scripts/modify_aviation_demand.py"          
 
 rule test_modify_prenetwork:
     input:

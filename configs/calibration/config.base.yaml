@@ -39,6 +39,11 @@ electricity:
   estimate_renewable_capacities:
     stats: false  # False, = greenfield expansion, 'irena' uses IRENA stats to add expansion limits
 
+renewable:
+  hydro:
+    normalization:
+      method: eia
+
 costs:
   year: 2030
 

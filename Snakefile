@@ -349,13 +349,7 @@ if config["countries"] == ["US"]:
             ssp2_dummy_output=temp("ssp2_dummy_output.log"),
         script:
             "scripts/retrieve_ssp2.py"
-
-# if config["countries"] == ["US"]:
-#     rule clean_up_dummy_files:
-#         params:
-#             ppl=ancient("powerplants_dummy_output.log"),
-#             ssp2=ancient("ssp2_dummy_output.log"),
-            
+                     
 
 rule test_modify_prenetwork:
     input:

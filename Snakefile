@@ -315,6 +315,41 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("renewab
 
     ruleorder: retrieve_renewable_profiles > build_renewable_profiles
 
+use rule build_powerplants from pypsa_earth with:
+    input:
+        **{k: v for k, v in rules.build_powerplants.input.items()},
+        powerplants_dummy_input=temp("powerplants_dummy_output.log"),
+
+
+if (config["countries"] == ["US"]):
+    rule retrieve_custom_powerplants:
+        input:
+            old_path="data/custom_powerplants.csv",
+        output:
+            destination=PYPSA_EARTH_DIR + "data/custom_powerplants.csv",
+            powerplants_dummy_input=temp("powerplants_dummy_output.log"),
+        script:
+            "scripts/retrieve_powerplants.py"
+
+
+use rule build_demand_profiles from pypsa_earth with:
+    input:
+        **{k: v for k, v in rules.build_demand_profiles.input.items()},
+        ssp2_dummy_input=temp("ssp2_dummy_output.log"),
+
+
+if config["countries"] == ["US"]:
+    rule retrieve_ssp2:
+        params:
+            nc_path=PYPSA_EARTH_DIR + "data/ssp2-2.6/2030/era5_2013/NorthAmerica.nc",
+        input:
+            old_path="data/NorthAmerica.csv",
+        output:
+            ssp2_northamerica=PYPSA_EARTH_DIR + "data/ssp2-2.6/2030/era5_2013/NorthAmerica.csv",
+            ssp2_dummy_output=temp("ssp2_dummy_output.log"),
+        script:
+            "scripts/retrieve_ssp2.py"
+                     
 
 rule test_modify_prenetwork:
     input:

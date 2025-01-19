@@ -315,10 +315,10 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("renewab
 
     ruleorder: retrieve_renewable_profiles > build_renewable_profiles
 
-use rule build_powerplants from pypsa_earth with:
-    input:
-        **{k: v for k, v in rules.build_powerplants.input.items()},
-        powerplants_dummy_input=temp("powerplants_dummy_output.log"),
+    use rule build_powerplants from pypsa_earth with:
+        input:
+            **{k: v for k, v in rules.build_powerplants.input.items()},
+            powerplants_dummy_input=temp("powerplants_dummy_output.log"),
 
 
 if (config["countries"] == ["US"]):
@@ -332,10 +332,10 @@ if (config["countries"] == ["US"]):
             "scripts/retrieve_powerplants.py"
 
 
-use rule build_demand_profiles from pypsa_earth with:
-    input:
-        **{k: v for k, v in rules.build_demand_profiles.input.items()},
-        ssp2_dummy_input=temp("ssp2_dummy_output.log"),
+    use rule build_demand_profiles from pypsa_earth with:
+        input:
+            **{k: v for k, v in rules.build_demand_profiles.input.items()},
+            ssp2_dummy_input=temp("ssp2_dummy_output.log"),
 
 
 if config["countries"] == ["US"]:

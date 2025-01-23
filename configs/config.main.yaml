@@ -56,7 +56,7 @@ custom_databundles:
     category: resources_osm_network
     destination: "resources"
     urls:
-      gdrive: https://drive.google.com/file/d/1ky8A48kuc80KkBVRX-2JEDXDa_t_vSto/view?usp=sharing
+      gdrive: https://drive.google.com/file/d/1KerxjN0dqEZaM3uFm1kkSAMApNzNf2cj/view?usp=sharing
 
   # precomputed base.nc
   bundle_base_network_USA:
@@ -64,7 +64,7 @@ custom_databundles:
     category: resources_base_network
     destination: "resources"
     urls:
-      gdrive: https://drive.google.com/file/d/1mo1F803g0LnSzdRtjyEEDYiJpHEoJmu2/view?usp=sharing
+      gdrive: https://drive.google.com/file/d/1UhN4BMY7mLjENEZD2Tau_c5kkvWg2vyB/view?usp=sharing
 
   # precomputed renewable_profiles data
   bundle_renewable_profiles_USA:
@@ -72,5 +72,5 @@ custom_databundles:
     category: resources_renewable_profiles
     destination: "resources"
     urls:
-      alternative_clustering: https://drive.google.com/file/d/1PynvpDHknmBSvh1EUpBhzQyXaryBfreh/view?usp=sharing
+      alternative_clustering: https://drive.google.com/file/d/1pxRcPl2UrpwbDXfdLSOhgSJs4eO-87sh/view?usp=sharing
       voronoi_clustering: https://drive.google.com/file/d/128Zt2pX_UbAB3FSlf-Uq8aILcVom66MM/view?usp=sharing

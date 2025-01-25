@@ -64,7 +64,7 @@ custom_databundles:
     category: resources_base_network
     destination: "resources"
     urls:
-      gdrive: https://drive.google.com/file/d/1-KrhqLwiLgn-2cHH9-wm8l18o_Y_8VZr/view?usp=sharing
+      gdrive: https://drive.google.com/file/d/1X5rYmW-32wtJMwjal3Kjop3QnAGYTi0K/view?usp=sharing
 
   # precomputed renewable_profiles data
   bundle_renewable_profiles_USA:
@@ -73,4 +73,4 @@ custom_databundles:
     destination: "resources"
     urls:
       alternative_clustering: https://drive.google.com/file/d/1pxRcPl2UrpwbDXfdLSOhgSJs4eO-87sh/view?usp=sharing
-      voronoi_clustering: https://drive.google.com/file/d/128Zt2pX_UbAB3FSlf-Uq8aILcVom66MM/view?usp=sharing
+      voronoi_clustering: https://drive.google.com/file/d/14IREkqtUtvl4KRszvGf6nNcrv5K_mGlk/view?usp=sharing

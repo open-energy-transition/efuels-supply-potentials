@@ -32,7 +32,7 @@ custom_databundles:
     category: resources_osm_raw
     destination: "resources"
     urls:
-      gdrive: https://drive.google.com/file/d/1HFz0G0FjVWOQAAfVPW8v-IsQ25G6dvCT/view?usp=sharing
+      gdrive: https://drive.google.com/file/d/1OivnWzAC1RW47wBquqqrBY5Ti0S_9_7B/view?usp=sharing
 
   # precomputed clean osm data
   bundle_osm_clean_USA:
@@ -40,7 +40,7 @@ custom_databundles:
     category: resources_osm_clean
     destination: "resources"
     urls:
-      gdrive: https://drive.google.com/file/d/1wj9SieXYxvTVPWA9Ev-Kgvq5etGMePF-/view?usp=sharing
+      gdrive: https://drive.google.com/file/d/15LNOikkfVfUdJ40y-58QwEwqNkiabL78/view?usp=sharing
 
   # precomputed shapes data
   bundle_shapes_USA:
@@ -48,7 +48,7 @@ custom_databundles:
     category: resources_shapes
     destination: "resources"
     urls:
-      gdrive: https://drive.google.com/file/d/1Ok_J3EBdaxzd_0Es-WPgFOYgKTSy19iS/view?usp=sharing
+      gdrive: https://drive.google.com/file/d/1Uql8Icsy5z02YRCenZ4S2TS0qqT8GY4W/view?usp=sharing
 
   # precomputed osm network data
   bundle_osm_network_USA:
@@ -56,7 +56,7 @@ custom_databundles:
     category: resources_osm_network
     destination: "resources"
     urls:
-      gdrive: https://drive.google.com/file/d/1ANAAVGglnXy2dHQaP1y1DGIBj2YHnS1J/view?usp=sharing
+      gdrive: https://drive.google.com/file/d/1jeoZKwBPoJCKbXYks22dKF7r9Ju3oZqQ/view?usp=sharing
 
   # precomputed base.nc
   bundle_base_network_USA:
@@ -64,7 +64,7 @@ custom_databundles:
     category: resources_base_network
     destination: "resources"
     urls:
-      gdrive: https://drive.google.com/file/d/11yEW0A5GHZu2EAZcKeoNyILJYRxgGSvl/view?usp=sharing
+      gdrive: https://drive.google.com/file/d/1jblRngNeOuyRlXDb4miZjWXyyXvJCo5s/view?usp=sharing
 
   # precomputed renewable_profiles data
   bundle_renewable_profiles_USA:
@@ -73,4 +73,4 @@ custom_databundles:
     destination: "resources"
     urls:
       alternative_clustering: https://drive.google.com/file/d/1Bt8NVxhe2-nrw2ZTg35sgUIQ-R8A57DN/view?usp=sharing
-      voronoi_clustering: https://drive.google.com/file/d/1nxyeN0X2y3LmB2Nnffpa-aAX0g9JyQK1/view?usp=sharing
+      voronoi_clustering: https://drive.google.com/file/d/1SEvIoLz0x23jNNeMuDSOQwHvuwtvqIfd/view?usp=sharing

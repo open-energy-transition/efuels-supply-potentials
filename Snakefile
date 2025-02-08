@@ -351,7 +351,20 @@ if config["countries"] == ["US"]:
             ssp2_dummy_output=temp("ssp2_dummy_output.log"),
         script:
             "scripts/retrieve_ssp2.py"
-                     
+
+
+rule preprocess_demand_data:
+    input:
+        demand_utility_path="data/demand_data/table_10_EIA_utility_sales.xlsx",
+        country_gadm_path=PYPSA_EARTH_DIR + "resources/" + RDIR + "shapes/country_shapes.geojson",
+        erst_path="data/demand_data/Electric_Retail_Service_Territories.geojson",
+        gadm_usa_path="data/demand_data/gadm41_USA_1.json",
+        eia_per_capita_path="data/demand_data/use_es_capita.xlsx",
+    output:
+        utility_demand_path="data/demand_data/ERST_mapped_demand_centroids.geojson"
+    script:
+        "scripts/preprocess_demand_data.py"
+
 
 rule test_modify_prenetwork:
     input:

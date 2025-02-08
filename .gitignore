@@ -4,3 +4,4 @@ plots/__pycache__/
 gurobi.log
 plots/results/
 *.log
+logs/

@@ -15,6 +15,12 @@ retrieve_from_gdrive:
   base_network: true # if true, bypasses base_network rule
   renewable_profiles: true # if true, bypasses build_renewable_profiles rule
 
+demand_distribution:
+  base_demand_year: 2021
+  holes_area_threshold: 100
+  nprocesses: 4
+  plotting: true
+
 custom_databundles:
   bundle_cutouts_USA:
     countries: [US]

@@ -366,6 +366,16 @@ rule preprocess_demand_data:
         "scripts/preprocess_demand_data.py"
 
 
+rule retrieve_demand_data:
+    output:
+        "data/demand_data/table_10_EIA_utility_sales.xlsx",
+        "data/demand_data/Electric_Retail_Service_Territories.geojson",
+        "data/demand_data/gadm41_USA_1.json",
+        "data/demand_data/use_es_capita.xlsx",
+    script:
+        "scripts/retrieve_demand_data.py"
+
+
 rule test_modify_prenetwork:
     input:
         prenetwork=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",

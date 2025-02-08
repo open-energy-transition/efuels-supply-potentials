@@ -80,3 +80,11 @@ custom_databundles:
     urls:
       alternative_clustering: https://drive.google.com/file/d/1Bt8NVxhe2-nrw2ZTg35sgUIQ-R8A57DN/view?usp=sharing
       voronoi_clustering: https://drive.google.com/file/d/1SEvIoLz0x23jNNeMuDSOQwHvuwtvqIfd/view?usp=sharing
+
+  # demand data used for demand redistribution
+  bundle_demand_data_USA:
+    countries: [US]
+    category: data_demand_data
+    destination: "data"
+    urls:
+      gdrive: https://drive.google.com/file/d/1Ku44SEqx0NZlxceT14QLtH8lO5GnzuuM/view?usp=sharing

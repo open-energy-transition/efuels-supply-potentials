@@ -16,6 +16,7 @@ retrieve_from_gdrive:
   renewable_profiles: true # if true, bypasses build_renewable_profiles rule
 
 demand_distribution:
+  enable: true
   base_demand_year: 2021
   holes_area_threshold: 100
   nprocesses: 4

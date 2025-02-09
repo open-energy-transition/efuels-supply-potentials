@@ -353,27 +353,33 @@ if config["countries"] == ["US"]:
             "scripts/retrieve_ssp2.py"
 
 
-rule preprocess_demand_data:
-    input:
-        demand_utility_path="data/demand_data/table_10_EIA_utility_sales.xlsx",
-        country_gadm_path=PYPSA_EARTH_DIR + "resources/" + RDIR + "shapes/country_shapes.geojson",
-        erst_path="data/demand_data/Electric_Retail_Service_Territories.geojson",
-        gadm_usa_path="data/demand_data/gadm41_USA_1.json",
-        eia_per_capita_path="data/demand_data/use_es_capita.xlsx",
-    output:
-        utility_demand_path="data/demand_data/ERST_mapped_demand_centroids.geojson"
-    script:
-        "scripts/preprocess_demand_data.py"
+if config["demand_distribution"]["enable"]:
+    rule preprocess_demand_data:
+        input:
+            demand_utility_path="data/demand_data/table_10_EIA_utility_sales.xlsx",
+            country_gadm_path=PYPSA_EARTH_DIR + "resources/" + RDIR + "shapes/country_shapes.geojson",
+            erst_path="data/demand_data/Electric_Retail_Service_Territories.geojson",
+            gadm_usa_path="data/demand_data/gadm41_USA_1.json",
+            eia_per_capita_path="data/demand_data/use_es_capita.xlsx",
+        output:
+            utility_demand_path="data/demand_data/ERST_mapped_demand_centroids.geojson"
+        script:
+            "scripts/preprocess_demand_data.py"
 
 
-rule retrieve_demand_data:
-    output:
-        "data/demand_data/table_10_EIA_utility_sales.xlsx",
-        "data/demand_data/Electric_Retail_Service_Territories.geojson",
-        "data/demand_data/gadm41_USA_1.json",
-        "data/demand_data/use_es_capita.xlsx",
-    script:
-        "scripts/retrieve_demand_data.py"
+    rule retrieve_demand_data:
+        output:
+            "data/demand_data/table_10_EIA_utility_sales.xlsx",
+            "data/demand_data/Electric_Retail_Service_Territories.geojson",
+            "data/demand_data/gadm41_USA_1.json",
+            "data/demand_data/use_es_capita.xlsx",
+        script:
+            "scripts/retrieve_demand_data.py"
+
+
+    # use rule prepare_network from pypsa_earth with:
+    #     output:
+    #         **{k: v[:-3] + "_pre_demand_dist.nc" for k, v in rules.prepare_network.output.items()},
 
 
 rule test_modify_prenetwork:

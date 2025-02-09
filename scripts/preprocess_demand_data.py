@@ -5,22 +5,16 @@
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
-import random
 import datetime as dt
 import geopandas as gpd
 import pandas as pd
 import numpy as np
 from shapely.validation import make_valid
 import matplotlib.pyplot as plt
-from pathlib import Path
 from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            configure_logging
+                            configure_logging, get_colors
 
 logger = create_logger(__name__)
-
-
-def get_colors(n):
-    return ["#%06x" % random.randint(0, 0xFFFFFF) for _ in range(n)]
 
 
 def parse_inputs(demand_year):
@@ -181,7 +175,7 @@ def map_demands_utilitywise(
     logger.info(f"Total sales (TWh) as in EIA sales data: {total_demand}")
 
     # Add system paths
-    pypsa_earth_scripts_path = Path("submodules", "pypsa-earth", "scripts")
+    pypsa_earth_scripts_path = "submodules/pypsa-earth/scripts"
     sys.path.insert(0, str(pypsa_earth_scripts_path))
     import build_shapes
 

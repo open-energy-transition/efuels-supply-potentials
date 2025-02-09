@@ -8,6 +8,7 @@ from pathlib import Path
 import yaml
 import pypsa
 import logging
+import random
 import snakemake as sm
 from pypsa.descriptors import Dict
 from snakemake.script import Snakemake
@@ -357,3 +358,7 @@ def renewable_profiles_outputs():
         "renewable_profiles/profile_" + x + ".nc" for x in carriers
     ]
     return outputs
+
+
+def get_colors(n):
+    return ["#%06x" % random.randint(0, 0xFFFFFF) for _ in range(n)]

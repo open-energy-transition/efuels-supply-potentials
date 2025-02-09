@@ -375,13 +375,30 @@ if config["demand_distribution"]["enable"]:
             "data/demand_data/gadm41_USA_1.json",
             "data/demand_data/use_es_capita.xlsx",
             "data/demand_data/HS861_2010-.xlsx",
+            "data/demand_data/Balancing_Authorities.geojson",
+            "data/demand_data/EIA930_2021_Jan_Jun_opt.csv",
+            "data/demand_data/EIA930_2021_Jul_Dec_opt.csv",
         script:
             "scripts/retrieve_demand_data.py"
 
 
-    # use rule prepare_network from pypsa_earth with:
-    #     output:
-    #         **{k: v[:-3] + "_pre_demand_dist.nc" for k, v in rules.prepare_network.output.items()},
+    use rule prepare_network from pypsa_earth with:
+        output:
+            PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_predemand.nc",
+
+
+    rule build_demand_profiles_from_eia:
+        input:
+            BA_demand_path1="data/demand_data/EIA930_2021_Jan_Jun_opt.csv",
+            BA_demand_path2="data/demand_data/EIA930_2021_Jul_Dec_opt.csv",
+            BA_shape_path="data/demand_data/Balancing_Authorities.geojson",
+            utility_demand_path="data/demand_data/ERST_mapped_demand_centroids.geojson",
+            pypsa_prenetwork_path=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_predemand.nc",
+        output:
+            demand_profile_path=PYPSA_EARTH_DIR + "resources/" + RDIR + "demand_profiles_eia_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+            pypsa_network_path=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
+        script:
+            "scripts/build_demand_profiles_from_eia.py"
 
 
 rule test_modify_prenetwork:

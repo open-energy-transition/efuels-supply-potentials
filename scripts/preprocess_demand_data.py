@@ -11,7 +11,7 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 from shapely.validation import make_valid
-import plotly.express as px
+import matplotlib.pyplot as plt
 from pathlib import Path
 from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
                             configure_logging
@@ -322,13 +322,24 @@ def map_demands_utilitywise(
         df_final, df_gadm_usa, df_per_capita_cons, "Final", "State"
     )
 
-    fig = px.bar(df_error, barmode="group")
-    fig.update_layout(yaxis_title="Error %", xaxis_title="State")
-    fig.write_image(f"{plot_path}/unmet_demand_error_stages.png")
+    if plotting:
+        # Plot unmet demand error for each stage
+        fig, ax = plt.subplots(figsize=(10, 6))
+        df_error.plot.bar(ax=ax)
+        ax.set_ylabel("Error (%)")
+        ax.set_xlabel("State")
+        ax.set_title("Unmet Demand Error Stages by State")
+        fig.tight_layout()
+        fig.savefig(f"{plot_path}/unmet_demand_error_stages.png", dpi=300)
 
-    fig = px.bar(df_per_capita_cons, barmode="group")
-    fig.update_layout(yaxis_title="Per capita consumption (kWh)", xaxis_title="State")
-    fig.write_image(f"{plot_path}/per_capita_consumption_stages.png")
+        # Plot per capita consumption for each stage
+        fig, ax = plt.subplots(figsize=(10, 6))
+        df_per_capita_cons.plot.bar(ax=ax)
+        ax.set_ylabel("Per capita consumption (kWh)")
+        ax.set_xlabel("State")
+        ax.set_title("Per Capita Consumption Stages by State")
+        fig.tight_layout()
+        fig.savefig(f"{plot_path}/per_capita_consumption_stages.png", dpi=300)
 
     # Per-capita consumption
     df_per_capita = pd.DataFrame()
@@ -340,9 +351,15 @@ def map_demands_utilitywise(
     df_per_capita = df_per_capita.join(df_eia_per_capita)
     df_per_capita.rename(columns={2021: "EIA"}, inplace=True)
 
-    fig = px.bar(df_per_capita, barmode="group")
-    fig.update_layout(yaxis_title="Per capita consumption (kWh)", xaxis_title="State")
-    fig.write_image(f"{plot_path}/per_capita_consumption.png")
+    if plotting:
+        # Plot per-capita consumption
+        fig, ax = plt.subplots(figsize=(10, 6))
+        df_per_capita.plot.bar(ax=ax)
+        ax.set_ylabel("Per capita consumption (kWh)")
+        ax.set_xlabel("State")
+        ax.set_title("Per Capita Consumption by State")
+        fig.tight_layout()
+        fig.savefig(f"{plot_path}/per_capita_consumption.png", dpi=300)
 
     df_per_capita["error"] = (
         (df_per_capita["Calculated"] - df_per_capita["EIA"])
@@ -351,9 +368,15 @@ def map_demands_utilitywise(
     )
     df_per_capita["error"] = df_per_capita["error"].abs()
 
-    fig = px.bar(df_per_capita, y="error")
-    fig.update_layout(yaxis_title="Error %", xaxis_title="State")
-    fig.write_image(f"{plot_path}/per_capita_error.png")
+    if plotting:
+        # Plot per-capita consumption
+        fig, ax = plt.subplots(figsize=(10, 6))
+        df_per_capita["error"].plot.bar(ax=ax)
+        ax.set_ylabel("Error (%)")
+        ax.set_xlabel("State")
+        ax.set_title("Per Capita Error by State")
+        fig.tight_layout()
+        fig.savefig(f"{plot_path}/per_capita_error.png", dpi=300)
 
     geo_df_final = gpd.GeoDataFrame(df_final, geometry="geometry")
     geo_df_final["Sales (TWh)"] = geo_df_final["Sales (Megawatthours)"] / 1e6

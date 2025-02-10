@@ -188,6 +188,7 @@ rule process_airport_data:
         fuel_data="data/airport_data/fuel_jf.csv",
         airport_data="data/airport_data/airports.csv",
         passengers_data="data/airport_data/T100_Domestic_Market_and_Segment_Data_-3591723781169319541.csv",
+        aviation_demand="data/icct/aviation_demand.csv",
     output:
         statewise_output="plots/results/passengers_vs_consumption.csv",
         merged_data="plots/results/merged_airports.csv",

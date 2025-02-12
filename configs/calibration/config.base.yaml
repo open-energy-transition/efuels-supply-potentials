@@ -11,17 +11,23 @@ enable:
   download_osm_data: true  # If 'true', OpenStreetMap data will be downloaded for the above given countries
 
 run:
-  name: "US_2021" # use this to keep track of runs with different settings
-  sector_name: "US_2021"
+  name: "US_2023" # use this to keep track of runs with different settings
+  sector_name: "US_2023"
 
 scenario:
   simpl: ['']
   ll: ['copt']
   clusters: [10]
   opts: [Co2L-24H]
+  planning_horizons:
+  - 2020
+  sopts:
+  - "24H"
 
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes
+  simplify_network:
+    p_threshold_drop_isolated: 0.0
 
 electricity:
   co2limit: 1.4728e+9 # 0.8 * 1.841e+9
@@ -45,7 +51,7 @@ renewable:
       method: eia
 
 costs:
-  year: 2030
+  year: 2020
 
 custom_data:
   airports: true
@@ -59,6 +65,13 @@ sector:
     coal: coal
     lignite: lignite
     biomass: biomass
+
+  land_transport_fuel_cell_share:
+    AB_2020: 0
+  land_transport_electric_share:
+    AB_2020: 0
+  shipping_hydrogen_share:
+    AB_2020: 0
 
 solving:
   options:

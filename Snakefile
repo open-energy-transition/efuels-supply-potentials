@@ -371,6 +371,8 @@ if config["countries"] == ["US"]:
             energy_totals=PYPSA_EARTH_DIR + "resources/"
             + SECDIR
             + "energy_totals_{demand}_{planning_horizons}.csv",
+        script:
+            "scripts/modify_aviation_demand.py"
         
                      
 

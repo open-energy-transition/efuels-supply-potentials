@@ -15,6 +15,12 @@ retrieve_from_gdrive:
   base_network: true # if true, bypasses base_network rule
   renewable_profiles: true # if true, bypasses build_renewable_profiles rule
 
+# defining the aviation demand scenario
+aviation_demand_scenario:
+  country: US
+  year: 2023
+  scenario: central # low, central or high
+
 custom_databundles:
   bundle_cutouts_USA:
     countries: [US]
@@ -74,3 +80,4 @@ custom_databundles:
     urls:
       alternative_clustering: https://drive.google.com/file/d/1Bt8NVxhe2-nrw2ZTg35sgUIQ-R8A57DN/view?usp=sharing
       voronoi_clustering: https://drive.google.com/file/d/1SEvIoLz0x23jNNeMuDSOQwHvuwtvqIfd/view?usp=sharing
+

@@ -352,6 +352,26 @@ if config["countries"] == ["US"]:
             ssp2_dummy_output=temp("ssp2_dummy_output.log"),
         script:
             "scripts/retrieve_ssp2.py"
+
+if config["countries"] == ["US"]:
+
+    use rule prepare_energy_totals from pypsa_earth with:
+        output:
+            energy_totals=PYPSA_EARTH_DIR + "resources/"
+            + SECDIR
+            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv",
+
+    rule modify_aviation_demand:
+        input:
+            aviation_demand="data/icct/aviation_demand.csv",
+            energy_totals=PYPSA_EARTH_DIR + "resources/"
+            + SECDIR
+            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv",
+        output:
+            energy_totals=PYPSA_EARTH_DIR + "resources/"
+            + SECDIR
+            + "energy_totals_{demand}_{planning_horizons}.csv",
+        
                      
 
 rule test_modify_prenetwork:

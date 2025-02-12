@@ -102,7 +102,7 @@ def merge_airport_data(airports_df, passengers_df, aviation_df):
         # statewise fraction for each airports and the state fraction from total US demand
 
         state = row.iso_region
-        state_fraction = aviation_df.loc[state, "state_fraction"]
+        state_fraction = aviation_df.loc[state, "state_fraction"].iloc[0]
         fraction = state_fraction * row.statewise_fraction
         return fraction
 

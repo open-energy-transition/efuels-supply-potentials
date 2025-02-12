@@ -15,6 +15,22 @@ from scripts._helper import mock_snakemake, update_config_from_wildcards, create
 
 
 def parse_inputs():
+    """
+    Load all input data  
+    Parameters
+    ----------
+    Returns
+    -------
+    df_ba_demand: pandas dataframe
+        Balancing Authority demand profiles
+    gdf_ba_shape: geopandas dataframe
+        Balancing Authority shapes
+    df_utility_demand: geopandas dataframe
+        Output of preprocess_demand_data - demand mapped to utility level shapes and holes
+    pypsa_network: pypsa
+        network to obtain pypsa bus information
+    """
+
     df_ba_demand1 = pd.read_csv(snakemake.input.BA_demand_path1, index_col="period")
     df_ba_demand2 = pd.read_csv(snakemake.input.BA_demand_path2, index_col="period")
     df_ba_demand = df_ba_demand1._append(df_ba_demand2)
@@ -35,6 +51,24 @@ def parse_inputs():
 
 
 def build_demand_profiles(df_utility_demand, df_ba_demand, gdf_ba_shape, pypsa_network):
+    """
+    Build spatiotemporal demand profiles 
+    Parameters
+    ----------
+    df_utility_demand: geopandas dataframe
+        Output of preprocess_demand_data - demand mapped to utility level shapes and holes
+    df_ba_demand: pandas dataframe
+        Balancing Authority demand profiles
+    gdf_ba_shape: geopandas dataframe
+        Balancing Authority shapes
+    pypsa_network: pypsa
+        network to obtain pypsa bus information
+    Returns
+    -------
+    df_demand_bus_timeshifted: pandas dataframe
+        bus-wise demand profiles
+    """
+
     # Obtaining the centroids of the Utility demands
     df_utility_centroid = df_utility_demand.copy()
     df_utility_centroid.geometry = df_utility_centroid.geometry.centroid

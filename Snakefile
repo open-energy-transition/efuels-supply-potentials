@@ -382,23 +382,20 @@ if config["demand_distribution"]["enable"]:
             "scripts/retrieve_demand_data.py"
 
 
-    use rule prepare_network from pypsa_earth with:
-        output:
-            PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_predemand.nc",
-
-
     rule build_demand_profiles_from_eia:
         input:
             BA_demand_path1="data/demand_data/EIA930_2023_Jan_Jun_opt.csv",
             BA_demand_path2="data/demand_data/EIA930_2023_Jul_Dec_opt.csv",
             BA_shape_path="data/demand_data/Balancing_Authorities.geojson",
             utility_demand_path="data/demand_data/ERST_mapped_demand_centroids.geojson",
-            pypsa_prenetwork_path=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_predemand.nc",
+            base_network=PYPSA_EARTH_DIR + "networks/" + RDIR + "base.nc",
         output:
-            demand_profile_path=PYPSA_EARTH_DIR + "resources/" + RDIR + "demand_profiles_eia_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
-            pypsa_network_path=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
+            demand_profile_path=PYPSA_EARTH_DIR + "resources/" + RDIR + "demand_profiles.csv",
         script:
             "scripts/build_demand_profiles_from_eia.py"
+
+
+    ruleorder: build_demand_profiles_from_eia > build_demand_profiles
 
 
 rule test_modify_prenetwork:

@@ -146,7 +146,7 @@ def calc_percentage_unmet_demand_by_state(df_calc, df_ref, df_ref_additional, df
 
 
 def calc_per_capita_kWh_state(df_calc, df_gadm, df_per_capita_cons, text, state_kwd):
-   """
+    """
     Calculate per capita statewise electrical demand at various stages of the algorithm
     Parameters
     ----------
@@ -165,6 +165,7 @@ def calc_per_capita_kWh_state(df_calc, df_gadm, df_per_capita_cons, text, state_
     df_per_capita_cons: pandas dataframe
         Per capita electricity demand at different stages of algorithm
     """
+
     df_calc_per_capita = (
         df_calc.groupby(state_kwd)["Sales (Megawatthours)"].sum()
         * 1000

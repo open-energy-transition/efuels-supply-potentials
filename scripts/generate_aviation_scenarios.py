@@ -116,15 +116,18 @@ if __name__ == "__main__":
     aviation_data_path = snakemake.input.aviation_demand_data
     
     # Read the aviation demand data from the Excel file
+    logger.info("Reading aviation demand data from Excel file.")
     aviation_demand = pd.read_excel(
         aviation_data_path, sheet_name="Aviation Demand Projection", 
         header=1, index_col=0, skiprows=0)
     
-    # Preprocess the data
+    logger.info("Preprocessing the aviation demand data.")
     data = preprocess_df(aviation_demand)
-    # Compute the scenarios
+    
+    logger.info("Computing the scenarios based on the preprocessed data.")
     final_scenario_df = compute_scenario(data)
 
-    # Save the final scenario DataFrame to a CSV file
+    logger.info("Saving the final scenario DataFrame to a CSV file.")
     final_scenario_df.to_csv(snakemake.output.scenario_df, 
                              index=True, index_label="state")
+    logger.info("Process completed successfully.")

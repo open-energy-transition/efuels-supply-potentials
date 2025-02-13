@@ -15,9 +15,26 @@ from scripts._helper import mock_snakemake, update_config_from_wildcards, create
 
 
 def parse_inputs():
+    """
+    Load all input data  
+    Parameters
+    ----------
+    Returns
+    -------
+    df_ba_demand: pandas dataframe
+        Balancing Authority demand profiles
+    gdf_ba_shape: geopandas dataframe
+        Balancing Authority shapes
+    df_utility_demand: geopandas dataframe
+        Output of preprocess_demand_data - demand mapped to utility level shapes and holes
+    pypsa_network: pypsa
+        network to obtain pypsa bus information
+    """
+
     df_ba_demand1 = pd.read_csv(snakemake.input.BA_demand_path1, index_col="period")
     df_ba_demand2 = pd.read_csv(snakemake.input.BA_demand_path2, index_col="period")
     df_ba_demand = df_ba_demand1._append(df_ba_demand2)
+    df_ba_demand = df_ba_demand[~df_ba_demand.index.duplicated(keep="first")]
     df_ba_demand = df_ba_demand.replace(0, np.nan)
     df_ba_demand = df_ba_demand.dropna(axis=1)
 
@@ -28,12 +45,30 @@ def parse_inputs():
     df_utility_demand.rename(columns={"index_right": "index_right_1"}, inplace=True)
     df_utility_demand = df_utility_demand.to_crs(3857)
 
-    pypsa_network = pypsa.Network(snakemake.input.pypsa_prenetwork_path)
+    pypsa_network = pypsa.Network(snakemake.input.base_network)
 
     return df_ba_demand, gdf_ba_shape, df_utility_demand, pypsa_network
 
 
 def build_demand_profiles(df_utility_demand, df_ba_demand, gdf_ba_shape, pypsa_network):
+    """
+    Build spatiotemporal demand profiles 
+    Parameters
+    ----------
+    df_utility_demand: geopandas dataframe
+        Output of preprocess_demand_data - demand mapped to utility level shapes and holes
+    df_ba_demand: pandas dataframe
+        Balancing Authority demand profiles
+    gdf_ba_shape: geopandas dataframe
+        Balancing Authority shapes
+    pypsa_network: pypsa
+        network to obtain pypsa bus information
+    Returns
+    -------
+    df_demand_bus_timeshifted: pandas dataframe
+        bus-wise demand profiles
+    """
+
     # Obtaining the centroids of the Utility demands
     df_utility_centroid = df_utility_demand.copy()
     df_utility_centroid.geometry = df_utility_centroid.geometry.centroid
@@ -89,18 +124,10 @@ def build_demand_profiles(df_utility_demand, df_ba_demand, gdf_ba_shape, pypsa_n
     # The EIA profiles start at 6:00:00 hours on 1/1 instead of 00:00:00 hours - rolling over the time series to start at 00:00 hours
     df_demand_bus_timeshifted = df_demand_bus[-9:-3]._append(df_demand_bus[:-9])
     df_demand_bus_timeshifted = df_demand_bus_timeshifted[:8760]
+    df_demand_bus_timeshifted.index = pypsa_network.snapshots
+    df_demand_bus_timeshifted.index.name = "time"
 
     return df_demand_bus_timeshifted
-
-def modify_pypsa_network_demand(df_demand_profiles, pypsa_network, pypsa_network_path):
-    time_resolution = (8760 / len(pypsa_network.snapshots)) 
-    # Groupby time resolution and then convert from kWh -> kW
-    df_demand_profiles.index = np.arange(0,len(df_demand_profiles.index))
-    df_demand_profiles_agg = df_demand_profiles.groupby(df_demand_profiles.index // int(time_resolution)).sum() / time_resolution
-    df_demand_profiles_agg = df_demand_profiles_agg[0:len(pypsa_network.snapshots)]
-    df_demand_profiles_agg.index = pypsa_network.snapshots
-    pypsa_network.loads_t.p_set = df_demand_profiles_agg
-    pypsa_network.export_to_netcdf(pypsa_network_path)
 
 
 if __name__ == "__main__":
@@ -124,5 +151,3 @@ if __name__ == "__main__":
     )
 
     df_demand_profiles.to_csv(snakemake.output.demand_profile_path)
-
-    modify_pypsa_network_demand(df_demand_profiles, pypsa_network, snakemake.output.pypsa_network_path)

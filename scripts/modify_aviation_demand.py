@@ -20,7 +20,7 @@ if __name__ == "__main__":
             "modify_aviation_demand",
             demand="AB",
             planning_horizons="2030",
-            configfile="configs/calibration/config.base.yaml",
+            configfile="configs/calibration/config.base_AC.yaml",
         )
     # update config based on wildcards
     config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)

@@ -17,10 +17,10 @@ def create_df_scenario(scenario_df, lower_year, upper_year, lower_scenario, uppe
     base_df = scenario_df.copy()
     # Apply lower scenario growth rates
     for year in lower_year:
-        base_df[year] = base_df[year-1] * lower_scenario/100 + base_df[year-1]
+        base_df[year] = (base_df[year-1] * lower_scenario/100 + base_df[year-1]).round(4)
     # Apply upper scenario growth rates
     for year in upper_year:
-        base_df[year] = base_df[year-1] * upper_scenario/100 + base_df[year-1]
+        base_df[year] = (base_df[year-1] * upper_scenario/100 + base_df[year-1]).round(4)
     base_df["scenario"] = scenario_str
     return base_df
 
@@ -61,7 +61,7 @@ def preprocess_df(aviation_df):
 
     # Calculate US total fraction
     US_total_fraction = aviation_df["state_fraction"].iloc[1:].sum()
-    aviation_df.loc["US", "state_fraction"] = US_total_fraction
+    aviation_df.loc["US", "state_fraction"] = US_total_fraction.round(4)
 
     return aviation_df
 
@@ -107,7 +107,7 @@ def compute_scenario(aviation_df):
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
-            "process_airport_data",
+            "generate_aviation_scenario",
             configfile="configs/calibration/config.base_AC.yaml",
         )
     

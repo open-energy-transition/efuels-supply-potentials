@@ -61,18 +61,18 @@ def preprocess_df(aviation_df):
 
     # Calculate US total fraction
     US_total_fraction = aviation_df["state_fraction"].iloc[1:].sum()
-    aviation_df.loc["US", "state_fraction"] = US_total_fraction.round(4)
+    aviation_df.loc["US", "state_fraction"] = round(US_total_fraction, 4)
 
     return aviation_df
 
 # Function to define efficiency input values
 def efficiency_input():
-    low_scenario_lower_year_value = 1.42
-    low_scenario_upper_year_value = 1.36
-    central_scenario_lower_year_value = 1.25
-    central_scenario_upper_year_value = 0.56
-    high_scenario_lower_year_value = 1.09
-    high_scenario_upper_year_value = 0.08
+    low_scenario_lower_year_value = 1.4200
+    low_scenario_upper_year_value = 1.3600
+    central_scenario_lower_year_value = 1.2500
+    central_scenario_upper_year_value = 0.5600
+    high_scenario_lower_year_value = 1.0900
+    high_scenario_upper_year_value = 0.0800
 
     lower_year_value = [i for i in range(2024,2035)]
     upper_year_value = [i for i in range(2035,2041)]

@@ -51,10 +51,12 @@ if __name__ == "__main__":
 
     # Get the aviation demand for the specified scenario, country, and year
     aviation_demand = aviation_df[aviation_df.scenario == scenario].loc[country, (year)]
+    conversion_factor = 3.96e-2  # Convert from Million Gallon to TWh
+    aviation_demand_TWh = aviation_demand * conversion_factor
 
     # Update the energy totals with the new aviation demand
-    energy_total.loc[country, "total domestic aviation"] = aviation_demand * domestic_ratio
-    energy_total.loc[country, "total international aviation"] = aviation_demand * international_ratio
+    energy_total.loc[country, "total domestic aviation"] = aviation_demand_TWh * domestic_ratio
+    energy_total.loc[country, "total international aviation"] = aviation_demand_TWh * international_ratio
 
     # Save the updated energy totals back to the CSV file
     energy_total.to_csv(snakemake.output.energy_totals)

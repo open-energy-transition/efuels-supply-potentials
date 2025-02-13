@@ -203,7 +203,7 @@ rule process_airport_data:
 
 rule generate_aviation_scenario:
     input:
-        aviation_demand_data="data/icct/US Aviation Fuel Demand Projection_NP_0.1.xls,
+        aviation_demand_data="data/icct/US Aviation Fuel Demand Projection_NP_0.1.xls",
     output:
         scenario_df="data/icct/aviation_demand.csv",
     resources:

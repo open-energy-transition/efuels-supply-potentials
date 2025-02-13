@@ -1,6 +1,16 @@
+# SPDX-FileCopyrightText:  Open Energy Transition gGmbH
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 import pandas as pd
 import numpy as np
-import pypsa
+import logging
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
+from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger
+
+logger = create_logger(__name__)
 
 # Function to create a DataFrame for a specific scenario
 def create_df_scenario(scenario_df, lower_year, upper_year, lower_scenario, upper_scenario, scenario_str):
@@ -21,16 +31,20 @@ def preprocess_df(aviation_df):
     }
 
     statename_to_abbr = {
-        'Alabama': 'AL', 'Montana': 'MT', 'Alaska': 'AK', 'Nebraska': 'NE', 'Arizona': 'AZ', 'Nevada': 'NV',
-        'Arkansas': 'AR', 'New Hampshire': 'NH', 'California': 'CA', 'New Jersey': 'NJ', 'Colorado': 'CO',
-        'New Mexico': 'NM', 'Connecticut': 'CT', 'New York': 'NY', 'Delaware': 'DE', 'North Carolina': 'NC',
-        'Florida': 'FL', 'North Dakota': 'ND', 'Georgia': 'GA', 'Ohio': 'OH', 'Hawaii': 'HI',
-        'Oklahoma': 'OK', 'Idaho': 'ID', 'Oregon': 'OR', 'Illinois': 'IL', 'Dist. of Col.': 'DC',
-        'Pennsylvania': 'PA', 'Indiana': 'IN', 'Rhode Island': 'RI', 'Iowa': 'IA', 'South Carolina': 'SC',
-        'Kansas': 'KS', 'South Dakota': 'SD', 'Kentucky': 'KY', 'Tennessee': 'TN', 'Louisiana': 'LA',
-        'Texas': 'TX', 'Maine': 'ME', 'Utah': 'UT', 'Maryland': 'MD', 'Vermont': 'VT', 'Massachusetts': 'MA',
-        'Virginia': 'VA', 'Michigan': 'MI', 'Washington': 'WA', 'Minnesota': 'MN', 'West Virginia': 'WV',
-        'Mississippi': 'MS', 'Wisconsin': 'WI', 'Missouri': 'MO', 'Wyoming': 'WY', 'US Total': 'US',
+        'Alabama': 'AL', 'Montana': 'MT', 'Alaska': 'AK', 'Nebraska': 'NE', 
+        'Arizona': 'AZ', 'Nevada': 'NV', 'Arkansas': 'AR', 'New Hampshire': 'NH',
+        'California': 'CA', 'New Jersey': 'NJ', 'Colorado': 'CO', 'New Mexico': 'NM', 
+        'Connecticut': 'CT', 'New York': 'NY', 'Delaware': 'DE', 'North Carolina': 'NC',
+        'Florida': 'FL', 'North Dakota': 'ND', 'Georgia': 'GA', 'Ohio': 'OH', 
+        'Hawaii': 'HI', 'Oklahoma': 'OK', 'Idaho': 'ID', 'Oregon': 'OR', 
+        'Illinois': 'IL', 'Dist. of Col.': 'DC', 'Pennsylvania': 'PA', 
+        'Indiana': 'IN', 'Rhode Island': 'RI', 'Iowa': 'IA', 'South Carolina': 'SC',
+        'Kansas': 'KS', 'South Dakota': 'SD', 'Kentucky': 'KY', 'Tennessee': 'TN', 
+        'Louisiana': 'LA', 'Texas': 'TX', 'Maine': 'ME', 'Utah': 'UT', 'Maryland': 'MD', 
+        'Vermont': 'VT', 'Massachusetts': 'MA', 'Virginia': 'VA', 'Michigan': 'MI', 
+        'Washington': 'WA', 'Minnesota': 'MN', 'West Virginia': 'WV', 
+        'Mississippi': 'MS', 'Wisconsin': 'WI', 'Missouri': 'MO', 'Wyoming': 'WY',
+        'US Total': 'US',
     }
 
     # Rename columns
@@ -91,11 +105,19 @@ def compute_scenario(aviation_df):
     return final_scenario_df
 
 if __name__ == "__main__":
-    excel_path = "../US Aviation Fuel Demand Projection_NP_0.1.xls"
+    if "snakemake" not in globals():
+        snakemake = mock_snakemake(
+            "process_airport_data",
+            configfile="configs/calibration/config.base_AC.yaml",
+        )
+    
+    #  update config based on wildcards
+    config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
+    aviation_data_path = snakemake.input.aviation_demand_data
     
     # Read the aviation demand data from the Excel file
     aviation_demand = pd.read_excel(
-        excel_path, sheet_name="Aviation Demand Projection", 
+        aviation_data_path, sheet_name="Aviation Demand Projection", 
         header=1, index_col=0, skiprows=0)
     
     # Preprocess the data
@@ -104,4 +126,5 @@ if __name__ == "__main__":
     final_scenario_df = compute_scenario(data)
 
     # Save the final scenario DataFrame to a CSV file
-    final_scenario_df.to_csv("data/icct/aviation_demand.csv", index=True, index_label="state")
+    final_scenario_df.to_csv(snakemake.output.scenario_df, 
+                             index=True, index_label="state")

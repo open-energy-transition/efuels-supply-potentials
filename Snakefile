@@ -201,6 +201,16 @@ rule process_airport_data:
     script:
         "plots/airport_data_postprocessing.py"
 
+rule generate_aviation_scenario:
+    input:
+        aviation_demand_data="data/icct/US Aviation Fuel Demand Projection_NP_0.1.xls,
+    output:
+        scenario_df="data/icct/aviation_demand.csv",
+    resources:
+        mem_mb=3000,
+    script:
+        "scripts/generate_aviation_scenarios.py"
+
 
 if config["custom_data"]["airports"]:
     ruleorder: process_airport_data > prepare_airports

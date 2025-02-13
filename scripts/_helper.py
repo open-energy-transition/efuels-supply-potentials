@@ -225,7 +225,7 @@ def configure_logging(snakemake, skip_handlers=False):
     if skip_handlers is False:
         logs_dir = Path(__file__).parent.joinpath("..", "logs")
         logs_dir.mkdir(parents=True, exist_ok=True)  # Ensure logs directory
-        
+
         fallback_path = logs_dir.joinpath(f"{snakemake.rule}.log")
         logfile = snakemake.log.get(
             "python", snakemake.log[0] if snakemake.log else fallback_path

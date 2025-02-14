@@ -17,10 +17,10 @@ def create_df_scenario(scenario_df, lower_year, upper_year, lower_scenario, uppe
     base_df = scenario_df.copy()
     # Apply lower scenario growth rates
     for year in lower_year:
-        base_df[year] = (base_df[year-1] * lower_scenario/100 + base_df[year-1]).round(4)
+        base_df[year] = (base_df[year-1] * lower_scenario/100 + base_df[year-1])
     # Apply upper scenario growth rates
     for year in upper_year:
-        base_df[year] = (base_df[year-1] * upper_scenario/100 + base_df[year-1]).round(4)
+        base_df[year] = (base_df[year-1] * upper_scenario/100 + base_df[year-1])
     base_df["scenario"] = scenario_str
     return base_df
 
@@ -67,12 +67,12 @@ def preprocess_df(aviation_df):
 
 # Function to define efficiency input values
 def efficiency_input():
-    low_scenario_lower_year_value = 1.4200
-    low_scenario_upper_year_value = 1.3600
-    central_scenario_lower_year_value = 1.2500
-    central_scenario_upper_year_value = 0.5600
-    high_scenario_lower_year_value = 1.0900
-    high_scenario_upper_year_value = 0.0800
+    low_scenario_lower_year_value = 1.4216
+    low_scenario_upper_year_value = 1.3565
+    central_scenario_lower_year_value = 1.2541
+    central_scenario_upper_year_value = 0.5566
+    high_scenario_lower_year_value = 1.0866
+    high_scenario_upper_year_value = 0.0822
 
     lower_year_value = [i for i in range(2024,2035)]
     upper_year_value = [i for i in range(2035,2041)]

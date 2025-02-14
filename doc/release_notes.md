@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Integrated **generate aviation scenario** and **rescale fraction in airports dataset by state demand** into the workflow: [PR #35](https://github.com/open-energy-transition/efuels-supply-potentials/pull/35)
+
 * Enabled **custom data moving** within workflow (`custom_powerplants.csv` and `NorthAmerica.csv`): [PR #21](https://github.com/open-energy-transition/efuels-supply-potentials/pull/21)
 
 * Enabled **retrieving precomputed output** of power model's rules (e.g. `download_osm_data`, `clean_osm_data`, `build_shapes`, `build_osm_network`, `base_network`, and `build_renewable_profiles`) within the workflow: [PR #20](https://github.com/open-energy-transition/efuels-supply-potentials/pull/20)

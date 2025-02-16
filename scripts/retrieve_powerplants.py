@@ -8,7 +8,8 @@ sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
 import shutil
 import warnings
 warnings.filterwarnings("ignore")
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger
+from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
+                            configure_logging
 
 
 logger = create_logger(__name__)
@@ -20,6 +21,9 @@ if __name__ == "__main__":
             "retrieve_custom_powerplants",
             configfile="configs/calibration/config.base_AC.yaml",
         )
+
+    configure_logging(snakemake)
+
     # update config based on wildcards
     config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
 

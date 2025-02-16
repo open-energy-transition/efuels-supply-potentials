@@ -3,4 +3,6 @@ plots/__pycache__/
 .snakemake/
 gurobi.log
 plots/results/
+plots/demand_modelling/
 *.log
+logs/

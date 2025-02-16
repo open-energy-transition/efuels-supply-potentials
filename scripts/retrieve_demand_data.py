@@ -17,8 +17,8 @@ logger = create_logger(__name__)
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
-            "retrieve_osm_raw",
-            configfile="configs/calibration/config.base_AC.yaml",
+            "retrieve_demand_data",
+            configfile="configs/calibration/config.base.yaml",
         )
 
     configure_logging(snakemake)
@@ -26,13 +26,13 @@ if __name__ == "__main__":
     # update config based on wildcards
     config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
 
-    # load osm raw configuration
-    config_osm_raw = config["custom_databundles"]["bundle_osm_raw_USA"]
+    # load demand data configuration
+    config_demand_data = config["custom_databundles"]["bundle_demand_data_USA"]
 
-    # destination for osm/raw
-    destination = os.path.join(PYPSA_EARTH_DIR, snakemake.params.destination, "osm")
+    # destination for demand data
+    destination = "data"
 
-    # download osm/raw
-    downloaded = download_and_unzip_gdrive(config_osm_raw,
+    # download demand data
+    downloaded = download_and_unzip_gdrive(config_demand_data,
                                            destination=destination,
                                            logger=logger)

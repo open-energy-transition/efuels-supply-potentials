@@ -363,6 +363,7 @@ if config["countries"] == ["US"]:
         script:
             "scripts/retrieve_ssp2.py"
 
+            
 if config["countries"] == ["US"]:
 
     use rule prepare_energy_totals from pypsa_earth with:
@@ -384,7 +385,51 @@ if config["countries"] == ["US"]:
         script:
             "scripts/modify_aviation_demand.py"
         
-                     
+
+if config["demand_distribution"]["enable"]:
+    rule preprocess_demand_data:
+        input:
+            demand_utility_path="data/demand_data/table_10_EIA_utility_sales.xlsx",
+            country_gadm_path=PYPSA_EARTH_DIR + "resources/" + RDIR + "shapes/country_shapes.geojson",
+            erst_path="data/demand_data/Electric_Retail_Service_Territories.geojson",
+            gadm_usa_path="data/demand_data/gadm41_USA_1.json",
+            eia_per_capita_path="data/demand_data/use_es_capita.xlsx",
+            additional_demand_path="data/demand_data/HS861_2010-.xlsx",
+        output:
+            utility_demand_path="data/demand_data/ERST_mapped_demand_centroids.geojson"
+        script:
+            "scripts/preprocess_demand_data.py"
+
+
+    rule retrieve_demand_data:
+        output:
+            "data/demand_data/table_10_EIA_utility_sales.xlsx",
+            "data/demand_data/Electric_Retail_Service_Territories.geojson",
+            "data/demand_data/gadm41_USA_1.json",
+            "data/demand_data/use_es_capita.xlsx",
+            "data/demand_data/HS861_2010-.xlsx",
+            "data/demand_data/Balancing_Authorities.geojson",
+            "data/demand_data/EIA930_2023_Jan_Jun_opt.csv",
+            "data/demand_data/EIA930_2023_Jul_Dec_opt.csv",
+        script:
+            "scripts/retrieve_demand_data.py"
+
+
+    rule build_demand_profiles_from_eia:
+        input:
+            BA_demand_path1="data/demand_data/EIA930_2023_Jan_Jun_opt.csv",
+            BA_demand_path2="data/demand_data/EIA930_2023_Jul_Dec_opt.csv",
+            BA_shape_path="data/demand_data/Balancing_Authorities.geojson",
+            utility_demand_path="data/demand_data/ERST_mapped_demand_centroids.geojson",
+            base_network=PYPSA_EARTH_DIR + "networks/" + RDIR + "base.nc",
+        output:
+            demand_profile_path=PYPSA_EARTH_DIR + "resources/" + RDIR + "demand_profiles.csv",
+        script:
+            "scripts/build_demand_profiles_from_eia.py"
+
+
+    ruleorder: build_demand_profiles_from_eia > build_demand_profiles
+      
 
 rule test_modify_prenetwork:
     input:

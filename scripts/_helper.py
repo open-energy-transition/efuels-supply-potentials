@@ -8,6 +8,7 @@ from pathlib import Path
 import yaml
 import pypsa
 import logging
+import random
 import snakemake as sm
 from pypsa.descriptors import Dict
 from snakemake.script import Snakemake
@@ -215,6 +216,41 @@ def create_logger(logger_name, level=logging.INFO):
     return logger_instance
 
 
+def configure_logging(snakemake, skip_handlers=False):
+    import logging
+
+    kwargs = snakemake.config.get("logging", dict()).copy()
+    kwargs.setdefault("level", "INFO")
+
+    if skip_handlers is False:
+        logs_dir = Path(__file__).parent.joinpath("..", "logs")
+        logs_dir.mkdir(parents=True, exist_ok=True)  # Ensure logs directory
+
+        fallback_path = logs_dir.joinpath(f"{snakemake.rule}.log")
+        logfile = snakemake.log.get(
+            "python", snakemake.log[0] if snakemake.log else fallback_path
+        )
+        formatter = logging.Formatter('%(levelname)s - %(message)s')
+
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+
+        file_handler = logging.FileHandler(logfile)
+        file_handler.setFormatter(formatter)
+
+        kwargs.update(
+            {
+                "handlers": [
+                    # Prefer the "python" log, otherwise take the first log for each
+                    # Snakemake rule
+                    file_handler,
+                    stream_handler,
+                ]
+            }
+        )
+    logging.basicConfig(**kwargs, force=True)
+
+
 def download_and_unzip_gdrive(config, destination, logger, disable_progress=False, url=None):
     """
         Downloads and unzips data from custom bundle config
@@ -323,3 +359,7 @@ def renewable_profiles_outputs():
         "renewable_profiles/profile_" + x + ".nc" for x in carriers
     ]
     return outputs
+
+
+def get_colors(n):
+    return ["#%06x" % random.randint(0, 0xFFFFFF) for _ in range(n)]

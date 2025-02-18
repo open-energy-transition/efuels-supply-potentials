@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Integrated **generate aviation scenario** and **rescale fraction in airports dataset by state demand** into the workflow: [PR #35](https://github.com/open-energy-transition/efuels-supply-potentials/pull/35)
+
 * Integrated **demand redistribution** based on utility and balancing authority level demand [PR #34](https://github.com/open-energy-transition/efuels-supply-potentials/pull/34)
 
 * Updated **custom_powerplants.csv** data with new entries for coal and ror from EIA [PR #29](https://github.com/open-energy-transition/efuels-supply-potentials/pull/29)

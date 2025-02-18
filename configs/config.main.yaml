@@ -15,6 +15,12 @@ retrieve_from_gdrive:
   base_network: true # if true, bypasses base_network rule
   renewable_profiles: true # if true, bypasses build_renewable_profiles rule
 
+# defining the aviation demand scenario
+aviation_demand_scenario:
+  country: US
+  year: 2023
+  scenario: central # low, central or high
+
 demand_distribution:
   enable: true
   base_demand_year: 2023
@@ -89,3 +95,4 @@ custom_databundles:
     destination: "data"
     urls:
       gdrive: https://drive.google.com/file/d/15URN8vooJHqfAUEZjBGXoBuk5A0jPM7H/view?usp=sharing
+

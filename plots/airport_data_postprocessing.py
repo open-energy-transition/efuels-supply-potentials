@@ -85,7 +85,27 @@ def get_percentage_information(final_data):
 
     return final_data
 
-def merge_airport_data(airports_df, passengers_df):
+
+def merge_airport_data(airports_df, passengers_df, aviation_df):
+
+    def get_statewise_fraction(row):
+        # Calculate fraction for each airport based on the total passenger 
+        # for each corresponding state
+
+        state = row.iso_region
+        state_passenger_total = statewise_passengers.loc[state, "passengers"]
+        state_wise_fraction = row.passengers / state_passenger_total
+        return state_wise_fraction
+    
+    def get_fraction(row):
+        # Calculate the fraction of passengers for each airport based on 
+        # statewise fraction for each airports and the state fraction from total US demand
+
+        state = row.iso_region
+        state_fraction = aviation_df.loc[state, "state_fraction"].iloc[0]
+        fraction = state_fraction * row.statewise_fraction
+        return fraction
+
     # Merge the airports and passengers data
     merged_data = pd.merge(
         airports_df,
@@ -95,11 +115,12 @@ def merge_airport_data(airports_df, passengers_df):
         how='inner',
     )
 
-    passengers_total = merged_data["passengers"].sum()
-    merged_data["fraction"] = merged_data["passengers"] / passengers_total
-
     merged_data = merged_data.drop(columns=["OBJECTID"])
-    merged_data["fraction"] = merged_data["fraction"].fillna(0)
+    statewise_passengers = merged_data.groupby(["iso_region"])[["passengers"]].sum()
+    merged_data["statewise_fraction"] = merged_data.apply(get_statewise_fraction, axis=1)
+    merged_data.loc[:,"fraction"] = merged_data.apply(get_fraction, axis=1)
+
+    # merged_data["fraction"] = merged_data["fraction"].fillna(0)
     merged_data.rename(columns={
         "iso_country": "country", 
         "longitude_deg": "x",
@@ -128,6 +149,7 @@ if __name__ == "__main__":
     airports = pd.read_csv(snakemake.input.airport_data)
     market_data = pd.read_csv(snakemake.input.passengers_data)
     fuel_data = pd.read_csv(snakemake.input.fuel_data)  # Load the fuel consumption data file
+    aviation_demand = pd.read_csv(snakemake.input.aviation_demand, index_col=0)  # Load the aviation demand data file    
 
     # Filter the airports file to keep only US airports
     airports_us = airports[airports["iso_country"] == "US"].copy()
@@ -135,7 +157,7 @@ if __name__ == "__main__":
     # Remove the 'US-' prefix from 'iso_region'
     airports_us['iso_region'] = airports_us['iso_region'].str.replace('US-', '', regex=False)
 
-    merge_airport_data(airports_us, market_data)
+    merge_airport_data(airports_us, market_data, aviation_demand)
 
     # Merge `market_data` with `airports_us` to get the ISO region for each airport
     merged_check = pd.merge(

@@ -188,6 +188,7 @@ rule process_airport_data:
         fuel_data="data/airport_data/fuel_jf.csv",
         airport_data="data/airport_data/airports.csv",
         passengers_data="data/airport_data/T100_Domestic_Market_and_Segment_Data_-3591723781169319541.csv",
+        aviation_demand="data/icct/aviation_demand.csv",
     output:
         statewise_output="plots/results/passengers_vs_consumption.csv",
         merged_data="plots/results/merged_airports.csv",
@@ -199,6 +200,16 @@ rule process_airport_data:
         mem_mb=3000,
     script:
         "plots/airport_data_postprocessing.py"
+
+rule generate_aviation_scenario:
+    input:
+        aviation_demand_data="data/icct/US Aviation Fuel Demand Projection_NP_0.1.xls",
+    output:
+        scenario_df="data/icct/aviation_demand.csv",
+    resources:
+        mem_mb=3000,
+    script:
+        "scripts/generate_aviation_scenarios.py"
 
 
 if config["custom_data"]["airports"]:
@@ -352,6 +363,28 @@ if config["countries"] == ["US"]:
         script:
             "scripts/retrieve_ssp2.py"
 
+            
+if config["countries"] == ["US"]:
+
+    use rule prepare_energy_totals from pypsa_earth with:
+        output:
+            energy_totals=PYPSA_EARTH_DIR + "resources/"
+            + SECDIR
+            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv",
+
+    rule modify_aviation_demand:
+        input:
+            aviation_demand="data/icct/aviation_demand.csv",
+            energy_totals=PYPSA_EARTH_DIR + "resources/"
+            + SECDIR
+            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv",
+        output:
+            energy_totals=PYPSA_EARTH_DIR + "resources/"
+            + SECDIR
+            + "energy_totals_{demand}_{planning_horizons}.csv",
+        script:
+            "scripts/modify_aviation_demand.py"
+        
 
 if config["demand_distribution"]["enable"]:
     rule preprocess_demand_data:
@@ -396,7 +429,7 @@ if config["demand_distribution"]["enable"]:
 
 
     ruleorder: build_demand_profiles_from_eia > build_demand_profiles
-
+      
 
 rule test_modify_prenetwork:
     input:

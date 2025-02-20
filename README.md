@@ -54,8 +54,14 @@ snakemake -call statewise_validate_all --configfile configs/calibration/config.b
 |`validate_all`           |`config.base.yaml`, `config.base_AC.yaml`|Performs country-level validation comparing with EIA and Ember data|
 |`statewise_validate_all` |`config.base_AC.yaml`                    |Performs statewise validation comparing with EIA data|
 |`get_capacity_factors`   |Any base or scenario config file         |Estimates capacity factors for renewables|
-|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table| 
+|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand| 
 |`test_modify_prenetwork` |Any base or scenario config file         |Example rule that performs modiification of pre-network| 
+|`generate_aviation_scenario` |Any base or scenario config file         |Generates aviation demand csv file with different future scenario| 
+|`modify_aviation_demand` |Any base or scenario config file         |Switches aviation demand in energy_total to custom demand|
+|`preprocess_demand_data` |Any base or scenario config file         |Preprocess utlities data into geojson|
+|`build_demand_profiles_from_eia` |Any base or scenario config file         |Build custom demand data from eia and bypass build_demand_profiles|
+
+
 
 ### Retrieve rules
 |Rule name                |Config file                              |Description        |
@@ -69,5 +75,6 @@ snakemake -call statewise_validate_all --configfile configs/calibration/config.b
 |`retrieve_renewable_profiles`  |Any base or scenario config file         |Retrieves `resources/{RDIR}/renewable_profiles/` data from google drive and bypasses `build_renewable_profiles` rule|
 |`retrieve_custom_powerplants`  |Any base or scenario config file         |Copies `data/custom_powerplants.csv` to `submodules/pypsa-earth/data/` folder|
 |`retrieve_ssp2`          |Any base or scenario config file         |Copies `data/NorthAmerica.csv` to `submodules/pypsa-earth/data/ssp2-2.6/.` directory|
+|`retrieve_demand_data`          |Any base or scenario config file         |Retrieves demand data from google drive to `data/demand_data/*`|
 
 * `RDIR` - scenario folder

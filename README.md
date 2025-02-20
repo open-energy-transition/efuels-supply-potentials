@@ -20,6 +20,7 @@ Activate `pypsa-earth` environment:
 
     conda activate pypsa-earth
 
+* Note! At the moment, head of the PyPSA-Earth submodule points to latest stable commit before linopy merge (`83434a021`). Please, make sure the environment was build using on this commit.
 
 ## 2. Running scenarios
 

@@ -20,7 +20,7 @@ Activate `pypsa-earth` environment:
 
     conda activate pypsa-earth
 
-* Note! At the moment, head of the PyPSA-Earth submodule points to latest stable commit before linopy merge (`83434a021`). Please, make sure the environment was build using on this commit.
+* **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit before linopy merge (`83434a021`). Please, make sure the environment was build using on this commit.
 
 ## 2. Running scenarios
 
@@ -33,7 +33,7 @@ To run the power model for the base scenario of the U.S., navigate to the workin
 snakemake -call solve_all_networks --configfile configs/calibration/config.base.yaml
 ```
 
-* Note! All following snakemake commands needs to be executed in the working directory (`.../efuels-supply-potentials/`).
+* **Note!** All following snakemake commands needs to be executed in the working directory (`.../efuels-supply-potentials/`).
 
 To run the sector-coupled model of the base scenario, execute the command:
 ```bash
@@ -56,7 +56,8 @@ It is possible to run validation by specifying the output file with wildcards:
 snakemake -call plots/results/US_2023/demand_validation_s_10_ec_lcopt_Co2L-24H.png --configfile configs/calibration/config.base.yaml
 ```
 Validation results are stored in `plots/results/` directory under scenario run name (e.g. `US_2023`).
-### 2.2. State-wise validation
+
+### 2.3. State-wise validation
 To run state-wise validation, run:
 ```bash
 snakemake -call statewise_validate_all --configfile configs/calibration/config.base_AC.yaml

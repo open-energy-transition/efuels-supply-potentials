@@ -431,6 +431,28 @@ if config["demand_distribution"]["enable"]:
     ruleorder: build_demand_profiles_from_eia > build_demand_profiles
       
 
+if config["saf_mandate"]["enable"]:
+    rule add_saf_mandate:
+        input:
+            network=PYPSA_EARTH_DIR + "results/"
+            + SECDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}.nc",
+        output:
+            modified_network=PYPSA_EARTH_DIR + "results/"
+            + SECDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
+        script:
+            "scripts/add_saf_mandate.py"
+
+
+    use rule add_export from pypsa_earth with:
+        input:
+            **{k: v for k, v in rules.add_export.input.items() if k != "network"},
+            network=PYPSA_EARTH_DIR + "results/"
+            + SECDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
+
+
 rule test_modify_prenetwork:
     input:
         prenetwork=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",

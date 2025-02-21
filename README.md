@@ -20,12 +20,27 @@ Activate `pypsa-earth` environment:
 
     conda activate pypsa-earth
 
+* **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit before linopy merge (`83434a021`). Please, make sure the environment was build using on this commit.
 
-## 2. Running validation
+## 2. Running scenarios
 
-This project utilizes [`snakemake`](https://snakemake.readthedocs.io/en/stable/) to automate the execution of scripts, ensuring efficient and reproducible workflows. Configuration settings for *snakemake* are available in the `configs/config.main.yaml` file.
+This project utilizes [`snakemake`](https://snakemake.readthedocs.io/en/stable/) to automate the execution of scripts, ensuring efficient and reproducible workflows. Configuration settings for *snakemake* are available in the `configs/config.main.yaml` file as well as scenario-specific configuration files located in `configs/`.
 
-### 2.1. Country-level validation
+### 2.1. Running the base scenario
+
+To run the power model for the base scenario of the U.S., navigate to the working directory (`.../efuels-supply-potentials/`) and use the following command:
+```bash
+snakemake -call solve_all_networks --configfile configs/calibration/config.base.yaml
+```
+
+* **Note!** All following snakemake commands needs to be executed in the working directory (`.../efuels-supply-potentials/`).
+
+To run the sector-coupled model of the base scenario, execute the command:
+```bash
+snakemake -call solve_sector_networks --configfile configs/calibration/config.base.yaml
+```
+
+### 2.2. Country-level validation for the base scenario
 To run country-level validation of the U.S. for the base scenario, navigate to the working directory (`.../efuels-supply-potentials/`) and use the following command:
 ```bash
 snakemake -call validate_all --configfile configs/calibration/config.base.yaml
@@ -38,10 +53,11 @@ snakemake -call validate_all --configfile configs/calibration/config.base_AC.yam
 
 It is possible to run validation by specifying the output file with wildcards:
 ``` bash
-snakemake -call plots/results/US_2021/demand_validation_s_10_ec_lcopt_Co2L-24H.png --configfile configs/calibration/config.base.yaml
+snakemake -call plots/results/US_2023/demand_validation_s_10_ec_lcopt_Co2L-24H.png --configfile configs/calibration/config.base.yaml
 ```
-Validation results are stored in `plots/results/` directory under scenario run name (e.g. `US_2021`).
-### 2.2. State-wise validation
+Validation results are stored in `plots/results/` directory under scenario run name (e.g. `US_2023`).
+
+### 2.3. State-wise validation
 To run state-wise validation, run:
 ```bash
 snakemake -call statewise_validate_all --configfile configs/calibration/config.base_AC.yaml
@@ -54,8 +70,13 @@ snakemake -call statewise_validate_all --configfile configs/calibration/config.b
 |`validate_all`           |`config.base.yaml`, `config.base_AC.yaml`|Performs country-level validation comparing with EIA and Ember data|
 |`statewise_validate_all` |`config.base_AC.yaml`                    |Performs statewise validation comparing with EIA data|
 |`get_capacity_factors`   |Any base or scenario config file         |Estimates capacity factors for renewables|
-|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table| 
-|`test_modify_prenetwork` |Any base or scenario config file         |Example rule that performs modiification of pre-network| 
+|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand| 
+|`generate_aviation_scenario` |Any base or scenario config file         |Generates aviation demand csv file with different future scenario| 
+|`modify_aviation_demand` |Any base or scenario config file         |Switches aviation demand in energy_total to custom demand|
+|`preprocess_demand_data` |Any base or scenario config file         |Preprocess utlities demand data into geojson|
+|`build_demand_profiles_from_eia` |Any base or scenario config file         |Build custom demand data from eia and bypass build_demand_profiles|
+
+
 
 ### Retrieve rules
 |Rule name                |Config file                              |Description        |
@@ -69,5 +90,6 @@ snakemake -call statewise_validate_all --configfile configs/calibration/config.b
 |`retrieve_renewable_profiles`  |Any base or scenario config file         |Retrieves `resources/{RDIR}/renewable_profiles/` data from google drive and bypasses `build_renewable_profiles` rule|
 |`retrieve_custom_powerplants`  |Any base or scenario config file         |Copies `data/custom_powerplants.csv` to `submodules/pypsa-earth/data/` folder|
 |`retrieve_ssp2`          |Any base or scenario config file         |Copies `data/NorthAmerica.csv` to `submodules/pypsa-earth/data/ssp2-2.6/.` directory|
+|`retrieve_demand_data`          |Any base or scenario config file         |Retrieves utility demand data from google drive to `data/demand_data/*`|
 
 * `RDIR` - scenario folder

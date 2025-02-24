@@ -53,6 +53,7 @@ def add_ekerosene_buses(n):
         p_nom_extendable=True,
         efficiency=1.0,
     )
+    logger.info("Added links between E-kerosene and Oil buses")
 
 
 def reroute_FT_output(n):

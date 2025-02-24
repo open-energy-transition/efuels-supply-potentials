@@ -15,7 +15,7 @@ logger = create_logger(__name__)
 
 def add_ekerosene_buses(n):
     """
-        Adds e-kerosene buses and stores
+        Adds e-kerosene buses and stores, and adds links between e-kerosene and oil bus
     """
     # get oil bus names
     oil_buses = n.buses.query("carrier in 'oil'")
@@ -42,6 +42,17 @@ def add_ekerosene_buses(n):
         carrier="e-kerosene",
     )
     logger.info("Added E-kerosene buses, carrier, and stores")
+
+    # add links between E-kerosene and Oil buses so excess synthetic oil can be used
+    n.madd(
+        "Link",
+        [x + "-to-oil" for x in ekerosene_buses],
+        bus0=ekerosene_buses,
+        bus1=oil_buses.index,
+        carrier="e-kerosene-to-oil",
+        p_nom_extendable=True,
+        efficiency=1.0,
+    )
 
 
 def reroute_FT_output(n):
@@ -101,7 +112,7 @@ if __name__ == "__main__":
     # load the network
     n = load_network(snakemake.input.network)
 
-    # add e-kerosene buses with store
+    # add e-kerosene buses with store, and connect e-kerosene and oil buses
     add_ekerosene_buses(n)
 
     # reroute FT from oil buses to e-kerosene buses

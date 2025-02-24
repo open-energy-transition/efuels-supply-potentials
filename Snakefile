@@ -432,7 +432,7 @@ if config["demand_distribution"]["enable"]:
       
 
 if config["saf_mandate"]["ekerosene_split"]:
-    rule add_saf_mandate:
+    rule set_saf_mandate:
         params:
             blending_rate=config["saf_mandate"]["blending_rate"]
         input:
@@ -444,7 +444,7 @@ if config["saf_mandate"]["ekerosene_split"]:
             + SECDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
         script:
-            "scripts/add_saf_mandate.py"
+            "scripts/set_saf_mandate.py"
 
 
     use rule add_export from pypsa_earth with:

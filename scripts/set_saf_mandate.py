@@ -81,7 +81,7 @@ def redistribute_aviation_demand(n, rate):
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
-            "add_saf_mandate",
+            "set_saf_mandate",
             configfile="configs/calibration/config.base.yaml",
             simpl="",
             ll="copt",

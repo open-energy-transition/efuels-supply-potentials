@@ -110,3 +110,6 @@ if __name__ == "__main__":
     # split aviation demand to e-kerosene to kerosene for aviation based on blending rate
     if config["saf_mandate"]["enable_mandate"]:
         redistribute_aviation_demand(n, rate=snakemake.params.blending_rate)
+
+    # save the modified network
+    n.export_to_netcdf(snakemake.output.modified_network)

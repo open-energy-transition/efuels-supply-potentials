@@ -431,8 +431,10 @@ if config["demand_distribution"]["enable"]:
     ruleorder: build_demand_profiles_from_eia > build_demand_profiles
       
 
-if config["saf_mandate"]["enable"]:
+if config["saf_mandate"]["ekerosene_split"]:
     rule add_saf_mandate:
+        params:
+            blending_rate=config["saf_mandate"]["blending_rate"]
         input:
             network=PYPSA_EARTH_DIR + "results/"
             + SECDIR

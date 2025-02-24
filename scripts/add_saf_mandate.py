@@ -41,6 +41,41 @@ def add_ekerosene_buses(n):
         e_cyclic=True,
         carrier="e-kerosene",
     )
+    logger.info("Added E-kerosene buses, carrier, and stores")
+
+
+def reroute_FT_output(n):
+    """
+        Reroutes output of Fischer-Tropsch from Oil to E-kerosene bus
+    """
+    ft_carrier = "Fischer-Tropsch"
+    ft_links = n.links.query("carrier in @ft_carrier").index
+
+    # switch bus1 of FT from oil to E-kerosene
+    n.links.loc[ft_links, "bus1"] = n.links.loc[ft_links, "bus1"].str.replace("oil","e-kerosene")
+    logger.info("Rerouted Fischer-Tropsch output from Oil buses to E-kerosene buses")
+
+
+def redistribute_aviation_demand(n, rate):
+    """
+        Redistribute aviation demand to e-kerosene and kerosene based on blending rate
+    """
+    aviation_demand_carrier = "kerosene for aviation"
+    total_aviation_demand = n.loads.query("carrier in @aviation_demand_carrier")
+
+    # new kerosene for aviation demand = total * (1 - rate)
+    n.loads.loc[total_aviation_demand.index, "p_set"] *= (1 - rate)
+    logger.info(f"Set kerosene for aviation to {(1-rate)*100:.1f}% of total aviation demand")
+
+    # add e-kerosene for aviation load
+    n.madd(
+        "Load",
+        total_aviation_demand.index.str.replace("kerosene", "e-kerosene"),
+        bus=total_aviation_demand.bus.str.replace("oil", "e-kerosene").values,
+        carrier="e-kerosene for aviation",
+        p_set=total_aviation_demand.p_set.fillna(0).values * rate,
+    )
+    logger.info(f"Added e-kerosene for aviation demand at the rate of {(rate*100):.1f}% of total aviation demand")
 
 
 if __name__ == "__main__":
@@ -69,3 +104,9 @@ if __name__ == "__main__":
     # add e-kerosene buses with store
     add_ekerosene_buses(n)
 
+    # reroute FT from oil buses to e-kerosene buses
+    reroute_FT_output(n)
+
+    # split aviation demand to e-kerosene to kerosene for aviation based on blending rate
+    if config["saf_mandate"]["enable_mandate"]:
+        redistribute_aviation_demand(n, rate=snakemake.params.blending_rate)

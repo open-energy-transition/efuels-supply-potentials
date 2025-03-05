@@ -11,7 +11,7 @@ import geopandas as gpd
 import numpy as np
 import pypsa
 from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            configure_logging, get_colors
+                            configure_logging, get_colors, BASE_PATH
 
 
 def parse_inputs():
@@ -130,6 +130,44 @@ def build_demand_profiles(df_utility_demand, df_ba_demand, gdf_ba_shape, pypsa_n
     return df_demand_bus_timeshifted
 
 
+def read_scaling_factor(demand_scenario, horizon):
+    """
+    Reads scaling factor for future projections
+    Parameters
+    ----------
+    demand_scenario: str
+        Future demand projection scenario
+    horizon: int
+        Horizon for demand projection
+    Returns
+    -------
+    scaling_factor: pandas dataframe
+        Scaling factor of demand projection scenario
+    """
+    horizon = 2024 if horizon == 2025 else horizon # select 2024 demand projection for 2025 horizon
+    foldername = os.path.join(BASE_PATH, snakemake.params.demand_projections)
+    filename = f"Scaling_Factor_{demand_scenario}_Moderate_{horizon}_by_state.csv"
+    scaling_factor = pd.read_csv(os.path.join(foldername, filename), sep=";")
+    return scaling_factor
+
+
+def scale_demand_profiles(df_demand_profiles, scaling_factor):
+    """
+    Scales demand profiles for each state based on the NREL EFS demand projections
+    Parameters
+    ----------
+    df_demand_profiles: pandas dataframe
+        Hourly demand profiles for buses of base network
+    scaling_factor: pandas dataframe
+        Hourly scaling factor per each state
+    Returns
+    -------
+    scaled_demand_profiles: pandas dataframe
+         Scaled demand profiles based on the demand projections
+    """
+    pass
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -140,7 +178,7 @@ if __name__ == "__main__":
     configure_logging(snakemake)
 
     # set relevant paths
-    plot_path = "plots/demand_modelling"
+    plot_path = os.path.join(BASE_PATH, "plots/demand_modelling")
     os.makedirs(plot_path, exist_ok=True)
 
 
@@ -151,3 +189,7 @@ if __name__ == "__main__":
     )
 
     df_demand_profiles.to_csv(snakemake.output.demand_profile_path)
+
+    # scale demand for future scenarios
+    if snakemake.params.demand_horizon > 2020:
+        scaling_factor = read_scaling_factor(snakemake.params.demand_scenario, snakemake.params.demand_horizon)

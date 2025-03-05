@@ -12,7 +12,7 @@ import numpy as np
 from shapely.validation import make_valid
 import matplotlib.pyplot as plt
 from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            configure_logging, get_colors
+                            configure_logging, get_colors, BASE_PATH
 
 logger = create_logger(__name__)
 
@@ -591,7 +591,7 @@ if __name__ == "__main__":
     plotting = config["demand_distribution"]["plotting"]
 
     # set relevant paths
-    plot_path = "plots/demand_modelling"
+    plot_path = os.path.join(BASE_PATH, "plots/demand_modelling")
     os.makedirs(plot_path, exist_ok=True)
 
     # logging

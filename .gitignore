@@ -8,4 +8,4 @@ plots/demand_modelling/
 logs/
 .vscode/
 data/demand_data/
-data/icct/
+data/icct/aviation_demand.csv

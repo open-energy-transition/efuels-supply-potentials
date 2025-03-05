@@ -6,3 +6,6 @@ plots/results/
 plots/demand_modelling/
 *.log
 logs/
+.vscode/
+data/demand_data/
+data/icct/

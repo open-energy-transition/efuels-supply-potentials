@@ -21,6 +21,11 @@ aviation_demand_scenario:
   year: 2023
   scenario: central # low, central or high
 
+saf_mandate:
+  ekerosene_split: true # separate e-kerosene as separate bus
+  enable_mandate: false # enable SAF mandate
+  blending_rate: 0.05 # blending rate
+
 demand_distribution:
   enable: true
   base_demand_year: 2023

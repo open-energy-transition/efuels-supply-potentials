@@ -75,6 +75,7 @@ snakemake -call statewise_validate_all --configfile configs/calibration/config.b
 |`modify_aviation_demand` |Any base or scenario config file         |Switches aviation demand in energy_total to custom demand|
 |`preprocess_demand_data` |Any base or scenario config file         |Preprocess utlities demand data into geojson|
 |`build_demand_profiles_from_eia` |Any base or scenario config file         |Build custom demand data from eia and bypass build_demand_profiles|
+|`set_saf_mandate`        |Any base or scenario config file         |Adds e-kerosene buses to enable split of aviation demand and sets SAF mandate if enabled| 
 
 
 

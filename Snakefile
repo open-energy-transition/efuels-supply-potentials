@@ -420,13 +420,14 @@ if config["demand_distribution"]["enable"]:
             demand_projections="data/demand_projections/",
             demand_horizon=config["demand_projection"]["planning_horizon"],
             demand_scenario=config["demand_projection"]["scenario"],
+            geo_crs=config["crs"]["geo_crs"],
         input:
             BA_demand_path1="data/demand_data/EIA930_2023_Jan_Jun_opt.csv",
             BA_demand_path2="data/demand_data/EIA930_2023_Jul_Dec_opt.csv",
             BA_shape_path="data/demand_data/Balancing_Authorities.geojson",
             utility_demand_path="data/demand_data/ERST_mapped_demand_centroids.geojson",
             base_network=PYPSA_EARTH_DIR + "networks/" + RDIR + "base.nc",
-            gadm_shape=PYPSA_EARTH_DIR + "resources/" + RDIR + "shapes/gadm_shapes.geojson",
+            gadm_shape="data/demand_data/gadm41_USA_1.json",
         output:
             demand_profile_path=PYPSA_EARTH_DIR + "resources/" + RDIR + "demand_profiles.csv",
         script:

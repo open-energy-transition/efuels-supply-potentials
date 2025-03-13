@@ -33,6 +33,10 @@ demand_distribution:
   nprocesses: 4
   plotting: true
 
+demand_projection:
+  planning_horizon: 2020
+  scenario: "Reference"
+
 custom_databundles:
   bundle_cutouts_USA:
     countries: [US]

@@ -11,7 +11,9 @@ import geopandas as gpd
 import numpy as np
 import pypsa
 from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            configure_logging, get_colors
+                            configure_logging, get_colors, BASE_PATH
+
+logger = create_logger(__name__)
 
 
 def parse_inputs():
@@ -126,8 +128,86 @@ def build_demand_profiles(df_utility_demand, df_ba_demand, gdf_ba_shape, pypsa_n
     df_demand_bus_timeshifted = df_demand_bus_timeshifted[:8760]
     df_demand_bus_timeshifted.index = pypsa_network.snapshots
     df_demand_bus_timeshifted.index.name = "time"
-
+    logger.info("Built demand_profiles.csv based on demand distribution using utility level and balancing authority demand data.")
     return df_demand_bus_timeshifted
+
+
+def read_scaling_factor(demand_scenario, horizon):
+    """
+    Reads scaling factor for future projections
+    Parameters
+    ----------
+    demand_scenario: str
+        Future demand projection scenario
+    horizon: int
+        Horizon for demand projection
+    Returns
+    -------
+    scaling_factor: pandas dataframe
+        Scaling factor of demand projection scenario
+    """
+    horizon = 2024 if horizon == 2025 else horizon # select 2024 demand projection for 2025 horizon
+    foldername = os.path.join(BASE_PATH, snakemake.params.demand_projections)
+    filename = f"Scaling_Factor_{demand_scenario}_Moderate_{horizon}_by_state.csv"
+    scaling_factor = pd.read_csv(os.path.join(foldername, filename), sep=";")
+    scaling_factor["time"] = pd.to_datetime(scaling_factor["time"])
+    logger.info(f"Read {filename} for scaling the demand for {horizon}.")
+    return scaling_factor
+
+
+def scale_demand_profiles(df_demand_profiles, pypsa_network, scaling_factor):
+    """
+    Scales demand profiles for each state based on the NREL EFS demand projections
+    Parameters
+    ----------
+    df_demand_profiles: pandas dataframe
+        Hourly demand profiles for buses of base network
+    pypsa_network: netcdf file
+        base.nc network
+    scaling_factor: pandas dataframe
+        Hourly scaling factor per each state
+    Returns
+    -------
+    scaled_demand_profiles: pandas dataframe
+         Scaled demand profiles based on the demand projections
+    """
+    # read gadm file
+    gadm_shape = gpd.read_file(snakemake.input.gadm_shape)
+
+    # create geodataframe out of x and y coordinates of buses
+    buses_gdf = gpd.GeoDataFrame(
+        pypsa_network.buses,
+        geometry=gpd.points_from_xy(pypsa_network.buses.x, pypsa_network.buses.y),
+        crs=snakemake.params.geo_crs,
+    ).reset_index()
+
+    # map gadm shapes to each bus
+    spatial_gadm_bus_mapping = (
+        buses_gdf.sjoin(gadm_shape, how="left", predicate="within")
+        .set_index("Bus")["ISO_1"].str.replace("US-", "")
+    )
+
+    # convert demand_profiles from wide to long format
+    df_demand_long = df_demand_profiles.melt(ignore_index=False, var_name="Bus", value_name="demand")
+
+    # map Bus IDs to State Codes
+    df_demand_long["region_code"] = df_demand_long["Bus"].map(spatial_gadm_bus_mapping)
+
+    # merge with scaling_factor DataFrame based on region_code and time
+    scaling_factor["time"] = scaling_factor["time"].apply(lambda t: t.replace(year=df_demand_long.index[0].year))
+    df_scaled = df_demand_long.merge(scaling_factor, on=["region_code", "time"], how="left")
+    del scaling_factor
+
+    # multiply demand by scaling factor
+    df_scaled["scaling_factor"] = df_scaled["scaling_factor"].fillna(1)
+    df_scaled["scaled_demand"] = df_scaled["demand"] * df_scaled["scaling_factor"]
+
+    # pivot back to original wide format
+    scaled_demand_profiles = df_scaled.pivot(index="time", columns="Bus", values="scaled_demand")
+    scaled_demand_profiles = scaled_demand_profiles[sorted(scaled_demand_profiles.columns)]
+    logger.info(f"Scaled demand based on scaling factor for each state.")
+
+    return scaled_demand_profiles
 
 
 if __name__ == "__main__":
@@ -140,7 +220,7 @@ if __name__ == "__main__":
     configure_logging(snakemake)
 
     # set relevant paths
-    plot_path = "plots/demand_modelling"
+    plot_path = os.path.join(BASE_PATH, "plots/demand_modelling")
     os.makedirs(plot_path, exist_ok=True)
 
 
@@ -150,4 +230,10 @@ if __name__ == "__main__":
         df_utility_demand, df_ba_demand, gdf_ba_shape, pypsa_network
     )
 
+    # scale demand for future scenarios
+    if snakemake.params.demand_horizon > 2020:
+        scaling_factor = read_scaling_factor(snakemake.params.demand_scenario, snakemake.params.demand_horizon)
+        df_demand_profiles = scale_demand_profiles(df_demand_profiles, pypsa_network, scaling_factor)
+
+    # save demand_profiles.csv
     df_demand_profiles.to_csv(snakemake.output.demand_profile_path)

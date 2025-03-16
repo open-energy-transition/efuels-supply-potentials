@@ -210,6 +210,26 @@ def scale_demand_profiles(df_demand_profiles, pypsa_network, scaling_factor):
     return scaled_demand_profiles
 
 
+def read_data_center_profiles(horizon):
+    """
+    Reads statewise data center profiles for given horizon
+    Parameters
+    ----------
+    horizon: int
+        Horizon of the data center profiles
+    Returns
+    -------
+    dt_profile: pandas dataframe
+        Hourly statewise demand profile for selected horizon
+    """
+    foldername = os.path.join(BASE_PATH, snakemake.params.data_center_profiles)
+    filename = f"data_center_profile_{horizon}_by_state.csv"
+    data_center_profile = pd.read_csv(os.path.join(foldername, filename))
+    data_center_profile["time"] = pd.to_datetime(data_center_profile["time"])
+    logger.info(f"Read {filename} for setting data centerl demands for {horizon}.")
+    return data_center_profile
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(

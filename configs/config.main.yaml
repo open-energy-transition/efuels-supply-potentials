@@ -36,6 +36,7 @@ demand_distribution:
 demand_projection:
   planning_horizon: 2020
   scenario: "Reference"
+  data_centers_load: true
 
 custom_databundles:
   bundle_cutouts_USA:

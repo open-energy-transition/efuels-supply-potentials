@@ -155,21 +155,17 @@ def read_scaling_factor(demand_scenario, horizon):
     return scaling_factor
 
 
-def scale_demand_profiles(df_demand_profiles, pypsa_network, scaling_factor):
+def get_spatial_mapping(pypsa_network):
     """
-    Scales demand profiles for each state based on the NREL EFS demand projections
+    Determines gadm to bus mapping
     Parameters
     ----------
-    df_demand_profiles: pandas dataframe
-        Hourly demand profiles for buses of base network
     pypsa_network: netcdf file
         base.nc network
-    scaling_factor: pandas dataframe
-        Hourly scaling factor per each state
     Returns
     -------
-    scaled_demand_profiles: pandas dataframe
-         Scaled demand profiles based on the demand projections
+    spatial_gadm_bus_mapping: pandas series
+        Mapping of GADM regions to base network buses
     """
     # read gadm file
     gadm_shape = gpd.read_file(snakemake.input.gadm_shape)
@@ -186,7 +182,25 @@ def scale_demand_profiles(df_demand_profiles, pypsa_network, scaling_factor):
         buses_gdf.sjoin(gadm_shape, how="left", predicate="within")
         .set_index("Bus")["ISO_1"].str.replace("US-", "")
     )
+    return spatial_gadm_bus_mapping
 
+
+def scale_demand_profiles(df_demand_profiles, spatial_gadm_bus_mapping, scaling_factor):
+    """
+    Scales demand profiles for each state based on the NREL EFS demand projections
+    Parameters
+    ----------
+    df_demand_profiles: pandas dataframe
+        Hourly demand profiles for buses of base network
+    spatial_gadm_bus_mapping: pandas series
+        Mapping of GADM regions to base network buses
+    scaling_factor: pandas dataframe
+        Hourly scaling factor per each state
+    Returns
+    -------
+    scaled_demand_profiles: pandas dataframe
+         Scaled demand profiles based on the demand projections
+    """
     # convert demand_profiles from wide to long format
     df_demand_long = df_demand_profiles.melt(ignore_index=False, var_name="Bus", value_name="demand")
 
@@ -196,7 +210,7 @@ def scale_demand_profiles(df_demand_profiles, pypsa_network, scaling_factor):
     # merge with scaling_factor DataFrame based on region_code and time
     scaling_factor["time"] = scaling_factor["time"].apply(lambda t: t.replace(year=df_demand_long.index[0].year))
     df_scaled = df_demand_long.merge(scaling_factor, on=["region_code", "time"], how="left")
-    del scaling_factor
+    del scaling_factor, df_demand_long
 
     # multiply demand by scaling factor
     df_scaled["scaling_factor"] = df_scaled["scaling_factor"].fillna(1)
@@ -230,11 +244,40 @@ def read_data_center_profiles(horizon):
     return data_center_profile
 
 
+def add_data_center_demand(df_demand_profiles, spatial_gadm_bus_mapping, data_center_profiles):
+    """
+    Adds data center demand to demand profile
+    Parameters
+    ----------
+    df_demand_profiles: pandas dataframe
+        Hourly demand profiles for each bus of base network
+    spatial_gadm_bus_mapping: pandas series
+        Mapping of GADM regions to base network buses
+    data_center_profiles: pandas dataframe
+        Hourly statewise data center profiles
+    Returns
+    -------
+    updated_demand_profiles: pandas dataframe
+        Updated demand profiles with added data centers load
+    """
+    # convert demand_profiles from wide to long format
+    df_demand_long = df_demand_profiles.melt(ignore_index=False, var_name="Bus", value_name="demand")
+
+    # map Bus IDs to State Codes
+    df_demand_long["region_code"] = df_demand_long["Bus"].map(spatial_gadm_bus_mapping)
+
+    #  DataFrame based on region_code and time
+    #data_center_profiles["time"] = scaling_factor["time"].apply(lambda t: t.replace(year=df_demand_long.index[0].year))
+    #df_scaled = df_demand_long.merge(scaling_factor, on=["region_code", "time"], how="left")
+
+    return df_demand_profiles
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "build_demand_profiles_from_eia",
-            configfile="configs/calibration/config.base.yaml",
+            configfile="configs/scenarios/config.2030.yaml",
         )
 
     configure_logging(snakemake)
@@ -250,10 +293,18 @@ if __name__ == "__main__":
         df_utility_demand, df_ba_demand, gdf_ba_shape, pypsa_network
     )
 
+    # get spatial GADM to bus mapping
+    spatial_gadm_bus_mapping = get_spatial_mapping(pypsa_network)
+
     # scale demand for future scenarios
     if snakemake.params.demand_horizon > 2020:
         scaling_factor = read_scaling_factor(snakemake.params.demand_scenario, snakemake.params.demand_horizon)
-        df_demand_profiles = scale_demand_profiles(df_demand_profiles, pypsa_network, scaling_factor)
+        df_demand_profiles = scale_demand_profiles(df_demand_profiles, spatial_gadm_bus_mapping, scaling_factor)
+
+    # set data center demand profiles
+    if snakemake.config["demand_projection"]["data_centers_load"]:
+        data_center_profiles = read_data_center_profiles(snakemake.params.demand_horizon)
+        df_demand_profiles = add_data_center_demand(df_demand_profiles, spatial_gadm_bus_mapping, data_center_profiles)
 
     # save demand_profiles.csv
     df_demand_profiles.to_csv(snakemake.output.demand_profile_path)

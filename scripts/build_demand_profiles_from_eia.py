@@ -233,15 +233,32 @@ def read_data_center_profiles(horizon):
         Horizon of the data center profiles
     Returns
     -------
-    dt_profile: pandas dataframe
+    extended_data_center_profiles: pandas dataframe
         Hourly statewise demand profile for selected horizon
     """
     foldername = os.path.join(BASE_PATH, snakemake.params.data_center_profiles)
     filename = f"data_center_profile_{horizon}_by_state.csv"
     data_center_profile = pd.read_csv(os.path.join(foldername, filename))
     data_center_profile["time"] = pd.to_datetime(data_center_profile["time"])
-    logger.info(f"Read {filename} for setting data centerl demands for {horizon}.")
-    return data_center_profile
+    logger.info(f"Read {filename} for setting data center demands for {horizon}.")
+
+    # Initialize an empty list sto store expanded data center profile data
+    extended_profiles = []
+    full_dates = pd.date_range(start=f"{horizon}-01-01", end=f"{horizon}-12-31 23:00:00", freq="H")
+    # Loop through each region and extend data center profile from 24-hour to full year profile
+    for region in data_center_profile["region_code"].unique():
+        daily_profile = data_center_profile[data_center_profile["region_code"] == region]
+        # Repeat the daily profile for 365 days
+        repeated_profile = pd.concat([daily_profile] * 365, ignore_index=True)
+        # Assign new timestamps for 365 days
+        repeated_profile["time"] = full_dates
+
+        extended_profiles.append(repeated_profile)
+
+    # Combine all extended data into a single DataFrame
+    extended_data_center_profiles = pd.concat(extended_profiles, ignore_index=True)
+
+    return extended_data_center_profiles
 
 
 def add_data_center_demand(df_demand_profiles, spatial_gadm_bus_mapping, data_center_profiles):
@@ -266,11 +283,20 @@ def add_data_center_demand(df_demand_profiles, spatial_gadm_bus_mapping, data_ce
     # map Bus IDs to State Codes
     df_demand_long["region_code"] = df_demand_long["Bus"].map(spatial_gadm_bus_mapping)
 
-    #  DataFrame based on region_code and time
-    #data_center_profiles["time"] = scaling_factor["time"].apply(lambda t: t.replace(year=df_demand_long.index[0].year))
-    #df_scaled = df_demand_long.merge(scaling_factor, on=["region_code", "time"], how="left")
+    #  merge with data center profile based on region_code and time
+    df_total = df_demand_long.merge(data_center_profiles, on=["region_code", "time"], how="left")
+    del df_demand_long
 
-    return df_demand_profiles
+    # add data center and general load
+    df_total["load_GW"] = df_total["load_GW"].fillna(0)
+    df_total["total_demand"] = df_total["demand"] + df_total["load_GW"] * 1e3
+
+    # pivot back to original wide format
+    updated_demand_profiles = df_total.pivot(index="time", columns="Bus", values="total_demand")
+    updated_demand_profiles = updated_demand_profiles[sorted(updated_demand_profiles.columns)]
+    logger.info(f"Update demand profiles by adding data center load.")
+
+    return updated_demand_profiles
 
 
 if __name__ == "__main__":

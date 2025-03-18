@@ -233,35 +233,19 @@ def read_data_center_profiles(horizon):
         Horizon of the data center profiles
     Returns
     -------
-    extended_data_center_profiles: pandas dataframe
-        Hourly statewise demand profile for selected horizon
+    statewise_data_center_load: pandas series
+        Statewise data center demand for selected horizon
     """
     foldername = os.path.join(BASE_PATH, snakemake.params.data_center_profiles)
     filename = f"data_center_profile_{horizon}_by_state.csv"
     data_center_profile = pd.read_csv(os.path.join(foldername, filename))
-    data_center_profile["time"] = pd.to_datetime(data_center_profile["time"])
+    statewise_data_center_load = data_center_profile.groupby("region_code")["load_GW"].mean()
     logger.info(f"Read {filename} for setting data center demands for {horizon}.")
 
-    # Initialize an empty list sto store expanded data center profile data
-    extended_profiles = []
-    full_dates = pd.date_range(start=f"{horizon}-01-01", end=f"{horizon}-12-31 23:00:00", freq="H")
-    # Loop through each region and extend data center profile from 24-hour to full year profile
-    for region in data_center_profile["region_code"].unique():
-        daily_profile = data_center_profile[data_center_profile["region_code"] == region]
-        # Repeat the daily profile for 365 days
-        repeated_profile = pd.concat([daily_profile] * 365, ignore_index=True)
-        # Assign new timestamps for 365 days
-        repeated_profile["time"] = full_dates
-
-        extended_profiles.append(repeated_profile)
-
-    # Combine all extended data into a single DataFrame
-    extended_data_center_profiles = pd.concat(extended_profiles, ignore_index=True)
-
-    return extended_data_center_profiles
+    return statewise_data_center_load
 
 
-def add_data_center_demand(df_demand_profiles, spatial_gadm_bus_mapping, data_center_profiles):
+def add_data_center_demand(df_demand_profiles, spatial_gadm_bus_mapping, data_center_demand):
     """
     Adds data center demand to demand profile
     Parameters
@@ -274,29 +258,26 @@ def add_data_center_demand(df_demand_profiles, spatial_gadm_bus_mapping, data_ce
         Hourly statewise data center profiles
     Returns
     -------
-    updated_demand_profiles: pandas dataframe
+    df_demand_profiles: pandas dataframe
         Updated demand profiles with added data centers load
     """
-    # convert demand_profiles from wide to long format
-    df_demand_long = df_demand_profiles.melt(ignore_index=False, var_name="Bus", value_name="demand")
+    # Count total buses per region (excluding NaNs)
+    region_counts = spatial_gadm_bus_mapping.value_counts(dropna=True)
 
-    # map Bus IDs to State Codes
-    df_demand_long["region_code"] = df_demand_long["Bus"].map(spatial_gadm_bus_mapping)
+    for bus in df_demand_profiles.columns:
+        # gadm region where bus belongs
+        bus_region = spatial_gadm_bus_mapping.loc[bus]
 
-    #  merge with data center profile based on region_code and time
-    df_total = df_demand_long.merge(data_center_profiles, on=["region_code", "time"], how="left")
-    del df_demand_long
+        if bus_region in data_center_demand.index:
+            # data center demand for the gadm region in GW
+            region_data_center_demand = data_center_demand.loc[bus_region]
+            # take fraction of regional data center demand
+            bus_data_center_demand = (region_data_center_demand * 1e3) / region_counts.loc[bus_region]
+            # add bus-level data center demand
+            df_demand_profiles.loc[:, bus] += bus_data_center_demand
 
-    # add data center and general load
-    df_total["load_GW"] = df_total["load_GW"].fillna(0)
-    df_total["total_demand"] = df_total["demand"] + df_total["load_GW"] * 1e3
-
-    # pivot back to original wide format
-    updated_demand_profiles = df_total.pivot(index="time", columns="Bus", values="total_demand")
-    updated_demand_profiles = updated_demand_profiles[sorted(updated_demand_profiles.columns)]
     logger.info(f"Update demand profiles by adding data center load.")
-
-    return updated_demand_profiles
+    return df_demand_profiles
 
 
 if __name__ == "__main__":
@@ -329,8 +310,8 @@ if __name__ == "__main__":
 
     # set data center demand profiles
     if snakemake.config["demand_projection"]["data_centers_load"]:
-        data_center_profiles = read_data_center_profiles(snakemake.params.demand_horizon)
-        df_demand_profiles = add_data_center_demand(df_demand_profiles, spatial_gadm_bus_mapping, data_center_profiles)
+        data_center_demand = read_data_center_profiles(snakemake.params.demand_horizon)
+        df_demand_profiles = add_data_center_demand(df_demand_profiles, spatial_gadm_bus_mapping, data_center_demand)
 
     # save demand_profiles.csv
     df_demand_profiles.to_csv(snakemake.output.demand_profile_path)

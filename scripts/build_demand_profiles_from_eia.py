@@ -304,7 +304,7 @@ if __name__ == "__main__":
     spatial_gadm_bus_mapping = get_spatial_mapping(pypsa_network)
 
     # scale demand for future scenarios
-    if snakemake.params.demand_horizon > 2020:
+    if snakemake.params.demand_horizon >= 2025:
         scaling_factor = read_scaling_factor(snakemake.params.demand_scenario, snakemake.params.demand_horizon)
         df_demand_profiles = scale_demand_profiles(df_demand_profiles, spatial_gadm_bus_mapping, scaling_factor)
 

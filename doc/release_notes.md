@@ -8,6 +8,10 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Added functionality to **set data center loads** to `demand_profiles.csv`: [PR #41](https://github.com/open-energy-transition/efuels-supply-potentials/pull/41)
+
+* Enabled **setting demand projections** based on the **NREL EFS**: [PR #38](https://github.com/open-energy-transition/efuels-supply-potentials/pull/38) and [PR #40](https://github.com/open-energy-transition/efuels-supply-potentials/pull/40)
+
 * Added functionality to separate **e-kerosene** demand and set **SAF mandate** by choosing blending rate: [PR #37](https://github.com/open-energy-transition/efuels-supply-potentials/pull/37) 
 
 * Integrated **generate aviation scenario** and **rescale fraction in airports dataset by state demand** into the workflow: [PR #35](https://github.com/open-energy-transition/efuels-supply-potentials/pull/35)

@@ -420,6 +420,7 @@ if config["demand_distribution"]["enable"]:
             demand_projections="data/demand_projections/",
             demand_horizon=config["demand_projection"]["planning_horizon"],
             demand_scenario=config["demand_projection"]["scenario"],
+            data_center_profiles="data/data_center_profiles/",
             geo_crs=config["crs"]["geo_crs"],
         input:
             BA_demand_path1="data/demand_data/EIA930_2023_Jan_Jun_opt.csv",

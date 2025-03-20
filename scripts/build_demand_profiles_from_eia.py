@@ -208,7 +208,8 @@ def scale_demand_profiles(df_demand_profiles, spatial_gadm_bus_mapping, scaling_
     df_demand_long["region_code"] = df_demand_long["Bus"].map(spatial_gadm_bus_mapping)
 
     # merge with scaling_factor DataFrame based on region_code and time
-    scaling_factor["time"] = scaling_factor["time"].apply(lambda t: t.replace(year=df_demand_long.index[0].year))
+    df_demand_long.reset_index(inplace=True)
+    scaling_factor["time"] = scaling_factor["time"].apply(lambda t: t.replace(year=df_demand_long["time"][0].year))
     df_scaled = df_demand_long.merge(scaling_factor, on=["region_code", "time"], how="left")
     del scaling_factor, df_demand_long
 

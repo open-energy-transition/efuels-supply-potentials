@@ -285,7 +285,7 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "build_demand_profiles_from_eia",
-            configfile="configs/scenarios/config.2030.yaml",
+            configfile="configs/calibration/config.base.yaml",
         )
 
     configure_logging(snakemake)

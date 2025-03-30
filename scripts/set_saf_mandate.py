@@ -72,7 +72,18 @@ def add_ekerosene_buses(n):
         p_nom_extendable=True,
         efficiency=1.0,
     )
+    n.madd(
+        "Link",
+        [x.replace("e-kerosene", "main-to-e-kerosene") for x in ekerosene_buses],
+        bus0=ekerosene_main_bus,
+        bus1=ekerosene_buses,
+        carrier="main-to-e-kerosene",
+        p_nom_extendable=True,
+        efficiency=1.0,
+    )
     logger.info("Added links between E-kerosene buses and E-kerosene main bus")
+
+
 
 def reroute_FT_output(n):
     """

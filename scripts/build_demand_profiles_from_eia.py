@@ -105,7 +105,7 @@ def build_demand_profiles(df_utility_demand, df_ba_demand, gdf_ba_shape, pypsa_n
     pypsa_gpd["color"] = get_colors(len(pypsa_gpd))
 
     df_utility_centroid = gpd.sjoin_nearest(df_utility_centroid, pypsa_gpd, how="left")
-    df_utility_centroid.rename(columns={"index_right": "PyPSA_bus"}, inplace=True)
+    df_utility_centroid.rename(columns={"index_right_2": "PyPSA_bus"}, inplace=True)
 
     df_demand_bus = pd.DataFrame(
         index=pd.to_datetime(df_ba_demand.index),

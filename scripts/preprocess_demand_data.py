@@ -343,7 +343,7 @@ def map_demands_utilitywise(
     import build_shapes
 
     # Make geometry valid
-    df_erst_gpd["geometry"] = df_erst_gpd["geometry"].apply(make_valid)
+    df_erst_gpd["geometry"] = df_erst_gpd["geometry"].buffer(0)
 
     if plotting:
         # Plot initial ERST shapefile

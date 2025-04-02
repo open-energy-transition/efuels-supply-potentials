@@ -1,18 +1,26 @@
+# -*- coding: utf-8 -*-
 # SPDX-FileCopyrightText:  Open Energy Transition gGmbH
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import logging
 import os
+import random
+import re
 import sys
+import warnings
 from pathlib import Path
-import yaml
+from zipfile import ZipFile
+
 import pypsa
 import pandas as pd
 import logging
 import random
 import snakemake as sm
+import yaml
 from pypsa.descriptors import Dict
 from snakemake.script import Snakemake
+
 import re
 from pathlib import Path 
 from zipfile import ZipFile
@@ -33,10 +41,10 @@ LINE_OPTS = {"2021": "copt"}
 
 
 def load_network(filepath):
-    """ Input:
-            filepath - full path to the network
-        Output:
-            n - PyPSA network
+    """Input:
+        filepath - full path to the network
+    Output:
+        n - PyPSA network
     """
     try:
         n = pypsa.Network(filepath)
@@ -71,11 +79,14 @@ def mock_snakemake(rule_name, configfile=None, **wildcards):
             snakefile = p
             break
     if isinstance(configfile, str):
-        with open(configfile, 'r') as file:
+        with open(configfile, "r") as file:
             configfile = yaml.safe_load(file)
 
     workflow = sm.Workflow(
-        snakefile, overwrite_configfiles=[], rerun_triggers=[], overwrite_config=configfile
+        snakefile,
+        overwrite_configfiles=[],
+        rerun_triggers=[],
+        overwrite_config=configfile,
     )  # overwrite_config=config
     workflow.include(snakefile)
     workflow.global_resources = {}
@@ -172,7 +183,8 @@ def get_solved_network_path(scenario_folder):
         str: Full path to the network file.
     """
     results_dir = os.path.join(
-        BASE_PATH, f"submodules/pypsa-earth/results/{scenario_folder}/networks")
+        BASE_PATH, f"submodules/pypsa-earth/results/{scenario_folder}/networks"
+    )
     filenames = os.listdir(results_dir)
 
     # Ensure only one network file exists
@@ -232,7 +244,7 @@ def configure_logging(snakemake, skip_handlers=False):
         logfile = snakemake.log.get(
             "python", snakemake.log[0] if snakemake.log else fallback_path
         )
-        formatter = logging.Formatter('%(levelname)s - %(message)s')
+        formatter = logging.Formatter("%(levelname)s - %(message)s")
 
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
@@ -253,9 +265,11 @@ def configure_logging(snakemake, skip_handlers=False):
     logging.basicConfig(**kwargs, force=True)
 
 
-def download_and_unzip_gdrive(config, destination, logger, disable_progress=False, url=None):
+def download_and_unzip_gdrive(
+    config, destination, logger, disable_progress=False, url=None
+):
     """
-        Downloads and unzips data from custom bundle config
+    Downloads and unzips data from custom bundle config
     """
     resource = config["category"]
     file_path = os.path.join(PYPSA_EARTH_DIR, f"tempfile_{resource}.zip")
@@ -320,7 +334,7 @@ def osm_raw_outputs():
         "osm/raw/all_raw_generators.geojson",
         "osm/raw/all_raw_generators.csv",
         "osm/raw/all_raw_lines.geojson",
-        "osm/raw/all_raw_substations.geojson"
+        "osm/raw/all_raw_substations.geojson",
     ]
     return outputs
 
@@ -330,7 +344,7 @@ def osm_clean_outputs():
         "osm/clean/all_clean_generators.geojson",
         "osm/clean/all_clean_generators.csv",
         "osm/clean/all_clean_lines.geojson",
-        "osm/clean/all_clean_substations.geojson"
+        "osm/clean/all_clean_substations.geojson",
     ]
     return outputs
 
@@ -340,7 +354,7 @@ def shapes_outputs():
         "shapes/country_shapes.geojson",
         "shapes/offshore_shapes.geojson",
         "shapes/africa_shape.geojson",
-        "shapes/gadm_shapes.geojson"
+        "shapes/gadm_shapes.geojson",
     ]
     return outputs
 
@@ -350,16 +364,14 @@ def osm_network_outputs():
         "base_network/all_lines_build_network.csv",
         "base_network/all_converters_build_network.csv",
         "base_network/all_transformers_build_network.csv",
-        "base_network/all_buses_build_network.csv"
+        "base_network/all_buses_build_network.csv",
     ]
     return outputs
 
 
 def renewable_profiles_outputs():
     carriers = ["csp", "hydro", "offwind-ac", "offwind-dc", "onwind", "solar"]
-    outputs = [
-        "renewable_profiles/profile_" + x + ".nc" for x in carriers
-    ]
+    outputs = ["renewable_profiles/profile_" + x + ".nc" for x in carriers]
     return outputs
 
 

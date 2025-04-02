@@ -7,14 +7,13 @@ import os
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
+import shutil
 import warnings
 
 warnings.filterwarnings("ignore")
 from scripts._helper import (
-    PYPSA_EARTH_DIR,
     configure_logging,
     create_logger,
-    download_and_unzip_gdrive,
     mock_snakemake,
     update_config_from_wildcards,
 )
@@ -25,9 +24,8 @@ logger = create_logger(__name__)
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
-            "retrieve_cutouts",
+            "retrieve_custom_powerplants",
             configfile="configs/calibration/config.base_AC.yaml",
-            countries=["US"],
         )
 
     configure_logging(snakemake)
@@ -35,13 +33,11 @@ if __name__ == "__main__":
     # update config based on wildcards
     config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
 
-    # load cutouts configuration
-    config_cutouts = config["custom_databundles"]["bundle_cutouts_USA"]
+    old_custom_powerplants_path = snakemake.input.old_path
+    new_custom_powerplants_path = snakemake.output.destination
 
-    # destination for cutouts
-    destination = os.path.join(PYPSA_EARTH_DIR, config_cutouts["destination"])
+    with open(snakemake.output.powerplants_dummy_input, "w") as f:
+        f.write("success")
 
-    # download cutouts
-    downloaded = download_and_unzip_gdrive(
-        config_cutouts, destination=destination, logger=logger
-    )
+    shutil.copy(old_custom_powerplants_path, new_custom_powerplants_path)
+    logger.info(f"Retrieved custom_powerplants.csv file successfully")

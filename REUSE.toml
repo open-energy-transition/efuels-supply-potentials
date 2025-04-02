@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText:  Open Energy Transition gGmbH
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+version = 1
+SPDX-PackageName = "efuels-supply-potentials"
+SPDX-PackageSupplier = "Open Energy Transition"
+SPDX-PackageDownloadLocation = "https://github.com/open-energy-transition/efuels-supply-potentials"
+
+[[annotations]]
+path = "data/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = ".github/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = ".gitmodules"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = ".gitignore"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC0-1.0"

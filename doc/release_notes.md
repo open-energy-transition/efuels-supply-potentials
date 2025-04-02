@@ -56,7 +56,7 @@ Please list contributions, add reference to PRs if present.
 
 * Enabled **setting demand projections** based on the **NREL EFS**: [PR #38](https://github.com/open-energy-transition/efuels-supply-potentials/pull/38) and [PR #40](https://github.com/open-energy-transition/efuels-supply-potentials/pull/40)
 
-* Added functionality to separate **e-kerosene** demand and set **SAF mandate** by choosing blending rate: [PR #37](https://github.com/open-energy-transition/efuels-supply-potentials/pull/37) 
+* Added functionality to separate **e-kerosene** demand and set **SAF mandate** by choosing blending rate: [PR #37](https://github.com/open-energy-transition/efuels-supply-potentials/pull/37)
 
 * Integrated **generate aviation scenario** and **rescale fraction in airports dataset by state demand** into the workflow: [PR #35](https://github.com/open-energy-transition/efuels-supply-potentials/pull/35)
 
@@ -72,11 +72,11 @@ Please list contributions, add reference to PRs if present.
 
 * Prepared **merged airports** dataset: [PR #16](https://github.com/open-energy-transition/efuels-supply-potentials/pull/16)
 
-* Analyzed statewise **passengers and fuel consumption data** for fuel demand disaggregation for airports: [PR #9](https://github.com/open-energy-transition/efuels-supply-potentials/pull/9) 
+* Analyzed statewise **passengers and fuel consumption data** for fuel demand disaggregation for airports: [PR #9](https://github.com/open-energy-transition/efuels-supply-potentials/pull/9)
 
 * Facilitated **PyPSA-Earth sector run**: PyPSA-Earth [PR #1134](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1134), [PR #1143](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1143), [PR #1145](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1145), [PR #1165](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1165), [PR #1166](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1166)
 
-* Fixed **hydro profile data** by splitting inflow to powerplants: PyPSA-Earth [PR #1119](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1119) 
+* Fixed **hydro profile data** by splitting inflow to powerplants: PyPSA-Earth [PR #1119](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1119)
 
 * Added **statewise validation** script that compares demand and installed capacities with EIA data: [PR #7](https://github.com/open-energy-transition/efuels-supply-potentials/pull/7)
 

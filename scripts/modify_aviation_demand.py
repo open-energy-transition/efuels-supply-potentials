@@ -1,15 +1,18 @@
+# -*- coding: utf-8 -*-
 # SPDX-FileCopyrightText:  Open Energy Transition gGmbH
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
-import pandas as pd
-import warnings
-warnings.filterwarnings("ignore")
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger
 
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
+import warnings
+
+import pandas as pd
+
+warnings.filterwarnings("ignore")
+from scripts._helper import create_logger, mock_snakemake, update_config_from_wildcards
 
 logger = create_logger(__name__)
 
@@ -56,10 +59,12 @@ if __name__ == "__main__":
     aviation_demand_TWh = aviation_demand * conversion_factor
 
     # Update the energy totals with the new aviation demand
-    energy_total.loc[country, "total domestic aviation"] = aviation_demand_TWh * domestic_ratio
-    energy_total.loc[country, "total international aviation"] = aviation_demand_TWh * international_ratio
+    energy_total.loc[country, "total domestic aviation"] = (
+        aviation_demand_TWh * domestic_ratio
+    )
+    energy_total.loc[country, "total international aviation"] = (
+        aviation_demand_TWh * international_ratio
+    )
 
     # Save the updated energy totals back to the CSV file
     energy_total.to_csv(snakemake.output.energy_totals)
-
-

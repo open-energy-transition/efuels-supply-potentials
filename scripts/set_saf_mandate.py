@@ -1,21 +1,29 @@
+# -*- coding: utf-8 -*-
 # SPDX-FileCopyrightText:  Open Energy Transition gGmbH
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
-import pandas as pd
+
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 import numpy as np
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            configure_logging, load_network
+import pandas as pd
+
+from scripts._helper import (
+    configure_logging,
+    create_logger,
+    load_network,
+    mock_snakemake,
+    update_config_from_wildcards,
+)
 
 logger = create_logger(__name__)
 
 
 def add_ekerosene_buses(n):
     """
-        Adds e-kerosene buses and stores, and adds links between e-kerosene and oil bus
+    Adds e-kerosene buses and stores, and adds links between e-kerosene and oil bus
     """
     # get oil bus names
     oil_buses = n.buses.query("carrier in 'oil'")
@@ -87,13 +95,15 @@ def add_ekerosene_buses(n):
 
 def reroute_FT_output(n):
     """
-        Reroutes output of Fischer-Tropsch from Oil to E-kerosene bus
+    Reroutes output of Fischer-Tropsch from Oil to E-kerosene bus
     """
     ft_carrier = "Fischer-Tropsch"
     ft_links = n.links.query("carrier in @ft_carrier").index
 
     # switch bus1 of FT from oil to E-kerosene
-    n.links.loc[ft_links, "bus1"] = n.links.loc[ft_links, "bus1"].str.replace("oil","e-kerosene")
+    n.links.loc[ft_links, "bus1"] = n.links.loc[ft_links, "bus1"].str.replace(
+        "oil", "e-kerosene"
+    )
     logger.info("Rerouted Fischer-Tropsch output from Oil buses to E-kerosene buses")
 
 def get_dynamic_blending_rate(config):
@@ -113,14 +123,16 @@ def get_dynamic_blending_rate(config):
 
 def redistribute_aviation_demand(n, rate):
     """
-        Redistribute aviation demand to e-kerosene and kerosene based on blending rate
+    Redistribute aviation demand to e-kerosene and kerosene based on blending rate
     """
     aviation_demand_carrier = "kerosene for aviation"
     total_aviation_demand = n.loads.query("carrier in @aviation_demand_carrier")
 
     # new kerosene for aviation demand = total * (1 - rate)
-    n.loads.loc[total_aviation_demand.index, "p_set"] *= (1 - rate)
-    logger.info(f"Set kerosene for aviation to {(1-rate)*100:.1f}% of total aviation demand")
+    n.loads.loc[total_aviation_demand.index, "p_set"] *= 1 - rate
+    logger.info(
+        f"Set kerosene for aviation to {(1-rate)*100:.1f}% of total aviation demand"
+    )
 
     # add e-kerosene for aviation load
     n.madd(
@@ -130,7 +142,9 @@ def redistribute_aviation_demand(n, rate):
         carrier="e-kerosene for aviation",
         p_set=total_aviation_demand.p_set.fillna(0).values * rate,
     )
-    logger.info(f"Added e-kerosene for aviation demand at the rate of {(rate*100):.1f}% of total aviation demand")
+    logger.info(
+        f"Added e-kerosene for aviation demand at the rate of {(rate*100):.1f}% of total aviation demand"
+    )
 
 
 if __name__ == "__main__":

@@ -3,9 +3,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 from snakemake.utils import min_version
+
 min_version("6.0")
 
 import sys
+
 sys.path.append("submodules/pypsa-earth")
 sys.path.append("submodules/pypsa-earth/scripts")
 
@@ -60,16 +62,35 @@ rule validate:
         countries=config["countries"],
         planning_horizon=config["validation"]["planning_horizon"],
     input:
-        solved_network=PYPSA_EARTH_DIR + "results/" + RDIR + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
+        solved_network=PYPSA_EARTH_DIR
+        + "results/"
+        + RDIR
+        + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
     output:
-        demand=RESULTS_DIR + RDIR + "demand_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
-        capacity=RESULTS_DIR + RDIR + "capacity_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
-        generation=RESULTS_DIR + RDIR + "generation_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
-        generation_detailed=RESULTS_DIR + RDIR + "generation_validation_detailed_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
-        demand_csv=RESULTS_DIR + RDIR + "demand_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
-        capacity_csv=RESULTS_DIR + RDIR + "capacity_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
-        generation_csv=RESULTS_DIR + RDIR + "generation_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
-        generation_detailed_csv=RESULTS_DIR + RDIR + "generation_validation_detailed_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+        demand=RESULTS_DIR
+        + RDIR
+        + "demand_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+        capacity=RESULTS_DIR
+        + RDIR
+        + "capacity_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+        generation=RESULTS_DIR
+        + RDIR
+        + "generation_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+        generation_detailed=RESULTS_DIR
+        + RDIR
+        + "generation_validation_detailed_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+        demand_csv=RESULTS_DIR
+        + RDIR
+        + "demand_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+        capacity_csv=RESULTS_DIR
+        + RDIR
+        + "capacity_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+        generation_csv=RESULTS_DIR
+        + RDIR
+        + "generation_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+        generation_detailed_csv=RESULTS_DIR
+        + RDIR
+        + "generation_validation_detailed_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
     resources:
         mem_mb=16000,
     script:
@@ -82,14 +103,29 @@ rule statewise_validate:
         planning_horizon=config["validation"]["planning_horizon"],
         plots_config=config["plotting"],
     input:
-        solved_network=PYPSA_EARTH_DIR + "results/" + RDIR + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
+        solved_network=PYPSA_EARTH_DIR
+        + "results/"
+        + RDIR
+        + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
     output:
-        demand_statewise_comparison=RESULTS_DIR + RDIR + "total_demand_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
-        statewise_installed_capacity_pypsa=RESULTS_DIR + RDIR + "installed_capacity_pypsa_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
-        statewise_installed_capacity_eia=RESULTS_DIR + RDIR + "installed_capacity_eia_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
-        table_demand_statewise_comparison=RESULTS_DIR + RDIR + "total_demand_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
-        table_statewise_installed_capacity_pypsa=RESULTS_DIR + RDIR + "installed_capacity_pypsa_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
-        table_statewise_installed_capacity_eia=RESULTS_DIR + RDIR + "installed_capacity_eia_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+        demand_statewise_comparison=RESULTS_DIR
+        + RDIR
+        + "total_demand_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+        statewise_installed_capacity_pypsa=RESULTS_DIR
+        + RDIR
+        + "installed_capacity_pypsa_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+        statewise_installed_capacity_eia=RESULTS_DIR
+        + RDIR
+        + "installed_capacity_eia_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+        table_demand_statewise_comparison=RESULTS_DIR
+        + RDIR
+        + "total_demand_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+        table_statewise_installed_capacity_pypsa=RESULTS_DIR
+        + RDIR
+        + "installed_capacity_pypsa_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
+        table_statewise_installed_capacity_eia=RESULTS_DIR
+        + RDIR
+        + "installed_capacity_eia_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
     resources:
         mem_mb=16000,
     script:
@@ -100,10 +136,15 @@ rule get_capacity_factor:
     params:
         alternative_clustering=config["cluster_options"]["alternative_clustering"],
     input:
-        unsolved_network=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
-        gadm="data/validation/gadm41_USA_1.json"
+        unsolved_network=PYPSA_EARTH_DIR
+        + "networks/"
+        + RDIR
+        + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
+        gadm="data/validation/gadm41_USA_1.json",
     output:
-        capacity_factors=RESULTS_DIR + RDIR + "capacity_factors_s{simpl}_{clusters}_ec_l{ll}_{opts}.xlsx",
+        capacity_factors=RESULTS_DIR
+        + RDIR
+        + "capacity_factors_s{simpl}_{clusters}_ec_l{ll}_{opts}.xlsx",
     resources:
         mem_mb=8000,
     script:
@@ -112,36 +153,51 @@ rule get_capacity_factor:
 
 rule get_capacity_factors:
     input:
-        expand(RESULTS_DIR + RDIR
+        expand(
+            RESULTS_DIR
+            + RDIR
             + "capacity_factors_s{simpl}_{clusters}_ec_l{ll}_{opts}.xlsx",
             **config["scenario"],
         ),
 
 
 if config["cluster_options"]["alternative_clustering"]:
+
     rule statewise_validate_all:
         input:
-            expand(RESULTS_DIR + RDIR
+            expand(
+                RESULTS_DIR
+                + RDIR
                 + "total_demand_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
                 **config["scenario"],
             ),
-            expand(RESULTS_DIR + RDIR
+            expand(
+                RESULTS_DIR
+                + RDIR
                 + "installed_capacity_pypsa_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
                 **config["scenario"],
             ),
-            expand(RESULTS_DIR + RDIR
+            expand(
+                RESULTS_DIR
+                + RDIR
                 + "installed_capacity_eia_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
                 **config["scenario"],
             ),
-            expand(RESULTS_DIR + RDIR
+            expand(
+                RESULTS_DIR
+                + RDIR
                 + "total_demand_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
                 **config["scenario"],
             ),
-            expand(RESULTS_DIR + RDIR
+            expand(
+                RESULTS_DIR
+                + RDIR
                 + "installed_capacity_pypsa_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
                 **config["scenario"],
             ),
-            expand(RESULTS_DIR + RDIR
+            expand(
+                RESULTS_DIR
+                + RDIR
                 + "installed_capacity_eia_statewise_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
                 **config["scenario"],
             ),
@@ -149,35 +205,51 @@ if config["cluster_options"]["alternative_clustering"]:
 
 rule validate_all:
     input:
-        expand(RESULTS_DIR + RDIR
+        expand(
+            RESULTS_DIR
+            + RDIR
             + "demand_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
             **config["scenario"],
         ),
-        expand(RESULTS_DIR + RDIR
+        expand(
+            RESULTS_DIR
+            + RDIR
             + "capacity_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
             **config["scenario"],
         ),
-        expand(RESULTS_DIR + RDIR
+        expand(
+            RESULTS_DIR
+            + RDIR
             + "generation_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
             **config["scenario"],
         ),
-        expand(RESULTS_DIR + RDIR
+        expand(
+            RESULTS_DIR
+            + RDIR
             + "generation_validation_detailed_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
             **config["scenario"],
         ),
-        expand(RESULTS_DIR + RDIR
+        expand(
+            RESULTS_DIR
+            + RDIR
             + "demand_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
             **config["scenario"],
         ),
-        expand(RESULTS_DIR + RDIR
+        expand(
+            RESULTS_DIR
+            + RDIR
             + "capacity_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
             **config["scenario"],
         ),
-        expand(RESULTS_DIR + RDIR
+        expand(
+            RESULTS_DIR
+            + RDIR
             + "generation_validation_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
             **config["scenario"],
         ),
-        expand(RESULTS_DIR + RDIR
+        expand(
+            RESULTS_DIR
+            + RDIR
             + "generation_validation_detailed_s{simpl}_{clusters}_ec_l{ll}_{opts}.csv",
             **config["scenario"],
         ),
@@ -201,6 +273,7 @@ rule process_airport_data:
     script:
         "plots/airport_data_postprocessing.py"
 
+
 rule generate_aviation_scenario:
     input:
         aviation_demand_data="data/icct/US Aviation Fuel Demand Projection_NP_0.1.xls",
@@ -213,17 +286,23 @@ rule generate_aviation_scenario:
 
 
 if config["custom_data"]["airports"]:
+
     ruleorder: process_airport_data > prepare_airports
+
 else:
+
     ruleorder: prepare_airports > process_airport_data
 
 
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("cutouts", False):
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
+    "cutouts", False
+):
+
     rule retrieve_cutouts:
         params:
             countries=config["countries"],
         output:
-            cutouts=PYPSA_EARTH_DIR+"cutouts/cutout-2013-era5.nc"
+            cutouts=PYPSA_EARTH_DIR + "cutouts/cutout-2013-era5.nc",
         resources:
             mem_mb=16000,
         script:
@@ -240,7 +319,10 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("cutouts
 
 
 # retrieving precomputed osm/raw data and bypassing download_osm_data rule
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_raw", False):
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
+    "osm_raw", False
+):
+
     rule retrieve_osm_raw:
         params:
             destination="resources/" + RDIR,
@@ -255,7 +337,10 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_raw
 
 
 # retrieving precomputed osm/clean data and bypassing clean_osm_data rule
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_clean", False):
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
+    "osm_clean", False
+):
+
     rule retrieve_osm_clean:
         params:
             destination="resources/" + RDIR,
@@ -270,7 +355,10 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_cle
 
 
 # retrieving shapes data and bypassing build_shapes rule
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("shapes", False):
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
+    "shapes", False
+):
+
     rule retrieve_shapes:
         params:
             destination="resources/" + RDIR,
@@ -285,7 +373,10 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("shapes"
 
 
 # retrieving base_network data and bypassing build_osm_network rule
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_network", False):
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
+    "osm_network", False
+):
+
     rule retrieve_osm_network:
         params:
             destination="resources/" + RDIR,
@@ -300,7 +391,10 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("osm_net
 
 
 # retrieving base.nc and bypassing base_network rule
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("base_network", False):
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
+    "base_network", False
+):
+
     rule retrieve_base_network:
         input:
             **{k: v for k, v in rules.base_network.input.items()},
@@ -313,21 +407,28 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("base_ne
 
 
 # retrieving renewable_profiles data and bypassing build_renewable_profiles rule
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("renewable_profiles", False):
+if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
+    "renewable_profiles", False
+):
+
     rule retrieve_renewable_profiles:
         params:
             destination="resources/" + RDIR,
             alternative_clustering=config["cluster_options"]["alternative_clustering"],
         output:
             expand(
-                "{PYPSA_EARTH_DIR}resources/{RDIR}{file}", PYPSA_EARTH_DIR=PYPSA_EARTH_DIR, RDIR=RDIR, file=renewable_profiles_outputs()),
+                "{PYPSA_EARTH_DIR}resources/{RDIR}{file}",
+                PYPSA_EARTH_DIR=PYPSA_EARTH_DIR,
+                RDIR=RDIR,
+                file=renewable_profiles_outputs(),
+            ),
         script:
             "scripts/retrieve_renewable_profiles.py"
 
     ruleorder: retrieve_renewable_profiles > build_renewable_profiles
 
 
-if (config["countries"] == ["US"]):
+if config["countries"] == ["US"]:
 
     use rule build_powerplants from pypsa_earth with:
         input:
@@ -348,9 +449,13 @@ if config["countries"] == ["US"]:
 
     use rule build_demand_profiles from pypsa_earth with:
         input:
-            **{k: v for k, v in rules.build_demand_profiles.input.items() if k != "load"},
+            **{
+                k: v
+                for k, v in rules.build_demand_profiles.input.items()
+                if k != "load"
+            },
             ssp2_dummy_input=temp("ssp2_dummy_output.log"),
-            load = [PYPSA_EARTH_DIR + 'data/ssp2-2.6/2030/era5_2013/NorthAmerica.csv'],
+            load=[PYPSA_EARTH_DIR + "data/ssp2-2.6/2030/era5_2013/NorthAmerica.csv"],
 
     rule retrieve_ssp2:
         params:
@@ -358,48 +463,55 @@ if config["countries"] == ["US"]:
         input:
             old_path="data/NorthAmerica.csv",
         output:
-            ssp2_northamerica=PYPSA_EARTH_DIR + "data/ssp2-2.6/2030/era5_2013/NorthAmerica.csv",
+            ssp2_northamerica=PYPSA_EARTH_DIR
+            + "data/ssp2-2.6/2030/era5_2013/NorthAmerica.csv",
             ssp2_dummy_output=temp("ssp2_dummy_output.log"),
         script:
             "scripts/retrieve_ssp2.py"
 
-            
+
 if config["countries"] == ["US"]:
 
     use rule prepare_energy_totals from pypsa_earth with:
         output:
-            energy_totals=PYPSA_EARTH_DIR + "resources/"
+            energy_totals=PYPSA_EARTH_DIR
+            + "resources/"
             + SECDIR
             + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv",
 
     rule modify_aviation_demand:
         input:
             aviation_demand="data/icct/aviation_demand.csv",
-            energy_totals=PYPSA_EARTH_DIR + "resources/"
+            energy_totals=PYPSA_EARTH_DIR
+            + "resources/"
             + SECDIR
             + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv",
         output:
-            energy_totals=PYPSA_EARTH_DIR + "resources/"
+            energy_totals=PYPSA_EARTH_DIR
+            + "resources/"
             + SECDIR
             + "energy_totals_{demand}_{planning_horizons}.csv",
         script:
             "scripts/modify_aviation_demand.py"
-        
+
 
 if config["demand_distribution"]["enable"]:
+
     rule preprocess_demand_data:
         input:
             demand_utility_path="data/demand_data/table_10_EIA_utility_sales.xlsx",
-            country_gadm_path=PYPSA_EARTH_DIR + "resources/" + RDIR + "shapes/country_shapes.geojson",
+            country_gadm_path=PYPSA_EARTH_DIR
+            + "resources/"
+            + RDIR
+            + "shapes/country_shapes.geojson",
             erst_path="data/demand_data/Electric_Retail_Service_Territories.geojson",
             gadm_usa_path="data/demand_data/gadm41_USA_1.json",
             eia_per_capita_path="data/demand_data/use_es_capita.xlsx",
             additional_demand_path="data/demand_data/HS861_2010-.xlsx",
         output:
-            utility_demand_path="data/demand_data/ERST_mapped_demand_centroids.geojson"
+            utility_demand_path="data/demand_data/ERST_mapped_demand_centroids.geojson",
         script:
             "scripts/preprocess_demand_data.py"
-
 
     rule retrieve_demand_data:
         output:
@@ -413,7 +525,6 @@ if config["demand_distribution"]["enable"]:
             "data/demand_data/EIA930_2023_Jul_Dec_opt.csv",
         script:
             "scripts/retrieve_demand_data.py"
-
 
     rule build_demand_profiles_from_eia:
         params:
@@ -430,57 +541,64 @@ if config["demand_distribution"]["enable"]:
             base_network=PYPSA_EARTH_DIR + "networks/" + RDIR + "base.nc",
             gadm_shape="data/demand_data/gadm41_USA_1.json",
         output:
-            demand_profile_path=PYPSA_EARTH_DIR + "resources/" + RDIR + "demand_profiles.csv",
+            demand_profile_path=PYPSA_EARTH_DIR
+            + "resources/"
+            + RDIR
+            + "demand_profiles.csv",
         script:
             "scripts/build_demand_profiles_from_eia.py"
 
-
     ruleorder: build_demand_profiles_from_eia > build_demand_profiles
-      
+
 
 if config["saf_mandate"]["ekerosene_split"]:
+
     rule set_saf_mandate:
         params:
             blending_rate=config["saf_mandate"]["blending_rate"],
-            non_spatial_ekerosene=config["saf_mandate"]["non_spatial_ekerosene"]
+            non_spatial_ekerosene=config["saf_mandate"]["non_spatial_ekerosene"],
         input:
-            network=PYPSA_EARTH_DIR + "results/"
+            network=PYPSA_EARTH_DIR
+            + "results/"
             + SECDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}.nc",
         output:
-            modified_network=PYPSA_EARTH_DIR + "results/"
+            modified_network=PYPSA_EARTH_DIR
+            + "results/"
             + SECDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
         script:
             "scripts/set_saf_mandate.py"
 
-
     use rule add_export from pypsa_earth with:
         input:
             **{k: v for k, v in rules.add_export.input.items() if k != "network"},
-            network=PYPSA_EARTH_DIR + "results/"
+            network=PYPSA_EARTH_DIR
+            + "results/"
             + SECDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
 
 
 rule test_modify_prenetwork:
     input:
-        prenetwork=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
+        prenetwork=PYPSA_EARTH_DIR
+        + "networks/"
+        + RDIR
+        + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
     output:
-        network=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_mod.nc",
+        network=PYPSA_EARTH_DIR
+        + "networks/"
+        + RDIR
+        + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_mod.nc",
     resources:
         mem_mb=16000,
     script:
         "scripts/test_modify_network.py"
 
 
-#use rule prepare_network from pypsa_earth with:
+# use rule prepare_network from pypsa_earth with:
 #    input:
 #        **{k: v for k, v in rules.prepare_network.input.items() if k != "tech_costs"},
-
-
-#use rule add_extra_components from pypsa_earth with:
+# use rule add_extra_components from pypsa_earth with:
 #    input:
 #        **{k: v for k, v in rules.add_extra_components.input.items()},
-
-

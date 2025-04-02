@@ -20,7 +20,7 @@ Activate `pypsa-earth` environment:
 
     conda activate pypsa-earth
 
-* **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit before linopy merge (`83434a021`). Please, make sure the environment was build using on this commit.
+* **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit (`ee14fa5`) of `efuels-supply-potential` branch of [open-energy-transition/pypsa-earth](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials) repository. Please, make sure the environment was build using on this commit.
 
 ## 2. Running scenarios
 
@@ -94,3 +94,9 @@ snakemake -call statewise_validate_all --configfile configs/calibration/config.b
 |`retrieve_demand_data`          |Any base or scenario config file         |Retrieves utility demand data from google drive to `data/demand_data/*`|
 
 * `RDIR` - scenario folder
+
+## 4. Cherry-picking
+Cherry-picking allows applying specific commits from one branch to another. We cherry-picked the important commits from upstream pypsa-earth to our project branch ([efuels-supply-potentials](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials)). The commits of the following PRs were integrated to project branch:
+
+1. [PR #1372](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1372): Scale temporal loads based on temporal resolution.
+2. [PR #1381](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1381): Remove space in rail transport oil and electricity carriers.

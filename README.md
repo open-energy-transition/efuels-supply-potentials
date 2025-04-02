@@ -22,6 +22,30 @@ Activate `pypsa-earth` environment:
 
 * **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit (`ee14fa5`) of `efuels-supply-potential` branch of [open-energy-transition/pypsa-earth](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials) repository.
 
+### 1.1. Configure pre-commit
+
+To ensure that all team members can use the pre-commit hooks and maintain code quality across the project, follow these steps:
+
+1. Navigate to the root directory of the repository, where the .pre-commit-config.yaml file is located. Then, run the following command to install the hooks defined in the .pre-commit-config.yaml file:
+```pre-commit install
+```
+This command will set up the hooks in the `.git/hooks directory` (specifically the `pre-commit hook`), ensuring that the hooks are executed automatically before each commit.
+
+2. To ensure that all files comply with the defined hooks, users can run the following command manually to check and fix any issues with all files in the repository:
+```pre-commit run --a
+```
+This step is optional but recommended to make sure that any formatting or linting issues are fixed before starting to commit changes.
+
+3. Once the pre-commit hooks are installed and verified, you can proceed to make changes to the code, add them to your commit, and push them to the repository. From this point forward, pre-commit will automatically run checks on your files whenever you try to commit:
+```git add .
+git commit -m "Your commit message"
+```
+If any of the hooks (such as `black`, `isort`, or `reuse lint`) detect issues (for example, formatting issues or missing license headers), the commit will be blocked, and you'll be required to fix the issues before retrying.
+
+4. Some hooks, such as `black` and `isort`, will automatically fix code formatting issues during the commit process. If a file is not formatted correctly, the hook will fix it, and the user can reattempt the commit. If a hook fails (for example, the license linting hook or a formatting hook fails), the commit will not proceed. The user will see a message explaining the issue, and they will need to correct it before committing again.
+
+5. Every time a new hook is added, or changes to the configuration in the `.pre-commit-config.yaml` are performed, it is necessary to run `pre-commit install` again.
+
 ## 2. Running scenarios
 
 This project utilizes [`snakemake`](https://snakemake.readthedocs.io/en/stable/) to automate the execution of scripts, ensuring efficient and reproducible workflows. Configuration settings for *snakemake* are available in the `configs/config.main.yaml` file as well as scenario-specific configuration files located in `configs/`.

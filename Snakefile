@@ -37,6 +37,8 @@ run = config["run"]
 RDIR = run["name"] + "/" if run.get("name") else ""
 SECDIR = run["sector_name"] + "/" if run.get("sector_name") else ""
 CDIR = RDIR if not run.get("shared_cutouts") else ""
+SDIR = config["summary_dir"].strip("/") + f"/{SECDIR}"
+RESDIR = config["results_dir"].strip("/") + f"/{SECDIR}"
 
 
 module pypsa_earth:
@@ -460,6 +462,30 @@ if config["saf_mandate"]["ekerosene_split"]:
             network=PYPSA_EARTH_DIR + "results/"
             + SECDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
+
+
+rule subregion_analysis:
+    # fix inputs for sector and power model probably use an if condition.
+    input:
+        path_shapes="data/subregion/needs_grid_regions_aggregated.geojson",
+        p_network=PYPSA_EARTH_DIR + "results/" + RDIR + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
+    output:
+        network=PYPSA_EARTH_DIR + "results/" + RDIR + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_subregion.nc",
+        subregion_plot=RESULTS_DIR + RDIR + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+    script:
+        "scripts/subregions_analysis.py"
+
+
+rule subregion_analysis_all:
+    input:
+        expand(PYPSA_EARTH_DIR
+            + "results/" + RDIR + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_subregion.nc",
+            **config["scenario"],
+        ),
+        expand(RESULTS_DIR + RDIR
+            + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}.png",
+            **config["scenario"],
+        ),
 
 
 rule test_modify_prenetwork:

@@ -7,6 +7,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
 import pandas as pd
 import numpy as np
+import pypsa
 import geopandas as gpd
 from shapely.geometry import Point
 import matplotlib.pyplot as plt
@@ -71,21 +72,13 @@ def preprocess_capacities(n_subregion):
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
-            "preprocess_subregions_data",
+            "subregion_analysis",
             configfile="configs/calibration/config.base.yaml",
-            simpl="",
-            ll="copt",
-            clusters=10,
-            opts="Co2L-24H",
-            sopts="24H",
-            planning_horizons=2020,
-            discountrate="0.071",
-            demand="AB",
         )
 
     configure_logging(snakemake)
     
-    network = snakemake.input.network
+    network = pypsa.Network(snakemake.input.p_network)
     path_shapes = snakemake.input.path_shapes
     distance_crs =  "EPSG:3857"
 
@@ -96,4 +89,4 @@ if __name__ == "__main__":
 
     fig1 = px.bar(capacities_df, barmode='stack', text_auto='.1f', orientation='h')
     fig1.update_layout(width=1000, yaxis_title='Installed capacity PyPSA (GW)')
-    fig1.write_image("testplot.png")
+    fig1.write_image(snakemake.output.subregion_plot)

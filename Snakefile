@@ -473,7 +473,7 @@ rule subregion_analysis:
         network=PYPSA_EARTH_DIR + "results/" + RDIR + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_subregion.nc",
         installed_capacity_plot=RESULTS_DIR + RDIR + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_installed_capacities.png",
         generation_capacity_plot=RESULTS_DIR + RDIR + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_generation_capacities.png",
-
+        demand_plot=RESULTS_DIR + RDIR + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_demand.png",
     script:
         "scripts/subregions_analysis.py"
 
@@ -490,6 +490,10 @@ rule subregion_analysis_all:
         ),
         expand(RESULTS_DIR + RDIR
             + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_generation_capacities.png",
+            **config["scenario"],
+        ),
+        expand(RESULTS_DIR + RDIR
+            + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_demand.png",
             **config["scenario"],
         ),
 

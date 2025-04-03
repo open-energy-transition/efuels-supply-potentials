@@ -99,7 +99,14 @@ def preprocess_generation(n_subregion):
 
     return generation_pypsa
 
+def preprocess_demand(n_subregion):
+    demand_df = n_subregion.loads_t.p.T.sum(axis=1)
+    demand_df.index = demand_df.index.map(lambda x: n_subregion.buses.loc[x, "country"])
+    demand_df = demand_df.groupby(demand_df.index).sum()
+    demand_df.index.name = "country"
+    demand_df = demand_df.to_frame().rename(columns={0: "demand"})
 
+    return demand_df
 
 
 if __name__ == "__main__":
@@ -120,11 +127,16 @@ if __name__ == "__main__":
 
     capacities_df = preprocess_capacities(n)
     generation_df = preprocess_generation(n)
+    demand_df = preprocess_demand(n)
 
     fig1 = px.bar(capacities_df, barmode='stack', text_auto='.1f', orientation='h')
     fig1.update_layout(width=1000, yaxis_title='Installed capacity PyPSA (GW)')
     fig1.write_image(snakemake.output.installed_capacity_plot)
 
-    fig1 = px.bar(generation_df, barmode='stack', text_auto='.1f', orientation='h')
-    fig1.update_layout(width=1000, yaxis_title='Generation capacity PyPSA (TWh)')
-    fig1.write_image(snakemake.output.generation_capacity_plot)
+    fig2 = px.bar(generation_df, barmode='stack', text_auto='.1f', orientation='h')
+    fig2.update_layout(width=1000, yaxis_title='Generation capacity PyPSA (TWh)')
+    fig2.write_image(snakemake.output.generation_capacity_plot)
+
+    fig3 = px.bar(demand_df, barmode='stack', text_auto='.1f', orientation='v')
+    fig3.update_layout(width=1000, yaxis_title='Demand PyPSA (TWh)')
+    fig3.write_image(snakemake.output.demand_plot)

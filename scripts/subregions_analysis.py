@@ -68,6 +68,39 @@ def preprocess_capacities(n_subregion):
     
     return merged_df
 
+def preprocess_generation(n_subregion):
+    gen_capacities = (n_subregion.generators_t
+                        .p.multiply(n_subregion.snapshot_weightings.objective, axis=0).T
+                        .groupby([n_subregion.generators.carrier, n_subregion.generators.bus])
+                        .sum()).sum(axis=1).unstack(level=0, fill_value=0)
+
+    gen_capacities.index = gen_capacities.index.map(lambda x: n_subregion.buses.loc[x, "country"])
+    gen_capacities = gen_capacities.groupby(gen_capacities.index).sum()
+
+    storage_capacities = (n_subregion.storage_units_t
+                            .p.multiply(n_subregion.snapshot_weightings.objective, axis=0).T
+                            .groupby([n_subregion.storage_units.carrier, n_subregion.storage_units.bus])
+                            .sum()).sum(axis=1).unstack(level=0, fill_value=0)
+
+    storage_capacities.index = storage_capacities.index.map(lambda x: n_subregion.buses.loc[x, "country"])
+    storage_capacities = storage_capacities.groupby(storage_capacities.index).sum()
+
+    generation_pypsa = ((pd.concat([gen_capacities, storage_capacities], axis=1)) / 1e6).fillna(0).round(2)
+
+    # Aggregate fossil fuel, hydro, and wind generation
+    generation_pypsa["fossil fuels"] = generation_pypsa[[
+        "CCGT", "OCGT", "coal"]].sum(axis=1)
+    generation_pypsa["hydro"] = generation_pypsa[["hydro", "ror", "PHS"]].sum(axis=1)
+    generation_pypsa["wind"] = generation_pypsa[[
+        "offwind-ac", "offwind-dc", "onwind"]].sum(axis=1)
+
+    generation_pypsa.drop(
+        columns=["CCGT", "OCGT", "coal", "ror", "PHS","offwind-ac", "offwind-dc", "onwind"], inplace=True)
+
+    return generation_pypsa
+
+
+
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -86,7 +119,12 @@ if __name__ == "__main__":
     n.export_to_netcdf(snakemake.output.network)
 
     capacities_df = preprocess_capacities(n)
+    generation_df = preprocess_generation(n)
 
     fig1 = px.bar(capacities_df, barmode='stack', text_auto='.1f', orientation='h')
     fig1.update_layout(width=1000, yaxis_title='Installed capacity PyPSA (GW)')
-    fig1.write_image(snakemake.output.subregion_plot)
+    fig1.write_image(snakemake.output.installed_capacity_plot)
+
+    fig1 = px.bar(generation_df, barmode='stack', text_auto='.1f', orientation='h')
+    fig1.update_layout(width=1000, yaxis_title='Generation capacity PyPSA (TWh)')
+    fig1.write_image(snakemake.output.generation_capacity_plot)

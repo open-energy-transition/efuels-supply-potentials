@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Added functionality to **connect all e-kerosene buses with a single E-kerosene-main bus* to model 0 cost of transport and store: [PR #42](https://github.com/open-energy-transition/efuels-supply-potentials/pull/42)
+
 * Added functionality to **set data center loads** to `demand_profiles.csv`: [PR #41](https://github.com/open-energy-transition/efuels-supply-potentials/pull/41)
 
 * Enabled **setting demand projections** based on the **NREL EFS**: [PR #38](https://github.com/open-energy-transition/efuels-supply-potentials/pull/38) and [PR #40](https://github.com/open-energy-transition/efuels-supply-potentials/pull/40)

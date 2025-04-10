@@ -441,7 +441,8 @@ if config["demand_distribution"]["enable"]:
 if config["saf_mandate"]["ekerosene_split"]:
     rule set_saf_mandate:
         params:
-            blending_rate=config["saf_mandate"]["blending_rate"]
+            blending_rate=config["saf_mandate"]["blending_rate"],
+            non_spatial_ekerosene=config["saf_mandate"]["non_spatial_ekerosene"]
         input:
             network=PYPSA_EARTH_DIR + "results/"
             + SECDIR

@@ -55,6 +55,35 @@ def add_ekerosene_buses(n):
     )
     logger.info("Added links between E-kerosene and Oil buses")
 
+    # link all e-kerosene buses with E-kerosene-main bus if set in config
+    if snakemake.params.non_spatial_ekerosene:
+        ekerosene_main_bus = ["E-kerosene-main"]
+        n.madd(
+            "Bus",
+            ekerosene_main_bus,
+            location="E-kerosene-main",
+            carrier="e-kerosene-main",
+        )
+        n.madd(
+            "Link",
+            [x + "-to-main" for x in ekerosene_buses],
+            bus0=ekerosene_buses,
+            bus1=ekerosene_main_bus,
+            carrier="e-kerosene-to-main",
+            p_nom_extendable=True,
+            efficiency=1.0,
+        )
+        n.madd(
+            "Link",
+            [x.replace("e-kerosene", "main-to-e-kerosene") for x in ekerosene_buses],
+            bus0=ekerosene_main_bus,
+            bus1=ekerosene_buses,
+            carrier="main-to-e-kerosene",
+            p_nom_extendable=True,
+            efficiency=1.0,
+        )
+        logger.info("Added links between E-kerosene buses and E-kerosene main bus")
+
 
 def reroute_FT_output(n):
     """

@@ -463,6 +463,41 @@ if config["saf_mandate"]["ekerosene_split"]:
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
 
 
+if config["add_custom_industry"]["enable"]:
+    rule build_custom_industry_demand:
+        params:
+            countries=config["countries"],
+            add_ethanol=config["add_custom_industry"]["ethanol"],
+            add_ammonia=config["add_custom_industry"]["ammonia"],
+            gadm_layer_id=config["build_shape_options"]["gadm_layer_id"],
+            alternative_clustering=config["cluster_options"]["alternative_clustering"],
+            industry_database=config["custom_data"]["industry_database"],
+        input:
+            uscity_map="data/industry_data/uscities.csv",
+            ethanol_plants="data/industry_data/ethanolcapacity.xlsx",
+            regions_onshore=PYPSA_EARTH_DIR + "resources/"
+            + RDIR
+            + "bus_regions/regions_onshore_elec_s{simpl}_{clusters}.geojson",
+            clustered_pop_layout=PYPSA_EARTH_DIR + "resources/"
+            + SECDIR
+            + "population_shares/pop_layout_elec_s{simpl}_{clusters}_{planning_horizons}.csv",
+            clustered_gdp_layout=PYPSA_EARTH_DIR + "resources/"
+            + SECDIR
+            + "gdp_shares/gdp_layout_elec_s{simpl}_{clusters}_{planning_horizons}.csv",
+            shapes_path=PYPSA_EARTH_DIR + "resources/"
+            + RDIR
+            + "bus_regions/regions_onshore_elec_s{simpl}_{clusters}.geojson",
+        output:
+            industrial_energy_demand_per_node=PYPSA_EARTH_DIR + "resources/"
+            + SECDIR
+            + "demand/industrial_energy_demand_per_node_elec_s{simpl}_{clusters}_{planning_horizons}_{demand}_custom_industry.csv",
+        threads: 1
+        resources:
+            mem_mb=2000,
+        script:
+            "scripts/build_custom_industry_demand.py"
+
+
 rule test_modify_prenetwork:
     input:
         prenetwork=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",

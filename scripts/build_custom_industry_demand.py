@@ -5,12 +5,14 @@
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
+sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../submodules/pypsa-earth/scripts/")))
 import pandas as pd
 import geopandas as gpd
 from difflib import get_close_matches
 import warnings
 warnings.filterwarnings("ignore")
 from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger
+from build_industrial_distribution_key import map_industry_to_buses
 
 
 logger = create_logger(__name__)
@@ -142,6 +144,12 @@ def prepare_ethanol_plants(ethanol_plants_raw, uscities_clean):
     # 1 gallon ethanol = 80.2 MJ https://indico.ictp.it/event/8008/session/3/contribution/23/material/slides/2.pdf
     # 1 MWh = 3600 MJ
     ethanol_plants_clean["MWh/a"] = ethanol_plants_clean["MMgal/yr"] * 1e6 * 80.2 / 3600
+
+    # Add country and industry column
+    ethanol_plants_clean.loc[:, ["country", "industry"]] = ["US", "ethanol"]
+
+    # Select relevant columns
+    ethanol_plants_clean = ethanol_plants_clean[["City", "State", "country", "x", "y", "MWh/a", "industry"]]
     logger.info("Prepared ethanol plants data")
     return ethanol_plants_clean
 
@@ -210,6 +218,12 @@ def prepare_ammonia_plants(ammonia_plants_raw, uscities_clean):
     # Convert production capacity from thousand metric tons to MWh/a
     # 1 metric ton ammonia = 5.17 MWh https://ammoniaenergy.org/articles/round-trip-efficiency-of-ammonia-as-a-renewable-energy-transportation-media/
     ammonia_plants_clean["MWh/a"] = ammonia_plants_clean["Production (thousand metric tons)"] * 1e3 * 5.17
+
+    # Add country column
+    ammonia_plants_clean.loc[:, ["country", "industry"]] = ["US", "ammonia"]
+
+    # Select relevant columns
+    ammonia_plants_clean = ammonia_plants_clean[["City", "State", "country", "x", "y", "MWh/a", "industry"]]
     logger.info("Prepared ammonia plants data")
     return ammonia_plants_clean
 
@@ -222,10 +236,19 @@ if __name__ == "__main__":
             clusters="10",
             planning_horizons="2020",
             demand="AB",
-            configfile="configs/calibration/config.base_AC.yaml",
+            configfile="configs/calibration/config.base.yaml",
         )
     # update config based on wildcards
     config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
+
+    # snakemake params
+    countries = snakemake.params.countries
+    gadm_layer_id = snakemake.params.gadm_layer_id
+    gadm_clustering = snakemake.params.alternative_clustering
+    shapes_path = snakemake.input.shapes_path
+
+    # load shapes file
+    regions = gpd.read_file(snakemake.input.regions_onshore)
 
     # load US cities locational information
     uscities = pd.read_csv(snakemake.input.uscity_map)
@@ -239,6 +262,8 @@ if __name__ == "__main__":
 
         # clean ethanol plants data
         ethanol_plants_clean = prepare_ethanol_plants(ethanol_plants_raw, uscities_clean)
+    else:
+        ethanol_plants_clean = pd.DataFrame(columns=["City", "State", "country", "y", "x", "MWh/a", "industry"])
 
 
     if snakemake.params.add_ammonia:
@@ -247,3 +272,13 @@ if __name__ == "__main__":
 
         # clean ammonia plants data
         ammonia_plants_clean = prepare_ammonia_plants(ammonia_plants_raw, uscities_clean)
+    else:
+        ammonia_plants_clean = pd.DataFrame(columns=["City", "State", "country", "y", "x", "MWh/a", "industry"])
+
+    # combine ethanol and ammonia plants data
+    combined_plants = pd.concat([ethanol_plants_clean, ammonia_plants_clean], ignore_index=True, axis=0)
+
+    # Map industry to buses
+    industrial_database = map_industry_to_buses(combined_plants, countries, gadm_layer_id, shapes_path, gadm_clustering)
+
+    

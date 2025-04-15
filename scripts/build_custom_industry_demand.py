@@ -206,6 +206,10 @@ def prepare_ammonia_plants(ammonia_plants_raw, uscities_clean):
 
     # Merge longitude and latitude columns for non-exact matches
     ammonia_plants_clean = fuzzy_match_ammonia(ammonia_plants_clean, uscities_clean)
+
+    # Convert production capacity from thousand metric tons to MWh/a
+    # 1 metric ton ammonia = 5.17 MWh https://ammoniaenergy.org/articles/round-trip-efficiency-of-ammonia-as-a-renewable-energy-transportation-media/
+    ammonia_plants_clean["MWh/a"] = ammonia_plants_clean["Production (thousand metric tons)"] * 1e3 * 5.17
     logger.info("Prepared ammonia plants data")
     return ammonia_plants_clean
 

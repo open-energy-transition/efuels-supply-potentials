@@ -16,7 +16,41 @@ from scripts._helper import mock_snakemake, update_config_from_wildcards, create
 logger = create_logger(__name__)
 
 
-def fuzzy_match(ethanol_plants_clean, uscities):
+def process_uscities(uscities):
+    """
+    Process US cities data to extract relevant information.
+    """
+    # Rename columns of uscities to match ethanol plants data
+    uscities.rename(
+        columns={
+            "state_name":"State",
+            "city":"City",
+            "lat":"y",
+            "lng":"x"
+        }, inplace=True
+    )
+
+    # Groupby state and city names, and take mean for x and y coordinates
+    uscities_grouped = (
+        uscities.groupby(["City", "State"])
+        .agg({"y": "mean", "x": "mean"})
+        .reset_index()
+    )
+
+    # Get State name to state code mapping
+    state_id_mapping = uscities[["State", "state_id"]].drop_duplicates().set_index("State")
+
+    # Add state_id to uscities_grouped
+    uscities_grouped["State_id"] = uscities_grouped["State"].map(state_id_mapping["state_id"])
+
+    # Make City and State names lowercase
+    uscities_grouped["City"] = uscities_grouped["City"].str.lower()
+    uscities_grouped["State"] = uscities_grouped["State"].str.lower()
+
+    return uscities_grouped
+
+
+def fuzzy_match_ethanol(ethanol_plants_clean, uscities_clean):
     """
     Fuzzy match ethanol plants with US cities based on name similarity.
     """
@@ -31,11 +65,10 @@ def fuzzy_match(ethanol_plants_clean, uscities):
         state = row["State"]
 
         # Filter uscities DataFrame for the same state to find candidates
-        candidates = uscities[uscities["State"] == state]
+        candidates = uscities_clean[uscities_clean["State"] == state]
 
         # Find the best match using fuzzy matching
         matches = get_close_matches(city, candidates['City'], n=1, cutoff=0.9)
-        print(f"Fuzzy matching for {city}, {state}: {matches}")
         # If a match is found, update the coordinates
         if matches:
             logger.info(f"Fuzzy matching for {city}, {state}: {matches}")
@@ -70,11 +103,11 @@ def fuzzy_match(ethanol_plants_clean, uscities):
     return ethanol_plants_clean
 
 
-def prepare_ethanol_plants(ethanol_plants_raw, uscities):
+def prepare_ethanol_plants(ethanol_plants_raw, uscities_clean):
     """
     Clean and prepare ethanol plants data.
     """
-    # Drop rows with no city names
+    # Drop rows with no city names (intermediate empty spaces)
     ethanol_plants_clean = ethanol_plants_raw[ethanol_plants_raw.City.notna()]
 
     # Fill state names by forward filling
@@ -93,38 +126,17 @@ def prepare_ethanol_plants(ethanol_plants_raw, uscities):
     ethanol_plants_clean["City"] = ethanol_plants_clean["City"].str.lower()
     ethanol_plants_clean["State"] = ethanol_plants_clean["State"].str.lower()
 
-    # Rename columns of uscities to match ethanol plants data
-    uscities.rename(
-        columns={
-            "state_name":"State",
-            "city":"City",
-            "lat":"y",
-            "lng":"x"
-        }, inplace=True
-    )
-
-    # Groupby state and city names, and take mean for x and y coordinates
-    uscities = (
-        uscities.groupby(["City", "State"])
-        .agg({"y": "mean", "x": "mean"})
-        .reset_index()
-    )
-
-    # Make City and State names lowercase
-    uscities["City"] = uscities["City"].str.lower()
-    uscities["State"] = uscities["State"].str.lower()
-
     # Merge longitude and latitude columns from uscities based on State and City names
     ethanol_plants_clean = pd.merge(
         ethanol_plants_clean,
-        uscities[["City", "State", "y", "x"]],
+        uscities_clean[["City", "State", "y", "x"]],
         how="left",
         left_on=["City", "State"],
         right_on=["City", "State"],
     )
 
     # Merge longitude and latitude columns for non-exact matches
-    ethanol_plants_clean = fuzzy_match(ethanol_plants_clean, uscities)
+    ethanol_plants_clean = fuzzy_match_ethanol(ethanol_plants_clean, uscities_clean)
 
     # Ethanol production capacity in MMgal/yr to MWh/a 
     # 1 gallon ethanol = 80.2 MJ https://indico.ictp.it/event/8008/session/3/contribution/23/material/slides/2.pdf
@@ -132,6 +144,70 @@ def prepare_ethanol_plants(ethanol_plants_raw, uscities):
     ethanol_plants_clean["MWh/a"] = ethanol_plants_clean["MMgal/yr"] * 1e6 * 80.2 / 3600
     logger.info("Prepared ethanol plants data")
     return ethanol_plants_clean
+
+
+def fuzzy_match_ammonia(ammonia_plants_clean, uscities_clean):
+    """
+    Fuzzy match ammonia plants with US cities based on name similarity.
+    """
+    # Get non-exact matches that have NaN in x and y columns
+    non_matched = ammonia_plants_clean[
+        ammonia_plants_clean["x"].isna() & ammonia_plants_clean["y"].isna()
+    ]
+
+    # Loop through each row in non_matched DataFrame and find the best match
+    for index, row in non_matched.iterrows():
+        city = row["City"]
+        state = row["State_id"]
+
+        # Filter uscities DataFrame for the same state to find candidates
+        candidates = uscities_clean[uscities_clean["State_id"] == state]
+
+        # Find the best match using fuzzy matching
+        matches = get_close_matches(city, candidates['City'], n=1, cutoff=0.9)
+        # If a match is found, update the coordinates
+        if matches:
+            logger.info(f"Fuzzy matching for {city}, {state}: {matches}")
+            ammonia_plants_clean.loc[index, ["x", "y"]] = candidates.loc[candidates.City == matches[0], ["x", "y"]].values[0]
+        else:
+            # Take coordinates from internet
+            coordinates = {"port neal": (42.33408214805535, -96.37646295212545),
+                           "geismar": (30.224529130849646, -91.0565952614892)
+            }
+            if city in coordinates:
+                ammonia_plants_clean.loc[index, ["y", "x"]] = coordinates[city]
+                logger.info(f"Coordinates for {city}, {state}: {coordinates[city]}")
+
+    return ammonia_plants_clean
+
+
+def prepare_ammonia_plants(ammonia_plants_raw, uscities_clean):
+    """
+    Clean and prepare ammonia plants data.
+    """
+    # Groupby state and city names, and sum the production capacity
+    ammonia_plants_clean = (
+        ammonia_plants_raw.groupby(["City", "State_id"])
+        .agg({"Production (thousand metric tons)": "sum"})
+        .reset_index()
+    )
+
+    # Make City names lowercase
+    ammonia_plants_clean["City"] = ammonia_plants_clean["City"].str.lower()
+
+    # Merge longitude and latitude columns from uscities based on State and City names
+    ammonia_plants_clean = pd.merge(
+        ammonia_plants_clean,
+        uscities_clean[["City", "State", "State_id", "y", "x"]],
+        how="left",
+        left_on=["City", "State_id"],
+        right_on=["City", "State_id"],
+    )
+
+    # Merge longitude and latitude columns for non-exact matches
+    ammonia_plants_clean = fuzzy_match_ammonia(ammonia_plants_clean, uscities_clean)
+    logger.info("Prepared ammonia plants data")
+    return ammonia_plants_clean
 
 
 if __name__ == "__main__":
@@ -150,9 +226,20 @@ if __name__ == "__main__":
     # load US cities locational information
     uscities = pd.read_csv(snakemake.input.uscity_map)
 
+    # process uscities data
+    uscities_clean = process_uscities(uscities)
+
     if snakemake.params.add_ethanol:
         # load ethanol plants
         ethanol_plants_raw = pd.read_excel(snakemake.input.ethanol_plants, skiprows=2)
 
         # clean ethanol plants data
-        ethanol_plants_clean = prepare_ethanol_plants(ethanol_plants_raw, uscities)
+        ethanol_plants_clean = prepare_ethanol_plants(ethanol_plants_raw, uscities_clean)
+
+
+    if snakemake.params.add_ammonia:
+        # load ammonia plants
+        ammonia_plants_raw = pd.read_excel(snakemake.input.ammonia_plants, sheet_name="Statista", index_col=0)
+
+        # clean ammonia plants data
+        ammonia_plants_clean = prepare_ammonia_plants(ammonia_plants_raw, uscities_clean)

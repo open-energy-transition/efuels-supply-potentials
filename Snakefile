@@ -475,6 +475,7 @@ if config["add_custom_industry"]["enable"]:
         input:
             uscity_map="data/industry_data/uscities.csv",
             ethanol_plants="data/industry_data/ethanolcapacity.xlsx",
+            ammonia_plants="data/industry_data/ammoniacapacity.xlsx",
             regions_onshore=PYPSA_EARTH_DIR + "resources/"
             + RDIR
             + "bus_regions/regions_onshore_elec_s{simpl}_{clusters}.geojson",

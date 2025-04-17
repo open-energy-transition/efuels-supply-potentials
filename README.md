@@ -100,5 +100,6 @@ Cherry-picking allows applying specific commits from one branch to another. We c
 
 1. [PR #1372](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1372): Scale temporal loads based on temporal resolution.
 2. [PR #1381](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1381): Remove space in rail transport oil and electricity carriers.
+3. [PR #1400](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1400): Add US-specific demand growth rates and fuel shares (Medium scenario).
 
 Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-pick) on cherry-picking in Git to get more familiar with procedure.

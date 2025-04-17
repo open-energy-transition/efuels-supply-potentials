@@ -247,9 +247,6 @@ if __name__ == "__main__":
     gadm_clustering = snakemake.params.alternative_clustering
     shapes_path = snakemake.input.shapes_path
 
-    # load shapes file
-    regions = gpd.read_file(snakemake.input.regions_onshore)
-
     # load US cities locational information
     uscities = pd.read_csv(snakemake.input.uscity_map)
 
@@ -281,4 +278,16 @@ if __name__ == "__main__":
     # Map industry to buses
     industrial_database = map_industry_to_buses(combined_plants, countries, gadm_layer_id, shapes_path, gadm_clustering)
 
+    # Reset index and rename columns
+    industrial_database = industrial_database.reset_index().rename(columns={"gadm_1": "bus"})
+
+    # Groupby buses and industry, and sum the production capacity
+    industrial_demand = industrial_database.groupby(["bus", "industry"])["MWh/a"].sum().reset_index()
+
+    # Format the industry demand by pivoting
+    industrial_demand = industrial_demand.pivot(index="bus", columns="industry", values="MWh/a").rename_axis("MWh/a").reset_index().fillna(0)
+
+    # Save the industrial database to CSV
+    industrial_demand.to_csv(snakemake.output.industrial_energy_demand_per_node, index=False)
+    logger.info("Custom industry demands were saved to CSV")
     

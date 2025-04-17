@@ -476,15 +476,6 @@ if config["add_custom_industry"]["enable"]:
             uscity_map="data/industry_data/uscities.csv",
             ethanol_plants="data/industry_data/ethanolcapacity.xlsx",
             ammonia_plants="data/industry_data/ammoniacapacity.xlsx",
-            regions_onshore=PYPSA_EARTH_DIR + "resources/"
-            + RDIR
-            + "bus_regions/regions_onshore_elec_s{simpl}_{clusters}.geojson",
-            clustered_pop_layout=PYPSA_EARTH_DIR + "resources/"
-            + SECDIR
-            + "population_shares/pop_layout_elec_s{simpl}_{clusters}_{planning_horizons}.csv",
-            clustered_gdp_layout=PYPSA_EARTH_DIR + "resources/"
-            + SECDIR
-            + "gdp_shares/gdp_layout_elec_s{simpl}_{clusters}_{planning_horizons}.csv",
             shapes_path=PYPSA_EARTH_DIR + "resources/"
             + RDIR
             + "bus_regions/regions_onshore_elec_s{simpl}_{clusters}.geojson",

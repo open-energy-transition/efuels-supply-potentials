@@ -453,14 +453,18 @@ if config["saf_mandate"]["ekerosene_split"]:
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
         script:
             "scripts/set_saf_mandate.py"
-
-
-    use rule add_export from pypsa_earth with:
+else:
+    rule passthrough_saf_mandate:
         input:
-            **{k: v for k, v in rules.add_export.input.items() if k != "network"},
             network=PYPSA_EARTH_DIR + "results/"
             + SECDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}.nc",
+        output:
+            modified_network=PYPSA_EARTH_DIR + "results/"
+            + SECDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
+        shell:
+            "cp {input.network} {output.modified_network}"
 
 
 if config["add_custom_industry"]["enable"]:
@@ -488,6 +492,46 @@ if config["add_custom_industry"]["enable"]:
             mem_mb=2000,
         script:
             "scripts/build_custom_industry_demand.py"
+
+
+    rule add_custom_industry:
+        params:
+            countries=config["countries"],
+            add_ethanol=config["add_custom_industry"]["ethanol"],
+            add_ammonia=config["add_custom_industry"]["ammonia"],
+            gadm_layer_id=config["build_shape_options"]["gadm_layer_id"],
+            alternative_clustering=config["cluster_options"]["alternative_clustering"],
+            industry_database=config["custom_data"]["industry_database"],
+        input:
+            network=PYPSA_EARTH_DIR + "results/"
+            + SECDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
+        output:
+            modified_network=PYPSA_EARTH_DIR + "results/"
+            + SECDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf_industry.nc",
+        script:
+            "scripts/add_custom_industry.py"
+else:
+    rule passthrough_custom_industry:
+        input:
+            network=PYPSA_EARTH_DIR + "results/"
+            + SECDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
+        output:
+            modified_network=PYPSA_EARTH_DIR + "results/"
+            + SECDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf_industry.nc",
+        shell:
+            "cp {input.network} {output.modified_network}"
+
+
+use rule add_export from pypsa_earth with:
+    input:
+        **{k: v for k, v in rules.add_export.input.items() if k != "network"},
+        network=PYPSA_EARTH_DIR + "results/"
+        + SECDIR
+        + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf_industry.nc",
 
 
 rule test_modify_prenetwork:

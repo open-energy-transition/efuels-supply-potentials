@@ -39,6 +39,11 @@ demand_projection:
   scenario: "Reference"
   data_centers_load: false
 
+add_custom_industry:
+  enable: true
+  ethanol: true
+  ammonia: true
+
 custom_databundles:
   bundle_cutouts_USA:
     countries: [US]

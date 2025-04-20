@@ -467,12 +467,12 @@ else:
             "cp {input.network} {output.modified_network}"
 
 
-if config["add_custom_industry"]["enable"]:
+if config["custom_industry"]["enable"]:
     rule build_custom_industry_demand:
         params:
             countries=config["countries"],
-            add_ethanol=config["add_custom_industry"]["ethanol"],
-            add_ammonia=config["add_custom_industry"]["ammonia"],
+            add_ethanol=config["custom_industry"]["ethanol"],
+            add_ammonia=config["custom_industry"]["ammonia"],
             gadm_layer_id=config["build_shape_options"]["gadm_layer_id"],
             alternative_clustering=config["cluster_options"]["alternative_clustering"],
             industry_database=config["custom_data"]["industry_database"],
@@ -496,16 +496,20 @@ if config["add_custom_industry"]["enable"]:
 
     rule add_custom_industry:
         params:
-            countries=config["countries"],
-            add_ethanol=config["add_custom_industry"]["ethanol"],
-            add_ammonia=config["add_custom_industry"]["ammonia"],
-            gadm_layer_id=config["build_shape_options"]["gadm_layer_id"],
-            alternative_clustering=config["cluster_options"]["alternative_clustering"],
-            industry_database=config["custom_data"]["industry_database"],
+            costs=config["costs"],
+            add_ethanol=config["custom_industry"]["ethanol"],
+            add_ammonia=config["custom_industry"]["ammonia"],
+            add_steel=config["custom_industry"]["steel"],
+            add_cement=config["custom_industry"]["cement"],
+            ccs_retrofit=config["custom_industry"]["CCS_retrofit"],
         input:
+            industrial_energy_demand_per_node=PYPSA_EARTH_DIR + "resources/"
+            + SECDIR
+            + "demand/industrial_energy_demand_per_node_elec_s{simpl}_{clusters}_{planning_horizons}_{demand}_custom_industry.csv",
             network=PYPSA_EARTH_DIR + "results/"
             + SECDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
+            costs=PYPSA_EARTH_DIR + "resources/" + RDIR + "costs_{planning_horizons}.csv",
         output:
             modified_network=PYPSA_EARTH_DIR + "results/"
             + SECDIR

@@ -39,10 +39,13 @@ demand_projection:
   scenario: "Reference"
   data_centers_load: false
 
-add_custom_industry:
+custom_industry:
   enable: true
   ethanol: true
   ammonia: true
+  steel: true
+  cement: true
+  CCS_retrofit: [ethanol, ammonia, steel, cement]
 
 custom_databundles:
   bundle_cutouts_USA:

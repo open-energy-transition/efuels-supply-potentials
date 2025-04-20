@@ -5,118 +5,118 @@
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
+sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../submodules/pypsa-earth/scripts/")))
 import pandas as pd
 import numpy as np
 from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
                             configure_logging, load_network
+from _helpers import prepare_costs
+
 
 logger = create_logger(__name__)
 
 
-def add_ekerosene_buses(n):
+def add_ammonia(n):
     """
-        Adds e-kerosene buses and stores, and adds links between e-kerosene and oil bus
+        Adds ammonia buses and stores, and adds links between ammonia and hydrogen bus
     """
-    # get oil bus names
-    oil_buses = n.buses.query("carrier in 'oil'")
+    # add ammonia carrier
+    n.add("Carrier", "NH3")
 
-    # add e-kerosene bus
-    ekerosene_buses = [x.replace("oil", "e-kerosene") for x in oil_buses.index]
+    # add ammonia bus
     n.madd(
         "Bus",
-        ekerosene_buses,
-        location=oil_buses.location,
-        carrier="e-kerosene",
+        nodes + " NH3",
+        location=nodes,
+        carrier="NH3",
     )
 
-    # add e-kerosene carrier
-    n.add("Carrier", "e-kerosene", co2_emissions=n.carriers.loc["oil", "co2_emissions"])
-
-    # add e-kerosene stores
+    # add ammonia stores
     n.madd(
         "Store",
-        [ekerosene_bus + " Store" for ekerosene_bus in ekerosene_buses],
-        bus=ekerosene_buses,
+        nodes + " ammonia store",
+        bus=nodes + " NH3",
         e_nom_extendable=True,
         e_cyclic=True,
-        carrier="e-kerosene",
+        carrier="ammonia store",
+        capital_cost=costs.at["NH3 (l) storage tank incl. liquefaction", "fixed"],
+        lifetime=costs.at["NH3 (l) storage tank incl. liquefaction", "lifetime"],
     )
-    logger.info("Added E-kerosene buses, carrier, and stores")
+    logger.info("Added Ammonia buses, carrier, and stores")
 
-    # add links between E-kerosene and Oil buses so excess synthetic oil can be used
+    # add Haber-Bosch process to produce ammonia from hydrogen and electricity
     n.madd(
         "Link",
-        [x + "-to-oil" for x in ekerosene_buses],
-        bus0=ekerosene_buses,
-        bus1=oil_buses.index,
-        carrier="e-kerosene-to-oil",
+        nodes + " Haber-Bosch",
+        bus0=nodes,
+        bus1=nodes + " NH3",
+        bus2=nodes + " H2",
         p_nom_extendable=True,
-        efficiency=1.0,
+        carrier="Haber-Bosch",
+        efficiency=1 / costs.at["Haber-Bosch", "electricity-input"],
+        efficiency2=-costs.at["Haber-Bosch", "hydrogen-input"]
+        / costs.at["Haber-Bosch", "electricity-input"],
+        capital_cost=costs.at["Haber-Bosch", "fixed"]
+        / costs.at["Haber-Bosch", "electricity-input"],
+        marginal_cost=costs.at["Haber-Bosch", "VOM"]
+        / costs.at["Haber-Bosch", "electricity-input"],
+        lifetime=costs.at["Haber-Bosch", "lifetime"],
     )
-    logger.info("Added links between E-kerosene and Oil buses")
+    logger.info("Added Haber-Bosch process to produce ammonia from hydrogen and electricity")
 
-    # link all e-kerosene buses with E-kerosene-main bus if set in config
-    if snakemake.params.non_spatial_ekerosene:
-        ekerosene_main_bus = ["E-kerosene-main"]
-        n.madd(
-            "Bus",
-            ekerosene_main_bus,
-            location="E-kerosene-main",
-            carrier="e-kerosene-main",
-        )
-        n.madd(
-            "Link",
-            [x + "-to-main" for x in ekerosene_buses],
-            bus0=ekerosene_buses,
-            bus1=ekerosene_main_bus,
-            carrier="e-kerosene-to-main",
-            p_nom_extendable=True,
-            efficiency=1.0,
-        )
-        n.madd(
-            "Link",
-            [x.replace("e-kerosene", "main-to-e-kerosene") for x in ekerosene_buses],
-            bus0=ekerosene_main_bus,
-            bus1=ekerosene_buses,
-            carrier="main-to-e-kerosene",
-            p_nom_extendable=True,
-            efficiency=1.0,
-        )
-        logger.info("Added links between E-kerosene buses and E-kerosene main bus")
-
-
-def reroute_FT_output(n):
-    """
-        Reroutes output of Fischer-Tropsch from Oil to E-kerosene bus
-    """
-    ft_carrier = "Fischer-Tropsch"
-    ft_links = n.links.query("carrier in @ft_carrier").index
-
-    # switch bus1 of FT from oil to E-kerosene
-    n.links.loc[ft_links, "bus1"] = n.links.loc[ft_links, "bus1"].str.replace("oil","e-kerosene")
-    logger.info("Rerouted Fischer-Tropsch output from Oil buses to E-kerosene buses")
-
-
-def redistribute_aviation_demand(n, rate):
-    """
-        Redistribute aviation demand to e-kerosene and kerosene based on blending rate
-    """
-    aviation_demand_carrier = "kerosene for aviation"
-    total_aviation_demand = n.loads.query("carrier in @aviation_demand_carrier")
-
-    # new kerosene for aviation demand = total * (1 - rate)
-    n.loads.loc[total_aviation_demand.index, "p_set"] *= (1 - rate)
-    logger.info(f"Set kerosene for aviation to {(1-rate)*100:.1f}% of total aviation demand")
-
-    # add e-kerosene for aviation load
+    # add ammonia demand
+    p_set = industrial_demand.loc[nodes, "ammonia"].rename(index=lambda x: x + " NH3") / nhours
     n.madd(
         "Load",
-        total_aviation_demand.index.str.replace("kerosene", "e-kerosene"),
-        bus=total_aviation_demand.bus.str.replace("oil", "e-kerosene").values,
-        carrier="e-kerosene for aviation",
-        p_set=total_aviation_demand.p_set.fillna(0).values * rate,
+        nodes + " NH3",
+        bus=nodes + " NH3",
+        p_set=p_set,
+        carrier="NH3",
     )
-    logger.info(f"Added e-kerosene for aviation demand at the rate of {(rate*100):.1f}% of total aviation demand")
+    logger.info("Added ammonia demand to ammonia buses")
+
+    # CCS retrofit for ammonia
+    if "ammonia" in snakemake.params.ccs_retrofit:
+        # prepare buses for SMR CC
+        SMR_CC_links = n.links.query("carrier == 'SMR'").copy().rename(index=lambda x: x + " CC")
+        gas_buses = SMR_CC_links.bus0
+        h2_buses = SMR_CC_links.bus1
+        co2_stored_buses = gas_buses.str.replace("gas", "co2 stored")
+        elec_buses = gas_buses.str.replace(" gas", "")
+
+        # TODO: revise capital and marginal costs of SMR CC
+        # compute capital and marginal costs of SMR CC
+        capital_cost = (
+            costs.at["SMR", "fixed"]
+            + costs.at["ammonia capture retrofit", "fixed"]
+            * costs.at["gas", "CO2 intensity"]
+            / costs.at["ammonia capture retrofit", "capture_rate"]
+        )
+        # no marginal cost for SMR as there is no VOM for SMR and ammonia capture retrofit
+
+        # add SMR CC
+        n.madd(
+            "Link",
+            SMR_CC_links.index,
+            bus0=gas_buses,
+            bus1=h2_buses,
+            bus2="co2 atmoshpere",
+            bus3=co2_stored_buses,
+            bus4=elec_buses,
+            p_nom_extendable=True,
+            carrier="SMR CC",
+            efficiency=costs.at["SMR CC", "efficiency"],
+            efficiency2=costs.at["gas", "CO2 intensity"]
+            * (1 - costs.at["ammonia capture retrofit", "capture_rate"]),
+            efficiency3=costs.at["gas", "CO2 intensity"]
+            * costs.at["ammonia capture retrofit", "capture_rate"],
+            efficiency4=costs.at["ammonia capture retrofit", "electricity-input"]
+            / costs.at["ammonia capture retrofit", "capture_rate"]
+            * costs.at["gas", "CO2 intensity"],
+            capital_cost=capital_cost,
+            lifetime=costs.at["ammonia capture retrofit", "lifetime"],
+        )
+        logger.info("Added SMR CC to retrofit ammonia plants")
 
 
 if __name__ == "__main__":
@@ -142,6 +142,29 @@ if __name__ == "__main__":
     # load the network
     n = load_network(snakemake.input.network)
 
+    # load custom industrial energy demands
+    industrial_demand = pd.read_csv(snakemake.input.industrial_energy_demand_per_node, index_col=0)
+
+    # get industry nodes
+    nodes = industrial_demand.rename_axis("Bus").index
+
+    # get number of hours and years
+    nhours = n.snapshot_weightings.generators.sum()
+    Nyears = nhours / 8760
+
+    # Prepare the costs dataframe
+    costs = prepare_costs(
+        snakemake.input.costs,
+        snakemake.params.costs["USD2013_to_EUR2013"],
+        snakemake.params.costs["fill_values"],
+        Nyears,
+    )
+
+    # add ammonia industry
+    if config["custom_industry"]["ammonia"]:
+        add_ammonia(n)
+
+    
     # add e-kerosene buses with store, and connect e-kerosene and oil buses
     add_ekerosene_buses(n)
 

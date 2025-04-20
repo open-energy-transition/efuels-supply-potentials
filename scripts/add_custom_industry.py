@@ -110,7 +110,7 @@ def add_ammonia(n):
             * (1 - costs.at["ammonia capture retrofit", "capture_rate"]),
             efficiency3=costs.at["gas", "CO2 intensity"]
             * costs.at["ammonia capture retrofit", "capture_rate"],
-            efficiency4=costs.at["ammonia capture retrofit", "electricity-input"]
+            efficiency4=-costs.at["ammonia capture retrofit", "electricity-input"]
             / costs.at["ammonia capture retrofit", "capture_rate"]
             * costs.at["gas", "CO2 intensity"],
             capital_cost=capital_cost,

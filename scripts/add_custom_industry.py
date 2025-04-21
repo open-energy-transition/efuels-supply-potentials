@@ -164,16 +164,5 @@ if __name__ == "__main__":
     if config["custom_industry"]["ammonia"]:
         add_ammonia(n)
 
-    
-    # add e-kerosene buses with store, and connect e-kerosene and oil buses
-    add_ekerosene_buses(n)
-
-    # reroute FT from oil buses to e-kerosene buses
-    reroute_FT_output(n)
-
-    # split aviation demand to e-kerosene to kerosene for aviation based on blending rate
-    if config["saf_mandate"]["enable_mandate"]:
-        redistribute_aviation_demand(n, rate=snakemake.params.blending_rate)
-
     # save the modified network
     n.export_to_netcdf(snakemake.output.modified_network)

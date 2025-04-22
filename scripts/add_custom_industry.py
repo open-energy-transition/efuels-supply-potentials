@@ -119,6 +119,119 @@ def add_ammonia(n):
         logger.info("Added SMR CC to retrofit ammonia plants")
 
 
+def add_ethanol(n):
+    """
+        Adds ethanol buses and stores, and adds links between ethanol and hydrogen bus
+    """
+    # bioethanol crop carrier
+    n.add("Carrier", "bioethanol crop")
+
+    # add bioethanol crop bus
+    n.madd(
+        "Bus",
+        nodes + " bioethanol crop",
+        location=nodes,
+        carrier="bioethanol crop",
+    )
+
+    # add bioethanol crop stores
+    n.madd(
+        "Store",
+        nodes + " bioethanol crop store",
+        bus=nodes + " bioethanol crop",
+        e_nom_extendable=True,
+        e_cyclic=True,
+        carrier="bioethanol crop store",
+    )
+
+    # add bioethanol crop generator
+    # TODO: revise if marginal cost is needed
+    n.madd(
+        "Generator",
+        nodes + " bioethanol crop",
+        bus=nodes + " bioethanol crop",
+        p_nom_extendable=True,
+        carrier="bioethanol crop",
+        marginal_cost=costs.at["bioethanol crops", "fuel"],
+    )
+    logger.info("Added bioethanol crop carrier, buses, generators and stores")
+
+    # add ethanol carrier
+    n.add("Carrier", "ethanol")
+
+    # add ethanol bus
+    n.madd(
+        "Bus",
+        nodes + " ethanol",
+        location=nodes,
+        carrier="ethanol",
+    )
+    logger.info("Added ethanol carrier and buses")
+
+    # add links of ethanol from starch crop
+    n.madd(
+        "Link",
+        nodes + " ethanol from starch",
+        bus0=nodes + " bioethanol crop",
+        bus1=nodes + " ethanol",
+        p_nom_extendable=True,
+        carrier="ethanol from starch",
+        efficiency=costs.at["ethanol from starch crop", "efficiency"],
+        capital_cost=costs.at["ethanol from starch crop", "fixed"]
+        / costs.at["ethanol from starch crop", "efficiency"],
+        marginal_cost=costs.at["ethanol from starch crop", "VOM"],
+        lifetime=costs.at["ethanol from starch crop", "lifetime"],
+    )
+    logger.info("Added links to model starch-based ethanol plants")
+
+    # add ethanol demand
+    p_set = industrial_demand.loc[nodes, "ethanol"].rename(index=lambda x: x + " ethanol") / nhours
+    n.madd(
+        "Load",
+        nodes + " ethanol",
+        bus=nodes + " ethanol",
+        p_set=p_set,
+        carrier="ethanol",
+    )
+    logger.info("Added ethanol demand to ethanol buses")
+
+    # CCS retrofit for ethanol
+    if "ethanol" in snakemake.params.ccs_retrofit:
+        # calculate capital and marginal costs of ethanol from starch CC
+        # TODO: revise capital and marginal costs of ethanol from starch CC
+        capital_cost = (
+            costs.at["ethanol from starch crop", "fixed"]
+            / costs.at["ethanol from starch crop", "efficiency"]
+            + costs.at["ethanol capture retrofit", "fixed"]
+            * 0.2 # costs.at["bioethanol crops", "CO2 intensity"]
+            / costs.at["ethanol capture retrofit", "capture_rate"]
+        )
+        marginal_cost = (
+            costs.at["ethanol from starch crop", "VOM"]
+            # + costs.at["ethanol capture retrofit", "VOM"]
+            # * costs.at["ethanol from starch crop", "CO2 intensity"]
+            # / costs.at["ethanol capture retrofit", "capture_rate"]
+        )
+
+        # add ethanol from starch CC
+        n.madd(
+            "Link",
+            nodes + " ethanol from starch CC",
+            bus0=nodes + " bioethanol crop",
+            bus1=nodes + " ethanol",
+            bus2="co2 atmoshpere",
+            bus3=nodes + " co2 stored",
+            p_nom_extendable=True,
+            carrier="ethanol from starch CC",
+            efficiency=costs.at["ethanol from starch crop", "efficiency"],
+            efficiency2=costs.at["ethanol from starch crop", "CO2 intensity"],
+            efficiency3=costs.at["ethanol from starch crop", "capture_rate"],
+            capital_cost=capital_cost,
+            marginal_cost=marginal_cost,
+            lifetime=costs.at["ethanol capture retrofit", "lifetime"],
+        )
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -163,6 +276,10 @@ if __name__ == "__main__":
     # add ammonia industry
     if config["custom_industry"]["ammonia"]:
         add_ammonia(n)
+
+    # add ethanol industry
+    if config["custom_industry"]["ethanol"]:
+        add_ethanol(n)
 
     # save the modified network
     n.export_to_netcdf(snakemake.output.modified_network)

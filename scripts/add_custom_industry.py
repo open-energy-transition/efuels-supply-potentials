@@ -203,7 +203,7 @@ def add_ethanol(n):
             costs.at["ethanol from starch crop", "fixed"]
             / costs.at["ethanol from starch crop", "efficiency"]
             + costs.at["ethanol capture retrofit", "fixed"]
-            * 0.2 # costs.at["bioethanol crops", "CO2 intensity"]
+            * costs.at["bioethanol crops", "CO2 intensity"] # TODO: we do not have it yet
             / costs.at["ethanol capture retrofit", "capture_rate"]
         )
         marginal_cost = (
@@ -219,13 +219,16 @@ def add_ethanol(n):
             nodes + " ethanol from starch CC",
             bus0=nodes + " bioethanol crop",
             bus1=nodes + " ethanol",
-            bus2="co2 atmoshpere",
-            bus3=nodes + " co2 stored",
+            bus2=nodes + " co2 stored",
+            bus3=nodes,
             p_nom_extendable=True,
             carrier="ethanol from starch CC",
             efficiency=costs.at["ethanol from starch crop", "efficiency"],
-            efficiency2=costs.at["ethanol from starch crop", "CO2 intensity"],
-            efficiency3=costs.at["ethanol from starch crop", "capture_rate"],
+            efficiency2=costs.at["bioethanol crops", "CO2 intensity"]
+            * costs.at["ethanol capture retrofit", "capture_rate"], # TODO: revise conversion rate
+            efficiency3=-costs.at["ethanol capture retrofit", "electricity-input"]
+            * costs.at["bioethanol crops", "CO2 intensity"]
+            / costs.at["ethanol capture retrofit", "capture_rate"], # TODO: revise conversion rate
             capital_cost=capital_cost,
             marginal_cost=marginal_cost,
             lifetime=costs.at["ethanol capture retrofit", "lifetime"],

@@ -112,45 +112,47 @@ def add_constraints(network, constraints_df):
 
 
 if __name__ == "__main__":
-    # if "snakemake" not in globals():
-    #     snakemake = mock_snakemake(
-    #         "set_saf_mandate",
-    #         configfile="configs/calibration/config.base.yaml",
-    #         simpl="",
-    #         ll="copt",
-    #         clusters=10,
-    #         opts="Co2L-24H",
-    #         sopts="24H",
-    #         planning_horizons=2020,
-    #         discountrate="0.071",
-    #         demand="AB",
-    #     )
+    if "snakemake" not in globals():
+        snakemake = mock_snakemake(
+            "add_res_constraints",
+            configfile="configs/calibration/config.base.yaml",
+            simpl="",
+            ll="copt",
+            clusters=10,
+            opts="Co2L-24H",
+            sopts="24H",
+            planning_horizons=2020,
+            discountrate="0.071",
+            demand="AB",
+        )
     
+    config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
 
-    res_carriers = ["solar", "onwind", "offwind-ac", "offwind-dc", "hydro"]
+    res_carriers = ["solar", "onwind", "offwind-ac", "offwind-dc", "hydro", "geothermal"]
     ces_carriers = res_carriers + ["nuclear"]
 
     ces_data = process_targets_data(
-        "data/current_electricity_state_policies/clean_targets.csv",
+        snakemake.input.ces_path,
         ces_carriers,
     )
 
     res_data = process_targets_data(
-        "data/current_electricity_state_policies/res_targets.csv",
+        snakemake.input.res_path,
         res_carriers,
     )
 
-    path_shapes = "data/demand_data/gadm41_USA_1.json" # retrieve from snakemake
-    distance_crs =  "EPSG:3857" # pick from config
+    path_shapes = snakemake.input.gadm_shape_path # retrieve from snakemake
+    # distance_crs =  "EPSG:3857" # pick from config
 
-    n_path = "/Users/gbotemi/Documents/code/PYPSA/US/efuels-supply-potentials/submodules/pypsa-earth/results/US_2021/prenetworks/elec_s_10_ec_lcopt_Co2L-1H_3H_2030_0.071_AB_presec.nc"
+    n_path = snakemake.input.network
     n = load_network(n_path)
-    n = attach_state_to_buses(n, path_shapes, distance_crs)
+    n = attach_state_to_buses(n, path_shapes, snakemake.params.distance_crs)
 
-    ces_data = ces_data[(ces_data["year"]=="2030")
-                    & (ces_data["target"] > 0)
+    planning_horizons = config["scenario"]["planning_horizons"]
+    ces_data = ces_data[(ces_data["year"].isin(planning_horizons))
+                    & (ces_data["target"] > 0.0)
                     & (ces_data["state"].isin(n.buses["state"].unique()))]
 
     add_constraints(n, ces_data)
 
-    # export network to solve_network
+    n.export_to_netcdf(snakemake.output[0])

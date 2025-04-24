@@ -50,7 +50,7 @@ def attach_state_to_buses(network, path_shapes, distance_crs):
     # Read the shapefile using geopandas
     shapes = gpd.read_file(path_shapes, crs=distance_crs)
     shapes["ISO_1"] = shapes["ISO_1"].apply(lambda x: x.split("-")[1])
-    shapes.rename(columns={"ISO_1": "state"}, inplace=True)
+    shapes.rename(columns={"ISO_1": "State"}, inplace=True)
 
     pypsa_gpd = gpd.GeoDataFrame(
             network.buses, 
@@ -59,13 +59,13 @@ def attach_state_to_buses(network, path_shapes, distance_crs):
         )
 
     bus_cols = network.buses.columns
-    bus_cols = list(bus_cols) + ["state"]
+    bus_cols = list(bus_cols) + ["State"]
 
     st_buses = gpd.sjoin_nearest(shapes, pypsa_gpd, how="right")[bus_cols]
 
-    network.buses["state"] = st_buses["state"]
+    network.buses["state"] = st_buses["State"]
 
-    return n
+    return network
 
 
 def add_constraints(network, constraints_df):

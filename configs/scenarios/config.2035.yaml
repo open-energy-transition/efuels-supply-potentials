@@ -78,6 +78,8 @@ sector:
     lignite: lignite
     biomass: biomass
 
+  SMR CC: false
+
   land_transport_fuel_cell_share:
     AB_2035: 0.0
   land_transport_electric_share:

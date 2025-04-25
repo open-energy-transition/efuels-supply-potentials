@@ -23,8 +23,9 @@ aviation_demand_scenario:
 
 saf_mandate:
   ekerosene_split: true # separate e-kerosene as separate bus
+  non_spatial_ekerosene: true # connects all e-kerosene buses with a single E-kerosene-main bus to model 0 cost of transport and store
   enable_mandate: false # enable SAF mandate
-  blending_rate: 0.05 # blending rate
+  blending_rate: 0.05 # blending rate, 0.003 (EU -) 0.007 (EU) 0.012 (EU +)
 
 demand_distribution:
   enable: true

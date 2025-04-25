@@ -464,19 +464,21 @@ if config["saf_mandate"]["ekerosene_split"]:
             + SECDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
 
+if config["foresight"] == "overnight":
 
-rule subregion_analysis:
-    # fix inputs for sector and power model probably use an if condition.
-    input:
-        path_shapes="data/subregion/needs_grid_regions_aggregated.geojson",
-        p_network=PYPSA_EARTH_DIR + "results/" + RDIR + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
-    output:
-        network=PYPSA_EARTH_DIR + "results/" + RDIR + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_subregion.nc",
-        installed_capacity_plot=RESULTS_DIR + RDIR + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_installed_capacities.png",
-        generation_capacity_plot=RESULTS_DIR + RDIR + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_generation_capacities.png",
-        demand_plot=RESULTS_DIR + RDIR + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_demand.png",
-    script:
-        "scripts/subregions_analysis.py"
+    rule subregion_analysis:
+        # fix inputs for sector and power model probably use an if condition.
+        input:
+            path_shapes="data/subregion/needs_grid_regions_aggregated.geojson",
+            p_network=PYPSA_EARTH_DIR + RESDIR
+            + "postnetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",
+        output:
+            network=PYPSA_EARTH_DIR + "results/" + RDIR + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_subregion.nc",
+            installed_capacity_plot=RESULTS_DIR + RDIR + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_installed_capacities.png",
+            generation_capacity_plot=RESULTS_DIR + RDIR + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_generation_capacities.png",
+            demand_plot=RESULTS_DIR + RDIR + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_demand.png",
+        script:
+            "scripts/subregions_analysis.py"
 
 
 rule subregion_analysis_all:

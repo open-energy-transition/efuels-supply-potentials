@@ -484,19 +484,19 @@ if config["foresight"] == "overnight":
 rule subregion_analysis_all:
     input:
         expand(PYPSA_EARTH_DIR
-            + "results/" + RDIR + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_subregion.nc",
+            + "results/" + RDIR + "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_subregion.nc",
             **config["scenario"],
         ),
         expand(RESULTS_DIR + RDIR
-            + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_installed_capacities.png",
+            + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_installed_capacities.png",
             **config["scenario"],
         ),
         expand(RESULTS_DIR + RDIR
-            + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_generation_capacities.png",
+            + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_generation_capacities.png",
             **config["scenario"],
         ),
         expand(RESULTS_DIR + RDIR
-            + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_demand.png",
+            + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_demand.png",
             **config["scenario"],
         ),
 

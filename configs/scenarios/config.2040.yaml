@@ -81,7 +81,7 @@ sector:
   land_transport_fuel_cell_share:
     AB_2040: 0.0
   land_transport_electric_share:
-    AB_2040: 0.272 # 0.077 (Reference) 0.272 (Medium) 0.526 (High)
+    AB_2040: 0.353 # 0.064 (Reference) 0.353 (Medium) 0.462 (High)
   shipping_hydrogen_share:
     AB_2040: 0.00
 

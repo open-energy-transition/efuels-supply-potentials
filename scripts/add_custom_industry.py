@@ -180,9 +180,9 @@ def add_ethanol(n):
         p_nom_extendable=True,
         carrier="ethanol from starch",
         efficiency=costs.at["ethanol from starch crop", "efficiency"],
-        capital_cost=costs.at["ethanol from starch crop", "fixed"]
-        / costs.at["ethanol from starch crop", "efficiency"],
-        marginal_cost=costs.at["ethanol from starch crop", "VOM"],
+        capital_cost=costs.at["ethanol from starch crop", "fixed"] # TODO: revise investment cost: we have EUR/MWh_eth not EUR/MW_eth
+        * costs.at["ethanol from starch crop", "efficiency"],
+        marginal_cost=costs.at["ethanol from starch crop", "VOM"], # TODO: revise VOM: generally it is EUR/MWh, but here it is %/year
         lifetime=costs.at["ethanol from starch crop", "lifetime"],
     )
     logger.info("Added links to model starch-based ethanol plants")
@@ -204,14 +204,14 @@ def add_ethanol(n):
         # TODO: revise capital and marginal costs of ethanol from starch CC
         capital_cost = (
             costs.at["ethanol from starch crop", "fixed"]
-            / costs.at["ethanol from starch crop", "efficiency"]
-            + costs.at["ethanol capture retrofit", "fixed"]
+            * costs.at["ethanol from starch crop", "efficiency"]
+            + costs.at["ethanol capture retrofit", "fixed"] # TODO: revise investment cost: it is only 10.0,EUR/(tCO2/h)
             * costs.at["bioethanol crops", "CO2 intensity"] # TODO: we do not have it yet
             / costs.at["ethanol capture retrofit", "capture_rate"]
         )
         marginal_cost = (
-            costs.at["ethanol from starch crop", "VOM"]
-            # + costs.at["ethanol capture retrofit", "VOM"]
+            costs.at["ethanol from starch crop", "VOM"] # TODO: revise VOM: generally it is EUR/MWh, but here it is %/year
+            # + costs.at["ethanol capture retrofit", "VOM"] # TODO: revise retrofit part too
             # * costs.at["ethanol from starch crop", "CO2 intensity"]
             # / costs.at["ethanol capture retrofit", "capture_rate"]
         )
@@ -227,7 +227,7 @@ def add_ethanol(n):
             p_nom_extendable=True,
             carrier="ethanol from starch CC",
             efficiency=costs.at["ethanol from starch crop", "efficiency"],
-            efficiency2=costs.at["bioethanol crops", "CO2 intensity"]
+            efficiency2=costs.at["bioethanol crops", "CO2 intensity"] # TODO: needs CO2 intensity for bioethanol crops
             * costs.at["ethanol capture retrofit", "capture_rate"], # TODO: revise conversion rate
             efficiency3=-costs.at["ethanol capture retrofit", "electricity-input"]
             * costs.at["bioethanol crops", "CO2 intensity"]

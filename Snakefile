@@ -464,6 +464,8 @@ if config["custom_industry"]["enable"]:
             countries=config["countries"],
             add_ethanol=config["custom_industry"]["ethanol"],
             add_ammonia=config["custom_industry"]["ammonia"],
+            add_steel=config["custom_industry"]["steel"],
+            add_cement=config["custom_industry"]["cement"],
             gadm_layer_id=config["build_shape_options"]["gadm_layer_id"],
             alternative_clustering=config["cluster_options"]["alternative_clustering"],
             industry_database=config["custom_data"]["industry_database"],
@@ -474,6 +476,7 @@ if config["custom_industry"]["enable"]:
             shapes_path=PYPSA_EARTH_DIR + "resources/"
             + RDIR
             + "bus_regions/regions_onshore_elec_s{simpl}_{clusters}.geojson",
+            pypsa_earth_industrial_database=PYPSA_EARTH_DIR + "data/industrial_database.csv",
         output:
             industrial_energy_demand_per_node=PYPSA_EARTH_DIR + "resources/"
             + SECDIR

@@ -143,13 +143,13 @@ def prepare_ethanol_plants(ethanol_plants_raw, uscities_clean):
     # Ethanol production capacity in MMgal/yr to MWh/a 
     # 1 gallon ethanol = 80.2 MJ https://indico.ictp.it/event/8008/session/3/contribution/23/material/slides/2.pdf
     # 1 MWh = 3600 MJ
-    ethanol_plants_clean["MWh/a"] = ethanol_plants_clean["MMgal/yr"] * 1e6 * 80.2 / 3600
+    ethanol_plants_clean["capacity"] = ethanol_plants_clean["MMgal/yr"] * 1e6 * 80.2 / 3600
 
     # Add country and industry column
     ethanol_plants_clean.loc[:, ["country", "industry"]] = ["US", "ethanol"]
 
     # Select relevant columns
-    ethanol_plants_clean = ethanol_plants_clean[["City", "State", "country", "x", "y", "MWh/a", "industry"]]
+    ethanol_plants_clean = ethanol_plants_clean[["country", "x", "y", "capacity", "industry"]]
     logger.info("Prepared ethanol plants data")
     return ethanol_plants_clean
 
@@ -217,15 +217,46 @@ def prepare_ammonia_plants(ammonia_plants_raw, uscities_clean):
 
     # Convert production capacity from thousand metric tons to MWh/a
     # 1 metric ton ammonia = 5.17 MWh https://ammoniaenergy.org/articles/round-trip-efficiency-of-ammonia-as-a-renewable-energy-transportation-media/
-    ammonia_plants_clean["MWh/a"] = ammonia_plants_clean["Production (thousand metric tons)"] * 1e3 * 5.17
+    ammonia_plants_clean["capacity"] = ammonia_plants_clean["Production (thousand metric tons)"] * 1e3 * 5.17
 
     # Add country column
     ammonia_plants_clean.loc[:, ["country", "industry"]] = ["US", "ammonia"]
 
     # Select relevant columns
-    ammonia_plants_clean = ammonia_plants_clean[["City", "State", "country", "x", "y", "MWh/a", "industry"]]
+    ammonia_plants_clean = ammonia_plants_clean[["country", "x", "y", "capacity", "industry"]]
     logger.info("Prepared ammonia plants data")
     return ammonia_plants_clean
+
+
+def read_pypsa_earth_industrial_database():
+    """
+    Read the industrial database from a pypsa-earth/data/industrial_database.csv
+    """
+    # Read the industrial database
+    industrial_database = pd.read_csv(snakemake.input.pypsa_earth_industrial_database)
+
+    # Select the country
+    industrial_database = industrial_database[
+        industrial_database["country"].isin(snakemake.params.countries)
+    ]
+
+    # Select iron and steel and cement industries
+    industrial_database = industrial_database[
+        industrial_database["technology"].isin([
+            "Electric arc",
+            "Integrated steelworks",
+            "DRI + Electric arc",
+            "Cement",
+            ])
+    ].rename(
+        columns={
+            "technology": "industry",
+        }
+    )
+    # Select relevant columns
+    industrial_database = industrial_database[["country", "x", "y", "industry", "capacity"]]
+
+    return industrial_database
 
 
 if __name__ == "__main__":
@@ -253,6 +284,9 @@ if __name__ == "__main__":
     # process uscities data
     uscities_clean = process_uscities(uscities)
 
+    # load pypsa-earth industrial database
+    industrial_database = read_pypsa_earth_industrial_database()
+
     if snakemake.params.add_ethanol:
         # load ethanol plants
         ethanol_plants_raw = pd.read_excel(snakemake.input.ethanol_plants, skiprows=2)
@@ -260,7 +294,7 @@ if __name__ == "__main__":
         # clean ethanol plants data
         ethanol_plants_clean = prepare_ethanol_plants(ethanol_plants_raw, uscities_clean)
     else:
-        ethanol_plants_clean = pd.DataFrame(columns=["City", "State", "country", "y", "x", "MWh/a", "industry"])
+        ethanol_plants_clean = pd.DataFrame(columns=["country", "y", "x", "capacity", "industry"])
 
 
     if snakemake.params.add_ammonia:
@@ -270,22 +304,40 @@ if __name__ == "__main__":
         # clean ammonia plants data
         ammonia_plants_clean = prepare_ammonia_plants(ammonia_plants_raw, uscities_clean)
     else:
-        ammonia_plants_clean = pd.DataFrame(columns=["City", "State", "country", "y", "x", "MWh/a", "industry"])
+        ammonia_plants_clean = pd.DataFrame(columns=["country", "y", "x", "capacity", "industry"])
 
-    # combine ethanol and ammonia plants data
-    combined_plants = pd.concat([ethanol_plants_clean, ammonia_plants_clean], ignore_index=True, axis=0)
+
+    if snakemake.params.add_steel:
+        # select steel plants from pypsa-earth industrial database
+        steel_plants = industrial_database[industrial_database["industry"].isin([
+            "Electric arc",
+            "Integrated steelworks",
+            "DRI + Electric arc",
+        ])]
+    else:
+        steel_plants = pd.DataFrame(columns=["country", "x", "y", "industry", "capacity"])
+
+
+    if snakemake.params.add_cement:
+        # select cement plants from pypsa-earth industrial database
+        cement_plants = industrial_database[industrial_database["industry"] == "Cement"]
+    else:
+        cement_plants = pd.DataFrame(columns=["country", "x", "y", "industry", "capacity"])
+
+    # combine ethanol, ammonia, steel and cement plants data
+    combined_plants = pd.concat([ethanol_plants_clean, ammonia_plants_clean, steel_plants, cement_plants], ignore_index=True, axis=0)
 
     # Map industry to buses
-    industrial_database = map_industry_to_buses(combined_plants, countries, gadm_layer_id, shapes_path, gadm_clustering)
+    custom_industrial_database = map_industry_to_buses(combined_plants, countries, gadm_layer_id, shapes_path, gadm_clustering)
 
     # Reset index and rename columns
-    industrial_database = industrial_database.reset_index().rename(columns={"gadm_1": "bus"})
+    custom_industrial_database = custom_industrial_database.reset_index().rename(columns={"gadm_1": "bus"})
 
     # Groupby buses and industry, and sum the production capacity
-    industrial_demand = industrial_database.groupby(["bus", "industry"])["MWh/a"].sum().reset_index()
+    industrial_demand = custom_industrial_database.groupby(["bus", "industry"])["capacity"].sum().reset_index()
 
     # Format the industry demand by pivoting
-    industrial_demand = industrial_demand.pivot(index="bus", columns="industry", values="MWh/a").rename_axis("MWh/a").reset_index().fillna(0)
+    industrial_demand = industrial_demand.pivot(index="bus", columns="industry", values="capacity").rename_axis("MWh/a (kton/a)").reset_index().fillna(0)
 
     # Save the industrial database to CSV
     industrial_demand.to_csv(snakemake.output.industrial_energy_demand_per_node, index=False)

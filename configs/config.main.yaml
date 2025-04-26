@@ -46,6 +46,7 @@ custom_industry:
   steel: true
   cement: true
   CCS_retrofit: [ethanol, ammonia, steel, cement]
+  production_flexibility: []
 
 custom_databundles:
   bundle_cutouts_USA:

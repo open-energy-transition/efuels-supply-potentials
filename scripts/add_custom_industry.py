@@ -30,19 +30,22 @@ def add_ammonia(n):
         location=nodes,
         carrier="NH3",
     )
+    logger.info("Added Ammonia buses and carrier")
 
-    # add ammonia stores
-    n.madd(
-        "Store",
-        nodes + " ammonia store",
-        bus=nodes + " NH3",
-        e_nom_extendable=True,
-        e_cyclic=True,
-        carrier="ammonia store",
-        capital_cost=costs.at["NH3 (l) storage tank incl. liquefaction", "fixed"],
-        lifetime=costs.at["NH3 (l) storage tank incl. liquefaction", "lifetime"],
-    )
-    logger.info("Added Ammonia buses, carrier, and stores")
+    # enable ammonia production flexibility
+    if "ammonia" in config["custom_industry"]["production_flexibility"]:
+        # add ammonia stores
+        n.madd(
+            "Store",
+            nodes + " ammonia store",
+            bus=nodes + " NH3",
+            e_nom_extendable=True,
+            e_cyclic=True,
+            carrier="ammonia store",
+            capital_cost=costs.at["NH3 (l) storage tank incl. liquefaction", "fixed"],
+            lifetime=costs.at["NH3 (l) storage tank incl. liquefaction", "lifetime"],
+        )
+        logger.info("Added Ammonia stores")
 
     # add Haber-Bosch process to produce ammonia from hydrogen and electricity
     n.madd(

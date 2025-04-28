@@ -238,6 +238,321 @@ def add_ethanol(n):
         )
 
 
+def add_steel(n):
+    """
+        Adds steel buses and stores, and adds links to produce iron and steel
+    """
+    # add iron ore carrier
+    n.add("Carrier", "iron ore")
+
+    # add iron ore bus
+    n.madd(
+        "Bus",
+        nodes + " iron ore",
+        location=nodes,
+        carrier="iron ore",
+    )
+
+    # add iron ore stores
+    n.madd(
+        "Store",
+        nodes + " iron ore store",
+        bus=nodes + " iron ore",
+        e_nom_extendable=True,
+        e_cyclic=True,
+        carrier="iron ore store",
+    )
+
+    # add iron ore generator
+    n.madd(
+        "Generator",
+        nodes + " iron ore",
+        bus=nodes + " iron ore",
+        p_nom_extendable=True,
+        carrier="iron ore",
+    )
+    logger.info("Added iron ore carrier, buses, stores and generators")
+
+    # add DRI carrier
+    n.add("Carrier", "DRI")
+
+    # add DRI bus
+    n.madd(
+        "Bus",
+        nodes + " DRI",
+        location=nodes,
+        carrier="DRI",
+    )
+    logger.info("Added DRI carrier and buses")
+
+    # add DRI load
+    p_set = industrial_demand.loc[nodes, "DRI + Electric arc"].rename(index=lambda x: x + " DRI") / nhours
+    n.madd(
+        "Load",
+        nodes + " DRI",
+        bus=nodes + " DRI",
+        p_set=p_set,
+        carrier="DRI",
+    )
+    logger.info("Added DRI demand to DRI buses")
+
+    # add DRI process to produce DRI/sponge iron from gas and electricity
+    # TODO: revise if marginal price is needed: no VOM is available
+    # TODO: revise gas-input and electricity-input
+    n.madd(
+        "Link",
+        nodes + " DRI",
+        bus0=nodes,
+        bus1=nodes + " DRI",
+        bus2=nodes + " gas",
+        bus3=nodes + " iron ore",
+        bus4="co2 atmoshpere",
+        p_nom_extendable=True,
+        carrier="DRI",
+        efficiency=1/costs.at["direct iron reduction furnace", "electricity-input"],
+        efficiency2=-costs.at["direct iron reduction furnace", "gas-input"] # TODO: revise gas-input as it is not matching the source
+        / costs.at["direct iron reduction furnace", "electricity-input"],
+        efficiency3=-costs.at["direct iron reduction furnace", "ore-input"] # TODO: revise electricity-input as it is not matching the source
+        / costs.at["direct iron reduction furnace", "electricity-input"],
+        efficiency4=costs.at["direct iron reduction furnace", "gas-input"]
+        * costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for direct iron reduction furnace or any other method to compute CO2 emissions
+        / costs.at["direct iron reduction furnace", "electricity-input"],
+        capital_cost=costs.at["direct iron reduction furnace", "fixed"]
+        / costs.at["direct iron reduction furnace", "ore-input"],
+        lifetime=costs.at["direct iron reduction furnace", "lifetime"],
+    )
+    logger.info("Added DRI process to produce steel from gas and electricity")
+
+    # TODO: revise implementation of CCS retrofit for DRI
+    # CCS retrofit for DRI
+    if "steel" in snakemake.params.ccs_retrofit:
+        # calculate capital and marginal costs of DRI CC
+        # TODO: revise capital and marginal costs of DRI CC
+        capital_cost = (
+            costs.at["direct iron reduction furnace", "fixed"]
+            / costs.at["direct iron reduction furnace", "electricity-input"]
+            + costs.at["steel capture retrofit", "fixed"] # TODO :revise: it is in USD/tCO2 (seems marginal cost)
+            * costs.at["direct iron reduction furnace", "gas-input"]
+            * costs.at["gas", "CO2 intensity"]
+            / costs.at["direct iron reduction furnace", "capture_rate"]
+        )
+        # TODO: no VOM for marginal price of DRI CC
+
+        # add DRI CC
+        # iron ore bus is not used, because bus4 is maximum what we have, electricity, gas, co2 are more important, because iron ore is just there.
+        n.madd(
+            "Link",
+            nodes + " DRI CC",
+            bus0=nodes,
+            bus1=nodes + " DRI",
+            bus2=nodes + " gas",
+            bus3=nodes + " iron ore",
+            bus4="co2 atmoshpere",
+            bus5=nodes + " co2 stored",
+            p_nom_extendable=True,
+            carrier="DRI CC",
+            efficiency=1/costs.at["direct iron reduction furnace", "electricity-input"],
+            efficiency2=-costs.at["direct iron reduction furnace", "gas-input"]
+            / costs.at["direct iron reduction furnace", "electricity-input"],
+            efficiency3=-costs.at["direct iron reduction furnace", "ore-input"]
+            / costs.at["direct iron reduction furnace", "electricity-input"],
+            efficiency4=costs.at["direct iron reduction furnace", "gas-input"]
+            * costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for direct iron reduction furnace
+            * (1 - costs.at["steel capture retrofit", "capture_rate"])
+            / costs.at["direct iron reduction furnace", "electricity-input"],
+            efficiency5=costs.at["direct iron reduction furnace", "gas-input"]
+            * costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for direct iron reduction furnace
+            * costs.at["steel capture retrofit", "capture_rate"]
+            / costs.at["direct iron reduction furnace", "electricity-input"],
+            capital_cost=capital_cost,
+            # marginal_cost=marginal_cost, # TODO: revise VOM
+            lifetime=costs.at["steel capture retrofit", "lifetime"],
+        )
+        logger.info("Added DRI CC to retrofit DRI plants")
+
+    if config["custom_industry"]["H2_DRI"]:
+        # add DRI process to produce steel from hydrogen
+        # TODO: revise if marginal price is needed: no VOM is available
+        n.madd(
+            "Link",
+            nodes + " DRI H2",
+            bus0=nodes,
+            bus1=nodes + " DRI",
+            bus2=nodes + " H2",
+            p_nom_extendable=True,
+            carrier="DRI H2",
+            efficiency=costs.at["hydrogen direct iron reduction furnace", "electricity-input"],
+            efficiency2=-costs.at["hydrogen direct iron reduction furnace", "hydrogen-input"]
+            / costs.at["hydrogen direct iron reduction furnace", "electricity-input"],
+            capital_cost=costs.at["hydrogen direct iron reduction furnace", "fixed"]
+            / costs.at["hydrogen direct iron reduction furnace", "electricity-input"],
+            lifetime=costs.at["hydrogen direct iron reduction furnace", "lifetime"],
+        )
+        logger.info("Added DRI process to produce steel from hydrogen")
+
+    # add steel BF-BOF carrier
+    n.add("Carrier", "steel BF-BOF")
+
+    # add steel BF-BOF bus
+    n.madd(
+        "Bus",
+        nodes + " steel BF-BOF",
+        location=nodes,
+        carrier="steel BF-BOF",
+    )
+    logger.info("Added steel BF-BOF carrier and buses")
+
+    # add steel BF-BOF demand
+    p_set = industrial_demand.loc[nodes, "Integrated steelworks"].rename(index=lambda x: x + " steel BF-BOF") / nhours
+    n.madd(
+        "Load",
+        nodes + " steel BF-BOF",
+        bus=nodes + " steel BF-BOF",
+        p_set=p_set,
+        carrier="steel BF-BOF",
+    )
+    logger.info("Added steel BF-BOF demand to steel BF-BOF buses")
+
+    # add scrap steel carrier
+    n.add("Carrier", "scrap steel")
+
+    # add scrap steel bus
+    n.madd(
+        "Bus",
+        nodes + " scrap steel",
+        location=nodes,
+        carrier="scrap steel",
+    )
+
+    # add scrap steel stores
+    n.madd(
+        "Store",
+        nodes + " scrap steel store",
+        bus=nodes + " scrap steel",
+        e_nom_extendable=True,
+        e_cyclic=True,
+        carrier="scrap steel store",
+    )
+
+    # add scrap steel generator
+    n.madd(
+        "Generator",
+        nodes + " scrap steel",
+        bus=nodes + " scrap steel",
+        p_nom_extendable=True,
+        carrier="scrap steel",
+    )
+    logger.info("Added scrap steel carrier, buses, stores and generators")
+
+    # add steel BF-BOF process to produce steel from gas and electricity
+    # TODO: revise ore-input and scrap-input: ore input seems to small
+    # from the source: ore-input = 1.539 t_ore/t_steel, and scrap-input = 0.051 t_scrap/t_steel
+    # TODO: revise if marginal price is needed: no VOM is available
+    n.madd(
+        "Link",
+        nodes + " steel BF-BOF",
+        bus0=nodes + " coal",
+        bus1=nodes + " steel BF-BOF",
+        bus2=nodes + " iron ore",
+        bus3=nodes + " scrap steel",
+        bus4="co2 atmoshpere",
+        p_nom_extendable=True,
+        carrier="BF-BOF",
+        efficiency=1/costs.at["blast furnace-basic oxygen furnace", "coal-input"],
+        efficiency2=-costs.at["blast furnace-basic oxygen furnace", "ore-input"]
+        / costs.at["blast furnace-basic oxygen furnace", "coal-input"], # TODO: ore-input needs revision
+        efficiency3=-costs.at["blast furnace-basic oxygen furnace", "scrap-input"]
+        / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
+        efficiency4=costs.at["coal", "CO2 intensity"], # TODO: needs CO2 intensity for blast furnace-basic oxygen furnace
+        capital_cost=costs.at["blast furnace-basic oxygen furnace", "fixed"]
+        / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
+        lifetime=costs.at["blast furnace-basic oxygen furnace", "lifetime"],
+    )
+    logger.info("Added steel BF-BOF process to produce steel from gas and electricity")
+
+    if "steel" in snakemake.params.ccs_retrofit:
+        # calculate capital and marginal costs of BF-BOF CC
+        capital_cost = (
+            costs.at["blast furnace-basic oxygen furnace", "fixed"]
+            / costs.at["blast furnace-basic oxygen furnace", "coal-input"]
+            + costs.at["steel capture retrofit", "fixed"] # TODO: revise: it is in USD/tCO2 (seems marginal cost), to use it we need to know how much it emits
+            * costs.at["coal", "CO2 intensity"] # TODO: needs CO2 intensity for blast furnace-basic oxygen furnace
+            / costs.at["blast furnace-basic oxygen furnace", "capture_rate"]
+        )
+        # no VOM is available for BF-BOF CC
+
+        # add BF-BOF CC
+        n.madd(
+            "Link",
+            nodes + " BF-BOF CC",
+            bus0=nodes + " coal",
+            bus1=nodes + " steel BF-BOF",
+            bus2=nodes + " iron ore",
+            bus3=nodes + " scrap steel",
+            bus4="co2 atmoshpere",
+            bus5=nodes + " co2 stored",
+            p_nom_extendable=True,
+            carrier="BF-BOF CC",
+            efficiency=1/costs.at["blast furnace-basic oxygen furnace", "coal-input"],
+            efficiency2=-costs.at["blast furnace-basic oxygen furnace", "ore-input"]
+            / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
+            efficiency3=-costs.at["blast furnace-basic oxygen furnace", "scrap-input"]
+            / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
+            efficiency4=costs.at["coal", "CO2 intensity"] # TODO: needs CO2 intensity for blast furnace-basic oxygen furnace
+            * (1 - costs.at["steel capture retrofit", "capture_rate"]),
+            efficiency5=costs.at["coal", "CO2 intensity"] # TODO: needs CO2 intensity for blast furnace-basic oxygen furnace
+            * costs.at["steel capture retrofit", "capture_rate"],
+            capital_cost=capital_cost,
+            lifetime=costs.at["steel capture retrofit", "lifetime"],
+        )
+        logger.info("Added BF-BOF CC to retrofit BF-BOF plants")
+
+    # add steel EAF carrier
+    n.add("Carrier", "steel EAF")
+
+    # add steel EAF bus
+    n.madd(
+        "Bus",
+        nodes + " steel EAF",
+        location=nodes,
+        carrier="steel EAF",
+    )
+    logger.info("Added steel EAF carrier and buses")
+
+    # add steel EAF demand
+    p_set = industrial_demand.loc[nodes, "Electric arc"].rename(index=lambda x: x + " steel EAF") / nhours
+    n.madd(
+        "Load",
+        nodes + " steel EAF",
+        bus=nodes + " steel EAF",
+        p_set=p_set,
+        carrier="steel EAF",
+    )
+    logger.info("Added steel EAF demand to steel EAF buses")
+
+    # add steel EAF process to produce steel from gas and electricity
+    # TODO: revise marginal price: no VOM is available
+    n.madd(
+        "Link",
+        nodes + " steel EAF",
+        bus0=nodes,
+        bus1=nodes + " steel EAF",
+        bus2=nodes + " H2",
+        bus3=nodes + " scrap",
+        p_nom_extendable=True,
+        carrier="EAF",
+        efficiency=1/costs.at["electric arc furnace", "electricity-input"],
+        efficiency2=-costs.at["electric arc furnace", "hydrogen-input"]
+        / costs.at["electric arc furnace", "electricity-input"],
+        efficiency3=-costs.at["electric arc furnace", "scrap-input"]
+        / costs.at["electric arc furnace", "electricity-input"],
+        capital_cost=costs.at["electric arc furnace", "fixed"]
+        / costs.at["electric arc furnace", "electricity-input"],
+        lifetime=costs.at["electric arc furnace", "lifetime"],
+    )
+    logger.info("Added steel EAF process to produce steel from gas and electricity")
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -280,12 +595,16 @@ if __name__ == "__main__":
     )
 
     # add ammonia industry
-    if config["custom_industry"]["ammonia"]:
+    if snakemake.params.add_ammonia:
         add_ammonia(n)
 
     # add ethanol industry
-    if config["custom_industry"]["ethanol"]:
+    if snakemake.params.add_ethanol:
         add_ethanol(n)
+
+    # add steel industry
+    if snakemake.params.add_steel:
+        add_steel(n)
 
     # save the modified network
     n.export_to_netcdf(snakemake.output.modified_network)

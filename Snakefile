@@ -29,14 +29,19 @@ wildcard_constraints:
     ll="(v|c)([0-9\.]+|opt|all)|all",
     opts="[-+a-zA-Z0-9\.]*",
     unc="[-+a-zA-Z0-9\.]*",
-    planning_horizon="[0-9]{4}",
-    countries="[A-Z]{2}",
+    sopts="[-+a-zA-Z0-9\.\s]*",
+    discountrate="[-+a-zA-Z0-9\.\s]*",
+    demand="[-+a-zA-Z0-9\.\s]*",
+    h2export="[0-9]+m?|all",
+    planning_horizons="20[2-9][0-9]|2100",
 
 
 run = config["run"]
 RDIR = run["name"] + "/" if run.get("name") else ""
 SECDIR = run["sector_name"] + "/" if run.get("sector_name") else ""
 CDIR = RDIR if not run.get("shared_cutouts") else ""
+SDIR = config["summary_dir"].strip("/") + f"/{SECDIR}"
+RESDIR = config["results_dir"].strip("/") + f"/{SECDIR}"
 
 
 module pypsa_earth:
@@ -461,6 +466,55 @@ if config["saf_mandate"]["ekerosene_split"]:
             network=PYPSA_EARTH_DIR + "results/"
             + SECDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
+
+
+if config["foresight"] == "overnight":
+
+    rule subregion_analysis:
+        # fix inputs for sector and power model probably use an if condition.
+        input:
+            path_shapes="data/subregion/needs_grid_regions_aggregated.geojson",
+            p_network=PYPSA_EARTH_DIR + RESDIR
+            + "postnetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",
+        output:
+            network=PYPSA_EARTH_DIR + RESDIR
+            + "postnetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_subregion.nc",
+            installed_capacity_plot=RESULTS_DIR 
+            + RDIR + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_installed_capacities.png",
+            generation_capacity_plot=RESULTS_DIR 
+            + RDIR + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_generation_capacities.png",
+            demand_plot=RESULTS_DIR 
+            + RDIR + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_demand.png",
+        script:
+            "scripts/subregions_analysis.py"
+
+
+    rule subregion_analysis_all:
+        input:
+            expand(PYPSA_EARTH_DIR
+                + RESDIR + "postnetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_subregion.nc",
+                **config["scenario"],
+                **config["costs"],
+                **config["export"],
+            ),
+            expand(RESULTS_DIR + RDIR
+                + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_installed_capacities.png",
+                **config["scenario"],
+                **config["costs"],
+                **config["export"],
+            ),
+            expand(RESULTS_DIR + RDIR
+                + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_generation_capacities.png",
+                **config["scenario"],
+                **config["costs"],
+                **config["export"],
+            ),
+            expand(RESULTS_DIR + RDIR
+                + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_demand.png",
+                **config["scenario"],
+                **config["costs"],
+                **config["export"],
+            ),
 
 
 rule test_modify_prenetwork:

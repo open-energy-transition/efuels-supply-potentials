@@ -489,24 +489,32 @@ if config["foresight"] == "overnight":
             "scripts/subregions_analysis.py"
 
 
-rule subregion_analysis_all:
-    input:
-        expand(PYPSA_EARTH_DIR
-            + RESDIR + "postnetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_subregion.nc",
-            **config["scenario"],
-        ),
-        expand(RESULTS_DIR + RDIR
-            + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_installed_capacities.png",
-            **config["scenario"],
-        ),
-        expand(RESULTS_DIR + RDIR
-            + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_generation_capacities.png",
-            **config["scenario"],
-        ),
-        expand(RESULTS_DIR + RDIR
-            + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_demand.png",
-            **config["scenario"],
-        ),
+    rule subregion_analysis_all:
+        input:
+            expand(PYPSA_EARTH_DIR
+                + RESDIR + "postnetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_subregion.nc",
+                **config["scenario"],
+                **config["costs"],
+                **config["export"],
+            ),
+            expand(RESULTS_DIR + RDIR
+                + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_installed_capacities.png",
+                **config["scenario"],
+                **config["costs"],
+                **config["export"],
+            ),
+            expand(RESULTS_DIR + RDIR
+                + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_generation_capacities.png",
+                **config["scenario"],
+                **config["costs"],
+                **config["export"],
+            ),
+            expand(RESULTS_DIR + RDIR
+                + "subregion_analysis_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_demand.png",
+                **config["scenario"],
+                **config["costs"],
+                **config["export"],
+            ),
 
 
 rule test_modify_prenetwork:

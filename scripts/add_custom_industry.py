@@ -537,14 +537,11 @@ def add_steel(n):
         nodes + " steel EAF",
         bus0=nodes,
         bus1=nodes + " steel EAF",
-        bus2=nodes + " H2",
-        bus3=nodes + " scrap",
+        bus2=nodes + " scrap",
         p_nom_extendable=True,
         carrier="EAF",
         efficiency=1/costs.at["electric arc furnace", "electricity-input"],
-        efficiency2=-costs.at["electric arc furnace", "hydrogen-input"]
-        / costs.at["electric arc furnace", "electricity-input"],
-        efficiency3=-costs.at["electric arc furnace", "scrap-input"]
+        efficiency2=-costs.at["electric arc furnace", "scrap-input"]
         / costs.at["electric arc furnace", "electricity-input"],
         capital_cost=costs.at["electric arc furnace", "fixed"]
         / costs.at["electric arc furnace", "electricity-input"],

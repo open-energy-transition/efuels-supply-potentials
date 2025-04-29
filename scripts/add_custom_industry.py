@@ -550,6 +550,150 @@ def add_steel(n):
     logger.info("Added steel EAF process to produce steel from gas and electricity")
 
 
+def add_cement(n):
+    """
+        Adds cement buses and stores, and adds links to produce cement
+    """
+    # add cement dry clinker carrier
+    n.add("Carrier", "clinker")
+
+    # add clinker bus
+    n.madd(
+        "Bus",
+        nodes + " clinker",
+        location=nodes,
+        carrier="clinker",
+    )
+
+    # add clinker stores
+    n.madd(
+        "Store",
+        nodes + " clinker store",
+        bus=nodes + " clinker",
+        e_nom_extendable=True,
+        e_cyclic=True,
+        carrier="clinker store",
+    )
+    logger.info("Added cement carrier, buses, and stores")
+
+    # add cement carrier
+    n.add("Carrier", "cement")
+
+    # add cement bus
+    n.madd(
+        "Bus",
+        nodes + " cement",
+        location=nodes,
+        carrier="cement",
+    )
+    logger.info("Added cement carrier and buses")
+
+    # add cement load
+    p_set = industrial_demand.loc[nodes, "Cement"].rename(index=lambda x: x + " cement") / nhours
+    n.madd(
+        "Load",
+        nodes + " cement",
+        bus=nodes + " cement",
+        p_set=p_set,
+        carrier="cement",
+    )
+    logger.info("Added cement demand to cement buses")
+
+    # add cement dry clinker techonology
+    # TODO: revise co2 emissions, capital and marginal costs
+    n.madd(
+        "Link",
+        nodes + " dry clinker",
+        bus0=nodes + " gas",
+        bus1=nodes + " clinker",
+        bus2=nodes,
+        bus3="co2 atmoshpere",
+        p_nom_extendable=True,
+        carrier="dry clinker",
+        efficiency=1/costs.at["cement dry clinker", "gas-input"],
+        efficiency2=-costs.at["cement dry clinker", "electricity-input"]
+        / costs.at["cement dry clinker", "gas-input"],
+        efficiency3=costs.at["gas", "CO2 intensity"], # TODO: needs CO2 intensity for cement dry clinker
+        capital_cost=costs.at["cement dry clinker", "fixed"] # TODO: revise investment cost: it seems quite small 125Eur/t_clinker (it seems like a marginal cost)
+        / costs.at["cement dry clinker", "gas-input"],
+        marginal_cost=costs.at["cement dry clinker", "VOM"] # TODO: revise VOM: it is given in %/year, but it should be EUR/MWh (it needs additional calculations)
+        / costs.at["cement dry clinker", "gas-input"],
+        lifetime=costs.at["cement dry clinker", "lifetime"],
+    )
+    logger.info("Added dry clinker process to produce clinker from gas and electricity")
+
+    # add cement finishing technology
+    # TODO: revise marginal and capital costs
+    n.madd(
+        "Link",
+        nodes + " cement finishing",
+        bus0=nodes + " clinker",
+        bus1=nodes + " cement",
+        bus2=nodes,
+        p_nom_extendable=True,
+        carrier="cement finishing",
+        efficiency=1/costs.at["cement finishing", "clinker-input"],
+        efficiency2=-costs.at["cement finishing", "electricity-input"]
+        / costs.at["cement finishing", "clinker-input"],
+        capital_cost=costs.at["cement finishing", "fixed"] # TODO: revise investment cost: it seems quite small 10Eur/t_cement (it seems like a marginal cost)
+        / costs.at["cement finishing", "clinker-input"],
+        marginal_cost=costs.at["cement finishing", "VOM"] # TODO: revise VOM: it is given in %/year, but it should be EUR/MWh (it needs additional calculations)
+        / costs.at["cement finishing", "clinker-input"],
+        lifetime=costs.at["cement finishing", "lifetime"],
+    )
+    logger.info("Added cement finishing process to produce cement from clinker")
+
+    # add cement dry clinker CC
+    # TODO: revise co2 emissions, capital and marginal costs
+    if "cement" in snakemake.params.ccs_retrofit:
+        # calculate capital and marginal costs of cement dry clinker CC
+        capital_cost = (
+            costs.at["cement dry clinker", "fixed"]
+            / costs.at["cement dry clinker", "gas-input"]
+            + costs.at["cement capture retrofit", "fixed"] # TODO: revise: it is in USD/tCO2 (seems marginal cost)
+            * costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for cement dry clinker
+            / costs.at["cement dry clinker", "capture_rate"]
+        )
+        marginal_cost = (
+            costs.at["cement dry clinker", "VOM"] # TODO: revise VOM: it is given in %/year, but it should be EUR/MWh (it needs additional calculations)
+            / costs.at["cement dry clinker", "gas-input"]
+        )
+        # add cement dry clinker CC
+        n.madd(
+            "Link",
+            nodes + " dry clinker CC",
+            bus0=nodes + " gas",
+            bus1=nodes + " clinker",
+            bus2=nodes,
+            bus3="co2 atmoshpere",
+            bus4=nodes + " co2 stored",
+            p_nom_extendable=True,
+            carrier="dry clinker CC",
+            efficiency=1/costs.at["cement dry clinker", "gas-input"],
+            efficiency2=-costs.at["cement dry clinker", "electricity-input"]
+            / costs.at["cement dry clinker", "gas-input"],
+            efficiency3=costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for cement dry clinker
+            * (1 - costs.at["cement capture retrofit", "capture_rate"]),
+            efficiency4=costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for cement dry clinker
+            * costs.at["cement capture retrofit", "capture_rate"],
+            capital_cost=capital_cost,
+            marginal_cost=marginal_cost,
+            lifetime=costs.at["cement capture retrofit", "lifetime"],
+        )
+        logger.info("Added cement dry clinker CC to retrofit cement dry clinker plants")
+
+
+def extend_links(n, level):
+    """
+        Replace NaN for bus and efficiency of the links for selected level
+    """
+    # find links with efficiency of NaN for given level
+    nan_techs = n.links[n.links[f"efficiency{level}"].isna()].index
+    n.links.loc[nan_techs, f'bus{level}'] = ""
+    n.links.loc[nan_techs, f'efficiency{level}'] = 1.0
+    logger.info(f"Fill bus{level} and efficiency{level} with default values")
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -602,6 +746,13 @@ if __name__ == "__main__":
     # add steel industry
     if snakemake.params.add_steel:
         add_steel(n)
+
+    # add cement industry
+    if snakemake.params.add_cement:
+        add_cement(n)
+
+    # fill efficiency5 and bus5 for missing links
+    extend_links(n, level=5)
 
     # save the modified network
     n.export_to_netcdf(snakemake.output.modified_network)

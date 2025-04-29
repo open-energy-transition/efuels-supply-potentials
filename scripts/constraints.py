@@ -89,19 +89,15 @@ def add_constraints(network, constraints_df):
                 Generator=region_gens_eligible.index,
             )
 
-            lhs = p_eligible.sum()
+            # power level buses
+            pwr_buses = n.buses[(n.buses.carrier == "AC") & (n.buses.index.isin(region_buses.index))]
+            # links delievering power within the region
+            # removes any transmission links
+            pwr_links = n.links[(n.links.bus0.isin(pwr_buses.index)) & ~(n.links.bus1.isin(pwr_buses.index))]
+            region_demand = n.model["Link-p"].sel(period=constraint_row.planning_horizon, Link=pwr_links.index)
 
-            # Region demand
-            region_demand = (
-                network.loads_t.p_set.loc[
-                    constraint_row.year,
-                    network.loads.bus.isin(region_buses.index),
-                ]
-                .sum()
-                .sum()
-            )
-
-            rhs = region_demand * constraint_row.target
+            lhs = p_eligible.sum() - (constraint_row.target * region_demand.sum())
+            rhs = 0
 
             # Add constraint
             network.model.add_constraints(

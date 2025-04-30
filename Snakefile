@@ -331,17 +331,8 @@ if (config["countries"] == ["US"]):
 
     use rule build_powerplants from pypsa_earth with:
         input:
-            **{k: v for k, v in rules.build_powerplants.input.items()},
-            powerplants_dummy_input=temp("powerplants_dummy_output.log"),
-
-    rule retrieve_custom_powerplants:
-        input:
-            old_path="data/custom_powerplants.csv",
-        output:
-            destination=PYPSA_EARTH_DIR + "data/custom_powerplants.csv",
-            powerplants_dummy_input=temp("powerplants_dummy_output.log"),
-        script:
-            "scripts/retrieve_powerplants.py"
+            **{k: v for k, v in rules.build_powerplants.input.items() if k != "custom_powerplants"},
+            custom_powerplants="data/custom_powerplants.csv",
 
 
 if config["countries"] == ["US"]:

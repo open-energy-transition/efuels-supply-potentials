@@ -518,6 +518,12 @@ use rule add_export from pypsa_earth with:
         + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf_industry.nc",
 
 
+use rule solve_sector_network from pypsa_earth with:
+    input:
+        **{k: v for k, v in rules.solve_sector_network.input.items() if k != "overrides"},
+        overrides="data/override_component_attrs",
+
+
 rule test_modify_prenetwork:
     input:
         prenetwork=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",

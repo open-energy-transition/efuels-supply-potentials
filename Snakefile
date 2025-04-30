@@ -501,12 +501,12 @@ if config["custom_industry"]["enable"]:
             "scripts/add_custom_industry.py"
 
 
-use rule add_export from pypsa_earth with:
-    input:
-        **{k: v for k, v in rules.add_export.input.items() if k != "network"},
-        network=PYPSA_EARTH_DIR + "results/"
-        + SECDIR
-        + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf_industry.nc",
+    use rule add_export from pypsa_earth with:
+        input:
+            **{k: v for k, v in rules.add_export.input.items() if k != "network"},
+            network=PYPSA_EARTH_DIR + "results/"
+            + SECDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf_industry.nc",
 
 
 use rule solve_sector_network from pypsa_earth with:

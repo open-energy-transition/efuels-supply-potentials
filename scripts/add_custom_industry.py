@@ -67,7 +67,7 @@ def add_ammonia(n):
     )
     logger.info("Added Haber-Bosch process to produce ammonia from hydrogen and electricity")
 
-    # add ammonia demand
+    # add ammonia demand in MWh
     p_set = industrial_demand.loc[nodes, "ammonia"].rename(index=lambda x: x + " NH3") / nhours
     n.madd(
         "Load",
@@ -187,7 +187,7 @@ def add_ethanol(n):
     )
     logger.info("Added links to model starch-based ethanol plants")
 
-    # add ethanol demand
+    # add ethanol demand in MWh
     p_set = industrial_demand.loc[nodes, "ethanol"].rename(index=lambda x: x + " ethanol") / nhours
     n.madd(
         "Load",
@@ -285,8 +285,8 @@ def add_steel(n):
     )
     logger.info("Added DRI carrier and buses")
 
-    # add DRI load
-    p_set = industrial_demand.loc[nodes, "DRI + Electric arc"].rename(index=lambda x: x + " DRI") / nhours
+    # add DRI load in ton
+    p_set = industrial_demand.loc[nodes, "DRI + Electric arc"].rename(index=lambda x: x + " DRI") * 1e3 / nhours
     n.madd(
         "Load",
         nodes + " DRI",
@@ -402,8 +402,8 @@ def add_steel(n):
     )
     logger.info("Added steel BF-BOF carrier and buses")
 
-    # add steel BF-BOF demand
-    p_set = industrial_demand.loc[nodes, "Integrated steelworks"].rename(index=lambda x: x + " steel BF-BOF") / nhours
+    # add steel BF-BOF demand in ton
+    p_set = industrial_demand.loc[nodes, "Integrated steelworks"].rename(index=lambda x: x + " steel BF-BOF") * 1e3 / nhours
     n.madd(
         "Load",
         nodes + " steel BF-BOF",
@@ -519,8 +519,8 @@ def add_steel(n):
     )
     logger.info("Added steel EAF carrier and buses")
 
-    # add steel EAF demand
-    p_set = industrial_demand.loc[nodes, "Electric arc"].rename(index=lambda x: x + " steel EAF") / nhours
+    # add steel EAF demand in ton
+    p_set = industrial_demand.loc[nodes, "Electric arc"].rename(index=lambda x: x + " steel EAF") * 1e3 / nhours
     n.madd(
         "Load",
         nodes + " steel EAF",
@@ -588,8 +588,8 @@ def add_cement(n):
     )
     logger.info("Added cement carrier and buses")
 
-    # add cement load
-    p_set = industrial_demand.loc[nodes, "Cement"].rename(index=lambda x: x + " cement") / nhours
+    # add cement load in ton
+    p_set = industrial_demand.loc[nodes, "Cement"].rename(index=lambda x: x + " cement") * 1e3 / nhours
     n.madd(
         "Load",
         nodes + " cement",

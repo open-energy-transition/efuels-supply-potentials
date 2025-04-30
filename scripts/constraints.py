@@ -145,10 +145,10 @@ if __name__ == "__main__":
     n = attach_state_to_buses(n, path_shapes, snakemake.params.distance_crs)
 
     planning_horizons = config["scenario"]["planning_horizons"]
-    ces_data = ces_data[(ces_data["year"].isin(planning_horizons))
-                    & (ces_data["target"] > 0.0)
-                    & (ces_data["state"].isin(n.buses["state"].unique()))]
+    res_data = res_data[(res_data["year"].isin(planning_horizons))
+                    & (res_data["target"] > 0.0)
+                    & (res_data["state"].isin(n.buses["state"].unique()))]
 
-    add_constraints(n, ces_data)
+    add_constraints(n, res_data)
 
     n.export_to_netcdf(snakemake.output[0])

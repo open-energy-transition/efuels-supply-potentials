@@ -39,7 +39,7 @@ def process_targets_data(path, carrier):
     df.rename(columns={"Unnamed: 0": "state"}, inplace=True)
     df = df.melt(id_vars="state", var_name="year", value_name="target")
     df["carrier"] = ", ".join(carrier)
-
+    df["year"] = df.year.astype(int)
     return df
 
 
@@ -85,7 +85,7 @@ def add_constraints(network, constraints_df):
 
         if not region_gens_eligible.empty:
             p_eligible = network.model["Generator-p"].sel(
-                snapshot=constraint_row.year,
+                # snapshot=str(constraint_row.year),
                 Generator=region_gens_eligible.index,
             )
 
@@ -94,7 +94,9 @@ def add_constraints(network, constraints_df):
             # links delievering power within the region
             # removes any transmission links
             pwr_links = n.links[(n.links.bus0.isin(pwr_buses.index)) & ~(n.links.bus1.isin(pwr_buses.index))]
-            region_demand = n.model["Link-p"].sel(period=constraint_row.planning_horizon, Link=pwr_links.index)
+            region_demand = n.model["Link-p"].sel(
+                # period=constraint_row.planning_horizon, 
+                Link=pwr_links.index)
 
             lhs = p_eligible.sum() - (constraint_row.target * region_demand.sum())
             rhs = 0
@@ -104,20 +106,20 @@ def add_constraints(network, constraints_df):
                 lhs >= rhs,
                 name=f"GlobalConstraint-{constraint_row.state}_{constraint_row.year}_rps_limit",
             )
-            logger.info(f"Added RPS {constraint_row.name} for {constraint_row.planning_horizon}.")
+            logger.info(f"Added RPS {constraint_row.name} for {constraint_row.year}.")
 
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "add_res_constraints",
-            configfile="configs/calibration/config.base.yaml",
+            configfile="configs/scenarios/config.2035.yaml",
             simpl="",
             ll="copt",
-            clusters=10,
-            opts="Co2L-24H",
+            clusters=50,
+            opts="24H",
             sopts="24H",
-            planning_horizons=2020,
+            planning_horizons=2035,
             discountrate="0.071",
             demand="AB",
         )
@@ -145,10 +147,10 @@ if __name__ == "__main__":
     n = attach_state_to_buses(n, path_shapes, snakemake.params.distance_crs)
 
     planning_horizons = config["scenario"]["planning_horizons"]
-    res_data = res_data[(res_data["year"].isin(planning_horizons))
-                    & (res_data["target"] > 0.0)
-                    & (res_data["state"].isin(n.buses["state"].unique()))]
+    ces_data = ces_data[(ces_data["year"].isin(planning_horizons))
+                    & (ces_data["target"] > 0.0)
+                    & (ces_data["state"].isin(n.buses["state"].unique()))]
 
-    add_constraints(n, res_data)
+    add_constraints(n, ces_data)
 
     n.export_to_netcdf(snakemake.output[0])

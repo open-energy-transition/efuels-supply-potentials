@@ -1,3 +1,4 @@
 [submodule "submodules/pypsa-earth"]
 	path = submodules/pypsa-earth
 	url = https://github.com/open-energy-transition/pypsa-earth.git
+	branch = efuels-supply-potentials

@@ -303,23 +303,21 @@ def add_steel(n):
     n.madd(
         "Link",
         nodes + " DRI",
-        bus0=nodes,
+        bus0=nodes + " gas",
         bus1=nodes + " DRI",
-        bus2=nodes + " gas",
+        bus2=nodes,
         bus3=nodes + " iron ore",
         bus4="co2 atmoshpere",
         p_nom_extendable=True,
         carrier="DRI",
-        efficiency=1/costs.at["direct iron reduction furnace", "electricity-input"],
-        efficiency2=-costs.at["direct iron reduction furnace", "gas-input"] # TODO: revise gas-input as it is not matching the source
-        / costs.at["direct iron reduction furnace", "electricity-input"],
+        efficiency=1/costs.at["direct iron reduction furnace", "gas-input"],
+        efficiency2=-costs.at["direct iron reduction furnace", "electricity-input"] # TODO: revise gas-input as it is not matching the source
+        / costs.at["direct iron reduction furnace", "gas-input"],
         efficiency3=-costs.at["direct iron reduction furnace", "ore-input"] # TODO: revise electricity-input as it is not matching the source
-        / costs.at["direct iron reduction furnace", "electricity-input"],
-        efficiency4=costs.at["direct iron reduction furnace", "gas-input"]
-        * costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for direct iron reduction furnace or any other method to compute CO2 emissions
-        / costs.at["direct iron reduction furnace", "electricity-input"],
+        / costs.at["direct iron reduction furnace", "gas-input"],
+        efficiency4=costs.at["gas", "CO2 intensity"], # TODO: needs CO2 intensity for direct iron reduction furnace or any other method to compute CO2 emissions
         capital_cost=costs.at["direct iron reduction furnace", "fixed"]
-        / costs.at["direct iron reduction furnace", "ore-input"],
+        / costs.at["direct iron reduction furnace", "gas-input"],
         lifetime=costs.at["direct iron reduction furnace", "lifetime"],
     )
     logger.info("Added DRI process to produce steel from gas and electricity")
@@ -331,11 +329,10 @@ def add_steel(n):
         # TODO: revise capital and marginal costs of DRI CC
         capital_cost = (
             costs.at["direct iron reduction furnace", "fixed"]
-            / costs.at["direct iron reduction furnace", "electricity-input"]
+            / costs.at["direct iron reduction furnace", "gas-input"]
             + costs.at["steel capture retrofit", "fixed"] # TODO :revise: it is in USD/tCO2 (seems marginal cost)
-            * costs.at["direct iron reduction furnace", "gas-input"]
             * costs.at["gas", "CO2 intensity"]
-            / costs.at["direct iron reduction furnace", "capture_rate"]
+            / costs.at["steel capture retrofit", "capture_rate"]
         )
         # TODO: no VOM for marginal price of DRI CC
 
@@ -344,27 +341,23 @@ def add_steel(n):
         n.madd(
             "Link",
             nodes + " DRI CC",
-            bus0=nodes,
+            bus0=nodes + " gas",
             bus1=nodes + " DRI",
-            bus2=nodes + " gas",
+            bus2=nodes,
             bus3=nodes + " iron ore",
             bus4="co2 atmoshpere",
             bus5=nodes + " co2 stored",
             p_nom_extendable=True,
             carrier="DRI CC",
-            efficiency=1/costs.at["direct iron reduction furnace", "electricity-input"],
-            efficiency2=-costs.at["direct iron reduction furnace", "gas-input"]
-            / costs.at["direct iron reduction furnace", "electricity-input"],
+            efficiency=1/costs.at["direct iron reduction furnace", "gas-input"],
+            efficiency2=-costs.at["direct iron reduction furnace", "electricity-input"]
+            / costs.at["direct iron reduction furnace", "gas-input"],
             efficiency3=-costs.at["direct iron reduction furnace", "ore-input"]
-            / costs.at["direct iron reduction furnace", "electricity-input"],
-            efficiency4=costs.at["direct iron reduction furnace", "gas-input"]
-            * costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for direct iron reduction furnace
-            * (1 - costs.at["steel capture retrofit", "capture_rate"])
-            / costs.at["direct iron reduction furnace", "electricity-input"],
-            efficiency5=costs.at["direct iron reduction furnace", "gas-input"]
-            * costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for direct iron reduction furnace
-            * costs.at["steel capture retrofit", "capture_rate"]
-            / costs.at["direct iron reduction furnace", "electricity-input"],
+            / costs.at["direct iron reduction furnace", "gas-input"],
+            efficiency4=costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for direct iron reduction furnace
+            * (1 - costs.at["steel capture retrofit", "capture_rate"]),
+            efficiency5=costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for direct iron reduction furnace
+            * costs.at["steel capture retrofit", "capture_rate"],
             capital_cost=capital_cost,
             # marginal_cost=marginal_cost, # TODO: revise VOM
             lifetime=costs.at["steel capture retrofit", "lifetime"],
@@ -377,16 +370,16 @@ def add_steel(n):
         n.madd(
             "Link",
             nodes + " DRI H2",
-            bus0=nodes,
+            bus0=nodes + " H2",
             bus1=nodes + " DRI",
-            bus2=nodes + " H2",
+            bus2=nodes,
             p_nom_extendable=True,
             carrier="DRI H2",
-            efficiency=costs.at["hydrogen direct iron reduction furnace", "electricity-input"],
-            efficiency2=-costs.at["hydrogen direct iron reduction furnace", "hydrogen-input"]
-            / costs.at["hydrogen direct iron reduction furnace", "electricity-input"],
+            efficiency=1/costs.at["hydrogen direct iron reduction furnace", "hydrogen-input"],
+            efficiency2=-costs.at["hydrogen direct iron reduction furnace", "electricity-input"]
+            / costs.at["hydrogen direct iron reduction furnace", "hydrogen-input"],
             capital_cost=costs.at["hydrogen direct iron reduction furnace", "fixed"]
-            / costs.at["hydrogen direct iron reduction furnace", "electricity-input"],
+            / costs.at["hydrogen direct iron reduction furnace", "hydrogen-input"],
             lifetime=costs.at["hydrogen direct iron reduction furnace", "lifetime"],
         )
         logger.info("Added DRI process to produce steel from hydrogen")
@@ -478,7 +471,7 @@ def add_steel(n):
             / costs.at["blast furnace-basic oxygen furnace", "coal-input"]
             + costs.at["steel capture retrofit", "fixed"] # TODO: revise: it is in USD/tCO2 (seems marginal cost), to use it we need to know how much it emits
             * costs.at["coal", "CO2 intensity"] # TODO: needs CO2 intensity for blast furnace-basic oxygen furnace
-            / costs.at["blast furnace-basic oxygen furnace", "capture_rate"]
+            / costs.at["steel capture retrofit", "capture_rate"]
         )
         # no VOM is available for BF-BOF CC
 
@@ -653,7 +646,7 @@ def add_cement(n):
             / costs.at["cement dry clinker", "gas-input"]
             + costs.at["cement capture retrofit", "fixed"] # TODO: revise: it is in USD/tCO2 (seems marginal cost)
             * costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for cement dry clinker
-            / costs.at["cement dry clinker", "capture_rate"]
+            / costs.at["cement capture retrofit", "capture_rate"]
         )
         marginal_cost = (
             costs.at["cement dry clinker", "VOM"] # TODO: revise VOM: it is given in %/year, but it should be EUR/MWh (it needs additional calculations)

@@ -236,6 +236,7 @@ def add_ethanol(n):
             marginal_cost=marginal_cost,
             lifetime=costs.at["ethanol capture retrofit", "lifetime"],
         )
+        logger.info("Added ethanol from starch CC plants")
 
 
 def add_steel(n):
@@ -751,8 +752,9 @@ if __name__ == "__main__":
     if snakemake.params.add_cement:
         add_cement(n)
 
-    # fill efficiency5 and bus5 for missing links
-    extend_links(n, level=5)
+    # fill efficiency5 and bus5 for missing links if exists
+    if "efficiency5" in n.links.columns:
+        extend_links(n, level=5)
 
     # save the modified network
     n.export_to_netcdf(snakemake.output.modified_network)

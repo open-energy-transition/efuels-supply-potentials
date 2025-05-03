@@ -35,8 +35,9 @@ wildcard_constraints:
 
 run = config["run"]
 RDIR = run["name"] + "/" if run.get("name") else ""
-SECDIR = run["sector_name"] + "/" if run.get("sector_name") else ""
 CDIR = RDIR if not run.get("shared_cutouts") else ""
+SECDIR = run["sector_name"] + "/" if run.get("sector_name") else ""
+SDIR = config["summary_dir"].strip("/") + f"/{SECDIR}"
 RESDIR = config["results_dir"].strip("/") + f"/{SECDIR}"
 
 
@@ -464,26 +465,66 @@ if config["saf_mandate"]["ekerosene_split"]:
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
 
 
-if config["foresight"] == "overnight":
-    use rule override_respot from pypsa_earth with:
-        output:
-            PYPSA_EARTH_DIR + RESDIR
-            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_presec_mod_constraints.nc",
+# if config["foresight"] == "overnight":
+#     use rule override_respot from pypsa_earth with:
+#         output:
+#             PYPSA_EARTH_DIR + RESDIR
+#             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_presec_mod_constraints.nc",
 
-    rule add_res_constraints:
+#     rule add_res_constraints:
+#         params:
+#             distance_crs=config["crs"]["distance_crs"],
+#         input:
+#             ces_path="data/current_electricity_state_policies/clean_targets.csv",
+#             res_path="data/current_electricity_state_policies/res_targets.csv",
+#             gadm_shape_path="data/demand_data/gadm41_USA_1.json",
+#             network=PYPSA_EARTH_DIR + RESDIR
+#             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_presec_mod_constraints.nc",
+#         output:
+#             PYPSA_EARTH_DIR + RESDIR
+#             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_presec.nc",
+#         script:
+#             "scripts/constraints.py"
+
+if config["foresight"] == "overnight":    
+    rule solve_custom_sector_network:
         params:
-            distance_crs=config["crs"]["distance_crs"],
+            solving=config["solving"],
+            augmented_line_connection=config["augmented_line_connection"],
         input:
             ces_path="data/current_electricity_state_policies/clean_targets.csv",
             res_path="data/current_electricity_state_policies/res_targets.csv",
             gadm_shape_path="data/demand_data/gadm41_USA_1.json",
+            overrides=PYPSA_EARTH_DIR + "data/override_component_attrs",
             network=PYPSA_EARTH_DIR + RESDIR
-            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_presec_mod_constraints.nc",
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",
+            costs=PYPSA_EARTH_DIR + "resources/" + RDIR + "costs_{planning_horizons}.csv",
+            configs=PYPSA_EARTH_DIR + SDIR + "configs/config.yaml",  # included to trigger copy_config rule
         output:
             PYPSA_EARTH_DIR + RESDIR
-            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_presec.nc",
+            + "postnetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",
+        shadow:
+            "shallow"
+        log:
+            solver=PYPSA_EARTH_DIR + RESDIR
+            + "logs/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_solver.log",
+            python=PYPSA_EARTH_DIR + RESDIR
+            + "logs/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_python.log",
+            memory=PYPSA_EARTH_DIR + RESDIR
+            + "logs/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_memory.log",
+        threads: 25
+        resources:
+            mem_mb=config["solving"]["mem"],
+        benchmark:
+            (
+                PYPSA_EARTH_DIR + RESDIR
+                + "benchmarks/solve_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export"
+            )
         script:
-            "scripts/constraints.py"
+            "scripts/solve_custom_sector_network.py"
+
+        
+    ruleorder: solve_custom_sector_network > solve_sector_network
 
 
 rule test_modify_prenetwork:

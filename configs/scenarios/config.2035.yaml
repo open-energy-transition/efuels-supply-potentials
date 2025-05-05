@@ -11,13 +11,13 @@ enable:
   download_osm_data: true  # If 'true', OpenStreetMap data will be downloaded for the above given countries
 
 run:
-  name: "US_2035" # use this to keep track of runs with different settings
-  sector_name: "US_2035"
+  name: "ces_res_constraints" # use this to keep track of runs with different settings
+  sector_name: "ces_res_constraints"
 
 scenario:
   simpl: ['']
   ll: ['copt']
-  clusters: [10]
+  clusters: [50]
   opts: [24H]
   planning_horizons:
   - 2035
@@ -40,7 +40,7 @@ demand_projection:
   scenario: "Medium"
   data_centers_load: true
 
-state_policy: "state" # "off", "state", "country"
+state_policy: "off" # "off", "state", "country"
 
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes
@@ -91,8 +91,8 @@ solving:
   options:
     load_shedding: false
   solver:
-    name: cplex
-    options: cplex-default
+    name: gurobi
+    options: gurobi-default
   solver_options:
     gurobi-default:
       threads: 8

@@ -465,27 +465,6 @@ if config["saf_mandate"]["ekerosene_split"]:
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
 
 
-# if config["foresight"] == "overnight":
-#     use rule override_respot from pypsa_earth with:
-#         output:
-#             PYPSA_EARTH_DIR + RESDIR
-#             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_presec_mod_constraints.nc",
-
-#     rule add_res_constraints:
-#         params:
-#             distance_crs=config["crs"]["distance_crs"],
-#         input:
-#             ces_path="data/current_electricity_state_policies/clean_targets.csv",
-#             res_path="data/current_electricity_state_policies/res_targets.csv",
-#             gadm_shape_path="data/demand_data/gadm41_USA_1.json",
-#             network=PYPSA_EARTH_DIR + RESDIR
-#             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_presec_mod_constraints.nc",
-#         output:
-#             PYPSA_EARTH_DIR + RESDIR
-#             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_presec.nc",
-#         script:
-#             "scripts/constraints.py"
-
 if config["foresight"] == "overnight":    
     rule solve_custom_sector_network:
         params:

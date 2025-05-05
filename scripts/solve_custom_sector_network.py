@@ -182,6 +182,12 @@ def add_RPS_constraints(network, config_file):
         shapes["ISO_1"] = shapes["ISO_1"].apply(lambda x: x.split("-")[1])
         shapes.rename(columns={"ISO_1": "State"}, inplace=True)
 
+        ac_dc_carriers = ["AC", "DC"]
+        location_mapping = network.buses.query("carrier in @ac_dc_carriers")[["x", "y"]]
+
+        network.buses["x"] = network.buses["location"].map(location_mapping["x"]).fillna(0)
+        network.buses["y"] = network.buses["location"].map(location_mapping["y"]).fillna(0)
+        
         pypsa_gpd = gpd.GeoDataFrame(
                 network.buses, 
                 geometry=gpd.points_from_xy(network.buses.x, network.buses.y), 

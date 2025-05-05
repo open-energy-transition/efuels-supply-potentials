@@ -187,7 +187,7 @@ def add_RPS_constraints(network, config_file):
 
         network.buses["x"] = network.buses["location"].map(location_mapping["x"]).fillna(0)
         network.buses["y"] = network.buses["location"].map(location_mapping["y"]).fillna(0)
-        
+
         pypsa_gpd = gpd.GeoDataFrame(
                 network.buses, 
                 geometry=gpd.points_from_xy(network.buses.x, network.buses.y), 
@@ -1055,7 +1055,6 @@ def extra_functionality(n, snapshots):
         if "EQ" in o:
             add_EQ_constraints(n, o)
     add_battery_constraints(n)
-    add_RPS_constraints(n, config)
     add_lossy_bidirectional_link_constraints(n)
 
     if (
@@ -1101,6 +1100,9 @@ def extra_functionality(n, snapshots):
         set_h2_colors(n)
 
     add_co2_sequestration_limit(n, snapshots)
+    
+    if config["state_policy"] != "off":
+        add_RPS_constraints(n, config)
 
 
 def solve_network(n, config, solving={}, opts="", **kwargs):

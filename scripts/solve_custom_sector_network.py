@@ -86,9 +86,10 @@ import numpy as np
 import pandas as pd
 import pypsa
 import sys
-# sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
-# sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../submodules/pypsa-earth/scripts/"))), override_component_attrs
-from scripts._helper import configure_logging, create_logger, mock_snakemake, update_config_from_wildcards, override_component_attrs
+sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
+sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../submodules/pypsa-earth/scripts/")))
+from scripts._helper import configure_logging, create_logger, mock_snakemake, update_config_from_wildcards
+from _helpers import override_component_attrs
 from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 from pypsa.linopf import (
     define_constraints,

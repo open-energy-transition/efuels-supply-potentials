@@ -465,7 +465,7 @@ if config["saf_mandate"]["ekerosene_split"]:
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
 
 
-if config["foresight"] == "overnight":    
+if config["foresight"] == "overnight" and config["state_policy"] != "off":    
     rule solve_custom_sector_network:
         params:
             solving=config["solving"],

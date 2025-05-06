@@ -11,13 +11,13 @@ enable:
   download_osm_data: true  # If 'true', OpenStreetMap data will be downloaded for the above given countries
 
 run:
-  name: "ces_res_constraints" # use this to keep track of runs with different settings
-  sector_name: "ces_res_constraints"
+  name: "US_2035" # use this to keep track of runs with different settings
+  sector_name: "US_2035"
 
 scenario:
   simpl: ['']
   ll: ['copt']
-  clusters: [50]
+  clusters: [10]
   opts: [24H]
   planning_horizons:
   - 2035

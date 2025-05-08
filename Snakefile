@@ -508,7 +508,7 @@ if config["custom_industry"]["enable"]:
             + SECDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_custom_industry.nc",
 
-if config["foresight"] == "foresight":
+if config["foresight"] == "overnight":
     use rule solve_sector_network from pypsa_earth with:
         input:
             **{k: v for k, v in rules.solve_sector_network.input.items() if k != "overrides"},

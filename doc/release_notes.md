@@ -8,13 +8,15 @@
 
 Please list contributions, add reference to PRs if present.
 
-* Add scenario configs for 2030, 2035 and 2040 and add data for scenario definition [PR #51](https://github.com/open-energy-transition/efuels-supply-potentials/pull/51) 
+* Add **custom ammonia, ethanol, cement and steel industries** [PR #50](https://github.com/open-energy-transition/efuels-supply-potentials/pull/50)
 
-* Cherry-pick: [PR #1400](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1400): Add US-specific demand growth rates and fuel shares (Medium scenario): [PR #52](https://github.com/open-energy-transition/efuels-supply-potentials/pull/52) 
+* Add **scenario configs for 2030, 2035 and 2040** and add data for scenario definition [PR #51](https://github.com/open-energy-transition/efuels-supply-potentials/pull/51)
+
+* Cherry-pick: [PR #1400](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1400): Add **US-specific demand growth rates and fuel shares** (Medium scenario): [PR #52](https://github.com/open-energy-transition/efuels-supply-potentials/pull/52)
 
 * Update head of the submodule to `efuels-supply-potentials` branch of `open-energy-transition/pypsa-earth` and cherry-pick [PR #1372](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1372): Scale temporal loads based on temporal resolution; [PR #1381](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1381): Remove space in rail transport oil and electricity carriers: [PR #46](https://github.com/open-energy-transition/efuels-supply-potentials/pull/46)
 
-* Added functionality to **connect all e-kerosene buses with a single E-kerosene-main bus* to model 0 cost of transport and store: [PR #42](https://github.com/open-energy-transition/efuels-supply-potentials/pull/42)
+* Added functionality to **connect all e-kerosene buses with a single E-kerosene-main bus** to model 0 cost of transport and store: [PR #42](https://github.com/open-energy-transition/efuels-supply-potentials/pull/42)
 
 * Added functionality to **set data center loads** to `demand_profiles.csv`: [PR #41](https://github.com/open-energy-transition/efuels-supply-potentials/pull/41)
 

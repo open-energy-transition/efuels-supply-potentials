@@ -508,11 +508,18 @@ if config["custom_industry"]["enable"]:
             + SECDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_custom_industry.nc",
 
+if config["foresight"] == "foresight":
+    use rule solve_sector_network from pypsa_earth with:
+        input:
+            **{k: v for k, v in rules.solve_sector_network.input.items() if k != "overrides"},
+            overrides="data/override_component_attrs",
 
-use rule solve_sector_network from pypsa_earth with:
-    input:
-        **{k: v for k, v in rules.solve_sector_network.input.items() if k != "overrides"},
-        overrides="data/override_component_attrs",
+
+if config["foresight"] == "myopic":
+    use rule solve_network_myopic from pypsa_earth with:
+        input:
+            **{k: v for k, v in rules.solve_network_myopic.input.items() if k != "overrides"},
+            overrides="data/override_component_attrs",
 
 
 rule test_modify_prenetwork:

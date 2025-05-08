@@ -87,15 +87,13 @@ def add_ammonia(n):
         co2_stored_buses = gas_buses.str.replace("gas", "co2 stored")
         elec_buses = gas_buses.str.replace(" gas", "")
 
-        # TODO: revise capital and marginal costs of SMR CC
-        # compute capital and marginal costs of SMR CC
+        # compute capital costs of SMR CC
         capital_cost = (
             costs.at["SMR", "fixed"]
             + costs.at["ammonia capture retrofit", "fixed"]
             * costs.at["gas", "CO2 intensity"]
-            / costs.at["ammonia capture retrofit", "capture_rate"]
+            * costs.at["ammonia capture retrofit", "capture_rate"]
         )
-        # no marginal cost for SMR as there is no VOM for SMR and ammonia capture retrofit
 
         # add SMR CC
         n.madd(
@@ -114,8 +112,8 @@ def add_ammonia(n):
             efficiency3=costs.at["gas", "CO2 intensity"]
             * costs.at["ammonia capture retrofit", "capture_rate"],
             efficiency4=-costs.at["ammonia capture retrofit", "electricity-input"]
-            / costs.at["ammonia capture retrofit", "capture_rate"]
-            * costs.at["gas", "CO2 intensity"],
+            * costs.at["gas", "CO2 intensity"]
+            * costs.at["ammonia capture retrofit", "capture_rate"],
             capital_cost=capital_cost,
             lifetime=costs.at["ammonia capture retrofit", "lifetime"],
         )
@@ -148,7 +146,6 @@ def add_ethanol(n):
     )
 
     # add bioethanol crop generator
-    # TODO: revise if marginal cost is needed
     n.madd(
         "Generator",
         nodes + " bioethanol crop",
@@ -180,9 +177,9 @@ def add_ethanol(n):
         p_nom_extendable=True,
         carrier="ethanol from starch",
         efficiency=costs.at["ethanol from starch crop", "efficiency"],
-        capital_cost=costs.at["ethanol from starch crop", "fixed"] # TODO: revise investment cost: we have EUR/MWh_eth not EUR/MW_eth
+        capital_cost=costs.at["ethanol from starch crop", "fixed"]
         * costs.at["ethanol from starch crop", "efficiency"],
-        marginal_cost=costs.at["ethanol from starch crop", "VOM"], # TODO: revise VOM: generally it is EUR/MWh, but here it is %/year
+        marginal_cost=costs.at["ethanol from starch crop", "VOM"],
         lifetime=costs.at["ethanol from starch crop", "lifetime"],
     )
     logger.info("Added links to model starch-based ethanol plants")
@@ -200,20 +197,13 @@ def add_ethanol(n):
 
     # CCS retrofit for ethanol
     if "ethanol" in snakemake.params.ccs_retrofit:
-        # calculate capital and marginal costs of ethanol from starch CC
-        # TODO: revise capital and marginal costs of ethanol from starch CC
+        # calculate capital cost of ethanol from starch CC
         capital_cost = (
             costs.at["ethanol from starch crop", "fixed"]
             * costs.at["ethanol from starch crop", "efficiency"]
-            + costs.at["ethanol capture retrofit", "fixed"] # TODO: revise investment cost: it is only 10.0,EUR/(tCO2/h)
-            * costs.at["bioethanol crops", "CO2 intensity"] # TODO: we do not have it yet
-            / costs.at["ethanol capture retrofit", "capture_rate"]
-        )
-        marginal_cost = (
-            costs.at["ethanol from starch crop", "VOM"] # TODO: revise VOM: generally it is EUR/MWh, but here it is %/year
-            # + costs.at["ethanol capture retrofit", "VOM"] # TODO: revise retrofit part too
-            # * costs.at["ethanol from starch crop", "CO2 intensity"]
-            # / costs.at["ethanol capture retrofit", "capture_rate"]
+            + costs.at["ethanol capture retrofit", "fixed"]
+            * costs.at["bioethanol crops", "CO2 intensity"]
+            * costs.at["ethanol capture retrofit", "capture_rate"]
         )
 
         # add ethanol from starch CC
@@ -227,13 +217,13 @@ def add_ethanol(n):
             p_nom_extendable=True,
             carrier="ethanol from starch CC",
             efficiency=costs.at["ethanol from starch crop", "efficiency"],
-            efficiency2=costs.at["bioethanol crops", "CO2 intensity"] # TODO: needs CO2 intensity for bioethanol crops
-            * costs.at["ethanol capture retrofit", "capture_rate"], # TODO: revise conversion rate
+            efficiency2=costs.at["bioethanol crops", "CO2 intensity"]
+            * costs.at["ethanol capture retrofit", "capture_rate"],
             efficiency3=-costs.at["ethanol capture retrofit", "electricity-input"]
             * costs.at["bioethanol crops", "CO2 intensity"]
-            / costs.at["ethanol capture retrofit", "capture_rate"], # TODO: revise conversion rate
+            * costs.at["ethanol capture retrofit", "capture_rate"],
             capital_cost=capital_cost,
-            marginal_cost=marginal_cost,
+            marginal_cost=costs.at["ethanol from starch crop", "VOM"],
             lifetime=costs.at["ethanol capture retrofit", "lifetime"],
         )
         logger.info("Added ethanol from starch CC plants")
@@ -297,76 +287,66 @@ def add_steel(n):
     )
     logger.info("Added DRI demand to DRI buses")
 
-    # add DRI process to produce DRI/sponge iron from gas and electricity
-    # TODO: revise if marginal price is needed: no VOM is available
-    # TODO: revise gas-input and electricity-input
+    # add DRI process to produce DRI/sponge iron from gas
     n.madd(
         "Link",
         nodes + " DRI",
         bus0=nodes + " gas",
         bus1=nodes + " DRI",
-        bus2=nodes,
-        bus3=nodes + " iron ore",
-        bus4="co2 atmoshpere",
+        bus2=nodes + " iron ore",
+        bus3="co2 atmoshpere",
         p_nom_extendable=True,
         carrier="DRI",
         efficiency=1/costs.at["direct iron reduction furnace", "gas-input"],
-        efficiency2=-costs.at["direct iron reduction furnace", "electricity-input"] # TODO: revise gas-input as it is not matching the source
+        efficiency2=-costs.at["direct iron reduction furnace", "ore-input"]
         / costs.at["direct iron reduction furnace", "gas-input"],
-        efficiency3=-costs.at["direct iron reduction furnace", "ore-input"] # TODO: revise electricity-input as it is not matching the source
-        / costs.at["direct iron reduction furnace", "gas-input"],
-        efficiency4=costs.at["gas", "CO2 intensity"], # TODO: needs CO2 intensity for direct iron reduction furnace or any other method to compute CO2 emissions
+        efficiency3=costs.at["gas", "CO2 intensity"],
         capital_cost=costs.at["direct iron reduction furnace", "fixed"]
         / costs.at["direct iron reduction furnace", "gas-input"],
         lifetime=costs.at["direct iron reduction furnace", "lifetime"],
     )
     logger.info("Added DRI process to produce steel from gas and electricity")
 
-    # TODO: revise implementation of CCS retrofit for DRI
     # CCS retrofit for DRI
     if "steel" in snakemake.params.ccs_retrofit:
-        # calculate capital and marginal costs of DRI CC
-        # TODO: revise capital and marginal costs of DRI CC
+        # calculate capital cost of DRI CC
         capital_cost = (
             costs.at["direct iron reduction furnace", "fixed"]
             / costs.at["direct iron reduction furnace", "gas-input"]
-            + costs.at["steel capture retrofit", "fixed"] # TODO :revise: it is in USD/tCO2 (seems marginal cost)
+            + costs.at["steel capture retrofit", "fixed"]
             * costs.at["gas", "CO2 intensity"]
-            / costs.at["steel capture retrofit", "capture_rate"]
+            * costs.at["steel capture retrofit", "capture_rate"]
         )
-        # TODO: no VOM for marginal price of DRI CC
 
         # add DRI CC
-        # iron ore bus is not used, because bus4 is maximum what we have, electricity, gas, co2 are more important, because iron ore is just there.
         n.madd(
             "Link",
             nodes + " DRI CC",
             bus0=nodes + " gas",
             bus1=nodes + " DRI",
-            bus2=nodes,
-            bus3=nodes + " iron ore",
-            bus4="co2 atmoshpere",
-            bus5=nodes + " co2 stored",
+            bus2=nodes + " iron ore",
+            bus3="co2 atmoshpere",
+            bus4=nodes + " co2 stored",
+            bus5=nodes,
             p_nom_extendable=True,
             carrier="DRI CC",
             efficiency=1/costs.at["direct iron reduction furnace", "gas-input"],
-            efficiency2=-costs.at["direct iron reduction furnace", "electricity-input"]
+            efficiency2=-costs.at["direct iron reduction furnace", "ore-input"]
             / costs.at["direct iron reduction furnace", "gas-input"],
-            efficiency3=-costs.at["direct iron reduction furnace", "ore-input"]
-            / costs.at["direct iron reduction furnace", "gas-input"],
-            efficiency4=costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for direct iron reduction furnace
+            efficiency3=costs.at["gas", "CO2 intensity"]
             * (1 - costs.at["steel capture retrofit", "capture_rate"]),
-            efficiency5=costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for direct iron reduction furnace
+            efficiency4=costs.at["gas", "CO2 intensity"]
+            * costs.at["steel capture retrofit", "capture_rate"],
+            efficiency5=-costs.at["steel capture retrofit", "electricity-input"]
+            * costs.at["gas", "CO2 intensity"]
             * costs.at["steel capture retrofit", "capture_rate"],
             capital_cost=capital_cost,
-            # marginal_cost=marginal_cost, # TODO: revise VOM
             lifetime=costs.at["steel capture retrofit", "lifetime"],
         )
         logger.info("Added DRI CC to retrofit DRI plants")
 
     if config["custom_industry"]["H2_DRI"]:
         # add DRI process to produce steel from hydrogen
-        # TODO: revise if marginal price is needed: no VOM is available
         n.madd(
             "Link",
             nodes + " DRI H2",
@@ -438,13 +418,10 @@ def add_steel(n):
     )
     logger.info("Added scrap steel carrier, buses, stores and generators")
 
-    # add steel BF-BOF process to produce steel from gas and electricity
-    # TODO: revise ore-input and scrap-input: ore input seems to small
-    # from the source: ore-input = 1.539 t_ore/t_steel, and scrap-input = 0.051 t_scrap/t_steel
-    # TODO: revise if marginal price is needed: no VOM is available
+    # add steel BF-BOF process to produce steel from coal, iron ore and scrap steel
     n.madd(
         "Link",
-        nodes + " steel BF-BOF",
+        nodes + " BF-BOF",
         bus0=nodes + " coal",
         bus1=nodes + " steel BF-BOF",
         bus2=nodes + " iron ore",
@@ -454,10 +431,10 @@ def add_steel(n):
         carrier="BF-BOF",
         efficiency=1/costs.at["blast furnace-basic oxygen furnace", "coal-input"],
         efficiency2=-costs.at["blast furnace-basic oxygen furnace", "ore-input"]
-        / costs.at["blast furnace-basic oxygen furnace", "coal-input"], # TODO: ore-input needs revision
+        / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
         efficiency3=-costs.at["blast furnace-basic oxygen furnace", "scrap-input"]
         / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
-        efficiency4=costs.at["coal", "CO2 intensity"], # TODO: needs CO2 intensity for blast furnace-basic oxygen furnace
+        efficiency4=costs.at["coal", "CO2 intensity"],
         capital_cost=costs.at["blast furnace-basic oxygen furnace", "fixed"]
         / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
         lifetime=costs.at["blast furnace-basic oxygen furnace", "lifetime"],
@@ -465,15 +442,14 @@ def add_steel(n):
     logger.info("Added steel BF-BOF process to produce steel from gas and electricity")
 
     if "steel" in snakemake.params.ccs_retrofit:
-        # calculate capital and marginal costs of BF-BOF CC
+        # calculate capital cost of BF-BOF CC
         capital_cost = (
             costs.at["blast furnace-basic oxygen furnace", "fixed"]
             / costs.at["blast furnace-basic oxygen furnace", "coal-input"]
-            + costs.at["steel capture retrofit", "fixed"] # TODO: revise: it is in USD/tCO2 (seems marginal cost), to use it we need to know how much it emits
-            * costs.at["coal", "CO2 intensity"] # TODO: needs CO2 intensity for blast furnace-basic oxygen furnace
-            / costs.at["steel capture retrofit", "capture_rate"]
+            + costs.at["steel capture retrofit", "fixed"]
+            * costs.at["coal", "CO2 intensity"]
+            * costs.at["steel capture retrofit", "capture_rate"]
         )
-        # no VOM is available for BF-BOF CC
 
         # add BF-BOF CC
         n.madd(
@@ -492,9 +468,9 @@ def add_steel(n):
             / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
             efficiency3=-costs.at["blast furnace-basic oxygen furnace", "scrap-input"]
             / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
-            efficiency4=costs.at["coal", "CO2 intensity"] # TODO: needs CO2 intensity for blast furnace-basic oxygen furnace
+            efficiency4=costs.at["coal", "CO2 intensity"]
             * (1 - costs.at["steel capture retrofit", "capture_rate"]),
-            efficiency5=costs.at["coal", "CO2 intensity"] # TODO: needs CO2 intensity for blast furnace-basic oxygen furnace
+            efficiency5=costs.at["coal", "CO2 intensity"]
             * costs.at["steel capture retrofit", "capture_rate"],
             capital_cost=capital_cost,
             lifetime=costs.at["steel capture retrofit", "lifetime"],
@@ -524,8 +500,7 @@ def add_steel(n):
     )
     logger.info("Added steel EAF demand to steel EAF buses")
 
-    # add steel EAF process to produce steel from gas and electricity
-    # TODO: revise marginal price: no VOM is available
+    # add steel EAF process to produce steel from electricity and scrap steel
     n.madd(
         "Link",
         nodes + " steel EAF",
@@ -594,7 +569,6 @@ def add_cement(n):
     logger.info("Added cement demand to cement buses")
 
     # add cement dry clinker techonology
-    # TODO: revise co2 emissions, capital and marginal costs
     n.madd(
         "Link",
         nodes + " dry clinker",
@@ -607,17 +581,16 @@ def add_cement(n):
         efficiency=1/costs.at["cement dry clinker", "gas-input"],
         efficiency2=-costs.at["cement dry clinker", "electricity-input"]
         / costs.at["cement dry clinker", "gas-input"],
-        efficiency3=costs.at["gas", "CO2 intensity"], # TODO: needs CO2 intensity for cement dry clinker
-        capital_cost=costs.at["cement dry clinker", "fixed"] # TODO: revise investment cost: it seems quite small 125Eur/t_clinker (it seems like a marginal cost)
+        efficiency3=costs.at["gas", "CO2 intensity"],
+        capital_cost=costs.at["cement dry clinker", "fixed"]
         / costs.at["cement dry clinker", "gas-input"],
-        marginal_cost=costs.at["cement dry clinker", "VOM"] # TODO: revise VOM: it is given in %/year, but it should be EUR/MWh (it needs additional calculations)
+        marginal_cost=costs.at["cement dry clinker", "VOM"]
         / costs.at["cement dry clinker", "gas-input"],
         lifetime=costs.at["cement dry clinker", "lifetime"],
     )
     logger.info("Added dry clinker process to produce clinker from gas and electricity")
 
     # add cement finishing technology
-    # TODO: revise marginal and capital costs
     n.madd(
         "Link",
         nodes + " cement finishing",
@@ -629,27 +602,26 @@ def add_cement(n):
         efficiency=1/costs.at["cement finishing", "clinker-input"],
         efficiency2=-costs.at["cement finishing", "electricity-input"]
         / costs.at["cement finishing", "clinker-input"],
-        capital_cost=costs.at["cement finishing", "fixed"] # TODO: revise investment cost: it seems quite small 10Eur/t_cement (it seems like a marginal cost)
+        capital_cost=costs.at["cement finishing", "fixed"]
         / costs.at["cement finishing", "clinker-input"],
-        marginal_cost=costs.at["cement finishing", "VOM"] # TODO: revise VOM: it is given in %/year, but it should be EUR/MWh (it needs additional calculations)
+        marginal_cost=costs.at["cement finishing", "VOM"]
         / costs.at["cement finishing", "clinker-input"],
         lifetime=costs.at["cement finishing", "lifetime"],
     )
     logger.info("Added cement finishing process to produce cement from clinker")
 
     # add cement dry clinker CC
-    # TODO: revise co2 emissions, capital and marginal costs
     if "cement" in snakemake.params.ccs_retrofit:
         # calculate capital and marginal costs of cement dry clinker CC
         capital_cost = (
             costs.at["cement dry clinker", "fixed"]
             / costs.at["cement dry clinker", "gas-input"]
-            + costs.at["cement capture retrofit", "fixed"] # TODO: revise: it is in USD/tCO2 (seems marginal cost)
-            * costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for cement dry clinker
-            / costs.at["cement capture retrofit", "capture_rate"]
+            + costs.at["cement capture retrofit", "fixed"]
+            * costs.at["gas", "CO2 intensity"]
+            * costs.at["cement capture retrofit", "capture_rate"]
         )
         marginal_cost = (
-            costs.at["cement dry clinker", "VOM"] # TODO: revise VOM: it is given in %/year, but it should be EUR/MWh (it needs additional calculations)
+            costs.at["cement dry clinker", "VOM"]
             / costs.at["cement dry clinker", "gas-input"]
         )
         # add cement dry clinker CC
@@ -666,9 +638,9 @@ def add_cement(n):
             efficiency=1/costs.at["cement dry clinker", "gas-input"],
             efficiency2=-costs.at["cement dry clinker", "electricity-input"]
             / costs.at["cement dry clinker", "gas-input"],
-            efficiency3=costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for cement dry clinker
+            efficiency3=costs.at["gas", "CO2 intensity"]
             * (1 - costs.at["cement capture retrofit", "capture_rate"]),
-            efficiency4=costs.at["gas", "CO2 intensity"] # TODO: needs CO2 intensity for cement dry clinker
+            efficiency4=costs.at["gas", "CO2 intensity"]
             * costs.at["cement capture retrofit", "capture_rate"],
             capital_cost=capital_cost,
             marginal_cost=marginal_cost,

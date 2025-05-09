@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Add dynamic blending rate selection rule [PR #55](https://github.com/open-energy-transition/efuels-supply-potentials/pull/55) 
+
 * Add scenario configs for 2030, 2035 and 2040 and add data for scenario definition [PR #51](https://github.com/open-energy-transition/efuels-supply-potentials/pull/51) 
 
 * Cherry-pick: [PR #1400](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1400): Add US-specific demand growth rates and fuel shares (Medium scenario): [PR #52](https://github.com/open-energy-transition/efuels-supply-potentials/pull/52) 

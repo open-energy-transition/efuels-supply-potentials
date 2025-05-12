@@ -203,7 +203,7 @@ def add_RPS_constraints(network, config_file):
 
         return network
 
-    res_carriers = ["solar", "onwind", "offwind-ac", "offwind-dc", "hydro", "geothermal"]
+    res_carriers = ["solar", "onwind", "offwind-ac", "offwind-dc", "hydro", "geothermal"] # check solar_rooftop
     ces_carriers = res_carriers + ["nuclear"]
     
     ces_data = process_targets_data(
@@ -223,12 +223,12 @@ def add_RPS_constraints(network, config_file):
     network = attach_state_to_buses(network, path_shapes, distance_crs)
     planning_horizons = config_file["scenario"]["planning_horizons"]
 
-    ces_data = ces_data[(ces_data["year"].isin(planning_horizons))
-                    & (ces_data["target"] > 0.0)
-                    & (ces_data["state"].isin(n.buses["state"].unique()))]
+    res_data = res_data[(res_data["year"].isin(planning_horizons))
+                    & (res_data["target"] > 0.0)
+                    & (res_data["state"].isin(n.buses["state"].unique()))]
 
 
-    for _, constraint_row in ces_data.iterrows():
+    for _, constraint_row in res_data.iterrows():
         region_list = [constraint_row.state.strip()]
         region_buses = network.buses[network.buses.state.isin(region_list)]
 
@@ -243,36 +243,37 @@ def add_RPS_constraints(network, config_file):
         region_gens_eligible = region_gens[region_gens.carrier.isin(carriers)]
 
         if not region_gens_eligible.empty:
-            p_eligible = get_var(n, "Generator", "p").loc[:,region_gens_eligible.index].sum()
-            # p_eligible = network.model["Generator-p"].sel(
-            #     # snapshot=str(constraint_row.year),
-            #     Generator=region_gens_eligible.index,
-            # )
+            p_eligible = (
+                linexpr(
+                    (n.snapshot_weightings.generators, 
+                    get_var(n, "Generator", "p")[region_gens_eligible.index].T)
+                    )
+                    .T.groupby(region_gens_eligible.bus, axis=1)
+                    .apply(join_exprs) 
+            )
 
             # power level buses
             pwr_buses = n.buses[(n.buses.carrier == "AC") & (n.buses.index.isin(region_buses.index))]
             # links delievering power within the region
             # removes any transmission links
             pwr_links = n.links[(n.links.bus0.isin(pwr_buses.index)) & ~(n.links.bus1.isin(pwr_buses.index))]
-            # region_demand = n.model["Link-p"].sel(
-            #     # period=constraint_row.planning_horizon, 
-            #     Link=pwr_links.index)
 
-            region_demand = get_var(n, "Link", "p").loc[:, pwr_links.index].sum().sum()
-
-            lhs = linexpr(
-                (1, p_eligible.values),
-                (-constraint_row.target, region_demand),
+            # check for hydro power in US (ror and dam)
+            region_demand = (
+                (
+                    linexpr(
+                            (-n.snapshot_weightings.stores * constraint_row.target, 
+                            get_var(n, "Link", "p")[pwr_links.index]).T
+                            )
+                    ).T.groupby(pwr_links.bus0, axis=1)
+                    .apply(join_exprs)
+                    .reindex(p_eligible.index)
+                    .fillna("")
             )
-            # lhs = p_eligible.sum() - (constraint_row.target * region_demand.sum())
-            # rhs = 0
 
-            # Add constraint
-            # network.model.add_constraints(
-            #     lhs >= rhs,
-            #     name=f"GlobalConstraint-{constraint_row.state}_{constraint_row.year}_rps_limit",
-            # )
-            define_constraints(n, lhs, ">=", 0, f"RPS_{constraint_row.state}", "rps_limit")
+            lhs = p_eligible + region_demand
+
+            define_constraints(n, lhs, ">=", 0, f"RPS_{constraint_row.state}", "rps_limit") # try == constraints
             logger.info(f"Added RPS {constraint_row.state} for {constraint_row.year}.")
 
 
@@ -1101,7 +1102,7 @@ def extra_functionality(n, snapshots):
 
     add_co2_sequestration_limit(n, snapshots)
     
-    if config["state_policy"] != "off":
+    if config["state_policy"] != "off" and n.generators.p_nom_extendable.any():
         add_RPS_constraints(n, config)
 
 

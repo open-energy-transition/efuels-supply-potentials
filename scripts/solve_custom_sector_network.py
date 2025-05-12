@@ -223,12 +223,12 @@ def add_RPS_constraints(network, config_file):
     network = attach_state_to_buses(network, path_shapes, distance_crs)
     planning_horizons = config_file["scenario"]["planning_horizons"]
 
-    res_data = res_data[(res_data["year"].isin(planning_horizons))
-                    & (res_data["target"] > 0.0)
-                    & (res_data["state"].isin(n.buses["state"].unique()))]
+    ces_data = ces_data[(ces_data["year"].isin(planning_horizons))
+                    & (ces_data["target"] > 0.0)
+                    & (ces_data["state"].isin(n.buses["state"].unique()))]
 
 
-    for _, constraint_row in res_data.iterrows():
+    for _, constraint_row in ces_data.iterrows():
         region_list = [constraint_row.state.strip()]
         region_buses = network.buses[network.buses.state.isin(region_list)]
 

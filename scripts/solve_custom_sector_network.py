@@ -262,11 +262,13 @@ def add_RPS_constraints(network, config_file):
             region_demand = (
                 (
                     linexpr(
-                            (-n.snapshot_weightings.stores * constraint_row.target, 
-                            get_var(n, "Link", "p")[pwr_links.index]).T
+                        (
+                            -n.snapshot_weightings.stores * constraint_row.target, 
+                            get_var(n, "Link", "p")[pwr_links.index].T
                             )
                     ).T.groupby(pwr_links.bus0, axis=1)
                     .apply(join_exprs)
+                    )
                     .reindex(p_eligible.index)
                     .fillna("")
             )

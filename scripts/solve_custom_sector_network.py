@@ -256,7 +256,7 @@ def add_RPS_constraints(network, config_file):
             pwr_buses = n.buses[(n.buses.carrier == "AC") & (n.buses.index.isin(region_buses.index))]
             # links delievering power within the region
             # removes any transmission links
-            pwr_links = n.links[(n.links.bus0.isin(pwr_buses.index)) & ~(n.links.bus1.isin(pwr_buses.index))]
+            pwr_links = n.links[(n.links.bus0.isin(pwr_buses.index)) & ~(n.links.bus1.isin(pwr_buses.index)) & ~(n.links.carrier == "DC")]
 
             # check for hydro power in US (ror and dam)
             region_demand = (

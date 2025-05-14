@@ -243,7 +243,16 @@ def add_RPS_constraints(network, config_file):
         region_gens_eligible = region_gens[region_gens.carrier.isin(carriers)]
 
         if not region_gens_eligible.empty:
-            p_eligible = (
+
+            # res_gen >= target * total_generation
+            # total_generation = res_gen + conventional_gen
+            # res_gen - (target * total_generation) >= 0
+            # res_gen + (-target * res_gen) + (-target * convention_gen) >= 0
+            # res_generation_with_target = (-target * res_gen)
+            # conventional_generation_with_target = (-target * convention_gen)
+            # LHS: res_gen + res_generation_with_target + conventional_generation_with_target >= 0
+
+            res_generation = (
                 linexpr(
                     (n.snapshot_weightings.generators, 
                     get_var(n, "Generator", "p")[region_gens_eligible.index].T)
@@ -252,30 +261,46 @@ def add_RPS_constraints(network, config_file):
                     .apply(join_exprs) 
             )
 
+            res_generation_with_target = (
+                linexpr(
+                    (
+                        -n.snapshot_weightings.generators * constraint_row.target, 
+                        get_var(n, "Generator", "p")[region_gens_eligible.index].T)
+                    )
+                    .T.groupby(region_gens_eligible.bus, axis=1)
+                    .apply(join_exprs) 
+            )
             # power level buses
             pwr_buses = n.buses[(n.buses.carrier == "AC") & (n.buses.index.isin(region_buses.index))]
             # links delievering power within the region
             # removes any transmission links
-            pwr_links = n.links[(n.links.bus0.isin(pwr_buses.index)) & ~(n.links.bus1.isin(pwr_buses.index)) & ~(n.links.carrier == "DC")]
+            # pwr_links = n.links[(n.links.bus1.isin(pwr_buses.index)) & ~(n.links.bus1.isin(pwr_buses.index)) & ~(n.links.carrier == "DC")]
+
+            conventional_gen_carriers = ['OCGT', 'CCGT', 'oil', 'coal', 'lignite',
+                        'biomass', 'urban central gas CHP', 'urban central gas CHP CC', 'biomass EOP',
+                        'urban central solid biomass CHP',
+                        'urban central solid biomass CHP CC']
+            
+            pwr_links = n.links[(n.links.bus1.isin(pwr_buses.index))].query("carrier in @conventional_gen_carriers")
 
             # check for hydro power in US (ror and dam)
-            region_demand = (
+            conventional_generation_with_target = (
                 (
                     linexpr(
                         (
-                            -n.snapshot_weightings.stores * constraint_row.target, 
-                            get_var(n, "Link", "p")[pwr_links.index].T
+                            -n.snapshot_weightings.generators * constraint_row.target, 
+                            (get_var(n, "Link", "p")[pwr_links.index] * pwr_links.efficiency).T
                             )
-                    ).T.groupby(pwr_links.bus0, axis=1)
+                    ).T.groupby(pwr_links.bus1, axis=1)
                     .apply(join_exprs)
                     )
-                    .reindex(p_eligible.index)
+                    .reindex(res_generation.index)
                     .fillna("")
             )
 
-            lhs = p_eligible + region_demand
+            lhs = res_generation + res_generation_with_target + conventional_generation_with_target
 
-            define_constraints(n, lhs, ">=", 0, f"RPS_{constraint_row.state}", "rps_limit") # try == constraints
+            define_constraints(n, lhs, ">=", 0, f"RPS_{constraint_row.state}", "rps_limit")
             logger.info(f"Added RPS {constraint_row.state} for {constraint_row.year}.")
 
 

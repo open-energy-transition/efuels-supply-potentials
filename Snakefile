@@ -381,7 +381,6 @@ if config["countries"] == ["US"]:
             countries=config["countries"],
             base_year=config["demand_data"]["base_year"],
             sector_options=config["sector"],
-            scenario=config["demand_projection"]["scenario"],
         output:
             energy_totals=PYPSA_EARTH_DIR + "resources/"
             + SECDIR

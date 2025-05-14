@@ -65,17 +65,18 @@ snakemake -call statewise_validate_all --configfile configs/calibration/config.b
 
 ## 3. Snakemake rules
 
-|Rule name                |Config file                              |Description        |
-|-------------------------|-----------------------------------------|-------------------|
-|`validate_all`           |`config.base.yaml`, `config.base_AC.yaml`|Performs country-level validation comparing with EIA and Ember data|
-|`statewise_validate_all` |`config.base_AC.yaml`                    |Performs statewise validation comparing with EIA data|
-|`get_capacity_factors`   |Any base or scenario config file         |Estimates capacity factors for renewables|
-|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand| 
-|`generate_aviation_scenario` |Any base or scenario config file         |Generates aviation demand csv file with different future scenario| 
-|`modify_aviation_demand` |Any base or scenario config file         |Switches aviation demand in energy_total to custom demand|
-|`preprocess_demand_data` |Any base or scenario config file         |Preprocess utlities demand data into geojson|
-|`build_demand_profiles_from_eia` |Any base or scenario config file         |Build custom demand data from eia and bypass build_demand_profiles|
-|`set_saf_mandate`        |Any base or scenario config file         |Adds e-kerosene buses to enable split of aviation demand and sets SAF mandate if enabled| 
+| Rule name                        | Config file                               | Description                                                                                                                                                            |
+|----------------------------------|-------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `validate_all`                   | `config.base.yaml`, `config.base_AC.yaml` | Performs country-level validation comparing with EIA and Ember data                                                                                                    |
+| `statewise_validate_all`         | `config.base_AC.yaml`                     | Performs statewise validation comparing with EIA data                                                                                                                  |
+| `get_capacity_factors`           | Any base or scenario config file          | Estimates capacity factors for renewables                                                                                                                              |
+| `process_airport_data`           | -                                         | Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand | 
+| `generate_aviation_scenario`     | Any base or scenario config file          | Generates aviation demand csv file with different future scenario                                                                                                      | 
+| `modify_aviation_demand`         | Any base or scenario config file          | Switches aviation demand in energy_total to custom demand                                                                                                              |
+| `preprocess_demand_data`         | Any base or scenario config file          | Preprocess utlities demand data into geojson                                                                                                                           |
+| `build_demand_profiles_from_eia` | Any base or scenario config file          | Build custom demand data from eia and bypass build_demand_profiles                                                                                                     |
+| `set_saf_mandate`                | Any base or scenario config file          | Adds e-kerosene buses to enable split of aviation demand and sets SAF mandate if enabled                                                                               | 
+| `prepare_growth_rate_scenarios`  | Any base or scenario config file          | Allows automatic fetching of correct growth rate files according to the demand_projection scenario name                                                                |
 
 
 

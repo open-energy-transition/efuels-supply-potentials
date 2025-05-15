@@ -11,7 +11,6 @@ import warnings
 
 warnings.filterwarnings("ignore")
 from scripts._helper import (
-    PYPSA_EARTH_DIR,
     configure_logging,
     create_logger,
     download_and_unzip_gdrive,

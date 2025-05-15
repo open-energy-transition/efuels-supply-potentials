@@ -15,7 +15,6 @@ sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 from state_analysis import get_state_mapping
 
 from scripts._helper import (
-    DATA_DIR,
     PLOTS_DIR,
     build_directory,
     load_network,

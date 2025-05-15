@@ -18,7 +18,6 @@ from scripts._helper import (
     PLOTS_DIR,
     build_directory,
     load_network,
-    load_pypsa_network,
     mock_snakemake,
     update_config_from_wildcards,
 )

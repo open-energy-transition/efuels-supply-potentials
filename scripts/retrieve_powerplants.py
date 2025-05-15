@@ -40,4 +40,4 @@ if __name__ == "__main__":
         f.write("success")
 
     shutil.copy(old_custom_powerplants_path, new_custom_powerplants_path)
-    logger.info(f"Retrieved custom_powerplants.csv file successfully")
+    logger.info("Retrieved custom_powerplants.csv file successfully")

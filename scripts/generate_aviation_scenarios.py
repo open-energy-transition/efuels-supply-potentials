@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-import logging
 import os
 import sys
 
@@ -137,7 +136,6 @@ def efficiency_input():
 
 # Function to compute scenarios based on the aviation DataFrame
 def compute_scenario(aviation_df):
-
     (
         low_scenario_lower_year,
         low_scenario_upper_year,

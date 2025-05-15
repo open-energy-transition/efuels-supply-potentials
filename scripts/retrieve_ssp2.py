@@ -1,15 +1,22 @@
+# -*- coding: utf-8 -*-
 # SPDX-FileCopyrightText:  Open Energy Transition gGmbH
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
+
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 import shutil
 import warnings
+
 warnings.filterwarnings("ignore")
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            configure_logging
+from scripts._helper import (
+    configure_logging,
+    create_logger,
+    mock_snakemake,
+    update_config_from_wildcards,
+)
 
 logger = create_logger(__name__)
 
@@ -36,7 +43,7 @@ if __name__ == "__main__":
         logger.info(f"Removed {nc_path} file successfully")
 
     shutil.copy(old_northamerica_path, new_northamerica_path)
-    logger.info(f"Retrieved NorthAmerica.csv file successfully")
+    logger.info("Retrieved NorthAmerica.csv file successfully")
 
     with open(snakemake.output.ssp2_dummy_output, "w") as f:
         f.write("success")

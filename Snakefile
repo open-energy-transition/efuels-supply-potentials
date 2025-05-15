@@ -446,6 +446,7 @@ if config["saf_mandate"]["ekerosene_split"]:
             network=PYPSA_EARTH_DIR + "results/"
             + SECDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}.nc",
+            saf_scenarios="data/saf_blending_rates/saf_scenarios.csv",
         output:
             modified_network=PYPSA_EARTH_DIR + "results/"
             + SECDIR

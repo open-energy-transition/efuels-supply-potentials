@@ -103,7 +103,7 @@ def get_dynamic_blending_rate(config):
     """
     saf_scenario = config["saf_mandate"].get("saf_scenario", "EU")  # default: EU
     year = str(config["scenario"]["planning_horizons"][0])          # e.g. 2030 -> "2030"
-    csv_path = "data/saf_blending_rates/saf_scenarios.csv"
+    csv_path = snakemake.input.saf_scenarios
     df = pd.read_csv(csv_path, index_col=0)
 
     rate = df.loc[saf_scenario, year]
@@ -137,13 +137,13 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "set_saf_mandate",
-            configfile="configs/calibration/config.base.yaml",
+            configfile="configs/scenarios/config.2040.yaml",
             simpl="",
             ll="copt",
             clusters=10,
-            opts="Co2L-24H",
+            opts="24H",
             sopts="24H",
-            planning_horizons=2020,
+            planning_horizons=2040,
             discountrate="0.071",
             demand="AB",
         )

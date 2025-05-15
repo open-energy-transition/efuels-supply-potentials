@@ -7,7 +7,6 @@ import os
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
-import datetime as dt
 
 import geopandas as gpd
 import numpy as np
@@ -20,7 +19,6 @@ from scripts._helper import (
     create_logger,
     get_colors,
     mock_snakemake,
-    update_config_from_wildcards,
 )
 
 logger = create_logger(__name__)
@@ -251,7 +249,7 @@ def scale_demand_profiles(df_demand_profiles, spatial_gadm_bus_mapping, scaling_
     scaled_demand_profiles = scaled_demand_profiles[
         sorted(scaled_demand_profiles.columns)
     ]
-    logger.info(f"Scaled demand based on scaling factor for each state.")
+    logger.info("Scaled demand based on scaling factor for each state.")
 
     return scaled_demand_profiles
 
@@ -316,7 +314,7 @@ def add_data_center_demand(
             # add bus-level data center demand
             df_demand_profiles.loc[:, bus] += bus_data_center_demand
 
-    logger.info(f"Update demand profiles by adding data center load.")
+    logger.info("Update demand profiles by adding data center load.")
     return df_demand_profiles
 
 

@@ -468,10 +468,11 @@ if config["countries"] == ["US"]:
     rule prepare_growth_rate_scenarios:
         input:
             source_growth_factors=lambda wildcards: f"data/US_growth_rates/{config['demand_projection']['scenario']}/growth_factors_cagr.csv",
-            source_industry_growth=lambda wildcards: f"data/US_growth_rates/{config['demand_projection']['scenario']}/industry_growth_cagr.csv"
+            source_industry_growth=lambda wildcards: f"data/US_growth_rates/{config['demand_projection']['scenario']}/industry_growth_cagr.csv",
         output:
             growth_factors_cagr=PYPSA_EARTH_DIR + "data/demand/growth_factors_cagr.csv",
-            industry_growth_cagr=PYPSA_EARTH_DIR + "data/demand/industry_growth_cagr.csv"
+            industry_growth_cagr=PYPSA_EARTH_DIR
+            + "data/demand/industry_growth_cagr.csv",
         script:
             "scripts/prepare_growth_rate_scenarios.py"
 
@@ -484,7 +485,7 @@ if config["countries"] == ["US"]:
             energy_totals=PYPSA_EARTH_DIR
             + "resources/"
             + SECDIR
-            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv"
+            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv",
 
     rule modify_aviation_demand:
         input:
@@ -492,18 +493,19 @@ if config["countries"] == ["US"]:
             energy_totals=PYPSA_EARTH_DIR
             + "resources/"
             + SECDIR
-            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv"
+            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv",
         output:
             energy_totals=PYPSA_EARTH_DIR
             + "resources/"
             + SECDIR
-            + "energy_totals_{demand}_{planning_horizons}.csv"
+            + "energy_totals_{demand}_{planning_horizons}.csv",
         script:
             "scripts/modify_aviation_demand.py"
 <<<<<<< HEAD
 =======
 
 >>>>>>> 08e2633 (implement and run pre-commit, update license files)
+
 
 if config["demand_distribution"]["enable"]:
 

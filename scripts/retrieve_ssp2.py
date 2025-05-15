@@ -43,7 +43,7 @@ if __name__ == "__main__":
         logger.info(f"Removed {nc_path} file successfully")
 
     shutil.copy(old_northamerica_path, new_northamerica_path)
-    logger.info(f"Retrieved NorthAmerica.csv file successfully")
+    logger.info("Retrieved NorthAmerica.csv file successfully")
 
     with open(snakemake.output.ssp2_dummy_output, "w") as f:
         f.write("success")

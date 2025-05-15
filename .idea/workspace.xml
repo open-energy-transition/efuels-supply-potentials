@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="e4aa8cc6-22f9-4656-b7d5-b1b7d0dbd8ec" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.pre-commit-config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/.pre-commit-config.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Snakefile" beforeDir="false" afterPath="$PROJECT_DIR$/Snakefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configs/scenarios/config.2030.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/configs/scenarios/config.2030.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configs/scenarios/config.2035.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/configs/scenarios/config.2035.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configs/scenarios/config.2040.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/configs/scenarios/config.2040.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/release_notes.md" beforeDir="false" afterPath="$PROJECT_DIR$/doc/release_notes.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plots/airport_data_postprocessing.py" beforeDir="false" afterPath="$PROJECT_DIR$/plots/airport_data_postprocessing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plots/capacity_factors.py" beforeDir="false" afterPath="$PROJECT_DIR$/plots/capacity_factors.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plots/results_validation.py" beforeDir="false" afterPath="$PROJECT_DIR$/plots/results_validation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plots/state_analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/plots/state_analysis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/_helper.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/_helper.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/build_demand_profiles_from_eia.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/build_demand_profiles_from_eia.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/generate_aviation_scenarios.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/generate_aviation_scenarios.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/prepare_growth_rate_scenarios.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/prepare_growth_rate_scenarios.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/preprocess_demand_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/preprocess_demand_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/retrieve_demand_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/retrieve_demand_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/retrieve_powerplants.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/retrieve_powerplants.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/retrieve_ssp2.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/retrieve_ssp2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/set_saf_mandate.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/set_saf_mandate.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/test_modify_prenetwork.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/test_modify_prenetwork.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/config.default.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/config.default.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/data/demand/growth_factors_cagr.csv" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/data/demand/growth_factors_cagr.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/data/demand/industry_growth_cagr.csv" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/data/demand/industry_growth_cagr.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/_helpers.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/_helpers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/add_brownfield.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/add_brownfield.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/add_electricity.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/add_electricity.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/add_existing_baseyear.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/add_existing_baseyear.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/add_extra_components.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/add_extra_components.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/augmented_line_connections.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/augmented_line_connections.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_base_energy_totals.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_base_energy_totals.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_base_industry_totals.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_base_industry_totals.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_bus_regions.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_bus_regions.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_clustered_population_layouts.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_clustered_population_layouts.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_cutout.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_cutout.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_demand_profiles.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_demand_profiles.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_existing_heating_distribution.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_existing_heating_distribution.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_heat_demand.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_heat_demand.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_industrial_database.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_industrial_database.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_industrial_distribution_key.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_industrial_distribution_key.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_natura_raster.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_natura_raster.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_osm_network.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_osm_network.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_population_layouts.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_population_layouts.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_renewable_profiles.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_renewable_profiles.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_ship_profile.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_ship_profile.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_solar_thermal_profiles.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_solar_thermal_profiles.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_temperature_profiles.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_temperature_profiles.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_test_configs.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/build_test_configs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/make_statistics.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/make_statistics.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/monte_carlo.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/monte_carlo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/non_workflow/zip_folder.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/non_workflow/zip_folder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/override_respot.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/override_respot.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/plot_network.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/plot_network.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_airports.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_airports.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_energy_totals.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_energy_totals.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_gas_network.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_gas_network.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_heat_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_heat_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_ports.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_ports.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_sector_network.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_sector_network.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_transport_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_transport_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_transport_data_input.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_transport_data_input.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_urban_percent.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/prepare_urban_percent.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/retrieve_databundle_light.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/retrieve_databundle_light.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/simplify_network.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/simplify_network.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/solve_network.py" beforeDir="false" afterPath="$PROJECT_DIR$/submodules/pypsa-earth/scripts/solve_network.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="add_saf_rule" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="ROOT_SYNC" value="DONT_SYNC" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="2wqrgSgZMgXdwGR2JYKDVmphVXu" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.modify_aviation_demand.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "implement__pre__commit"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-348a24fa61fa-5312c7369657-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-251.23774.444" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="e4aa8cc6-22f9-4656-b7d5-b1b7d0dbd8ec" name="Changes" comment="" />
+      <created>1746780056994</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1746780056994</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/scripts/set_saf_mandate.py</url>
+          <line>5</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>

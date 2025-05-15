@@ -7,8 +7,6 @@ import os
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
-import numpy as np
-import pandas as pd
 
 from scripts._helper import (
     configure_logging,

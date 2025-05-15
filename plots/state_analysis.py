@@ -110,7 +110,6 @@ def load_pypsa_network(is_alternative_clustering, network_path):
 
 
 def preprocess_pypsa_cap(network, state_mapping):
-
     req_col = [
         "nuclear",
         "coal",

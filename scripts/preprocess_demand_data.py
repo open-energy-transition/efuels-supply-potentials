@@ -7,7 +7,6 @@ import os
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
-import datetime as dt
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -232,9 +231,9 @@ def rescale_demands(df_final, df_demand_utility, df_additional_sales_data):
             rescaling_factor = actual_state_demand / assigned_utility_demand
         else:
             rescaling_factor = 1
-        df_final.loc[
-            df_final["State"] == state, "Sales (Megawatthours)"
-        ] *= rescaling_factor
+        df_final.loc[df_final["State"] == state, "Sales (Megawatthours)"] *= (
+            rescaling_factor
+        )
         df_final.loc[df_final["State"] == state, "rescaling_factor"] = rescaling_factor
 
     return df_final

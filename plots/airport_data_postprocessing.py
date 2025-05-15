@@ -117,7 +117,6 @@ def get_percentage_information(final_data):
 
 
 def merge_airport_data(airports_df, passengers_df, aviation_df):
-
     def get_statewise_fraction(row):
         # Calculate fraction for each airport based on the total passenger
         # for each corresponding state

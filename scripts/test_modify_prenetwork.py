@@ -9,12 +9,10 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 import warnings
 
-import pandas as pd
 import pypsa
 
 warnings.filterwarnings("ignore")
 from scripts._helper import (
-    PYPSA_EARTH_DIR,
     create_logger,
     mock_snakemake,
     update_config_from_wildcards,

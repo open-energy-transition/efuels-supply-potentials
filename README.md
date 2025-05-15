@@ -20,7 +20,7 @@ Activate `pypsa-earth` environment:
 
     conda activate pypsa-earth
 
-* **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit before linopy merge (`83434a021`). Please, make sure the environment was build using on this commit.
+* **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit (`ee14fa5`) of `efuels-supply-potential` branch of [open-energy-transition/pypsa-earth](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials) repository.
 
 ### 1.1. Configure pre-commit
 
@@ -89,17 +89,18 @@ snakemake -call statewise_validate_all --configfile configs/calibration/config.b
 
 ## 3. Snakemake rules
 
-|Rule name                |Config file                              |Description        |
-|-------------------------|-----------------------------------------|-------------------|
-|`validate_all`           |`config.base.yaml`, `config.base_AC.yaml`|Performs country-level validation comparing with EIA and Ember data|
-|`statewise_validate_all` |`config.base_AC.yaml`                    |Performs statewise validation comparing with EIA data|
-|`get_capacity_factors`   |Any base or scenario config file         |Estimates capacity factors for renewables|
-|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand|
-|`generate_aviation_scenario` |Any base or scenario config file         |Generates aviation demand csv file with different future scenario|
-|`modify_aviation_demand` |Any base or scenario config file         |Switches aviation demand in energy_total to custom demand|
-|`preprocess_demand_data` |Any base or scenario config file         |Preprocess utlities demand data into geojson|
-|`build_demand_profiles_from_eia` |Any base or scenario config file         |Build custom demand data from eia and bypass build_demand_profiles|
-|`set_saf_mandate`        |Any base or scenario config file         |Adds e-kerosene buses to enable split of aviation demand and sets SAF mandate if enabled|
+| Rule name                        | Config file                               | Description                                                                                                                                                            |
+|----------------------------------|-------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `validate_all`                   | `config.base.yaml`, `config.base_AC.yaml` | Performs country-level validation comparing with EIA and Ember data                                                                                                    |
+| `statewise_validate_all`         | `config.base_AC.yaml`                     | Performs statewise validation comparing with EIA data                                                                                                                  |
+| `get_capacity_factors`           | Any base or scenario config file          | Estimates capacity factors for renewables                                                                                                                              |
+| `process_airport_data`           | -                                         | Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand | 
+| `generate_aviation_scenario`     | Any base or scenario config file          | Generates aviation demand csv file with different future scenario                                                                                                      | 
+| `modify_aviation_demand`         | Any base or scenario config file          | Switches aviation demand in energy_total to custom demand                                                                                                              |
+| `preprocess_demand_data`         | Any base or scenario config file          | Preprocess utlities demand data into geojson                                                                                                                           |
+| `build_demand_profiles_from_eia` | Any base or scenario config file          | Build custom demand data from eia and bypass build_demand_profiles                                                                                                     |
+| `set_saf_mandate`                | Any base or scenario config file          | Adds e-kerosene buses to enable split of aviation demand and sets SAF mandate if enabled                                                                               | 
+| `prepare_growth_rate_scenarios`  | Any base or scenario config file          | Allows automatic fetching of correct growth rate files according to the demand_projection scenario name                                                                |
 
 
 
@@ -118,3 +119,12 @@ snakemake -call statewise_validate_all --configfile configs/calibration/config.b
 |`retrieve_demand_data`          |Any base or scenario config file         |Retrieves utility demand data from google drive to `data/demand_data/*`|
 
 * `RDIR` - scenario folder
+
+## 4. Cherry-picking
+Cherry-picking allows applying specific commits from one branch to another. We cherry-picked the important commits from upstream pypsa-earth to our project branch ([efuels-supply-potentials](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials)). The commits of the following PRs were integrated to project branch:
+
+1. [PR #1372](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1372): Scale temporal loads based on temporal resolution.
+2. [PR #1381](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1381): Remove space in rail transport oil and electricity carriers.
+3. [PR #1400](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1400): Add US-specific demand growth rates and fuel shares (Medium scenario).
+
+Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-pick) on cherry-picking in Git to get more familiar with procedure.

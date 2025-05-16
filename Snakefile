@@ -454,12 +454,13 @@ if config["demand_distribution"]["enable"]:
 if config["saf_mandate"]["ekerosene_split"]:
     rule set_saf_mandate:
         params:
-            blending_rate=config["saf_mandate"]["blending_rate"],
-            non_spatial_ekerosene=config["saf_mandate"]["non_spatial_ekerosene"]
+            non_spatial_ekerosene=config["saf_mandate"]["non_spatial_ekerosene"],
+            saf_scenario=config["saf_mandate"]["saf_scenario"],
         input:
             network=PYPSA_EARTH_DIR + "results/"
             + SECDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}.nc",
+            saf_scenarios="data/saf_blending_rates/saf_scenarios.csv",
         output:
             modified_network=PYPSA_EARTH_DIR + "results/"
             + SECDIR

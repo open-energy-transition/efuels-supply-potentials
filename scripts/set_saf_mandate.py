@@ -96,6 +96,20 @@ def reroute_FT_output(n):
     n.links.loc[ft_links, "bus1"] = n.links.loc[ft_links, "bus1"].str.replace("oil","e-kerosene")
     logger.info("Rerouted Fischer-Tropsch output from Oil buses to E-kerosene buses")
 
+def get_dynamic_blending_rate(config):
+    """
+    Extract the blending rate from data/saf_blending_rates/saf_scenarios.csv based on the planning horizon
+    and the scenario specified in the config file (EU, EU+ or EU-)
+    """
+    saf_scenario = snakemake.params.saf_scenario
+    year = str(config["scenario"]["planning_horizons"][0])          # e.g. 2030 -> "2030"
+    csv_path = snakemake.input.saf_scenarios
+    df = pd.read_csv(csv_path, index_col=0)
+
+    rate = df.loc[saf_scenario, year]
+
+    logger.info(f"Blending rate for scenario {saf_scenario} in {year}: {rate}")
+    return float(rate)
 
 def redistribute_aviation_demand(n, rate):
     """
@@ -123,13 +137,13 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "set_saf_mandate",
-            configfile="configs/calibration/config.base.yaml",
+            configfile="configs/scenarios/config.2040.yaml",
             simpl="",
             ll="copt",
             clusters=10,
-            opts="Co2L-24H",
+            opts="24H",
             sopts="24H",
-            planning_horizons=2020,
+            planning_horizons=2040,
             discountrate="0.071",
             demand="AB",
         )
@@ -150,7 +164,8 @@ if __name__ == "__main__":
 
     # split aviation demand to e-kerosene to kerosene for aviation based on blending rate
     if config["saf_mandate"]["enable_mandate"]:
-        redistribute_aviation_demand(n, rate=snakemake.params.blending_rate)
+        rate = get_dynamic_blending_rate(config)
+        redistribute_aviation_demand(n, rate)
 
     # save the modified network
     n.export_to_netcdf(snakemake.output.modified_network)

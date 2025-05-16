@@ -40,11 +40,14 @@ demand_projection:
   scenario: "Medium"
   data_centers_load: true
 
+state_policy: "state" # "off", "state", "country"
+
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes
   simplify_network:
     p_threshold_drop_isolated: 0.0
 
+electricity:
   extendable_carriers:
     Generator: []
     Store: [battery, H2]

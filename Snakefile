@@ -366,25 +366,38 @@ if config["countries"] == ["US"]:
             
 if config["countries"] == ["US"]:
 
+    rule prepare_growth_rate_scenarios:
+        input:
+            source_growth_factors=lambda wildcards: f"data/US_growth_rates/{config['demand_projection']['scenario']}/growth_factors_cagr.csv",
+            source_industry_growth=lambda wildcards: f"data/US_growth_rates/{config['demand_projection']['scenario']}/industry_growth_cagr.csv"
+        output:
+            growth_factors_cagr=PYPSA_EARTH_DIR + "data/demand/growth_factors_cagr.csv",
+            industry_growth_cagr=PYPSA_EARTH_DIR + "data/demand/industry_growth_cagr.csv"
+        script:
+            "scripts/prepare_growth_rate_scenarios.py"
+
     use rule prepare_energy_totals from pypsa_earth with:
+        params:
+            countries=config["countries"],
+            base_year=config["demand_data"]["base_year"],
+            sector_options=config["sector"],
         output:
             energy_totals=PYPSA_EARTH_DIR + "resources/"
             + SECDIR
-            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv",
+            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv"
 
     rule modify_aviation_demand:
         input:
             aviation_demand="data/icct/aviation_demand.csv",
             energy_totals=PYPSA_EARTH_DIR + "resources/"
             + SECDIR
-            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv",
+            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv"
         output:
             energy_totals=PYPSA_EARTH_DIR + "resources/"
             + SECDIR
-            + "energy_totals_{demand}_{planning_horizons}.csv",
+            + "energy_totals_{demand}_{planning_horizons}.csv"
         script:
             "scripts/modify_aviation_demand.py"
-        
 
 if config["demand_distribution"]["enable"]:
     rule preprocess_demand_data:

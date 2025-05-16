@@ -8,7 +8,9 @@
 
 Please list contributions, add reference to PRs if present.
 
-* Add dynamic blending rate selection rule [PR #55](https://github.com/open-energy-transition/efuels-supply-potentials/pull/55) 
+* Add **dynamic blending rate selection** rule [PR #55](https://github.com/open-energy-transition/efuels-supply-potentials/pull/55) 
+
+* Add custom rule to **fetch scenario-dependent growth rates** for the US [PR #57](https://github.com/open-energy-transition/efuels-supply-potentials/pull/51)
 
 * Add scenario configs for 2030, 2035 and 2040 and add data for scenario definition [PR #51](https://github.com/open-energy-transition/efuels-supply-potentials/pull/51) 
 

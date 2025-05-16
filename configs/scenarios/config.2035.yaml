@@ -45,6 +45,7 @@ cluster_options:
   simplify_network:
     p_threshold_drop_isolated: 0.0
 
+electricity:
   extendable_carriers:
     Generator: []
     Store: [battery, H2]
@@ -77,6 +78,8 @@ sector:
     coal: coal
     lignite: lignite
     biomass: biomass
+
+  SMR CC: false
 
   land_transport_fuel_cell_share:
     AB_2035: 0.0

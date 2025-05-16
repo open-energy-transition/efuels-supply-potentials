@@ -47,6 +47,7 @@ cluster_options:
   simplify_network:
     p_threshold_drop_isolated: 0.0
 
+electricity:
   extendable_carriers:
     Generator: []
     Store: [battery, H2]

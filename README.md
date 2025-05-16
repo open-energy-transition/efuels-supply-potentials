@@ -78,8 +78,7 @@ snakemake -call statewise_validate_all --configfile configs/calibration/config.b
 |`set_saf_mandate`        |Any base or scenario config file         |Adds e-kerosene buses to enable split of aviation demand and sets SAF mandate if enabled|
 |`build_custom_industry_demand` |Any base or scenario config file   |Estimates node level demands for selected custom industries (e.g. ammonia, ethanol, cement, and steel)|
 |`add_custom_industry`    |Any base or scenario config file         |Adds selected custom industries into the network|
-
-
+| `prepare_growth_rate_scenarios`  | Any base or scenario config file          | Allows automatic fetching of correct growth rate files according to the demand_projection scenario name                                                                |
 
 ### Retrieve rules
 |Rule name                |Config file                              |Description        |

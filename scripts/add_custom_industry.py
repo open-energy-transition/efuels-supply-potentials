@@ -90,9 +90,9 @@ def add_ammonia(n):
         # compute capital costs of SMR CC
         capital_cost = (
             costs.at["SMR", "fixed"]
-            + costs.at["ammonia capture retrofit", "fixed"]
+            + costs.at["ammonia carbon capture retrofit", "fixed"]
             * costs.at["gas", "CO2 intensity"]
-            * costs.at["ammonia capture retrofit", "capture_rate"]
+            * costs.at["ammonia carbon capture retrofit", "capture_rate"]
         )
 
         # add SMR CC
@@ -108,14 +108,14 @@ def add_ammonia(n):
             carrier="SMR CC",
             efficiency=costs.at["SMR CC", "efficiency"],
             efficiency2=costs.at["gas", "CO2 intensity"]
-            * (1 - costs.at["ammonia capture retrofit", "capture_rate"]),
+            * (1 - costs.at["ammonia carbon capture retrofit", "capture_rate"]),
             efficiency3=costs.at["gas", "CO2 intensity"]
-            * costs.at["ammonia capture retrofit", "capture_rate"],
-            efficiency4=-costs.at["ammonia capture retrofit", "electricity-input"]
+            * costs.at["ammonia carbon capture retrofit", "capture_rate"],
+            efficiency4=-costs.at["ammonia carbon capture retrofit", "electricity-input"]
             * costs.at["gas", "CO2 intensity"]
-            * costs.at["ammonia capture retrofit", "capture_rate"],
+            * costs.at["ammonia carbon capture retrofit", "capture_rate"],
             capital_cost=capital_cost,
-            lifetime=costs.at["ammonia capture retrofit", "lifetime"],
+            lifetime=costs.at["ammonia carbon capture retrofit", "lifetime"],
         )
         logger.info("Added SMR CC to retrofit ammonia plants")
 
@@ -201,9 +201,9 @@ def add_ethanol(n):
         capital_cost = (
             costs.at["ethanol from starch crop", "fixed"]
             * costs.at["ethanol from starch crop", "efficiency"]
-            + costs.at["ethanol capture retrofit", "fixed"]
+            + costs.at["ethanol carbon capture retrofit", "fixed"]
             * costs.at["bioethanol crops", "CO2 intensity"]
-            * costs.at["ethanol capture retrofit", "capture_rate"]
+            * costs.at["ethanol carbon capture retrofit", "capture_rate"]
         )
 
         # add ethanol from starch CC
@@ -218,13 +218,13 @@ def add_ethanol(n):
             carrier="ethanol from starch CC",
             efficiency=costs.at["ethanol from starch crop", "efficiency"],
             efficiency2=costs.at["bioethanol crops", "CO2 intensity"]
-            * costs.at["ethanol capture retrofit", "capture_rate"],
-            efficiency3=-costs.at["ethanol capture retrofit", "electricity-input"]
+            * costs.at["ethanol carbon capture retrofit", "capture_rate"],
+            efficiency3=-costs.at["ethanol carbon capture retrofit", "electricity-input"]
             * costs.at["bioethanol crops", "CO2 intensity"]
-            * costs.at["ethanol capture retrofit", "capture_rate"],
+            * costs.at["ethanol carbon capture retrofit", "capture_rate"],
             capital_cost=capital_cost,
             marginal_cost=costs.at["ethanol from starch crop", "VOM"],
-            lifetime=costs.at["ethanol capture retrofit", "lifetime"],
+            lifetime=costs.at["ethanol carbon capture retrofit", "lifetime"],
         )
         logger.info("Added ethanol from starch CC plants")
 
@@ -297,13 +297,13 @@ def add_steel(n):
         bus3="co2 atmoshpere",
         p_nom_extendable=True,
         carrier="DRI",
-        efficiency=1/costs.at["direct iron reduction furnace", "gas-input"],
-        efficiency2=-costs.at["direct iron reduction furnace", "ore-input"]
-        / costs.at["direct iron reduction furnace", "gas-input"],
+        efficiency=1/costs.at["natural gas direct iron reduction furnace", "gas-input"],
+        efficiency2=-costs.at["natural gas direct iron reduction furnace", "ore-input"]
+        / costs.at["natural gas direct iron reduction furnace", "gas-input"],
         efficiency3=costs.at["gas", "CO2 intensity"],
-        capital_cost=costs.at["direct iron reduction furnace", "fixed"]
-        / costs.at["direct iron reduction furnace", "gas-input"],
-        lifetime=costs.at["direct iron reduction furnace", "lifetime"],
+        capital_cost=costs.at["natural gas direct iron reduction furnace", "fixed"]
+        / costs.at["natural gas direct iron reduction furnace", "gas-input"],
+        lifetime=costs.at["natural gas direct iron reduction furnace", "lifetime"],
     )
     logger.info("Added DRI process to produce steel from gas and electricity")
 
@@ -311,11 +311,11 @@ def add_steel(n):
     if "steel" in snakemake.params.ccs_retrofit:
         # calculate capital cost of DRI CC
         capital_cost = (
-            costs.at["direct iron reduction furnace", "fixed"]
-            / costs.at["direct iron reduction furnace", "gas-input"]
-            + costs.at["steel capture retrofit", "fixed"]
+            costs.at["natural gas direct iron reduction furnace", "fixed"]
+            / costs.at["natural gas direct iron reduction furnace", "gas-input"]
+            + costs.at["steel carbon capture retrofit", "fixed"]
             * costs.at["gas", "CO2 intensity"]
-            * costs.at["steel capture retrofit", "capture_rate"]
+            * costs.at["steel carbon capture retrofit", "capture_rate"]
         )
 
         # add DRI CC
@@ -330,18 +330,18 @@ def add_steel(n):
             bus5=nodes,
             p_nom_extendable=True,
             carrier="DRI CC",
-            efficiency=1/costs.at["direct iron reduction furnace", "gas-input"],
-            efficiency2=-costs.at["direct iron reduction furnace", "ore-input"]
-            / costs.at["direct iron reduction furnace", "gas-input"],
+            efficiency=1/costs.at["natural gas direct iron reduction furnace", "gas-input"],
+            efficiency2=-costs.at["natural gas direct iron reduction furnace", "ore-input"]
+            / costs.at["natural gas direct iron reduction furnace", "gas-input"],
             efficiency3=costs.at["gas", "CO2 intensity"]
-            * (1 - costs.at["steel capture retrofit", "capture_rate"]),
+            * (1 - costs.at["steel carbon capture retrofit", "capture_rate"]),
             efficiency4=costs.at["gas", "CO2 intensity"]
-            * costs.at["steel capture retrofit", "capture_rate"],
-            efficiency5=-costs.at["steel capture retrofit", "electricity-input"]
+            * costs.at["steel carbon capture retrofit", "capture_rate"],
+            efficiency5=-costs.at["steel carbon capture retrofit", "electricity-input"]
             * costs.at["gas", "CO2 intensity"]
-            * costs.at["steel capture retrofit", "capture_rate"],
+            * costs.at["steel carbon capture retrofit", "capture_rate"],
             capital_cost=capital_cost,
-            lifetime=costs.at["steel capture retrofit", "lifetime"],
+            lifetime=costs.at["steel carbon capture retrofit", "lifetime"],
         )
         logger.info("Added DRI CC to retrofit DRI plants")
 
@@ -355,12 +355,12 @@ def add_steel(n):
             bus2=nodes,
             p_nom_extendable=True,
             carrier="DRI H2",
-            efficiency=1/costs.at["hydrogen direct iron reduction furnace", "hydrogen-input"],
-            efficiency2=-costs.at["hydrogen direct iron reduction furnace", "electricity-input"]
-            / costs.at["hydrogen direct iron reduction furnace", "hydrogen-input"],
-            capital_cost=costs.at["hydrogen direct iron reduction furnace", "fixed"]
-            / costs.at["hydrogen direct iron reduction furnace", "hydrogen-input"],
-            lifetime=costs.at["hydrogen direct iron reduction furnace", "lifetime"],
+            efficiency=1/costs.at["hydrogen natural gas direct iron reduction furnace", "hydrogen-input"],
+            efficiency2=-costs.at["hydrogen natural gas direct iron reduction furnace", "electricity-input"]
+            / costs.at["hydrogen natural gas direct iron reduction furnace", "hydrogen-input"],
+            capital_cost=costs.at["hydrogen natural gas direct iron reduction furnace", "fixed"]
+            / costs.at["hydrogen natural gas direct iron reduction furnace", "hydrogen-input"],
+            lifetime=costs.at["hydrogen natural gas direct iron reduction furnace", "lifetime"],
         )
         logger.info("Added DRI process to produce steel from hydrogen")
 
@@ -446,9 +446,9 @@ def add_steel(n):
         capital_cost = (
             costs.at["blast furnace-basic oxygen furnace", "fixed"]
             / costs.at["blast furnace-basic oxygen furnace", "coal-input"]
-            + costs.at["steel capture retrofit", "fixed"]
+            + costs.at["steel carbon capture retrofit", "fixed"]
             * costs.at["coal", "CO2 intensity"]
-            * costs.at["steel capture retrofit", "capture_rate"]
+            * costs.at["steel carbon capture retrofit", "capture_rate"]
         )
 
         # add BF-BOF CC
@@ -469,11 +469,11 @@ def add_steel(n):
             efficiency3=-costs.at["blast furnace-basic oxygen furnace", "scrap-input"]
             / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
             efficiency4=costs.at["coal", "CO2 intensity"]
-            * (1 - costs.at["steel capture retrofit", "capture_rate"]),
+            * (1 - costs.at["steel carbon capture retrofit", "capture_rate"]),
             efficiency5=costs.at["coal", "CO2 intensity"]
-            * costs.at["steel capture retrofit", "capture_rate"],
+            * costs.at["steel carbon capture retrofit", "capture_rate"],
             capital_cost=capital_cost,
-            lifetime=costs.at["steel capture retrofit", "lifetime"],
+            lifetime=costs.at["steel carbon capture retrofit", "lifetime"],
         )
         logger.info("Added BF-BOF CC to retrofit BF-BOF plants")
 
@@ -509,12 +509,12 @@ def add_steel(n):
         bus2=nodes + " scrap",
         p_nom_extendable=True,
         carrier="EAF",
-        efficiency=1/costs.at["electric arc furnace", "electricity-input"],
-        efficiency2=-costs.at["electric arc furnace", "scrap-input"]
-        / costs.at["electric arc furnace", "electricity-input"],
-        capital_cost=costs.at["electric arc furnace", "fixed"]
-        / costs.at["electric arc furnace", "electricity-input"],
-        lifetime=costs.at["electric arc furnace", "lifetime"],
+        efficiency=1/costs.at["electric arc furnace with hbi and scrap", "electricity-input"],
+        efficiency2=-costs.at["electric arc furnace with hbi and scrap", "scrap-input"]
+        / costs.at["electric arc furnace with hbi and scrap", "electricity-input"],
+        capital_cost=costs.at["electric arc furnace with hbi and scrap", "fixed"]
+        / costs.at["electric arc furnace with hbi and scrap", "electricity-input"],
+        lifetime=costs.at["electric arc furnace with hbi and scrap", "lifetime"],
     )
     logger.info("Added steel EAF process to produce steel from gas and electricity")
 
@@ -608,7 +608,7 @@ def add_cement(n):
         / costs.at["cement finishing", "clinker-input"],
         lifetime=costs.at["cement finishing", "lifetime"],
     )
-    logger.info("Added cement finishing process to produce cement from clinker")
+    logger.info("Added cement finishing process to produce cement from clinker and electricity")
 
     # add cement dry clinker CC
     if "cement" in snakemake.params.ccs_retrofit:
@@ -616,9 +616,9 @@ def add_cement(n):
         capital_cost = (
             costs.at["cement dry clinker", "fixed"]
             / costs.at["cement dry clinker", "gas-input"]
-            + costs.at["cement capture retrofit", "fixed"]
+            + costs.at["cement carbon capture retrofit", "fixed"]
             * costs.at["gas", "CO2 intensity"]
-            * costs.at["cement capture retrofit", "capture_rate"]
+            * costs.at["cement carbon capture retrofit", "capture_rate"]
         )
         marginal_cost = (
             costs.at["cement dry clinker", "VOM"]
@@ -639,12 +639,12 @@ def add_cement(n):
             efficiency2=-costs.at["cement dry clinker", "electricity-input"]
             / costs.at["cement dry clinker", "gas-input"],
             efficiency3=costs.at["gas", "CO2 intensity"]
-            * (1 - costs.at["cement capture retrofit", "capture_rate"]),
+            * (1 - costs.at["cement carbon capture retrofit", "capture_rate"]),
             efficiency4=costs.at["gas", "CO2 intensity"]
-            * costs.at["cement capture retrofit", "capture_rate"],
+            * costs.at["cement carbon capture retrofit", "capture_rate"],
             capital_cost=capital_cost,
             marginal_cost=marginal_cost,
-            lifetime=costs.at["cement capture retrofit", "lifetime"],
+            lifetime=costs.at["cement carbon capture retrofit", "lifetime"],
         )
         logger.info("Added cement dry clinker CC to retrofit cement dry clinker plants")
 

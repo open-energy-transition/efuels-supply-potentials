@@ -233,7 +233,7 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("cutouts
 # use rule retrieve_cost_data from pypsa_earth with:
 #     input:
 #         HTTP.remote(
-#             f"raw.githubusercontent.com/open-energy-transition/technology-data/dummy_industrial_technologies_and_retrofits/outputs/US/costs"
+#             f"raw.githubusercontent.com/open-energy-transition/technology-data/master/outputs/US/costs"
 #             + "_{year}.csv",
 #             keep_local=True,
 #         ),

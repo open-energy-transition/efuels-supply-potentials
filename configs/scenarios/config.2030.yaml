@@ -17,7 +17,7 @@ run:
 scenario:
   simpl: ['']
   ll: ['copt']
-  clusters: [10]
+  clusters: [50]
   opts: [24H]
   planning_horizons:
   - 2030
@@ -49,7 +49,7 @@ cluster_options:
 
 electricity:
   extendable_carriers:
-    Generator: []
+    Generator: [solar, csp, onwind, offwind-ac, offwind-dc, geothermal]
     Store: [battery, H2]
 
   custom_powerplants: "replace" #  "false" use only powerplantmatching (ppm) data, "merge" combines ppm and custom powerplants, "replace" use only custom powerplants

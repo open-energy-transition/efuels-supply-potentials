@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Update **head for pypsa-earth submodule** [PR #58](https://github.com/open-energy-transition/efuels-supply-potentials/pull/58) due to merge of [PR #34](https://github.com/open-energy-transition/pypsa-earth/pull/34) to a working branch `efuels-supply-potentials`
+
 * Add **custom ammonia, ethanol, cement and steel industries** [PR #50](https://github.com/open-energy-transition/efuels-supply-potentials/pull/50)
 
 * Add **dynamic blending rate selection** rule [PR #55](https://github.com/open-energy-transition/efuels-supply-potentials/pull/55) 

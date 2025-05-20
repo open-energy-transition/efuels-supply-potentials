@@ -39,6 +39,16 @@ demand_projection:
   scenario: "Reference"
   data_centers_load: false
 
+custom_industry:
+  enable: true
+  ethanol: true
+  ammonia: true
+  steel: true
+  cement: true
+  CCS_retrofit: [ethanol, ammonia, steel, cement]
+  production_flexibility: []
+  H2_DRI: false
+
 custom_databundles:
   bundle_cutouts_USA:
     countries: [US]

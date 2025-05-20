@@ -25,7 +25,7 @@ def add_ekerosene_buses(n):
     n.madd(
         "Bus",
         ekerosene_buses,
-        location=oil_buses.location,
+        location=oil_buses.location.values,
         carrier="e-kerosene",
     )
 

@@ -232,13 +232,14 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("cutouts
             "scripts/retrieve_cutouts.py"
 
 
+# TODO: revise retrieve cost data
 # use rule retrieve_cost_data from pypsa_earth with:
-#     input:
-#         HTTP.remote(
-#             f"raw.githubusercontent.com/open-energy-transition/technology-data/nrel_atb_usa_costs/outputs/US/costs"
-#             + "_{year}.csv",
-#             keep_local=True,
-#         ),
+    input:
+        HTTP.remote(
+            f"raw.githubusercontent.com/open-energy-transition/technology-data/master/outputs/US/costs"
+            + "_{year}.csv",
+            keep_local=True,
+        ),
 
 
 # retrieving precomputed osm/raw data and bypassing download_osm_data rule
@@ -333,17 +334,8 @@ if (config["countries"] == ["US"]):
 
     use rule build_powerplants from pypsa_earth with:
         input:
-            **{k: v for k, v in rules.build_powerplants.input.items()},
-            powerplants_dummy_input=temp("powerplants_dummy_output.log"),
-
-    rule retrieve_custom_powerplants:
-        input:
-            old_path="data/custom_powerplants.csv",
-        output:
-            destination=PYPSA_EARTH_DIR + "data/custom_powerplants.csv",
-            powerplants_dummy_input=temp("powerplants_dummy_output.log"),
-        script:
-            "scripts/retrieve_powerplants.py"
+            **{k: v for k, v in rules.build_powerplants.input.items() if k != "custom_powerplants"},
+            custom_powerplants="data/custom_powerplants.csv",
 
 
 if config["countries"] == ["US"]:
@@ -368,25 +360,38 @@ if config["countries"] == ["US"]:
             
 if config["countries"] == ["US"]:
 
+    rule prepare_growth_rate_scenarios:
+        input:
+            source_growth_factors=lambda wildcards: f"data/US_growth_rates/{config['demand_projection']['scenario']}/growth_factors_cagr.csv",
+            source_industry_growth=lambda wildcards: f"data/US_growth_rates/{config['demand_projection']['scenario']}/industry_growth_cagr.csv"
+        output:
+            growth_factors_cagr=PYPSA_EARTH_DIR + "data/demand/growth_factors_cagr.csv",
+            industry_growth_cagr=PYPSA_EARTH_DIR + "data/demand/industry_growth_cagr.csv"
+        script:
+            "scripts/prepare_growth_rate_scenarios.py"
+
     use rule prepare_energy_totals from pypsa_earth with:
+        params:
+            countries=config["countries"],
+            base_year=config["demand_data"]["base_year"],
+            sector_options=config["sector"],
         output:
             energy_totals=PYPSA_EARTH_DIR + "resources/"
             + SECDIR
-            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv",
+            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv"
 
     rule modify_aviation_demand:
         input:
             aviation_demand="data/icct/aviation_demand.csv",
             energy_totals=PYPSA_EARTH_DIR + "resources/"
             + SECDIR
-            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv",
+            + "energy_totals_{demand}_{planning_horizons}_aviation_mod.csv"
         output:
             energy_totals=PYPSA_EARTH_DIR + "resources/"
             + SECDIR
-            + "energy_totals_{demand}_{planning_horizons}.csv",
+            + "energy_totals_{demand}_{planning_horizons}.csv"
         script:
             "scripts/modify_aviation_demand.py"
-        
 
 if config["demand_distribution"]["enable"]:
     rule preprocess_demand_data:
@@ -443,12 +448,13 @@ if config["demand_distribution"]["enable"]:
 if config["saf_mandate"]["ekerosene_split"]:
     rule set_saf_mandate:
         params:
-            blending_rate=config["saf_mandate"]["blending_rate"],
-            non_spatial_ekerosene=config["saf_mandate"]["non_spatial_ekerosene"]
+            non_spatial_ekerosene=config["saf_mandate"]["non_spatial_ekerosene"],
+            saf_scenario=config["saf_mandate"]["saf_scenario"],
         input:
             network=PYPSA_EARTH_DIR + "results/"
             + SECDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}.nc",
+            saf_scenarios="data/saf_blending_rates/saf_scenarios.csv",
         output:
             modified_network=PYPSA_EARTH_DIR + "results/"
             + SECDIR
@@ -457,12 +463,80 @@ if config["saf_mandate"]["ekerosene_split"]:
             "scripts/set_saf_mandate.py"
 
 
+saf_suffix = "_saf" if config["saf_mandate"]["ekerosene_split"] else ""
+
+
+if config["custom_industry"]["enable"]:
+    rule build_custom_industry_demand:
+        params:
+            countries=config["countries"],
+            add_ethanol=config["custom_industry"]["ethanol"],
+            add_ammonia=config["custom_industry"]["ammonia"],
+            add_steel=config["custom_industry"]["steel"],
+            add_cement=config["custom_industry"]["cement"],
+            gadm_layer_id=config["build_shape_options"]["gadm_layer_id"],
+            alternative_clustering=config["cluster_options"]["alternative_clustering"],
+            industry_database=config["custom_data"]["industry_database"],
+        input:
+            uscity_map="data/industry_data/uscities.csv",
+            ethanol_plants="data/industry_data/ethanolcapacity.xlsx",
+            ammonia_plants="data/industry_data/ammoniacapacity.xlsx",
+            shapes_path=PYPSA_EARTH_DIR + "resources/"
+            + RDIR
+            + "bus_regions/regions_onshore_elec_s{simpl}_{clusters}.geojson",
+            pypsa_earth_industrial_database=PYPSA_EARTH_DIR + "data/industrial_database.csv",
+        output:
+            industrial_energy_demand_per_node=PYPSA_EARTH_DIR + "resources/"
+            + SECDIR
+            + "demand/industrial_energy_demand_per_node_elec_s{simpl}_{clusters}_{planning_horizons}_{demand}_custom_industry.csv",
+        threads: 1
+        resources:
+            mem_mb=2000,
+        script:
+            "scripts/build_custom_industry_demand.py"
+
+
+    rule add_custom_industry:
+        params:
+            costs=config["costs"],
+            add_ethanol=config["custom_industry"]["ethanol"],
+            add_ammonia=config["custom_industry"]["ammonia"],
+            add_steel=config["custom_industry"]["steel"],
+            add_cement=config["custom_industry"]["cement"],
+            ccs_retrofit=config["custom_industry"]["CCS_retrofit"],
+        input:
+            industrial_energy_demand_per_node=PYPSA_EARTH_DIR + "resources/"
+            + SECDIR
+            + "demand/industrial_energy_demand_per_node_elec_s{simpl}_{clusters}_{planning_horizons}_{demand}_custom_industry.csv",
+            network=lambda w: f"{PYPSA_EARTH_DIR}results/{SECDIR}prenetworks/elec_s{w.simpl}_{w.clusters}_ec_l{w.ll}_{w.opts}_{w.sopts}_{w.planning_horizons}_{w.discountrate}_{w.demand}{saf_suffix}.nc",
+            costs=PYPSA_EARTH_DIR + "resources/" + RDIR + "costs_{planning_horizons}.csv",
+        output:
+            modified_network=PYPSA_EARTH_DIR + "results/"
+            + SECDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_custom_industry.nc",
+        script:
+            "scripts/add_custom_industry.py"
+
+
     use rule add_export from pypsa_earth with:
         input:
             **{k: v for k, v in rules.add_export.input.items() if k != "network"},
             network=PYPSA_EARTH_DIR + "results/"
             + SECDIR
-            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_saf.nc",
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_custom_industry.nc",
+
+if config["foresight"] == "overnight":
+    use rule solve_sector_network from pypsa_earth with:
+        input:
+            **{k: v for k, v in rules.solve_sector_network.input.items() if k != "overrides"},
+            overrides="data/override_component_attrs",
+
+
+if config["foresight"] == "myopic":
+    use rule solve_network_myopic from pypsa_earth with:
+        input:
+            **{k: v for k, v in rules.solve_network_myopic.input.items() if k != "overrides"},
+            overrides="data/override_component_attrs",
 
 
 if config["foresight"] == "overnight" and config["state_policy"] != "off":    

@@ -40,6 +40,20 @@ To run the sector-coupled model of the base scenario, execute the command:
 snakemake -call solve_sector_networks --configfile configs/calibration/config.base.yaml
 ```
 
+### 2.2. Running scenarios for future years
+
+To run the power model for the Reference scenario of the U.S., navigate to the working directory (`.../efuels-supply-potentials/`) and use the following command:
+```bash
+snakemake -call solve_all_networks --configfile configs/scenarios/config.20**.yaml
+```
+
+* **Note!** Configuration files for future years are currently available for 2030, 2035 and 2040 (replace the "**" in the command above with one off the mentioned years).
+
+To run the sector-coupled model for the Reference scenario, execute the command substituting the desired year to "**" in the command below:
+```bash
+snakemake -call solve_sector_networks --configfile configs/scenarios/config.20**.yaml
+```
+
 ## 3. Snakemake rules
 
 |Rule name                |Config file                              |Description        |

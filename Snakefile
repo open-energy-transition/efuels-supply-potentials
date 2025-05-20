@@ -230,13 +230,14 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("cutouts
             "scripts/retrieve_cutouts.py"
 
 
+# TODO: revise retrieve cost data
 # use rule retrieve_cost_data from pypsa_earth with:
-#     input:
-#         HTTP.remote(
-#             f"raw.githubusercontent.com/open-energy-transition/technology-data/master/outputs/US/costs"
-#             + "_{year}.csv",
-#             keep_local=True,
-#         ),
+    input:
+        HTTP.remote(
+            f"raw.githubusercontent.com/open-energy-transition/technology-data/master/outputs/US/costs"
+            + "_{year}.csv",
+            keep_local=True,
+        ),
 
 
 # retrieving precomputed osm/raw data and bypassing download_osm_data rule

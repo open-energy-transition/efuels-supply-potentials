@@ -165,12 +165,13 @@ def prepare_network(n, solve_opts):
 
 def add_RPS_constraints(network, config_file):
 
-    def process_targets_data(path, carrier):
+    def process_targets_data(path, carrier, policy):
         df = pd.read_csv(path)
         df.rename(columns={"Unnamed: 0": "state"}, inplace=True)
         df = df.melt(id_vars="state", var_name="year", value_name="target")
         df["carrier"] = ", ".join(carrier)
         df["year"] = df.year.astype(int)
+        df["policy"] = policy
         return df
     
     def attach_state_to_buses(network, path_shapes, distance_crs):
@@ -203,105 +204,147 @@ def add_RPS_constraints(network, config_file):
 
         return network
 
-    res_carriers = ["solar", "onwind", "offwind-ac", "offwind-dc", "hydro", "geothermal"] # check solar_rooftop
+    # define carriers for RES and CES sources
+    res_carriers = ["solar", "onwind", "offwind-ac", "offwind-dc", "ror", "hydro", "geothermal"] # check solar_rooftop
     ces_carriers = res_carriers + ["nuclear"]
-    
+
+    # list of carriers for conventional generation
+    conventional_gen_carriers = [
+        'OCGT', 'CCGT', 'oil', 'coal', 'lignite',
+        'biomass', 'urban central gas CHP', 'urban central gas CHP CC', 'biomass EOP',
+        'urban central solid biomass CHP',
+        'urban central solid biomass CHP CC'
+    ]
+
+    # read state policies on CES constraints
     ces_data = process_targets_data(
         snakemake.input.ces_path,
         ces_carriers,
+        "CES",
     )
-
+    # read state policies on RES constraints
     res_data = process_targets_data(
         snakemake.input.res_path,
         res_carriers,
+        "RES",
     )
+    # combine dataframes to loop through states
+    policy_data = pd.concat([ces_data, res_data], ignore_index=True)
 
+    # get gadm shape path
     path_shapes = snakemake.input.gadm_shape_path
     
-
+    # map states to buses
     distance_crs = config_file["crs"]["distance_crs"]
     network = attach_state_to_buses(network, path_shapes, distance_crs)
     planning_horizons = config_file["scenario"]["planning_horizons"]
 
-    ces_data = ces_data[(ces_data["year"].isin(planning_horizons))
-                    & (ces_data["target"] > 0.0)
-                    & (ces_data["state"].isin(n.buses["state"].unique()))]
+    # select eligible RES/CES policies based on planning horizon, presense of target and state
+    policy_data = policy_data[
+        (policy_data["year"].isin(planning_horizons))
+        & (policy_data["target"] > 0.0)
+        & (policy_data["state"].isin(n.buses["state"].unique()))
+    ]
 
+    # get list of states where policies need to be applied
+    state_list = policy_data.state.unique()
 
-    for _, constraint_row in ces_data.iterrows():
-        region_list = [constraint_row.state.strip()]
-        region_buses = network.buses[network.buses.state.isin(region_list)]
+    # define CES and RES constraints
+    for state in state_list:
+        # get state buses
+        region_buses = network.buses[network.buses.state.isin([state])]
 
         if region_buses.empty:
             continue
 
-        carriers = [carrier.strip() for carrier in constraint_row.carrier.split(",")]
-
-
-        # Filter region generators
+        # get region policies
+        region_policy = policy_data[policy_data.state == state]
+        # select eligible generators for RES and CES 
         region_gens = network.generators[network.generators.bus.isin(region_buses.index)]
-        region_gens_eligible = region_gens[region_gens.carrier.isin(carriers)]
+        res_gens_eligible = region_gens[region_gens.carrier.isin(res_carriers)]
+        ces_gens_eligible = region_gens[region_gens.carrier.isin(ces_carriers)]
 
-        if not region_gens_eligible.empty:
+        # select eligible storage_units (hydro, not PHS)
+        region_storages = network.storage_units[network.storage_units.bus.isin(region_buses.index)]
+        region_storages_eligible = region_storages[region_storages.carrier.isin(res_carriers)]
 
-            # res_gen >= target * total_generation
-            # total_generation = res_gen + conventional_gen
-            # res_gen - (target * total_generation) >= 0
-            # res_gen + (-target * res_gen) + (-target * convention_gen) >= 0
-            # res_generation_with_target = (-target * res_gen)
-            # conventional_generation_with_target = (-target * convention_gen)
-            # LHS: res_gen + res_generation_with_target + conventional_generation_with_target >= 0
+        # Filter region links (conventional generation)
+        region_links = network.links[network.links.bus1.isin(region_buses.index)]
+        region_links_eligible = region_links[region_links.carrier.isin(conventional_gen_carriers)]
 
+        # add RES constraint
+        if "RES" in region_policy.policy.values:
+
+            # res_generation + hydro_dispatch >= res_target * total_generation
+            # total_generation = ces_generation + conventional_gen + hydro_dispatch
+            # res_generation + hydro_dispatch - (res_target * total_generation) >= 0
+            # res_generation + hydro_dispatch + (-res_target * ces_generation) + (-res_target * conventional_gen) + (-res_target * hydro_dispatch) >= 0
+            # ces_generation_with_res_target = (-res_target * ces_generation)
+            # conventional_generation_with_res_target = (-res_target * conventional_gen)
+            # hydro_dispatch_with_coefficient = (1 - res_target) * hydro_dispatch
+            # LHS: res_generation + hydro_dispatch_with_coefficient + ces_generation_with_res_target + conventional_generation_with_res_target >= 0
+
+            # get RES share target and year
+            res_target = region_policy[region_policy.policy == "RES"]["target"].item()
+            target_year = region_policy[region_policy.policy == "RES"]["year"].item()
+
+            # get generation by RES
             res_generation = (
                 linexpr(
-                    (n.snapshot_weightings.generators, 
-                    get_var(n, "Generator", "p")[region_gens_eligible.index].T)
+                    (
+                        n.snapshot_weightings.generators, 
+                        get_var(n, "Generator", "p")[res_gens_eligible.index].T
                     )
-                    .T.groupby(region_gens_eligible.bus, axis=1)
-                    .apply(join_exprs) 
+                )
+                .T.groupby(res_gens_eligible.bus, axis=1)
+                .apply(join_exprs) 
             )
 
-            res_generation_with_target = (
+            # hydro dispatch with coefficient of (1 - res_target)
+            hydro_dispatch_with_coefficient = (
                 linexpr(
                     (
-                        -n.snapshot_weightings.generators * constraint_row.target, 
-                        get_var(n, "Generator", "p")[region_gens_eligible.index].T)
+                        n.snapshot_weightings.stores * (1 - res_target),
+                        get_var(n, "StorageUnit", "p_dispatch")[region_storages_eligible.index].T,
                     )
-                    .T.groupby(region_gens_eligible.bus, axis=1)
-                    .apply(join_exprs) 
+                )
+                .T.groupby(region_storages_eligible.bus, axis=1)
+                .apply(join_exprs)
             )
-            # power level buses
-            pwr_buses = n.buses[(n.buses.carrier == "AC") & (n.buses.index.isin(region_buses.index))]
-            # links delievering power within the region
-            # removes any transmission links
-            # pwr_links = n.links[(n.links.bus1.isin(pwr_buses.index)) & ~(n.links.bus1.isin(pwr_buses.index)) & ~(n.links.carrier == "DC")]
 
-            conventional_gen_carriers = ['OCGT', 'CCGT', 'oil', 'coal', 'lignite',
-                        'biomass', 'urban central gas CHP', 'urban central gas CHP CC', 'biomass EOP',
-                        'urban central solid biomass CHP',
-                        'urban central solid biomass CHP CC']
-            
-            pwr_links = n.links[(n.links.bus1.isin(pwr_buses.index))].query("carrier in @conventional_gen_carriers")
+            # CES generation multiplied by RES target
+            ces_generation_with_res_target = (
+                linexpr(
+                    (
+                        -n.snapshot_weightings.generators * res_target, 
+                        get_var(n, "Generator", "p")[ces_gens_eligible.index].T
+                    )
+                )
+                .T.groupby(ces_gens_eligible.bus, axis=1)
+                .apply(join_exprs) 
+            )
 
             # check for hydro power in US (ror and dam)
-            conventional_generation_with_target = (
+            conventional_generation_with_res_target = (
                 (
                     linexpr(
                         (
-                            -n.snapshot_weightings.generators * constraint_row.target, 
-                            (get_var(n, "Link", "p")[pwr_links.index] * pwr_links.efficiency).T
-                            )
-                    ).T.groupby(pwr_links.bus1, axis=1)
-                    .apply(join_exprs)
+                            (-n.snapshot_weightings.generators.apply(
+                                lambda r: r * n.links.loc[region_links_eligible.index].efficiency) * res_target).T, 
+                            get_var(n, "Link", "p")[region_links_eligible.index].T
+                        )
                     )
-                    .reindex(res_generation.index)
-                    .fillna("")
+                    .T.groupby(region_links_eligible.bus1, axis=1)
+                    .apply(join_exprs)
+                )
+                .reindex(res_generation.index)
+                .fillna("")
             )
 
-            lhs = res_generation + res_generation_with_target + conventional_generation_with_target
+            lhs = res_generation + hydro_dispatch_with_coefficient + ces_generation_with_res_target + conventional_generation_with_res_target
 
-            define_constraints(n, lhs, ">=", 0, f"RPS_{constraint_row.state}", "rps_limit")
-            logger.info(f"Added RPS {constraint_row.state} for {constraint_row.year}.")
+            define_constraints(n, lhs, ">=", 0, f"RES_{state}", "rps_limit")
+            logger.info(f"Added RES constraint for {state} in {target_year}.")
 
 
 def add_CCL_constraints(n, config):

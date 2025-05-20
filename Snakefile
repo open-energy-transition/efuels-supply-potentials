@@ -548,7 +548,7 @@ if config["foresight"] == "overnight" and config["state_policy"] != "off":
             ces_path="data/current_electricity_state_policies/clean_targets.csv",
             res_path="data/current_electricity_state_policies/res_targets.csv",
             gadm_shape_path="data/demand_data/gadm41_USA_1.json",
-            overrides=PYPSA_EARTH_DIR + "data/override_component_attrs",
+            overrides="data/override_component_attrs",
             network=PYPSA_EARTH_DIR + RESDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",
             costs=PYPSA_EARTH_DIR + "resources/" + RDIR + "costs_{planning_horizons}.csv",

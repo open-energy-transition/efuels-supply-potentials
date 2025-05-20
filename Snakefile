@@ -233,7 +233,7 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get("cutouts
 
 
 # TODO: revise retrieve cost data
-# use rule retrieve_cost_data from pypsa_earth with:
+use rule retrieve_cost_data from pypsa_earth with:
     input:
         HTTP.remote(
             f"raw.githubusercontent.com/open-energy-transition/technology-data/master/outputs/US/costs"

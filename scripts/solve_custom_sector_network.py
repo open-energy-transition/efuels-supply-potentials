@@ -345,6 +345,68 @@ def add_RPS_constraints(network, config_file):
 
             define_constraints(n, lhs, ">=", 0, f"RES_{state}", "rps_limit")
             logger.info(f"Added RES constraint for {state} in {target_year}.")
+        
+        # add CES constraint
+        if "CES" in region_policy.policy.values:
+
+            # ces_generation + hydro_dispatch >= ces_target * total_generation
+            # total_generation = ces_generation + conventional_gen + hydro_dispatch
+            # ces_generation + hydro_dispatch - (ces_target * total_generation) >= 0
+            # ces_generation + hydro_dispatch + (-ces_target * ces_generation) + (-ces_target * conventional_gen) + (-ces_target * hydro_dispatch) >= 0
+            # ces_generation_with_coefficient = (1 - ces_target) * ces_generation
+            # conventional_generation_with_ces_target = (-ces_target * conventional_gen)
+            # hydro_dispatch_with_coefficient = (1 - ces_target) * hydro_dispatch
+            # LHS: ces_generation_with_coefficient + hydro_dispatch_with_coefficient + conventional_generation_with_ces_target >= 0
+
+            # get RES share target and year
+            ces_target = region_policy[region_policy.policy == "CES"]["target"].item()
+            target_year = region_policy[region_policy.policy == "CES"]["year"].item()
+
+            # get generation with coefficient of (1 - ces_target)
+            ces_generation_with_coefficient = (
+                linexpr(
+                    (
+                        n.snapshot_weightings.generators * (1 - ces_target), 
+                        get_var(n, "Generator", "p")[ces_gens_eligible.index].T
+                    )
+                )
+                .T.groupby(ces_gens_eligible.bus, axis=1)
+                .apply(join_exprs) 
+            )
+
+            # hydro dispatch with coefficient of (1 - ces_target)
+            hydro_dispatch_with_coefficient = (
+                linexpr(
+                    (
+                        n.snapshot_weightings.stores * (1 - ces_target),
+                        get_var(n, "StorageUnit", "p_dispatch")[region_storages_eligible.index].T,
+                    )
+                )
+                .T.groupby(region_storages_eligible.bus, axis=1)
+                .apply(join_exprs)
+            )
+
+            # check for hydro power in US (ror and dam)
+            conventional_generation_with_ces_target = (
+                (
+                    linexpr(
+                        (
+                            (-n.snapshot_weightings.generators.apply(
+                                lambda r: r * n.links.loc[region_links_eligible.index].efficiency) * ces_target).T, 
+                            get_var(n, "Link", "p")[region_links_eligible.index].T
+                        )
+                    )
+                    .T.groupby(region_links_eligible.bus1, axis=1)
+                    .apply(join_exprs)
+                )
+                .reindex(ces_generation_with_coefficient.index)
+                .fillna("")
+            )
+
+            lhs = ces_generation_with_coefficient + hydro_dispatch_with_coefficient  + conventional_generation_with_ces_target
+
+            define_constraints(n, lhs, ">=", 0, f"CES_{state}", "rps_limit")
+            logger.info(f"Added CES constraint for {state} in {target_year}.")
 
 
 def add_CCL_constraints(n, config):

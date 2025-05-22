@@ -677,6 +677,31 @@ def split_biogenic_CO2(n):
         carrier="biogenic co2 stored"
     )
 
+    # add biogenic co2 store
+    n.madd(
+        "Store",
+        biogenic_co2_stored_buses,
+        e_nom_extendable=True,
+        e_nom_max=np.inf,
+        capital_cost=config["sector"]["co2_sequestration_cost"],
+        carrier="biogenic co2 stored",
+        bus=biogenic_co2_stored_buses,
+    )
+    logger.info("Added biogenic CO2 carrier, buses, and stores")
+
+    # add links from biogenic co2 stored to co2 stored
+    n.madd(
+        "Link",
+        biogenic_co2_stored_buses,
+        bus0=biogenic_co2_stored_buses,
+        bus1=co2_stored_buses.index,
+        p_nom_extendable=True,
+        carrier="biogenic co2 stored",
+        efficiency=1,
+        capital_cost=0,
+    )
+    logger.info("Added links from 'biogenic co2 stored' to 'co2 stored'")
+
     # get ethanol from starch CC links to reroute output to biogenic co2 stored
     ethanol_CC_carrier = "ethanol from starch CC"
     ethanol_CC_links = n.links.query("carrier in @ethanol_CC_carrier").index

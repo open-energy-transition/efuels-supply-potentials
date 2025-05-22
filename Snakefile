@@ -502,6 +502,7 @@ if config["custom_industry"]["enable"]:
             add_steel=config["custom_industry"]["steel"],
             add_cement=config["custom_industry"]["cement"],
             ccs_retrofit=config["custom_industry"]["CCS_retrofit"],
+            biogenic_co2=config["custom_industry"]["biogenic_CO2"],
         input:
             industrial_energy_demand_per_node=PYPSA_EARTH_DIR + "resources/"
             + SECDIR

@@ -660,6 +660,40 @@ def extend_links(n, level):
     logger.info(f"Fill bus{level} and efficiency{level} with default values")
 
 
+def split_biogenic_CO2(n):
+    """
+        Splits biogenic co2 out of co2 stored
+    """
+    # add biogenic co2 carrier
+    n.add("Carrier", "biogenic co2", co2_emissions=0)
+
+    # add biogenic co2 stored buses
+    co2_stored_buses = n.buses.query("carrier in 'co2 stored'")
+    biogenic_co2_stored_buses = [x.replace("co2 stored", "biogenic co2 stored") for x in co2_stored_buses.index]
+    n.madd(
+        "Bus",
+        biogenic_co2_stored_buses,
+        location=co2_stored_buses.location.values,
+        carrier="biogenic co2 stored"
+    )
+
+    # get ethanol from starch CC links to reroute output to biogenic co2 stored
+    ethanol_CC_carrier = "ethanol from starch CC"
+    ethanol_CC_links = n.links.query("carrier in @ethanol_CC_carrier").index
+
+    # switch bus2 of ethanol from starch CC from co2 stored to biogenic co2 stored
+    n.links.loc[ethanol_CC_links, "bus2"] = n.links.loc[ethanol_CC_links, "bus2"].str.replace("co2 stored","biogenic co2 stored")
+    logger.info("Rerouted 'ethanol from starch CC' output from 'co2 stored' buses to 'biogenic co2 stored' buses")
+
+    # get Fischer-Tropsch links to reroute input to biogenic co2 stored
+    ft_carrier = "Fischer-Tropsch"
+    ft_links = n.links.query("carrier in @ft_carrier").index
+
+    # switch bus2 of Fischer-Tropsch from co2 stored to biogenic co2 stored
+    n.links.loc[ft_links, "bus2"] = n.links.loc[ft_links, "bus2"].str.replace("co2 stored", "biogenic co2 stored")
+    logger.info("Rerouted 'Fischer-Tropsch' input from 'co2 stored' buses to 'biogenic co2 stored' buses")
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -720,6 +754,10 @@ if __name__ == "__main__":
     # fill efficiency5 and bus5 for missing links if exists
     if "efficiency5" in n.links.columns:
         extend_links(n, level=5)
+
+    # apply biogenic CO2 split
+    if snakemake.params.biogenic_co2 and snakemake.params.add_ethanol and ("ethanol" in snakemake.params.ccs_retrofit):
+        split_biogenic_CO2(n)
 
     # save the modified network
     n.export_to_netcdf(snakemake.output.modified_network)

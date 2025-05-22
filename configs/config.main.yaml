@@ -45,7 +45,7 @@ custom_industry:
   ammonia: true
   steel: true
   cement: true
-  CCS_retrofit: [ethanol, ammonia, steel, cement]
+  CCS_retrofit: [] # [ethanol, ammonia, steel, cement]
   production_flexibility: []
   H2_DRI: false
   biogenic_co2: false

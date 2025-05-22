@@ -683,7 +683,7 @@ def split_biogenic_CO2(n):
 
     # switch bus2 of ethanol from starch CC from co2 stored to biogenic co2 stored
     n.links.loc[ethanol_CC_links, "bus2"] = n.links.loc[ethanol_CC_links, "bus2"].str.replace("co2 stored","biogenic co2 stored")
-    logger.info("Rerouted 'ethanol from starch CC' output from 'co2 stored' buses to 'biogenic co2 stored' buses")
+    logger.info(f"Rerouted {ethanol_CC_carrier} output from 'co2 stored' buses to 'biogenic co2 stored' buses")
 
     # get Fischer-Tropsch links to reroute input to biogenic co2 stored
     ft_carrier = "Fischer-Tropsch"
@@ -691,7 +691,55 @@ def split_biogenic_CO2(n):
 
     # switch bus2 of Fischer-Tropsch from co2 stored to biogenic co2 stored
     n.links.loc[ft_links, "bus2"] = n.links.loc[ft_links, "bus2"].str.replace("co2 stored", "biogenic co2 stored")
-    logger.info("Rerouted 'Fischer-Tropsch' input from 'co2 stored' buses to 'biogenic co2 stored' buses")
+    logger.info(f"Rerouted {ft_carrier} input from 'co2 stored' buses to 'biogenic co2 stored' buses")
+
+
+def define_grid_H2(n):
+    """
+        Marks output of electrolysis as grid H2 and connects only grid H2 to Fischer-Tropsch
+    """
+    # add grid H2 carrier
+    n.add("Carrier", "grid H2")
+
+    # add grid H2 buses
+    h2_buses = n.buses.query("carrier in 'H2'")
+    grid_h2_buses = [x.replace("H2", "grid H2") for x in h2_buses.index]
+    n.madd(
+        "Bus",
+        grid_h2_buses,
+        location=h2_buses.location.values,
+        carrier="grid H2",
+        x=h2_buses.x.values,
+        y=h2_buses.y.values,
+    )
+    logger.info("Added grid H2 carrier and buses")
+
+    # get electrolyzers
+    electrolysis_carriers = ["H2 Electrolysis", "Alkaline electrolyzer", "PEM electrolyzer", "SOEC"]
+    electrolyzers = n.links.query("carrier in @electrolysis_carriers")
+
+    # reroute output of electrolyzers from H2 to grid H2
+    n.links.loc[electrolyzers.index, "bus1"] = n.links.loc[electrolyzers.index, "bus1"].str.replace("H2", "grid H2")
+    logger.info(f"Rerouted output of {electrolyzers.carrier.unique()} from 'H2' buses to 'grid H2' buses")
+
+    # make sure Fischer-Tropsch uses grid H2 instead of H2
+    ft_carrier = "Fischer-Tropsch"
+    ft_links = n.links.query("carrier in @ft_carrier").index
+    n.links.loc[ft_links, "bus0"] = n.links.loc[ft_links, "bus0"].str.replace("H2", "grid H2")
+    logger.info(f"Rerouted input of {ft_carrier} from 'H2' buses to 'grid H2' buses")
+
+    # connect grid H2 buses to H2 buses so H2 can be supplied
+    n.madd(
+        "Link",
+        grid_h2_buses,
+        bus0=grid_h2_buses,
+        bus1=h2_buses.index,
+        p_nom_extendable=True,
+        carrier="grid H2",
+        efficiency=1,
+        capital_cost=0,
+    )
+    logger.info("Added links to connect grid H2 to H2")
 
 
 if __name__ == "__main__":
@@ -758,6 +806,10 @@ if __name__ == "__main__":
     # apply biogenic CO2 split
     if snakemake.params.biogenic_co2 and snakemake.params.add_ethanol and ("ethanol" in snakemake.params.ccs_retrofit):
         split_biogenic_CO2(n)
+
+    # define electrolysis output as grid H2 to be used in Fischer-Tropsch
+    if snakemake.params.grid_h2:
+        define_grid_H2(n)
 
     # save the modified network
     n.export_to_netcdf(snakemake.output.modified_network)

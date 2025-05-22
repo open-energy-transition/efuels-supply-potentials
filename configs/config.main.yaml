@@ -48,7 +48,7 @@ custom_industry:
   CCS_retrofit: [ethanol, ammonia, steel, cement]
   production_flexibility: []
   H2_DRI: false
-  biogenic_CO2: false
+  biogenic_co2: false
 
 custom_databundles:
   bundle_cutouts_USA:

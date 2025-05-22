@@ -40,7 +40,9 @@ demand_projection:
   scenario: "Medium"
   data_centers_load: true
 
-state_policy: "state" # "off", "state", "country"
+policies:
+  state: ["CES", "RES"]
+  country: ["CES"]
 
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes

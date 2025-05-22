@@ -39,7 +39,7 @@ demand_projection:
   scenario: "Reference"
   data_centers_load: false
 
-state_policy: "off"
+state_policy: "on" # "off", "on"
 
 custom_industry:
   enable: true

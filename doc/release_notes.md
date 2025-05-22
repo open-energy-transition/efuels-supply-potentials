@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Add custom rule to **apply state/country-wise constraints for clean/RES technologies** [PR #53](https://github.com/open-energy-transition/efuels-supply-potentials/pull/53)
+
 * Add **custom ammonia, ethanol, cement and steel industries** [PR #50](https://github.com/open-energy-transition/efuels-supply-potentials/pull/50)
 
 * Add **dynamic blending rate selection** rule [PR #55](https://github.com/open-energy-transition/efuels-supply-potentials/pull/55) 

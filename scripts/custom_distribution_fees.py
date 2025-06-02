@@ -89,7 +89,7 @@ if __name__ == "__main__":
         if region in regional_fees.region.unique():
             dist_fee = (regional_fees[(
                 regional_fees["Year"] == 2030) 
-                & (regional_fees["region"] == region)]["Distribution nom EUR/MWh"].iloc[0])
+                & (regional_fees["region"] == region)]["Distribution nom USD/MWh"].iloc[0])
             
             mask = (network.links.bus0.isin(region_idx)) & (network.links.index.str.contains(" electricity distribution grid"))
             network.links.loc[mask, "marginal_cost"] = dist_fee

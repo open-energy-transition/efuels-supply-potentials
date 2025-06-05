@@ -568,15 +568,15 @@ if config["foresight"] == "myopic":
             mem_mb=2000,
         log:
             PYPSA_EARTH_DIR + RESDIR
-            + "logs/add_existing_baseyear_elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.log",
+            + "logs/add_custom_existing_baseyear_elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.log",
         benchmark:
             PYPSA_EARTH_DIR + RESDIR
-            +"benchmarks/add_existing_baseyear/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export"
+            +"benchmarks/add_custom_existing_baseyear/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export"
         script:
             "scripts/add_custom_existing_baseyear.py"
 
-
     ruleorder: add_custom_existing_baseyear > add_existing_baseyear
+    ruleorder: add_custom_existing_baseyear > add_brownfield
 
 
 rule test_modify_prenetwork:

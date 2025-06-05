@@ -37,6 +37,7 @@ run = config["run"]
 RDIR = run["name"] + "/" if run.get("name") else ""
 SECDIR = run["sector_name"] + "/" if run.get("sector_name") else ""
 CDIR = RDIR if not run.get("shared_cutouts") else ""
+RESDIR = config["results_dir"].strip("/") + f"/{SECDIR}"
 
 
 module pypsa_earth:
@@ -537,6 +538,45 @@ if config["foresight"] == "myopic":
         input:
             **{k: v for k, v in rules.solve_network_myopic.input.items() if k != "overrides"},
             overrides="data/override_component_attrs",
+
+
+    rule add_custom_existing_baseyear:
+        params:
+            baseyear=config["scenario"]["planning_horizons"][0],
+            sector=config["sector"],
+            existing_capacities=config["existing_capacities"],
+            costs=config["costs"],
+        input:
+            network=PYPSA_EARTH_DIR + RESDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",
+            powerplants=PYPSA_EARTH_DIR + "resources/" + RDIR + "powerplants.csv",
+            busmap_s=PYPSA_EARTH_DIR + "resources/" + RDIR + "bus_regions/busmap_elec_s{simpl}.csv",
+            busmap=PYPSA_EARTH_DIR + "resources/"
+            + RDIR
+            + "bus_regions/busmap_elec_s{simpl}_{clusters}.csv",
+            costs=PYPSA_EARTH_DIR + "resources/" + RDIR + "costs_{planning_horizons}.csv",
+        output:
+            PYPSA_EARTH_DIR + RESDIR
+            + "prenetworks-brownfield/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",
+        wildcard_constraints:
+            # TODO: The first planning_horizon needs to be aligned across scenarios
+            # snakemake does not support passing functions to wildcard_constraints
+            # reference: https://github.com/snakemake/snakemake/issues/2703
+            planning_horizons=config["scenario"]["planning_horizons"][0],  #only applies to baseyear
+        threads: 1
+        resources:
+            mem_mb=2000,
+        log:
+            PYPSA_EARTH_DIR + RESDIR
+            + "logs/add_existing_baseyear_elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.log",
+        benchmark:
+            PYPSA_EARTH_DIR + RESDIR
+            +"benchmarks/add_existing_baseyear/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export"
+        script:
+            "scripts/add_custom_existing_baseyear.py"
+
+
+    ruleorder: add_custom_existing_baseyear > add_existing_baseyear
 
 
 rule test_modify_prenetwork:

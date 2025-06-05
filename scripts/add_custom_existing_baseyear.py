@@ -57,12 +57,13 @@ def add_build_year_to_new_assets(n, baseyear):
         logger.info(f"Added build_year {baseyear} to new assets in {c.name} for {len(new_assets)} assets.")
 
 
-def remove_powerplants(n):
+def remove_extra_powerplants(n):
     """
-    Remove capacities for non-extendable conventional and renewable powerplants as 
-    it was added previously year by year. This is done to avoid double counting of 
-    existing capacities.
-    Extendable powerplants are not removed, but set to p_nom_max = p_nom_max - p_nom and p_nom = 0
+    Remove capacities for non-extendable conventional and renewable powerplants with 
+    buid_year = 0 as it was added previously year by year. This is done to avoid 
+    double counting of existing capacities.
+    Extendable powerplants are not removed, but potential p_nom_max and p_nom_min 
+    are reduced by the amount of already installed capacities and p_nom set to 0.
     """
     carriers_to_remove = {
         "Link": ["CCGT", "OCGT", "coal", "oil", "biomass"],
@@ -70,12 +71,29 @@ def remove_powerplants(n):
         "Store": []
     }
     for c in n.iterate_components(["Link", "Generator", "Store"]):
-        # assets to remove
-        assets_to_remove = c.df[c.df.carrier.isin(carriers_to_remove[c.name])].index
+        attr = "e_nom_extendable" if c.name == "Store" else "p_nom_extendable"
+        # assets to remove (non-extendable powerplants with build_year == 0)
+        assets_to_remove = c.df[(c.df.carrier.isin(carriers_to_remove[c.name]))&
+                                (~c.df[attr])&
+                                (c.df.build_year == 0)].index
         # remove assets
+        removed_carriers = c.df.loc[assets_to_remove,:].carrier.unique()
         n.mremove(c.name, assets_to_remove)
 
-        logger.info(f"Removed {len(assets_to_remove)} assets from {c.name} with carriers {carriers_to_remove[c.name]}.")
+        logger.info(f"Removed {len(assets_to_remove)} assets from {c.name} with carriers {removed_carriers}.")
+
+        # assets to set p_nom = 0 and reduce potential (extendable powerplants with build_year == 0)
+        assets_to_zero = c.df[(c.df.carrier.isin(carriers_to_remove[c.name]))&
+                              (c.df[attr])&
+                              (c.df.build_year == 0)].index
+        if len(assets_to_zero) > 0:
+            # reduce potential p_nom_max and p_nom_min by the amount of already installed capacities
+            c.df.loc[assets_to_zero, "p_nom_max"] -= c.df.loc[assets_to_zero, "p_nom"]
+            c.df.loc[assets_to_zero, "p_nom_min"] -= c.df.loc[assets_to_zero, "p_nom"]
+            # set p_nom = 0
+            c.df.loc[assets_to_zero, "p_nom"] = 0
+
+            logger.info(f"Reduced p_nom_max and p_nom_min by p_nom and set p_nom = 0 for {len(assets_to_zero)} assets in {c.name} with carriers {c.df.loc[assets_to_zero, 'carrier'].unique()}.")
 
 
 def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, baseyear):
@@ -406,4 +424,8 @@ if __name__ == "__main__":
     add_power_capacities_installed_before_baseyear(n, grouping_years_power, costs, baseyear)
 
     # remove non-extendable powerplants with no build_year from network and set p_nom = 0 for extendable powerplants
-    remove_powerplants(n)
+    remove_extra_powerplants(n)
+
+    n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
+
+    n.export_to_netcdf(snakemake.output[0])

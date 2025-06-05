@@ -55,7 +55,7 @@ electricity:
 
   custom_powerplants: "replace" #  "false" use only powerplantmatching (ppm) data, "merge" combines ppm and custom powerplants, "replace" use only custom powerplants
 
-  conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, lignite, geothermal, biomass]
+  conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, geothermal, biomass]
   renewable_carriers: [solar, csp, onwind, offwind-ac, offwind-dc, hydro]
 
   estimate_renewable_capacities:
@@ -79,7 +79,6 @@ sector:
     CCGT: gas
     oil: oil
     coal: coal
-    lignite: lignite
     biomass: biomass
 
   SMR CC: false

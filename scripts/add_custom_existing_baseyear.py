@@ -60,7 +60,9 @@ def add_build_year_to_new_assets(n, baseyear):
 def remove_powerplants(n):
     """
     Remove capacities for non-extendable conventional and renewable powerplants as 
-    it is added later year by year
+    it was added previously year by year. This is done to avoid double counting of 
+    existing capacities.
+    Extendable powerplants are not removed, but set to p_nom_max = p_nom_max - p_nom and p_nom = 0
     """
     carriers_to_remove = {
         "Link": ["CCGT", "OCGT", "coal", "oil", "biomass"],
@@ -101,6 +103,10 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
     drop_hydro_storages = df_agg[(df_agg.Fueltype == "hydro") & (df_agg.Technology.isin(["Reservoir", "Pumped Storage"]))].index
     df_agg.drop(drop_hydro_storages, inplace=True)
     df_agg.Fueltype.replace({"hydro": "ror"}, inplace=True)
+
+    # drop battery
+    drop_battery = df_agg[df_agg.Fueltype == "battery"].index
+    df_agg.drop(drop_battery, inplace=True)
 
     # assign clustered bus
     busmap_s = pd.read_csv(snakemake.input.busmap_s, index_col=0).squeeze()
@@ -156,7 +162,7 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
         suffix = "-ac" if generator == "offwind" else ""
         name_suffix = f" {generator}{suffix}-{grouping_year}"
         asset_i = capacity.index + name_suffix
-        if generator in ["solar", "onwind", "offwind", "ror", "geothermal", "nuclear"]:
+        if generator in ["solar", "onwind", "offwind-ac", "offwind-ac", "ror", "geothermal", "nuclear"]:
             # to consider electricity grid connection costs or a split between
             # solar utility and rooftop as well, rather take cost assumptions
             # from existing network than from the cost database
@@ -169,7 +175,7 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
             # check if assets are already in network (e.g. for 2020)
             already_build = n.generators.index.intersection(asset_i)
             new_build = asset_i.difference(n.generators.index)
-            lifetime_assets = lifetime.loc[grouping_year, generator].dropna()
+            lifetime_assets = lifetime.loc[grouping_year, generator][capacity.index].dropna()
 
             # set p_nom_min for already built assets
             if not already_build.empty:
@@ -207,10 +213,13 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                         build_year=grouping_year,
                         lifetime=lifetime_assets.values,
                     )
+                    logger.info(
+                        f"Added {generator} capacities for {ind} with {len(inv_ind)} regions for {grouping_year}"
+                    )
 
             else:
                 # obtain p_max_pu from existing network
-                if generator in ["ror", "nuclear"]:
+                if generator in ["ror", "nuclear", "geothermal"]:
                     # get static p_max_pu for ror
                     p_max_pu = n.generators.loc[
                         capacity.index + f" {generator}{suffix}"
@@ -238,19 +247,22 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                         p_nom=new_capacity,
                         marginal_cost=marginal_cost,
                         capital_cost=capital_cost,
-                        efficiency=costs.at[generator, "efficiency"],
+                        efficiency=costs.at[generator, "efficiency"] 
+                        if "offwind" not in generator else costs.at["offwind", "efficiency"],
                         p_max_pu=p_max_pu,
                         build_year=grouping_year,
                         lifetime=lifetime_assets.values,
                     )
-                    
+                    logger.info(
+                        f"Added {sum(new_capacity)} MW {generator} capacities for {grouping_year} with {len(new_capacity)} assets"
+                    )
+
 
         else:
             # add capacities for conventional powerplants in links
             if carrier[generator] not in vars(spatial).keys():
                 logger.debug(f"Carrier type {generator} not in spatial data, skipping")
                 continue
-            print(f"Adding {generator} capacities for {grouping_year}")
             
             # get bus0 for the link
             bus0 = vars(spatial)[carrier[generator]].nodes
@@ -327,6 +339,9 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                         efficiency2=costs.at[key, "efficiency-heat"],
                         lifetime=lifetime_assets.loc[new_capacity.index],
                     )
+                logger.info(
+                    f"Added {sum(new_capacity)} MW {generator} capacities for {grouping_year} with {len(new_capacity)} assets"
+                )
         # check if existing capacities are larger than technical potential
         existing_large = n.generators[
             n.generators["p_nom_min"] > n.generators["p_nom_max"]
@@ -372,9 +387,6 @@ if __name__ == "__main__":
     # add build_year to new assets
     add_build_year_to_new_assets(n, baseyear)
 
-    # remove capacities for conventional and renewable powerplants as it is added later
-    # remove_powerplants(n)
-
     # read costs assumptions
     Nyears = n.snapshot_weightings.generators.sum() / 8760.0
     costs = prepare_costs(
@@ -393,5 +405,5 @@ if __name__ == "__main__":
     # add power capacities installed before baseyear
     add_power_capacities_installed_before_baseyear(n, grouping_years_power, costs, baseyear)
 
-    # define spatial resolution of carriers
-    #spatial = define_spatial(n.buses[n.buses.carrier == "AC"].index, options)
+    # remove non-extendable powerplants with no build_year from network and set p_nom = 0 for extendable powerplants
+    remove_powerplants(n)

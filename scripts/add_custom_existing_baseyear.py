@@ -8,10 +8,6 @@ sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
 sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../submodules/pypsa-earth/scripts/")))
 import pandas as pd
 import numpy as np
-import country_converter as coco
-import powerplantmatching as pm
-import pypsa
-import xarray as xr
 from types import SimpleNamespace
 from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
                             configure_logging, load_network
@@ -20,8 +16,6 @@ from prepare_sector_network import define_spatial
 
 
 logger = create_logger(__name__)
-cc = coco.CountryConverter()
-idx = pd.IndexSlice
 spatial = SimpleNamespace()
 
 
@@ -94,6 +88,13 @@ def remove_extra_powerplants(n):
             c.df.loc[assets_to_zero, "p_nom"] = 0
 
             logger.info(f"Reduced p_nom_max and p_nom_min by p_nom and set p_nom = 0 for {len(assets_to_zero)} assets in {c.name} with carriers {c.df.loc[assets_to_zero, 'carrier'].unique()}.")
+
+            # set build_year to baseyear
+            c.df.loc[assets_to_zero, "build_year"] = baseyear
+            # add -baseyear to name
+            rename = pd.Series(c.df.loc[assets_to_zero].index, c.df.loc[assets_to_zero].index)
+            rename[assets_to_zero] += f"-{str(baseyear)}"
+            c.df.rename(index=rename, inplace=True)
 
 
 def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, baseyear):

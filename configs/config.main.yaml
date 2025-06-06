@@ -109,7 +109,7 @@ custom_databundles:
     destination: "resources"
     urls:
       alternative_clustering: https://drive.google.com/file/d/1Bt8NVxhe2-nrw2ZTg35sgUIQ-R8A57DN/view?usp=sharing
-      voronoi_clustering: https://drive.google.com/file/d/1SEvIoLz0x23jNNeMuDSOQwHvuwtvqIfd/view?usp=sharing
+      voronoi_clustering: https://drive.google.com/file/d/1yIi5TG572o3m3_iZuiMyBZbtzNRgNzZi/view?usp=sharing
 
   # demand data used for demand redistribution
   bundle_demand_data_USA:

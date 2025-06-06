@@ -30,10 +30,8 @@ def add_build_year_to_new_assets(n, baseyear):
     # Set build_year for new assets (p_nom == 0)
     for c in n.iterate_components(["Link", "Generator", "Store"]):
         attr = "e_nom" if c.name == "Store" else "p_nom"
-        # carriers that already exists (p_nom > 0)
-        existing_carriers = c.df[c.df[attr] > 0].carrier.unique()
-        # new assets with no build_year and not built before baseyear
-        new_assets = c.df.index[~(c.df.carrier.isin(existing_carriers)) & (c.df.build_year == 0)]
+        # new assets with no build_year
+        new_assets = c.df.index[c.df.build_year == 0]
         c.df.loc[new_assets, "build_year"] = baseyear
 
         # add -baseyear to name
@@ -54,7 +52,7 @@ def add_build_year_to_new_assets(n, baseyear):
 def remove_extra_powerplants(n):
     """
     Remove capacities for non-extendable conventional and renewable powerplants with 
-    buid_year = 0 as it was added previously year by year. This is done to avoid 
+    buid_year = baseyear as it was added previously year by year. This is done to avoid 
     double counting of existing capacities.
     Extendable powerplants are not removed, but potential p_nom_max and p_nom_min 
     are reduced by the amount of already installed capacities and p_nom set to 0.
@@ -66,10 +64,10 @@ def remove_extra_powerplants(n):
     }
     for c in n.iterate_components(["Link", "Generator", "Store"]):
         attr = "e_nom_extendable" if c.name == "Store" else "p_nom_extendable"
-        # assets to remove (non-extendable powerplants with build_year == 0)
+        # assets to remove (non-extendable powerplants with build_year == base_year)
         assets_to_remove = c.df[(c.df.carrier.isin(carriers_to_remove[c.name]))&
                                 (~c.df[attr])&
-                                (c.df.build_year == 0)].index
+                                (c.df.build_year == baseyear)].index
         # remove assets
         removed_carriers = c.df.loc[assets_to_remove,:].carrier.unique()
         n.mremove(c.name, assets_to_remove)
@@ -79,7 +77,7 @@ def remove_extra_powerplants(n):
         # assets to set p_nom = 0 and reduce potential (extendable powerplants with build_year == 0)
         assets_to_zero = c.df[(c.df.carrier.isin(carriers_to_remove[c.name]))&
                               (c.df[attr])&
-                              (c.df.build_year == 0)].index
+                              (c.df.build_year == baseyear)].index
         if len(assets_to_zero) > 0:
             # reduce potential p_nom_max and p_nom_min by the amount of already installed capacities
             c.df.loc[assets_to_zero, "p_nom_max"] -= c.df.loc[assets_to_zero, "p_nom"]
@@ -88,13 +86,6 @@ def remove_extra_powerplants(n):
             c.df.loc[assets_to_zero, "p_nom"] = 0
 
             logger.info(f"Reduced p_nom_max and p_nom_min by p_nom and set p_nom = 0 for {len(assets_to_zero)} assets in {c.name} with carriers {c.df.loc[assets_to_zero, 'carrier'].unique()}.")
-
-            # set build_year to baseyear
-            c.df.loc[assets_to_zero, "build_year"] = baseyear
-            # add -baseyear to name
-            rename = pd.Series(c.df.loc[assets_to_zero].index, c.df.loc[assets_to_zero].index)
-            rename[assets_to_zero] += f"-{str(baseyear)}"
-            c.df.rename(index=rename, inplace=True)
 
 
 def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, baseyear):
@@ -241,7 +232,7 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                 if generator in ["ror", "nuclear", "geothermal"]:
                     # get static p_max_pu for ror
                     p_max_pu = n.generators.loc[
-                        capacity.index + f" {generator}{suffix}"
+                        capacity.index + f" {generator}{suffix}-{baseyear}"
                     ].p_max_pu.values
                 else:
                     try:

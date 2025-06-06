@@ -536,8 +536,10 @@ if config["foresight"] == "overnight":
 if config["foresight"] == "myopic":
     use rule solve_network_myopic from pypsa_earth with:
         input:
-            **{k: v for k, v in rules.solve_network_myopic.input.items() if k != "overrides"},
+            **{k: v for k, v in rules.solve_network_myopic.input.items() if k not in ["overrides", "network"]},
             overrides="data/override_component_attrs",
+            network=PYPSA_EARTH_DIR + RESDIR
+            + "prenetworks-brownfield/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_custom.nc",
 
 
     rule add_custom_existing_baseyear:
@@ -557,7 +559,7 @@ if config["foresight"] == "myopic":
             costs=PYPSA_EARTH_DIR + "resources/" + RDIR + "costs_{planning_horizons}.csv",
         output:
             PYPSA_EARTH_DIR + RESDIR
-            + "prenetworks-brownfield/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",
+            + "prenetworks-brownfield/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_custom.nc",
         wildcard_constraints:
             # TODO: The first planning_horizon needs to be aligned across scenarios
             # snakemake does not support passing functions to wildcard_constraints
@@ -575,8 +577,65 @@ if config["foresight"] == "myopic":
         script:
             "scripts/add_custom_existing_baseyear.py"
 
-    ruleorder: add_custom_existing_baseyear > add_existing_baseyear
-    ruleorder: add_custom_existing_baseyear > add_brownfield
+
+    ruleorder: add_custom_existing_baseyear > add_custom_brownfield
+
+
+    def solved_previous_horizon(w):
+        planning_horizons = config["scenario"]["planning_horizons"]
+        i = planning_horizons.index(int(w.planning_horizons))
+        planning_horizon_p = str(planning_horizons[i - 1])
+
+        return (
+            PYPSA_EARTH_DIR + RESDIR
+            + "postnetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_"
+            + planning_horizon_p
+            + "_{discountrate}_{demand}_{h2export}export.nc"
+        )
+
+    def get_previous_planning_horizon(w):
+        planning_horizons = config["scenario"]["planning_horizons"]
+        i = planning_horizons.index(int(w.planning_horizons))
+        return str(planning_horizons[i - 1])
+
+
+    rule add_custom_brownfield:
+        params:
+            H2_retrofit=config["sector"]["hydrogen"],
+            H2_retrofit_capacity_per_CH4=config["sector"]["hydrogen"][
+                "H2_retrofit_capacity_per_CH4"
+            ],
+            threshold_capacity=config["existing_capacities"]["threshold_capacity"],
+            snapshots=config["snapshots"],
+            # drop_leap_day=config["enable"]["drop_leap_day"],
+            carriers=config["electricity"]["renewable_carriers"],
+            planning_horizon_p=get_previous_planning_horizon,
+        input:
+            # unpack(input_profile_tech_brownfield),
+            simplify_busmap=PYPSA_EARTH_DIR + "resources/" + RDIR + "bus_regions/busmap_elec_s{simpl}.csv",
+            cluster_busmap=PYPSA_EARTH_DIR + "resources/"
+            + RDIR
+            + "bus_regions/busmap_elec_s{simpl}_{clusters}.csv",
+            network=PYPSA_EARTH_DIR + RESDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",
+            network_p=solved_previous_horizon,  #solved network at previous time step
+            costs=PYPSA_EARTH_DIR + "resources/" + RDIR + "costs_{planning_horizons}.csv",
+        output:
+            PYPSA_EARTH_DIR + RESDIR
+            + "prenetworks-brownfield/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_custom.nc",
+        threads: 4
+        resources:
+            mem_mb=10000,
+        log:
+            PYPSA_EARTH_DIR + RESDIR
+            + "logs/add_custom_brownfield_elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.log",
+        benchmark:
+            (
+                PYPSA_EARTH_DIR + RESDIR
+                + "benchmarks/add_custom_brownfield/elec_s{simpl}_ec_{clusters}_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export"
+            )
+        script:
+            "scripts/add_custom_brownfield.py"
 
 
 rule test_modify_prenetwork:

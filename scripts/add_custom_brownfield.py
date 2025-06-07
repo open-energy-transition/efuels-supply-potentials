@@ -26,10 +26,7 @@ def add_brownfield(n, n_p, year, planning_horizon_p):
     n.lines.s_nom_min = n_p.lines.s_nom_opt
     # set optimised capacities of previous horizon as minimum for DC links
     dc_i = n.links[n.links.carrier == "DC"].index
-    dc_prev = n.links[n.links.carrier == "DC"].index.str.replace(f"{year}", f"{planning_horizon_p}")
-    dc_p_nom_opt = n_p.links.loc[dc_prev, "p_nom_opt"]
-    dc_p_nom_opt.index = dc_p_nom_opt.index.str.replace(f"{planning_horizon_p}", f"{year}")
-    n.links.loc[dc_i, "p_nom_min"] = dc_p_nom_opt
+    n.links.loc[dc_i, "p_nom_min"] = n_p.links.loc[dc_i, "p_nom_opt"]
 
     for c in n_p.iterate_components(["Link", "Generator", "Store"]):
         attr = "e" if c.name == "Store" else "p"
@@ -68,9 +65,10 @@ def add_brownfield(n, n_p, year, planning_horizon_p):
             asset_prev_p_nom_opt = c.df[c.df.index.str.contains(asset_name)]["p_nom_opt"].sum()
             # reduce p_nom_max of the extendable asset by installed capacity
             c.df.loc[idx, f"{attr}_nom_max"] -= asset_prev_p_nom_opt
-            # set p_nom = 0 and p_nom_min = 0 for extendable assets
-            c.df.loc[idx, f"{attr}_nom"] = 0
-            c.df.loc[idx, f"{attr}_nom_min"] = 0
+
+        # set p_nom = 0 and p_nom_min = 0 for all assets with build_year == year
+        c.df.loc[c.df.build_year == year, f"{attr}_nom"] = 0
+        c.df.loc[c.df.build_year == year, f"{attr}_nom_min"] = 0
 
 
 if __name__ == "__main__":

@@ -27,11 +27,11 @@ def add_build_year_to_new_assets(n, baseyear):
     baseyear : int
         year in which optimized assets are built
     """
-    # Set build_year for new assets (p_nom == 0)
+    # Set build_year for new assets (build_year == 0 and lifetime != inf)
     for c in n.iterate_components(["Link", "Generator", "Store"]):
         attr = "e_nom" if c.name == "Store" else "p_nom"
-        # new assets with no build_year
-        new_assets = c.df.index[c.df.build_year == 0]
+        # new assets with no build_year and non-infinity lifetime
+        new_assets = c.df.index[(c.df.lifetime != np.inf) & (c.df.build_year == 0)]
         c.df.loc[new_assets, "build_year"] = baseyear
 
         # add -baseyear to name

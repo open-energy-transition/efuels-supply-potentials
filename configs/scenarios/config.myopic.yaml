@@ -39,7 +39,7 @@ saf_mandate:
   blending_rate: 0.007 # blending rate, 0.003 (EU -) 0.007 (EU) 0.012 (EU +)
 
 demand_projection:
-  planning_horizon: 2030
+  planning_horizon: 2030 # only needed for power model, sector model takes demand from UN data using planning_horizon
   scenario: "Medium"
   data_centers_load: true
 

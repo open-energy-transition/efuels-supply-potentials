@@ -26,7 +26,6 @@ scenario:
 
 aviation_demand_scenario:
   country: US
-  year: 2030
   scenario: central # low, central or high
 
 saf_mandate:

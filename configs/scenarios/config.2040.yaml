@@ -35,7 +35,7 @@ saf_mandate:
   saf_scenario: EU # EU (default), EU+, EU-
 
 demand_projection:
-  planning_horizon: 2040
+  planning_horizon: 2040 # only needed for power model, sector model takes demand from UN data using planning_horizon
   scenario: "Medium"
   data_centers_load: true
 

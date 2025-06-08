@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Update link to **retrieve renewable profiles (now generated via Earth cutout)** [PR #65](https://github.com/open-energy-transition/efuels-supply-potentials/pull/65)
+
 * Separate **biogenic CO2 stored and grid H2** [PR #60](https://github.com/open-energy-transition/efuels-supply-potentials/pull/60)
 
 * Update **head for pypsa-earth submodule** [PR #58](https://github.com/open-energy-transition/efuels-supply-potentials/pull/58) due to merge of [PR #34](https://github.com/open-energy-transition/pypsa-earth/pull/34) to a working branch `efuels-supply-potentials`

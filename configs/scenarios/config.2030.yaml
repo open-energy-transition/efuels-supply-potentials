@@ -44,6 +44,10 @@ policies:
   state: ["CES", "RES"]
   country: ["CES"]
 
+custom_industry:
+  CCS_retrofit: [ethanol, ammonia, steel, cement]
+
+
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes
   simplify_network:
@@ -51,9 +55,10 @@ cluster_options:
 
 electricity:
   extendable_carriers:
-    Generator: [solar, csp, onwind, offwind-ac, offwind-dc, geothermal]
+    Generator: [solar, onwind, offwind-ac, offwind-dc, csp, geothermal]
     Store: [battery, H2]
 
+  powerplants_filter: DateOut >= 2030 and DateIn <= 2030
   custom_powerplants: "replace" #  "false" use only powerplantmatching (ppm) data, "merge" combines ppm and custom powerplants, "replace" use only custom powerplants
 
   conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, lignite, geothermal, biomass]

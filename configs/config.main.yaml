@@ -47,9 +47,11 @@ custom_industry:
   ammonia: true
   steel: true
   cement: true
-  CCS_retrofit: [ethanol, ammonia, steel, cement]
+  CCS_retrofit: [] # [ethanol, ammonia, steel, cement]
   production_flexibility: []
   H2_DRI: false
+  biogenic_co2: false # define output of ethanol from starch CC as biogenic CO2 to be used in Fischer-Tropsch
+  grid_H2: true # mark output of electrolysis as grid H2 (which can be used in Fischer-Tropsch)
 
 custom_databundles:
   bundle_cutouts_USA:
@@ -109,7 +111,7 @@ custom_databundles:
     destination: "resources"
     urls:
       alternative_clustering: https://drive.google.com/file/d/1Bt8NVxhe2-nrw2ZTg35sgUIQ-R8A57DN/view?usp=sharing
-      voronoi_clustering: https://drive.google.com/file/d/1SEvIoLz0x23jNNeMuDSOQwHvuwtvqIfd/view?usp=sharing
+      voronoi_clustering: https://drive.google.com/file/d/1zNrL0wIWKzWEngSCYQ-S2z9tR4gGXgrB/view?usp=sharing
 
   # demand data used for demand redistribution
   bundle_demand_data_USA:

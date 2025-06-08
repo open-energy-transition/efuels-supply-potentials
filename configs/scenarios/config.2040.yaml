@@ -40,6 +40,9 @@ demand_projection:
   scenario: "Medium"
   data_centers_load: true
 
+custom_industry:
+  CCS_retrofit: [ethanol, ammonia, steel, cement]
+
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes
   simplify_network:

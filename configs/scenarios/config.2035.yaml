@@ -50,9 +50,10 @@ cluster_options:
 
 electricity:
   extendable_carriers:
-    Generator: []
+    Generator: [solar, onwind, offwind-ac, offwind-dc, csp, geothermal]
     Store: [battery, H2]
 
+  powerplants_filter: DateOut >= 2035 and DateIn <= 2035
   custom_powerplants: "replace" #  "false" use only powerplantmatching (ppm) data, "merge" combines ppm and custom powerplants, "replace" use only custom powerplants
 
   conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, lignite, geothermal, biomass]

@@ -8,7 +8,10 @@
 
 Please list contributions, add reference to PRs if present.
 
+
 * Update link to **retrieve renewable profiles (now generated via Earth cutout)** [PR #65](https://github.com/open-energy-transition/efuels-supply-potentials/pull/65)
+
+* Update **missing DateOut for custom powerplants**, add **a script to fill missing DateOut**, and enable **powerplant filtering for future scenarios** [PR #61](https://github.com/open-energy-transition/efuels-supply-potentials/pull/61) with cherry-pick [PR #39](https://github.com/open-energy-transition/pypsa-earth/pull/39) to a working branch `efuels-supply-potentials`
 
 * Separate **biogenic CO2 stored and grid H2** [PR #60](https://github.com/open-energy-transition/efuels-supply-potentials/pull/60)
 

@@ -17,7 +17,7 @@ run:
 scenario:
   simpl: ['']
   ll: ['copt']
-  clusters: [50]
+  clusters: [10]
   opts: [24H]
   planning_horizons:
   - 2040

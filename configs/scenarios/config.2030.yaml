@@ -39,8 +39,13 @@ demand_projection:
   scenario: "Medium"
   data_centers_load: true
 
+policies:
+  state: ["CES", "RES"] # "CES" to adopt State-wise clean electricity generation constraints from currently stated policies, "RES" to adopt State-wise renewable electricity generation constraints from currently stated policies, both to apply both kinds of constraintsAdd commentMore actions
+  country: [] # "CES" to adopt country-wise clean electricity generation constraint (90% clean electricity by 2040), otherwise empty
+
 custom_industry:
   CCS_retrofit: [ethanol, ammonia, steel, cement]
+
 
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes

@@ -8,6 +8,7 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Add custom rule to **apply state/country-wise constraints for clean/RES technologies** [PR #53](https://github.com/open-energy-transition/efuels-supply-potentials/pull/53)
 
 * Update link to **retrieve renewable profiles (now generated via Earth cutout)** [PR #65](https://github.com/open-energy-transition/efuels-supply-potentials/pull/65)
 

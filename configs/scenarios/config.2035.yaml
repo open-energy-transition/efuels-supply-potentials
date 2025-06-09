@@ -11,8 +11,8 @@ enable:
   download_osm_data: true  # If 'true', OpenStreetMap data will be downloaded for the above given countries
 
 run:
-  name: "ces_res_constraints" # use this to keep track of runs with different settings
-  sector_name: "ces_res_constraints"
+  name: "US_2035"
+  sector_name: "US_2035"
 
 scenario:
   simpl: ['']
@@ -41,8 +41,8 @@ demand_projection:
   data_centers_load: true
 
 policies:
-  state: ["CES", "RES"]
-  country: ["CES"]
+  state: ["CES", "RES"] # "CES" to adopt State-wise clean electricity generation constraints from currently stated policies, "RES" to adopt State-wise renewable electricity generation constraints from currently stated policies, both to apply both kinds of constraintsAdd commentMore actions
+  country: [] # "CES" to adopt country-wise clean electricity generation constraint (90% clean electricity by 2040), otherwise empty
 
 custom_industry:
   CCS_retrofit: [ethanol, ammonia, steel, cement]

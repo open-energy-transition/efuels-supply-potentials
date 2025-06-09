@@ -222,6 +222,10 @@ def add_RPS_constraints(network, config_file):
         target_year = policy_data[policy_data.policy ==
                                   f"{constraints_type}"]["year"].item()
 
+        # remove `low voltage` from bus name to account for solar rooftop (e.g. US0 0 low voltage to US0 0)
+        gens_eligible["bus"] = gens_eligible.bus.str.replace(" low voltage", "", regex=False)
+        ces_generators_eligible["bus"] = ces_generators_eligible.bus.str.replace(" low voltage", "", regex=False)
+
         # get generation
         generation = (
             linexpr(
@@ -289,8 +293,14 @@ def add_RPS_constraints(network, config_file):
         lhs = generation + hydro_dispatch_with_coefficient + \
             ces_generation_with_target + conventional_generation_with_target
 
+        # group buses
+        if state != "US":
+            lhs_grouped = lhs.groupby(n.buses.state).sum()
+        else:
+            lhs_grouped = lhs.groupby(n.buses.country).sum()
+
         define_constraints(
-            n, lhs, ">=", 0, f"{constraints_type}_{state}", "rps_limit")
+            n, lhs_grouped, ">=", 0, f"{constraints_type}_{state}", "rps_limit")
         logger.info(
             f"Added {constraints_type} constraint for {state} in {target_year}.")
         

@@ -19,8 +19,8 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "modify_aviation_demand",
             demand="AB",
-            planning_horizons="2020",
-            configfile="configs/scenarios/config.base.yaml",
+            planning_horizons="2030",
+            configfile="configs/scenarios/config.2030.yaml",
         )
     # update config based on wildcards
     config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)

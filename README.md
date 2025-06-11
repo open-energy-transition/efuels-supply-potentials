@@ -70,6 +70,8 @@ snakemake -call solve_sector_networks --configfile configs/scenarios/config.20**
 |`build_custom_industry_demand` |Any base or scenario config file   |Estimates node level demands for selected custom industries (e.g. ammonia, ethanol, cement, and steel)|
 |`add_custom_industry`    |Any base or scenario config file         |Adds selected custom industries into the network|
 | `prepare_growth_rate_scenarios`  | Any base or scenario config file          | Allows automatic fetching of correct growth rate files according to the demand_projection scenario name                                                                |
+| `solve_custom_sector_network`  | Any base or scenario config file          | Allows state/country-wise clean/RES polices to be applied as constraints. The constraints is turned on by default.                                                                |
+
 
 ### Retrieve rules
 |Rule name                |Config file                              |Description        |
@@ -98,6 +100,7 @@ Cherry-picking allows applying specific commits from one branch to another. We c
 4. [PR #1410](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1410): Fix negative transport demand.
 5. [PR #1401](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1401): Fix H2 pipeline bus names.
 6. [PR #1422](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1422): Fix renamed column in transport related wikipedia data.
+7. [PR #1465](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1465): Enable powerplant filtering using query.
 
 Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-pick) on cherry-picking in Git to get more familiar with procedure.
 

@@ -11,7 +11,7 @@ import numpy as np
 from types import SimpleNamespace
 from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
                             configure_logging, load_network
-from add_custom_existing_baseyear import add_build_year_to_new_assets
+from add_custom_existing_baseyear import add_build_year_to_new_assets, set_lifetimes
 from _helpers import prepare_costs
 
 
@@ -100,6 +100,18 @@ if __name__ == "__main__":
 
     # load the prenetwork for the brownfield
     n = load_network(snakemake.input.network)
+
+    # read costs assumptions
+    Nyears = n.snapshot_weightings.generators.sum() / 8760.0
+    costs = prepare_costs(
+        snakemake.input.costs,
+        snakemake.params.costs["USD2013_to_EUR2013"],
+        snakemake.params.costs["fill_values"],
+        Nyears,
+    )
+
+    # set lifetime for nuclear, geothermal, and ror generators manually to non-infinity values
+    set_lifetimes(n, costs)
 
     # add build_year to new assets
     add_build_year_to_new_assets(n, year)

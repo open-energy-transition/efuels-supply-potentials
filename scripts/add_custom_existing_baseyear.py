@@ -366,6 +366,25 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
             ]
 
 
+def set_lifetimes(n, costs):
+    """
+        Sets non-infinity lifetimes for powerplants. However, to phase out DateOut from
+        powerplants.csv is used.
+    """
+    powerplant_carriers = {
+        "Link": ["CCGT", "OCGT", "coal", "oil", "biomass"],
+        "Generator": ["nuclear", "solar", "onwind", "offwind-ac", "geothermal", "ror"],
+    }
+    for c in n.iterate_components(["Link", "Generator"]):
+        # get powerplants with infinite lifetime
+        mask = c.df.carrier.isin(powerplant_carriers[c.name]) & np.isinf(c.df.lifetime)
+
+        if mask.any():
+            # fill infinite lifetime with lifetime from costs
+            c.df.loc[mask, "lifetime"] = c.df.loc[mask, "carrier"].map(costs["lifetime"])
+            logger.info(f"Lifetime for {c.df.loc[mask, 'carrier'].unique()} was filled from costs")
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -394,9 +413,6 @@ if __name__ == "__main__":
     # load the network for the base year
     n = load_network(snakemake.input.network)
 
-    # add build_year to new assets
-    add_build_year_to_new_assets(n, baseyear)
-
     # read costs assumptions
     Nyears = n.snapshot_weightings.generators.sum() / 8760.0
     costs = prepare_costs(
@@ -405,6 +421,12 @@ if __name__ == "__main__":
         snakemake.params.costs["fill_values"],
         Nyears,
     )
+
+    # set lifetime for nuclear, geothermal, and ror generators manually to non-infinity values
+    set_lifetimes(n, costs)
+
+    # add build_year to new assets
+    add_build_year_to_new_assets(n, baseyear)
 
     # define grouping years for existing capacities
     grouping_years_power = snakemake.params.existing_capacities["grouping_years_power"]

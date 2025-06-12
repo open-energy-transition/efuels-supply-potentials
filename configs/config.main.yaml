@@ -59,7 +59,7 @@ custom_databundles:
     category: cutouts
     destination: "cutouts"
     urls:
-      gdrive: https://drive.google.com/file/d/10IRlnpEV9pRv1S28aezL_K0cTejGhpIA/view?usp=sharing
+      gdrive: https://drive.google.com/file/d/1Ao_kuHssRaP1qLV-IEG91Hu7E04-nBZg/view?usp=drive_link
     output: [cutouts/cutout-2013-era5.nc]
     disable_by_opt:
       build_cutout: [all]
@@ -111,7 +111,7 @@ custom_databundles:
     destination: "resources"
     urls:
       alternative_clustering: https://drive.google.com/file/d/1Bt8NVxhe2-nrw2ZTg35sgUIQ-R8A57DN/view?usp=sharing
-      voronoi_clustering: https://drive.google.com/file/d/1zNrL0wIWKzWEngSCYQ-S2z9tR4gGXgrB/view?usp=sharing
+      voronoi_clustering: https://drive.google.com/file/d/1ornHEC2Wey5w3XJ3bMT30DeJU2oDI0Gk/view?usp=sharing
 
   # demand data used for demand redistribution
   bundle_demand_data_USA:

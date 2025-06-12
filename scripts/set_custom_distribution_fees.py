@@ -16,7 +16,7 @@ from scripts._helper import mock_snakemake, update_config_from_wildcards, create
 
 logger = create_logger(__name__)
 
-def attach_region_to_buses(network, path_shape, distance_crs):
+def attach_grid_region_to_buses(network, path_shape, distance_crs):
     """
     Attach state to buses
     """
@@ -53,7 +53,7 @@ def attach_region_to_buses(network, path_shape, distance_crs):
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
-            "custom_distribution_fees",
+            "set_custom_distribution_fees",
             simpl="",
             clusters="10",
             planning_horizons="2020",
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     regional_fees = pd.read_csv(regional_fees_path)
     network = pypsa.Network(nc_path)
 
-    attach_region_to_buses(network, shape_path, distance_crs)
+    attach_grid_region_to_buses(network, shape_path, distance_crs)
     region_set = network.buses.region.unique()
 
     for region in region_set:

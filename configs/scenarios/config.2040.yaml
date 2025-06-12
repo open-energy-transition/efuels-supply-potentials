@@ -40,8 +40,13 @@ demand_projection:
   scenario: "Medium"
   data_centers_load: true
 
+policies:
+  state: ["CES", "RES"] # "CES" to adopt State-wise clean electricity generation constraints from currently stated policies, "RES" to adopt State-wise renewable electricity generation constraints from currently stated policies, both to apply both kinds of constraintsAdd commentMore actions
+  country: [] # "CES" to adopt country-wise clean electricity generation constraint (90% clean electricity by 2040), otherwise empty
+
 custom_industry:
   CCS_retrofit: [ethanol, ammonia, steel, cement]
+
 
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes
@@ -50,9 +55,11 @@ cluster_options:
 
 electricity:
   extendable_carriers:
-    Generator: []
+
+    Generator: [solar, onwind, offwind-ac, offwind-dc, csp, geothermal]
     Store: [battery, H2]
 
+  powerplants_filter: DateOut >= 2040 and DateIn <= 2040
   custom_powerplants: "replace" #  "false" use only powerplantmatching (ppm) data, "merge" combines ppm and custom powerplants, "replace" use only custom powerplants
 
   conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, lignite, geothermal, biomass]

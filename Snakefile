@@ -35,8 +35,10 @@ wildcard_constraints:
 
 run = config["run"]
 RDIR = run["name"] + "/" if run.get("name") else ""
-SECDIR = run["sector_name"] + "/" if run.get("sector_name") else ""
 CDIR = RDIR if not run.get("shared_cutouts") else ""
+SECDIR = run["sector_name"] + "/" if run.get("sector_name") else ""
+SDIR = config["summary_dir"].strip("/") + f"/{SECDIR}"
+RESDIR = config["results_dir"].strip("/") + f"/{SECDIR}"
 
 
 module pypsa_earth:
@@ -541,6 +543,47 @@ if config["foresight"] == "myopic":
         input:
             **{k: v for k, v in rules.solve_network_myopic.input.items() if k != "overrides"},
             overrides="data/override_component_attrs",
+
+
+if config["foresight"] == "overnight" and config["state_policy"] != "off":    
+    rule solve_custom_sector_network:
+        params:
+            solving=config["solving"],
+            augmented_line_connection=config["augmented_line_connection"],
+        input:
+            ces_path="data/current_electricity_state_policies/clean_targets.csv",
+            res_path="data/current_electricity_state_policies/res_targets.csv",
+            gadm_shape_path="data/demand_data/gadm41_USA_1.json",
+            overrides="data/override_component_attrs",
+            network=PYPSA_EARTH_DIR + RESDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",
+            costs=PYPSA_EARTH_DIR + "resources/" + RDIR + "costs_{planning_horizons}.csv",
+            configs=PYPSA_EARTH_DIR + SDIR + "configs/config.yaml",  # included to trigger copy_config rule
+        output:
+            PYPSA_EARTH_DIR + RESDIR
+            + "postnetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",
+        shadow:
+            "shallow"
+        log:
+            solver=PYPSA_EARTH_DIR + RESDIR
+            + "logs/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_solver.log",
+            python=PYPSA_EARTH_DIR + RESDIR
+            + "logs/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_python.log",
+            memory=PYPSA_EARTH_DIR + RESDIR
+            + "logs/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_memory.log",
+        threads: 25
+        resources:
+            mem_mb=config["solving"]["mem"],
+        benchmark:
+            (
+                PYPSA_EARTH_DIR + RESDIR
+                + "benchmarks/solve_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export"
+            )
+        script:
+            "scripts/solve_custom_sector_network.py"
+
+        
+    ruleorder: solve_custom_sector_network > solve_sector_network
 
 
 rule test_modify_prenetwork:

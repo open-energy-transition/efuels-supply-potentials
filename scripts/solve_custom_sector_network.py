@@ -157,8 +157,8 @@ def prepare_network(n, solve_opts):
         n.set_snapshots(n.snapshots[:nhours])
         n.snapshot_weightings[:] = 8760.0 / nhours
 
-    if snakemake.config["foresight"] == "myopic":
-        add_land_use_constraint(n)
+    # if snakemake.config["foresight"] == "myopic":
+    #     add_land_use_constraint(n)
 
     return n
 
@@ -617,11 +617,23 @@ def add_battery_constraints(n):
     if nodes.empty or ("Link", "p_nom") not in n.variables.index:
         return
     link_p_nom = get_var(n, "Link", "p_nom")
+
+    chargers_bool = link_p_nom.index.str.contains("battery charger")
+    dischargers_bool = link_p_nom.index.str.contains("battery discharger")
+
+    if snakemake.config["foresight"] == "myopic":
+        name_suffix = f"-{snakemake.wildcards.planning_horizons}"
+    else:
+        name_suffix = ""
+
     lhs = linexpr(
-        (1, link_p_nom[nodes + " charger"]),
+        (1, link_p_nom[chargers_bool]),
         (
-            -n.links.loc[nodes + " discharger", "efficiency"].values,
-            link_p_nom[nodes + " discharger"].values,
+            -n.links.loc[
+                n.links.index.str.contains(f"battery discharger{name_suffix}"),
+                "efficiency",
+            ].values,
+            link_p_nom[dischargers_bool].values,
         ),
     )
     define_constraints(n, lhs, "=", 0, "Link", "charger_ratio")

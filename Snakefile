@@ -611,6 +611,7 @@ if config["foresight"] == "myopic":
             # drop_leap_day=config["enable"]["drop_leap_day"],
             carriers=config["electricity"]["renewable_carriers"],
             planning_horizon_p=get_previous_planning_horizon,
+            costs=config["costs"],
         input:
             # unpack(input_profile_tech_brownfield),
             simplify_busmap=PYPSA_EARTH_DIR + "resources/" + RDIR + "bus_regions/busmap_elec_s{simpl}.csv",
@@ -637,6 +638,49 @@ if config["foresight"] == "myopic":
             )
         script:
             "scripts/add_custom_brownfield.py"
+
+
+    rule solve_custom_network_myopic:
+        params:
+            solving=config["solving"],
+            foresight=config["foresight"],
+            planning_horizons=config["scenario"]["planning_horizons"],
+            co2_sequestration_potential=config["scenario"].get(
+                "co2_sequestration_potential", 200
+            ),
+        input:
+            overrides="data/override_component_attrs",
+            network=RESDIR
+            + "prenetworks-brownfield/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",
+            costs=CDIR + "costs_{planning_horizons}.csv",
+            configs=SDIR + "configs/config.yaml",  # included to trigger copy_config rule
+        output:
+            network=RESDIR
+            + "postnetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",
+            # config=RESDIR
+            # + "configs/config.elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.yaml",
+        shadow:
+            "shallow"
+        log:
+            solver=RESDIR
+            + "logs/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_solver.log",
+            python=RESDIR
+            + "logs/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_python.log",
+            memory=RESDIR
+            + "logs/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_memory.log",
+        threads: 25
+        resources:
+            mem_mb=config["solving"]["mem"],
+        benchmark:
+            (
+                RESDIR
+                + "benchmarks/solve_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export"
+            )
+        script:
+            "scripts/solve_custom_sector_network.py"
+
+
+    ruleorder: solve_custom_network_myopic > solve_network_myopic
 
 
 if config["foresight"] == "overnight" and config["state_policy"] != "off":    

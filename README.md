@@ -42,6 +42,8 @@ snakemake -call solve_sector_networks --configfile configs/calibration/config.ba
 
 ### 2.2. Running scenarios for future years
 
+#### A. Running an individual horizon
+
 To run the power model for the Reference scenario of the U.S., navigate to the working directory (`.../efuels-supply-potentials/`) and use the following command:
 ```bash
 snakemake -call solve_all_networks --configfile configs/scenarios/config.20**.yaml
@@ -52,6 +54,13 @@ snakemake -call solve_all_networks --configfile configs/scenarios/config.20**.ya
 To run the sector-coupled model for the Reference scenario, execute the command substituting the desired year to "**" in the command below:
 ```bash
 snakemake -call solve_sector_networks --configfile configs/scenarios/config.20**.yaml
+```
+
+#### B. Running for multiple horizons
+
+To run the sector-coupled model for the Reference scenario using myopic optimization for the years 2030, 2035, and 2040 consecutively, execute the following:
+```bash
+snakemake -call solve_sector_networks_myopic --configfile configs/scenarios/config.myopic.yaml
 ```
 
 ## 3. Snakemake rules

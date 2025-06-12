@@ -209,7 +209,7 @@ def add_RPS_constraints(network, config_file):
 
     def filter_policy_data(df, coverage):
         return df[
-            (df["year"].isin(planning_horizons))
+            (df["year"] == planning_horizon)
             & (df["target"] > 0.0)
             & (df["state"].isin(n.buses[f"{coverage}"].unique()))
         ]
@@ -339,7 +339,7 @@ def add_RPS_constraints(network, config_file):
     # map states to buses
     distance_crs = config_file["crs"]["distance_crs"]
     network = attach_state_to_buses(network, path_shapes, distance_crs)
-    planning_horizons = config_file["scenario"]["planning_horizons"]
+    planning_horizon = int(snakemake.wildcards.planning_horizons)
 
     state_policies = config_file["policies"]["state"]
     country_policies = config_file["policies"]["country"]
@@ -1319,14 +1319,14 @@ if __name__ == "__main__":
         # from _helpers import mock_snakemake
 
         snakemake = mock_snakemake(
-            "solve_custom_sector_network",
-            configfile="configs/scenarios/config.2035.yaml",
+            "solve_custom_network_myopic",
+            configfile="configs/scenarios/config.myopic.yaml",
             simpl="",
             ll="copt",
-            clusters=50,
+            clusters=10,
             opts="24H",
             sopts="24H",
-            planning_horizons=2035,
+            planning_horizons="2030",
             discountrate="0.071",
             demand="AB",
             h2export="10",

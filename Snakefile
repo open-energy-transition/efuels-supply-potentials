@@ -648,32 +648,36 @@ if config["foresight"] == "myopic":
             co2_sequestration_potential=config["scenario"].get(
                 "co2_sequestration_potential", 200
             ),
+            augmented_line_connection=config["augmented_line_connection"],
         input:
+            ces_path="data/current_electricity_state_policies/clean_targets.csv",
+            res_path="data/current_electricity_state_policies/res_targets.csv",
+            gadm_shape_path="data/demand_data/gadm41_USA_1.json",
             overrides="data/override_component_attrs",
-            network=RESDIR
-            + "prenetworks-brownfield/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",
-            costs=CDIR + "costs_{planning_horizons}.csv",
-            configs=SDIR + "configs/config.yaml",  # included to trigger copy_config rule
+            network=PYPSA_EARTH_DIR + RESDIR
+            + "prenetworks-brownfield/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_custom.nc",
+            costs=PYPSA_EARTH_DIR + "resources/" + RDIR + "costs_{planning_horizons}.csv",
+            configs=PYPSA_EARTH_DIR + SDIR + "configs/config.yaml",  # included to trigger copy_config rule
         output:
-            network=RESDIR
+            network=PYPSA_EARTH_DIR + RESDIR
             + "postnetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",
             # config=RESDIR
             # + "configs/config.elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.yaml",
         shadow:
             "shallow"
         log:
-            solver=RESDIR
+            solver=PYPSA_EARTH_DIR + RESDIR
             + "logs/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_solver.log",
-            python=RESDIR
+            python=PYPSA_EARTH_DIR + RESDIR
             + "logs/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_python.log",
-            memory=RESDIR
+            memory=PYPSA_EARTH_DIR + RESDIR
             + "logs/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_memory.log",
         threads: 25
         resources:
             mem_mb=config["solving"]["mem"],
         benchmark:
             (
-                RESDIR
+                PYPSA_EARTH_DIR + RESDIR
                 + "benchmarks/solve_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export"
             )
         script:

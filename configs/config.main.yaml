@@ -53,6 +53,8 @@ custom_industry:
   grid_H2: true # mark output of electrolysis as grid H2 (which can be used in Fischer-Tropsch)
   other_electricity: true # add other electricity as a consumption
 
+set_custom_distribution_fees: "true" # "true", "false"
+
 custom_databundles:
   bundle_cutouts_USA:
     countries: [US]

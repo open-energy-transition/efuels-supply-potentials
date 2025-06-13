@@ -40,7 +40,6 @@ SECDIR = run["sector_name"] + "/" if run.get("sector_name") else ""
 SDIR = config["summary_dir"].strip("/") + f"/{SECDIR}"
 RESDIR = config["results_dir"].strip("/") + f"/{SECDIR}"
 
-
 module pypsa_earth:
     snakefile:
         "submodules/pypsa-earth/Snakefile"
@@ -393,19 +392,19 @@ if config["countries"] == ["US"]:
         script:
             "scripts/modify_aviation_demand.py"
 
-if config["demand_distribution"]["enable"]:
-    rule preprocess_demand_data:
-        input:
-            demand_utility_path="data/demand_data/table_10_EIA_utility_sales.xlsx",
-            country_gadm_path=PYPSA_EARTH_DIR + "resources/" + RDIR + "shapes/country_shapes.geojson",
-            erst_path="data/demand_data/Electric_Retail_Service_Territories.geojson",
-            gadm_usa_path="data/demand_data/gadm41_USA_1.json",
-            eia_per_capita_path="data/demand_data/use_es_capita.xlsx",
-            additional_demand_path="data/demand_data/HS861_2010-.xlsx",
-        output:
-            utility_demand_path="data/demand_data/ERST_mapped_demand_centroids.geojson"
-        script:
-            "scripts/preprocess_demand_data.py"
+#if config["demand_distribution"]["enable"]:
+#    rule preprocess_demand_data:
+#        input:
+#            demand_utility_path="data/demand_data/table_10_EIA_utility_sales.xlsx",
+#            country_gadm_path=PYPSA_EARTH_DIR + "resources/" + RDIR + "shapes/country_shapes.geojson",
+#            erst_path="data/demand_data/Electric_Retail_Service_Territories.geojson",
+#            gadm_usa_path="data/demand_data/gadm41_USA_1.json",
+#            eia_per_capita_path="data/demand_data/use_es_capita.xlsx",
+#            additional_demand_path="data/demand_data/HS861_2010-.xlsx",
+#        output:
+#            utility_demand_path="data/demand_data/ERST_mapped_demand_centroids.geojson"
+#        script:
+#            "scripts/preprocess_demand_data.py"
 
 
     rule retrieve_demand_data:
@@ -691,6 +690,26 @@ if config["foresight"] == "myopic":
     ruleorder: solve_custom_network_myopic > solve_network_myopic
 
 
+if config["set_custom_distribution_fees"]:
+    use rule prepare_sector_network from pypsa_earth with:
+        output:
+            PYPSA_EARTH_DIR + RESDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_distribution_fees.nc",
+
+    rule set_custom_distribution_fees:
+        params:
+            distance_crs=config["crs"]["distance_crs"],
+        input:
+            shape_path="data/needs_grid_region/needs_grid_regions_aggregated.geojson",
+            regional_fees_path="data/needs_grid_region/regional_fees.csv",
+            network=PYPSA_EARTH_DIR + RESDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_distribution_fees.nc",
+        output:
+            PYPSA_EARTH_DIR + RESDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}.nc",
+        script:
+            "scripts/set_custom_distribution_fees.py"
+
 if config["foresight"] == "overnight" and config["state_policy"] != "off":    
     rule solve_custom_sector_network:
         params:
@@ -730,7 +749,6 @@ if config["foresight"] == "overnight" and config["state_policy"] != "off":
 
         
     ruleorder: solve_custom_sector_network > solve_sector_network
-
 
 rule test_modify_prenetwork:
     input:

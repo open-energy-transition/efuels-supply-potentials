@@ -101,14 +101,16 @@ Cherry-picking allows applying specific commits from one branch to another. We c
 5. [PR #1401](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1401): Fix H2 pipeline bus names.
 6. [PR #1422](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1422): Fix renamed column in transport related Wikipedia data.
 7. [PR #1428](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1428): Change source for Aluminum production data.
-8. [PR #1465](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1465): Enable powerplant filtering using query.
-9. [PR #1479](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1479): Update link for North America cutout.
+8. [PR #1465](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1465): Enable power plants filtering using query.
+9. [PR #1468](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1468): Include missing efficiency gains and growth rates for other energy use.
+10. [PR #1479](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1479): Update link for North America cutout.
 
 Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-pick) on cherry-picking in Git to get more familiar with procedure.
 
 ## 4.2. Direct commits to PyPSA-Earth
 
 1. [PR #32](https://github.com/open-energy-transition/pypsa-earth/pull/34): Disable implicit calculations and assigning of industry demands for steel and cement industries, because they are added explicitly.
+2. [PR #40](https://github.com/open-energy-transition/pypsa-earth/pull/40): Adjusts calculation of `no_years` to properly run 2023 scenario.
 
 ## 5. Validation
 

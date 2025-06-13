@@ -75,6 +75,9 @@ renewable:
 costs:
   year: 2035
 
+demand_data:
+  base_year: 2021
+
 custom_data:
   airports: true
 

@@ -505,11 +505,15 @@ if config["custom_industry"]["enable"]:
             add_cement=config["custom_industry"]["cement"],
             ccs_retrofit=config["custom_industry"]["CCS_retrofit"],
             biogenic_co2=config["custom_industry"]["biogenic_co2"],
-            grid_h2=config["custom_industry"]["grid_H2"]
+            grid_h2=config["custom_industry"]["grid_H2"],
+            other_electricity=config["custom_industry"]["other_electricity"],
         input:
             industrial_energy_demand_per_node=PYPSA_EARTH_DIR + "resources/"
             + SECDIR
             + "demand/industrial_energy_demand_per_node_elec_s{simpl}_{clusters}_{planning_horizons}_{demand}_custom_industry.csv",
+            energy_totals=PYPSA_EARTH_DIR + "resources/"
+            + SECDIR
+            + "energy_totals_{demand}_{planning_horizons}.csv",
             network=lambda w: f"{PYPSA_EARTH_DIR}results/{SECDIR}prenetworks/elec_s{w.simpl}_{w.clusters}_ec_l{w.ll}_{w.opts}_{w.sopts}_{w.planning_horizons}_{w.discountrate}_{w.demand}{saf_suffix}.nc",
             costs=PYPSA_EARTH_DIR + "resources/" + RDIR + "costs_{planning_horizons}.csv",
         output:

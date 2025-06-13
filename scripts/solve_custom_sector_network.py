@@ -157,8 +157,8 @@ def prepare_network(n, solve_opts):
         n.set_snapshots(n.snapshots[:nhours])
         n.snapshot_weightings[:] = 8760.0 / nhours
 
-    if snakemake.config["foresight"] == "myopic":
-        add_land_use_constraint(n)
+    # if snakemake.config["foresight"] == "myopic":
+    #     add_land_use_constraint(n)
 
     return n
 
@@ -209,7 +209,7 @@ def add_RPS_constraints(network, config_file):
 
     def filter_policy_data(df, coverage):
         return df[
-            (df["year"].isin(planning_horizons))
+            (df["year"] == planning_horizon)
             & (df["target"] > 0.0)
             & (df["state"].isin(n.buses[f"{coverage}"].unique()))
         ]
@@ -339,7 +339,7 @@ def add_RPS_constraints(network, config_file):
     # map states to buses
     distance_crs = config_file["crs"]["distance_crs"]
     network = attach_state_to_buses(network, path_shapes, distance_crs)
-    planning_horizons = config_file["scenario"]["planning_horizons"]
+    planning_horizon = int(snakemake.wildcards.planning_horizons)
 
     state_policies = config_file["policies"]["state"]
     country_policies = config_file["policies"]["country"]
@@ -617,11 +617,23 @@ def add_battery_constraints(n):
     if nodes.empty or ("Link", "p_nom") not in n.variables.index:
         return
     link_p_nom = get_var(n, "Link", "p_nom")
+
+    chargers_bool = link_p_nom.index.str.contains("battery charger")
+    dischargers_bool = link_p_nom.index.str.contains("battery discharger")
+
+    if snakemake.config["foresight"] == "myopic":
+        name_suffix = f"-{snakemake.wildcards.planning_horizons}"
+    else:
+        name_suffix = ""
+
     lhs = linexpr(
-        (1, link_p_nom[nodes + " charger"]),
+        (1, link_p_nom[chargers_bool]),
         (
-            -n.links.loc[nodes + " discharger", "efficiency"].values,
-            link_p_nom[nodes + " discharger"].values,
+            -n.links.loc[
+                n.links.index.str.contains(f"battery discharger{name_suffix}"),
+                "efficiency",
+            ].values,
+            link_p_nom[dischargers_bool].values,
         ),
     )
     define_constraints(n, lhs, "=", 0, "Link", "charger_ratio")
@@ -1307,14 +1319,14 @@ if __name__ == "__main__":
         # from _helpers import mock_snakemake
 
         snakemake = mock_snakemake(
-            "solve_custom_sector_network",
-            configfile="configs/scenarios/config.2035.yaml",
+            "solve_custom_network_myopic",
+            configfile="configs/scenarios/config.myopic.yaml",
             simpl="",
             ll="copt",
-            clusters=50,
+            clusters=10,
             opts="24H",
             sopts="24H",
-            planning_horizons=2035,
+            planning_horizons="2030",
             discountrate="0.071",
             demand="AB",
             h2export="10",

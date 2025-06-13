@@ -11,6 +11,7 @@ import numpy as np
 from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
                             configure_logging, load_network
 from _helpers import prepare_costs
+from prepare_sector_network import normalize_by_country, p_set_from_scaling
 
 
 logger = create_logger(__name__)
@@ -767,6 +768,35 @@ def define_grid_H2(n):
     logger.info("Added links to connect grid H2 to H2")
 
 
+def add_other_electricity(n):
+    """
+        Adds other electricity load to the network
+    """
+    # read energy totals
+    energy_totals = pd.read_csv(snakemake.input.energy_totals, index_col=0)
+
+    # get electricity profiles for AC loads
+    temporal_resolution = n.snapshot_weightings.generators
+    ac_loads = n.loads.query("carrier in 'AC'").index
+    profile_ac = normalize_by_country(
+        n.loads_t.p_set[ac_loads].reindex(columns=ac_loads, fill_value=0.0)
+    ).fillna(0)
+
+    # add other electricity load
+    p_set = p_set_from_scaling(
+        "other electricity", profile_ac, energy_totals, temporal_resolution
+    )
+    n.madd(
+        "Load",
+        ac_loads,
+        suffix=" other electricity",
+        bus=n.loads.loc[ac_loads, "bus"],
+        p_set=p_set,
+        carrier="other electricity",
+    )
+    logger.info("Added other electricity demand")
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -835,6 +865,10 @@ if __name__ == "__main__":
     # define electrolysis output as grid H2 to be used in Fischer-Tropsch
     if snakemake.params.grid_h2:
         define_grid_H2(n)
+
+    # add other electricity load
+    if snakemake.params.other_electricity:
+        add_other_electricity(n)
 
     # save the modified network
     n.export_to_netcdf(snakemake.output.modified_network)

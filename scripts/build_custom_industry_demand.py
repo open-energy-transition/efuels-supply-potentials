@@ -13,7 +13,7 @@ import warnings
 warnings.filterwarnings("ignore")
 from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger
 from build_industrial_distribution_key import map_industry_to_buses
-
+import traceback
 
 logger = create_logger(__name__)
 
@@ -258,88 +258,140 @@ def read_pypsa_earth_industrial_database():
 
     return industrial_database
 
+try:
 
-if __name__ == "__main__":
-    if "snakemake" not in globals():
-        snakemake = mock_snakemake(
-            "build_custom_industry_demand",
-            simpl="",
-            clusters="10",
-            planning_horizons="2020",
-            demand="AB",
-            configfile="configs/calibration/config.base.yaml",
+    if __name__ == "__main__":
+        if "snakemake" not in globals():
+            snakemake = mock_snakemake(
+                "build_custom_industry_demand",
+                simpl="",
+                clusters="10",
+                planning_horizons="2020",
+                demand="AB",
+                configfile="configs/calibration/config.base.yaml",
+            )
+        # update config based on wildcards
+        config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
+
+        # snakemake params
+        countries = snakemake.params.countries
+        gadm_layer_id = snakemake.params.gadm_layer_id
+        gadm_clustering = snakemake.params.alternative_clustering
+        shapes_path = snakemake.input.shapes_path
+        base_year = int(snakemake.params.base_year)
+        no_years = int(snakemake.wildcards.planning_horizons) - base_year
+
+        # load US cities locational information
+        uscities = pd.read_csv(snakemake.input.uscity_map)
+
+        # process uscities data
+        uscities_clean = process_uscities(uscities)
+
+        # load pypsa-earth industrial database
+        industrial_database = read_pypsa_earth_industrial_database()
+
+        if snakemake.params.add_ethanol:
+            # load ethanol plants
+            ethanol_plants_raw = pd.read_excel(snakemake.input.ethanol_plants, skiprows=2)
+
+            # clean ethanol plants data
+            ethanol_plants_clean = prepare_ethanol_plants(ethanol_plants_raw, uscities_clean)
+        else:
+            ethanol_plants_clean = pd.DataFrame(columns=["country", "y", "x", "capacity", "industry"])
+
+
+        if snakemake.params.add_ammonia:
+            # load ammonia plants
+            ammonia_plants_raw = pd.read_excel(snakemake.input.ammonia_plants, sheet_name="Statista", index_col=0)
+
+            # clean ammonia plants data
+            ammonia_plants_clean = prepare_ammonia_plants(ammonia_plants_raw, uscities_clean)
+        else:
+            ammonia_plants_clean = pd.DataFrame(columns=["country", "y", "x", "capacity", "industry"])
+
+
+        if snakemake.params.add_steel:
+            # select steel plants from pypsa-earth industrial database
+            steel_plants = industrial_database[industrial_database["industry"].isin([
+                "Electric arc",
+                "Integrated steelworks",
+                "DRI + Electric arc",
+            ])]
+        else:
+            steel_plants = pd.DataFrame(columns=["country", "x", "y", "industry", "capacity"])
+
+
+        if snakemake.params.add_cement:
+            # select cement plants from pypsa-earth industrial database
+            cement_plants = industrial_database[industrial_database["industry"] == "Cement"]
+        else:
+            cement_plants = pd.DataFrame(columns=["country", "x", "y", "industry", "capacity"])
+
+        # combine ethanol, ammonia, steel and cement plants data
+        combined_plants = pd.concat([ethanol_plants_clean, ammonia_plants_clean, steel_plants, cement_plants], ignore_index=True, axis=0)
+
+        # Map industry to buses
+        custom_industrial_database = map_industry_to_buses(combined_plants, countries, gadm_layer_id, shapes_path, gadm_clustering)
+
+        # Reset index and rename columns
+        custom_industrial_database = custom_industrial_database.reset_index().rename(columns={"gadm_1": "bus"})
+
+        # Save country associated to each bus
+        bus_to_country = custom_industrial_database.groupby("bus")["country"].first()
+
+        # Groupby buses and industry, and sum the production capacity
+        industrial_demand = custom_industrial_database.groupby(["bus", "industry", "country"])["capacity"].sum().reset_index()
+
+        industrial_demand = industrial_demand.pivot(index=["bus", "country"], columns="industry", values="capacity").reset_index().fillna(0)
+        custom_industry_to_cagr_map = {
+            "Cement": "non-metallic minerals",
+            "Electric arc": "iron and steel",
+            "DRI + Electric arc": "iron and steel",
+            "Integrated steelworks": "iron and steel",
+            "ammonia": "chemical and petrochemical",
+            "ethanol": "chemical and petrochemical",
+        }
+
+        cagr = pd.read_csv(snakemake.input.industry_growth_cagr, index_col=0)
+
+        for country in industrial_demand['country'].unique():
+            if country not in cagr.index:
+                _logger.warning(f"No industry growth data for {country}, using DEFAULT.")
+                cagr.loc[country] = cagr.loc["DEFAULT"]
+            else:
+                cagr.loc[country] = cagr.loc[country].fillna(cagr.loc["DEFAULT"])
+
+        cagr = cagr.loc[industrial_demand['country'].unique()]
+
+        # Compute growth rates
+        growth_factors = (1 + cagr) ** no_years
+
+        # Build growth_factors DataFrame
+        growth_factors_custom = pd.DataFrame(
+            index=industrial_demand.index,
+            columns=industrial_demand.columns.drop(['bus', 'country']),
+            dtype=float
         )
-    # update config based on wildcards
-    config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
 
-    # snakemake params
-    countries = snakemake.params.countries
-    gadm_layer_id = snakemake.params.gadm_layer_id
-    gadm_clustering = snakemake.params.alternative_clustering
-    shapes_path = snakemake.input.shapes_path
+        for industry in growth_factors_custom.columns:
+            sector_cagr = custom_industry_to_cagr_map.get(industry)
+            if sector_cagr is None:
+                _logger.warning(f"No CAGR mapping for industry {industry}. Using growth factor = 1.")
+                growth_factors_custom[industry] = 1.0
+            else:
+                growth_factors_custom[industry] = industrial_demand['country'].map(
+                    lambda c: growth_factors.loc[c, sector_cagr])
 
-    # load US cities locational information
-    uscities = pd.read_csv(snakemake.input.uscity_map)
+        # Apply growth rates
+        industrial_demand_scaled = industrial_demand.copy()
+        for industry in growth_factors_custom.columns:
+            industrial_demand_scaled[industry] *= growth_factors_custom[industry]
 
-    # process uscities data
-    uscities_clean = process_uscities(uscities)
+        # Save the industrial database to CSV
+        industrial_demand_scaled.to_csv(snakemake.output.industrial_energy_demand_per_node, index=False)
+        logger.info("Custom industry demands were saved to CSV")
 
-    # load pypsa-earth industrial database
-    industrial_database = read_pypsa_earth_industrial_database()
-
-    if snakemake.params.add_ethanol:
-        # load ethanol plants
-        ethanol_plants_raw = pd.read_excel(snakemake.input.ethanol_plants, skiprows=2)
-
-        # clean ethanol plants data
-        ethanol_plants_clean = prepare_ethanol_plants(ethanol_plants_raw, uscities_clean)
-    else:
-        ethanol_plants_clean = pd.DataFrame(columns=["country", "y", "x", "capacity", "industry"])
-
-
-    if snakemake.params.add_ammonia:
-        # load ammonia plants
-        ammonia_plants_raw = pd.read_excel(snakemake.input.ammonia_plants, sheet_name="Statista", index_col=0)
-
-        # clean ammonia plants data
-        ammonia_plants_clean = prepare_ammonia_plants(ammonia_plants_raw, uscities_clean)
-    else:
-        ammonia_plants_clean = pd.DataFrame(columns=["country", "y", "x", "capacity", "industry"])
-
-
-    if snakemake.params.add_steel:
-        # select steel plants from pypsa-earth industrial database
-        steel_plants = industrial_database[industrial_database["industry"].isin([
-            "Electric arc",
-            "Integrated steelworks",
-            "DRI + Electric arc",
-        ])]
-    else:
-        steel_plants = pd.DataFrame(columns=["country", "x", "y", "industry", "capacity"])
-
-
-    if snakemake.params.add_cement:
-        # select cement plants from pypsa-earth industrial database
-        cement_plants = industrial_database[industrial_database["industry"] == "Cement"]
-    else:
-        cement_plants = pd.DataFrame(columns=["country", "x", "y", "industry", "capacity"])
-
-    # combine ethanol, ammonia, steel and cement plants data
-    combined_plants = pd.concat([ethanol_plants_clean, ammonia_plants_clean, steel_plants, cement_plants], ignore_index=True, axis=0)
-
-    # Map industry to buses
-    custom_industrial_database = map_industry_to_buses(combined_plants, countries, gadm_layer_id, shapes_path, gadm_clustering)
-
-    # Reset index and rename columns
-    custom_industrial_database = custom_industrial_database.reset_index().rename(columns={"gadm_1": "bus"})
-
-    # Groupby buses and industry, and sum the production capacity
-    industrial_demand = custom_industrial_database.groupby(["bus", "industry"])["capacity"].sum().reset_index()
-
-    # Format the industry demand by pivoting
-    industrial_demand = industrial_demand.pivot(index="bus", columns="industry", values="capacity").rename_axis("MWh/a (kton/a)").reset_index().fillna(0)
-
-    # Save the industrial database to CSV
-    industrial_demand.to_csv(snakemake.output.industrial_energy_demand_per_node, index=False)
-    logger.info("Custom industry demands were saved to CSV")
-    
+except Exception as e:
+    print("ERROR TRACEBACK:")
+    traceback.print_exc()
+    raise

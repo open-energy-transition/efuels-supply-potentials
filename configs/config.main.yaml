@@ -52,6 +52,7 @@ custom_industry:
   H2_DRI: false
   biogenic_co2: false # define output of ethanol from starch CC as biogenic CO2 to be used in Fischer-Tropsch
   grid_H2: true # mark output of electrolysis as grid H2 (which can be used in Fischer-Tropsch)
+  base_year: 2019
 
 custom_databundles:
   bundle_cutouts_USA:

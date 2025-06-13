@@ -14,6 +14,7 @@ warnings.filterwarnings("ignore")
 from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger
 from build_industrial_distribution_key import map_industry_to_buses
 
+
 logger = create_logger(__name__)
 
 
@@ -257,6 +258,7 @@ def read_pypsa_earth_industrial_database():
 
     return industrial_database
 
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -290,6 +292,7 @@ if __name__ == "__main__":
     if snakemake.params.add_ethanol:
         # load ethanol plants
         ethanol_plants_raw = pd.read_excel(snakemake.input.ethanol_plants, skiprows=2)
+
         # clean ethanol plants data
         ethanol_plants_clean = prepare_ethanol_plants(ethanol_plants_raw, uscities_clean)
     else:
@@ -299,6 +302,7 @@ if __name__ == "__main__":
     if snakemake.params.add_ammonia:
         # load ammonia plants
         ammonia_plants_raw = pd.read_excel(snakemake.input.ammonia_plants, sheet_name="Statista", index_col=0)
+
         # clean ammonia plants data
         ammonia_plants_clean = prepare_ammonia_plants(ammonia_plants_raw, uscities_clean)
     else:

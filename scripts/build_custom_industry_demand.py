@@ -385,3 +385,4 @@ if __name__ == "__main__":
     # Save the industrial database to CSV
     industrial_demand_scaled.to_csv(snakemake.output.industrial_energy_demand_per_node, index=False)
     logger.info("Custom industry demands were saved to CSV")
+    

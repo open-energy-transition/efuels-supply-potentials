@@ -42,6 +42,8 @@ snakemake -call solve_sector_networks --configfile configs/calibration/config.ba
 
 ### 2.2. Running scenarios for future years
 
+#### A. Running an individual horizon
+
 To run the power model for the Reference scenario of the U.S., navigate to the working directory (`.../efuels-supply-potentials/`) and use the following command:
 ```bash
 snakemake -call solve_all_networks --configfile configs/scenarios/config.20**.yaml
@@ -52,6 +54,13 @@ snakemake -call solve_all_networks --configfile configs/scenarios/config.20**.ya
 To run the sector-coupled model for the Reference scenario, execute the command substituting the desired year to "**" in the command below:
 ```bash
 snakemake -call solve_sector_networks --configfile configs/scenarios/config.20**.yaml
+```
+
+#### B. Running for multiple horizons
+
+To run the sector-coupled model for the Reference scenario using myopic optimization for the years 2030, 2035, and 2040 consecutively, execute the following:
+```bash
+snakemake -call solve_sector_networks_myopic --configfile configs/scenarios/config.myopic.yaml
 ```
 
 ## 3. Snakemake rules
@@ -94,21 +103,25 @@ snakemake -call solve_sector_networks --configfile configs/scenarios/config.20**
 ### 4.1. Cherry-picking
 Cherry-picking allows applying specific commits from one branch to another. We cherry-picked the important commits from upstream pypsa-earth to our project branch ([efuels-supply-potentials](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials)). The commits of the following PRs were integrated to project branch:
 
-1. [PR #1372](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1372): Scale temporal loads based on temporal resolution.
-2. [PR #1381](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1381): Remove space in rail transport oil and electricity carriers.
-3. [PR #1400](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1400): Add US-specific demand growth rates and fuel shares (Medium scenario).
-4. [PR #1410](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1410): Fix negative transport demand.
-5. [PR #1401](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1401): Fix H2 pipeline bus names.
-6. [PR #1422](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1422): Fix renamed column in transport related Wikipedia data.
-7. [PR #1428](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1428): Change source for Aluminum production data.
-8. [PR #1465](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1465): Enable powerplant filtering using query.
-9. [PR #1479](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1479): Update link for North America cutout.
+1.  [PR #1369](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1369): Restore functioning of myopic optimization.
+2.  [PR #1372](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1372): Scale temporal loads based on temporal resolution.
+3.  [PR #1381](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1381): Remove space in rail transport oil and electricity carriers.
+4.  [PR #1400](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1400): Add US-specific demand growth rates and fuel shares (Medium scenario).
+5.  [PR #1410](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1410): Fix negative transport demand.
+6.  [PR #1401](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1401): Fix H2 pipeline bus names.
+7.  [PR #1422](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1422): Fix renamed column in transport related Wikipedia data.
+8.  [PR #1428](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1428): Change source for Aluminum production data.
+9.  [PR #1465](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1465): Enable power plants filtering using query.
+10. [PR #1468](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1468): Include missing efficiency gains and growth rates for other energy use.
+11. [PR #1479](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1479): Update link for North America cutout.
 
 Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-pick) on cherry-picking in Git to get more familiar with procedure.
 
 ## 4.2. Direct commits to PyPSA-Earth
 
 1. [PR #32](https://github.com/open-energy-transition/pypsa-earth/pull/34): Disable implicit calculations and assigning of industry demands for steel and cement industries, because they are added explicitly.
+2. [PR #38](https://github.com/open-energy-transition/pypsa-earth/pull/38): Enable correct functioning of myopic optimization.
+3. [PR #40](https://github.com/open-energy-transition/pypsa-earth/pull/40): Adjusts calculation of `no_years` to properly run 2023 scenario.
 
 ## 5. Validation
 

@@ -11,8 +11,10 @@ enable:
   download_osm_data: true  # If 'true', OpenStreetMap data will be downloaded for the above given countries
 
 run:
-  name: "US_2035"
-  sector_name: "US_2035"
+  name: "US_myopic" # use this to keep track of runs with different settings
+  sector_name: "US_myopic"
+
+foresight: myopic
 
 scenario:
   simpl: ['']
@@ -20,7 +22,9 @@ scenario:
   clusters: [10]
   opts: [24H]
   planning_horizons:
+  - 2030
   - 2035
+  - 2040
   sopts:
   - "24H"
 
@@ -32,10 +36,10 @@ saf_mandate:
   ekerosene_split: true # separate e-kerosene as separate bus
   non_spatial_ekerosene: true # connects all e-kerosene buses with a single E-kerosene-main bus to model 0 cost of transport and store
   enable_mandate: true # enable SAF mandate
-  saf_scenario:  EU # EU (default), EU+, EU-
+  saf_scenario: EU # EU (default), EU+, EU-
 
 demand_projection:
-  planning_horizon: 2035 # only needed for power model, sector model takes demand from UN data using planning_horizon
+  planning_horizon: 2030 # only needed for power model, sector model takes demand from UN data using planning_horizon
   scenario: "Medium"
   data_centers_load: true
 
@@ -53,11 +57,9 @@ cluster_options:
 
 electricity:
   extendable_carriers:
-
-    Generator: [solar, onwind, offwind-ac, offwind-dc, csp, geothermal]
+    Generator: [solar, onwind, offwind-ac, offwind-dc]
     Store: [battery, H2]
 
-  powerplants_filter: DateOut >= 2035 and DateIn < 2035
   custom_powerplants: "replace" #  "false" use only powerplantmatching (ppm) data, "merge" combines ppm and custom powerplants, "replace" use only custom powerplants
 
   conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, geothermal, biomass]
@@ -72,17 +74,13 @@ renewable:
       method: eia
 
 costs:
-  year: 2035
-
-policy_config:
-  hydrogen:
-    temporal_matching: "hour" #either "hour", "month", "year", "no_temporal_matching"
-
-demand_data:
-  base_year: 2021
+  year: 2030
 
 custom_data:
   airports: true
+
+existing_capacities:
+  threshold_capacity: 5 # MW, below this threshold capacities are not added in separate horizon
 
 sector:
   electricity_distribution_grid: true
@@ -96,11 +94,17 @@ sector:
   SMR CC: false
 
   land_transport_fuel_cell_share:
+    AB_2030: 0.0
     AB_2035: 0.0
+    AB_2040: 0.0
   land_transport_electric_share:
+    AB_2030: 0.165 # 0.041 (Reference) 0.165 (Medium) 0.191 (High)
     AB_2035: 0.275 # 0.053 (Reference) 0.275 (Medium) 0.332 (High)
+    AB_2040: 0.353 # 0.064 (Reference) 0.353 (Medium) 0.462 (High)
   shipping_hydrogen_share:
+    AB_2030: 0.00
     AB_2035: 0.00
+    AB_2040: 0.00
 
 solving:
   options:

@@ -20,14 +20,15 @@ if __name__ == "__main__":
             "modify_aviation_demand",
             demand="AB",
             planning_horizons="2030",
-            configfile="configs/calibration/config.base_AC.yaml",
+            configfile="configs/scenarios/config.2030.yaml",
         )
     # update config based on wildcards
     config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
 
     # Extract aviation demand scenario configuration
     aviation_config = config["aviation_demand_scenario"]
-    year = str(aviation_config["year"])
+    planning_horizon = str(snakemake.wildcards.planning_horizons)
+    year = "2023" if planning_horizon == "2020" else planning_horizon
     scenario = aviation_config["scenario"]
     country = aviation_config["country"]
 

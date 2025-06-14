@@ -76,6 +76,10 @@ renewable:
 costs:
   year: 2040
 
+policy_config:
+  hydrogen:
+    temporal_matching: "hour" #either "hour", "month", "year", "no_temporal_matching"
+
 custom_data:
   airports: true
 

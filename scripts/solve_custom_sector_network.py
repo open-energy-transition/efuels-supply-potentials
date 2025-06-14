@@ -821,85 +821,52 @@ def add_h2_network_cap(n, cap):
     define_constraints(n, lhs, "<=", rhs, "h2_network_cap")
 
 
-def H2_export_yearly_constraint(n):
-    res = [
-        "csp",
-        "rooftop-solar",
-        "solar",
-        "onwind",
-        "onwind2",
-        "offwind",
-        "offwind2",
-        "ror",
-    ]
-    res_index = n.generators.loc[n.generators.carrier.isin(res)].index
-
-    weightings = pd.DataFrame(
-        np.outer(n.snapshot_weightings["generators"], [1.0] * len(res_index)),
-        index=n.snapshots,
-        columns=res_index,
-    )
-    res = join_exprs(
-        linexpr((weightings, get_var(n, "Generator", "p")[res_index]))
-    )  # single line sum
-
-    load_ind = n.loads[n.loads.carrier == "AC"].index.intersection(
-        n.loads_t.p_set.columns
-    )
-
-    load = (
-        n.loads_t.p_set[load_ind].sum(
-            axis=1) * n.snapshot_weightings["generators"]
-    ).sum()
-
-    h2_export = n.loads.loc["H2 export load"].p_set * 8760
-
-    lhs = res
-
-    include_country_load = snakemake.config["policy_config"]["yearly"][
-        "re_country_load"
-    ]
-
-    if include_country_load:
-        elec_efficiency = (
-            n.links.filter(like="Electrolysis",
-                           axis=0).loc[:, "efficiency"].mean()
-        )
-        rhs = (
-            h2_export * (1 / elec_efficiency) + load
-        )  # 0.7 is approximation of electrloyzer efficiency # TODO obtain value from network
-    else:
-        rhs = h2_export * (1 / 0.7)
-
-    con = define_constraints(
-        n, lhs, ">=", rhs, "H2ExportConstraint", "RESproduction")
-
-
-def monthly_constraints(n, n_ref):
+def hydrogen_temporal_constraint(n, n_ref, time_period):
     res_techs = [
         "csp",
         "rooftop-solar",
         "solar",
         "onwind",
         "onwind2",
+        "onwind3",
         "offwind",
         "offwind2",
         "ror",
     ]
+
+    res_stor_techs = ["hydro"]
+
     allowed_excess = snakemake.config["policy_config"]["hydrogen"]["allowed_excess"]
 
-    res_index = n.generators.loc[n.generators.carrier.isin(res_techs)].index
+    res_gen_index = n.generators.loc[n.generators.carrier.isin(res_techs)].index
+    res_stor_index = n.storage_units.loc[
+        n.storage_units.carrier.isin(res_stor_techs)
+    ].index
 
-    weightings = pd.DataFrame(
-        np.outer(n.snapshot_weightings["generators"], [1.0] * len(res_index)),
+    weightings_gen = pd.DataFrame(
+        np.outer(n.snapshot_weightings["generators"], [1.0] * len(res_gen_index)),
         index=n.snapshots,
-        columns=res_index,
+        columns=res_gen_index,
     )
 
-    res = linexpr((weightings, get_var(n, "Generator", "p")[res_index])).sum(
+    res = linexpr((weightings_gen, get_var(n, "Generator", "p")[res_gen_index])).sum(
         axis=1
-    )  # single line sum
-    res = res.groupby(res.index.month).sum()
+    )
+
+    if not res_stor_index.empty:
+        weightings_stor = pd.DataFrame(
+            np.outer(n.snapshot_weightings["generators"], [1.0] * len(res_stor_index)),
+            index=n.snapshots,
+            columns=res_stor_index,
+        )
+        res += linexpr(
+            (weightings_stor, get_var(n, "StorageUnit", "p_dispatch")[res_stor_index])
+        ).sum(axis=1)
+
+    if time_period == "month":
+        res = res.groupby(res.index.month).sum()
+    elif time_period == "year":
+        res = res.groupby(res.index.year).sum()
 
     electrolysis = get_var(n, "Link", "p")[
         n.links.index[n.links.index.str.contains("H2 Electrolysis")]
@@ -917,26 +884,47 @@ def monthly_constraints(n, n_ref):
         axis=1
     )
 
-    elec_input = elec_input.groupby(elec_input.index.month).sum()
+    if time_period == "month":
+        elec_input = elec_input.groupby(elec_input.index.month).sum()
+    elif time_period == "year":
+        elec_input = elec_input.groupby(elec_input.index.year).sum()
 
     if snakemake.config["policy_config"]["hydrogen"]["additionality"]:
-        res_ref = n_ref.generators_t.p[res_index] * weightings
-        res_ref = res_ref.groupby(
-            n_ref.generators_t.p.index.month).sum().sum(axis=1)
+        res_ref_gen = n_ref.generators_t.p[res_gen_index] * weightings_gen
+
+        if not res_stor_index.empty:
+            res_ref_store = (
+                n_ref.storage_units_t.p_dispatch[res_stor_index] * weightings_stor
+            )
+            res_ref = pd.concat([res_ref_gen, res_ref_store], axis=1)
+        else:
+            res_ref = res_ref_gen
+
+        if time_period == "month":
+            res_ref = (
+                res_ref.groupby(n_ref.generators_t.p.index.month).sum().sum(axis=1)
+            )
+        elif time_period == "year":
+            res_ref = res_ref.groupby(n_ref.generators_t.p.index.year).sum().sum(axis=1)
 
         elec_input_ref = (
-            n_ref.links_t.p0.loc[
+            -n_ref.links_t.p0.loc[
                 :, n_ref.links_t.p0.columns.str.contains("H2 Electrolysis")
             ]
             * weightings_electrolysis
         )
-        elec_input_ref = (
-            -elec_input_ref.groupby(elec_input_ref.index.month).sum().sum(axis=1)
-        )
+        if time_period == "month":
+            elec_input_ref = (
+                -elec_input_ref.groupby(elec_input_ref.index.month).sum().sum(axis=1)
+            )
+        elif time_period == "year":
+            elec_input_ref = (
+                -elec_input_ref.groupby(elec_input_ref.index.year).sum().sum(axis=1)
+            )
 
         for i in range(len(res.index)):
             lhs = res.iloc[i] + "\n" + elec_input.iloc[i]
-            rhs = res_ref.iloc[i] + elec_input_ref.iloc[i]
+            rhs = res_ref.iloc[i].sum() + elec_input_ref.iloc[i].sum()
             con = define_constraints(
                 n, lhs, ">=", rhs, f"RESconstraints_{i}", f"REStarget_{i}"
             )
@@ -1215,33 +1203,34 @@ def extra_functionality(n, snapshots):
     add_battery_constraints(n)
     add_lossy_bidirectional_link_constraints(n)
 
-    if (
-        snakemake.config["policy_config"]["hydrogen"]["temporal_matching"]
-        == "h2_yearly_matching"
-    ):
-        if snakemake.config["policy_config"]["hydrogen"]["additionality"] == True:
-            logger.info(
-                "additionality is currently not supported for yearly constraints, proceeding without additionality"
-            )
-        logger.info("setting h2 export to yearly greenness constraint")
-        H2_export_yearly_constraint(n)
+    additionality = snakemake.config["policy_config"]["hydrogen"]["additionality"]
+    ref_for_additionality = snakemake.config["policy_config"]["hydrogen"][
+        "is_reference"
+    ]
+    temportal_matching_period = snakemake.config["policy_config"]["hydrogen"][
+        "temporal_matching"
+    ]
 
-    elif (
-        snakemake.config["policy_config"]["hydrogen"]["temporal_matching"]
-        == "h2_monthly_matching"
-    ):
-        if not snakemake.config["policy_config"]["hydrogen"]["is_reference"]:
-            logger.info("setting h2 export to monthly greenness constraint")
-            monthly_constraints(n, n_ref)
+    if temportal_matching_period == "no_temporal_matching":
+        logger.info("no h2 temporal constraint set")
+
+    elif additionality:
+        if ref_for_additionality:
+            logger.info("preparing reference case for additionality constraint")
         else:
             logger.info(
-                "preparing reference case for additionality constraint")
-
-    elif (
-        snakemake.config["policy_config"]["hydrogen"]["temporal_matching"]
-        == "no_res_matching"
-    ):
-        logger.info("no h2 export constraint set")
+                "setting h2 export to {}ly matching constraint with additionality".format(
+                    temportal_matching_period
+                )
+            )
+            hydrogen_temporal_constraint(n, n_ref, temportal_matching_period)
+    elif not additionality:
+        logger.info(
+            "setting h2 export to {}ly matching constraint without additionality".format(
+                temportal_matching_period
+            )
+        )
+        hydrogen_temporal_constraint(n, n_ref, temportal_matching_period)
 
     else:
         raise ValueError(

@@ -836,13 +836,10 @@ def add_h2_network_cap(n, cap):
 def hydrogen_temporal_constraint(n, n_ref, time_period):
     res_techs = [
         "csp",
-        "rooftop-solar",
         "solar",
         "onwind",
-        "onwind2",
-        "onwind3",
-        "offwind",
-        "offwind2",
+        "offwind-ac",
+        "offwind-dc",
         "ror",
     ]
 
@@ -880,8 +877,15 @@ def hydrogen_temporal_constraint(n, n_ref, time_period):
     elif time_period == "year":
         res = res.groupby(res.index.year).sum()
 
+    electrolysis_carriers = [
+        'H2 Electrolysis',
+        'Alkaline electrolyzer large',
+        'PEM electrolyzer',
+        'SOEC'
+    ]
+    electrolyzers = n.links[n.links.carrier.isin(electrolysis_carriers)].index
     electrolysis = get_var(n, "Link", "p")[
-        n.links.index[n.links.index.str.contains("H2 Electrolysis")]
+        n.links.loc[electrolyzers].index
     ]
     weightings_electrolysis = pd.DataFrame(
         np.outer(

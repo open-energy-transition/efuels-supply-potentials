@@ -43,6 +43,7 @@ state_policy: "on" # "off", "on"
 policy_config:
   hydrogen:
     temporal_matching: "no_temporal_matching" #either "hour", "month", "year", "no_temporal_matching"
+    additionality: true
 
 custom_industry:
   enable: true

@@ -59,7 +59,7 @@ if __name__ == "__main__":
             planning_horizons="2020",
             demand="AB",
             ll="copt",
-            opts="Co2L-24H",
+            opts="24H",
             sopts="24H",
             discountrate="0.071",
             h2export="10",

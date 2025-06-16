@@ -540,7 +540,7 @@ if config["foresight"] == "myopic":
             overrides="data/override_component_attrs",
 
 
-if config["set_custom_distribution_fees"]:
+if config["set_custom_distribution_fees"] == "true":
     use rule prepare_sector_network from pypsa_earth with:
         output:
             PYPSA_EARTH_DIR + RESDIR

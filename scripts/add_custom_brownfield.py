@@ -66,7 +66,7 @@ def add_brownfield(n, n_p, year, planning_horizon_p):
             # reduce p_nom_max of the extendable asset by installed capacity
             c.df.loc[idx, f"{attr}_nom_max"] -= asset_prev_p_nom_opt
             # clip p_nom_max by lower bound to 0
-            c.df.loc[idx, f"{attr}_nom_max"] = c.df.loc[idx, f"{attr}_nom_max"].clip(lower=0)
+            c.df.loc[idx, f"{attr}_nom_max"] = max(0, c.df.loc[idx, f"{attr}_nom_max"])
 
         # set p_nom = 0 and p_nom_min = 0 for all assets with build_year == year
         c.df.loc[c.df.build_year == year, f"{attr}_nom"] = 0

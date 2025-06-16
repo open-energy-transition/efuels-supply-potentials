@@ -550,8 +550,8 @@ if config["set_custom_distribution_fees"]:
         params:
             distance_crs=config["crs"]["distance_crs"],
         input:
-            shape_path="data/needs_grid_region/needs_grid_regions_aggregated.geojson",
-            regional_fees_path="data/needs_grid_region/regional_fees.csv",
+            shape_path="data/EIA_market_module_regions/EMM_regions.geojson",
+            regional_fees_path="data/EIA_market_module_regions/regional_fees.csv",
             network=PYPSA_EARTH_DIR + RESDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_distribution_fees.nc",
         output:

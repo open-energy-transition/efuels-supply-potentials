@@ -22,7 +22,7 @@ def attach_grid_region_to_buses(network, path_shape, distance_crs):
     """
     # Read the shapefile using geopandas
     shape = gpd.read_file(path_shape, crs=distance_crs)
-    shape.rename(columns={"GRID_REGIO": "region"}, inplace=True)
+    # shape.rename(columns={"GRID_REGIO": "region"}, inplace=True)
 
     ac_dc_carriers = ["AC", "DC"]
     location_mapping = network.buses.query(
@@ -40,11 +40,11 @@ def attach_grid_region_to_buses(network, path_shape, distance_crs):
     )
 
     network_columns = network.buses.columns
-    bus_cols = [*network_columns, "region"]
+    bus_cols = [*network_columns, "subregion"]
 
     st_buses = gpd.sjoin_nearest(shape, pypsa_gpd, how="right")[bus_cols]
 
-    network.buses["region"] = st_buses["region"]
+    network.buses["region"] = st_buses["subregion"]
 
     return network
 
@@ -59,7 +59,7 @@ if __name__ == "__main__":
             planning_horizons="2020",
             demand="AB",
             ll="copt",
-            opts="24H",
+            opts="Co2L-24H",
             sopts="24H",
             discountrate="0.071",
             h2export="10",

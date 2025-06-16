@@ -72,6 +72,7 @@ if __name__ == "__main__":
     regional_fees_path = snakemake.input.regional_fees_path
     distance_crs = snakemake.params.distance_crs
     nc_path = snakemake.input.network
+    horizon = config["scenario"]["planning_horizons"][0]
 
     regional_fees = pd.read_csv(regional_fees_path)
     network = pypsa.Network(nc_path)
@@ -88,7 +89,7 @@ if __name__ == "__main__":
         
         if region in regional_fees.region.unique():
             dist_fee = (regional_fees[(
-                regional_fees["Year"] == 2030) 
+                regional_fees["Year"] == horizon) 
                 & (regional_fees["region"] == region)]["Distribution nom USD/MWh"].iloc[0])
             
             mask = (network.links.bus0.isin(region_idx)) & (network.links.index.str.contains(" electricity distribution grid"))

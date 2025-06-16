@@ -880,6 +880,8 @@ def hydrogen_temporal_constraint(n, n_ref, time_period):
     electrolysis_carriers = [
         'H2 Electrolysis',
         'Alkaline electrolyzer large',
+        'Alkaline electrolyzer medium',
+        'Alkaline electrolyzer small',
         'PEM electrolyzer',
         'SOEC'
     ]

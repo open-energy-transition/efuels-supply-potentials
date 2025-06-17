@@ -18,7 +18,7 @@ logger = create_logger(__name__)
 
 def attach_emm_region_to_buses(network, path_shape, distance_crs):
     """
-    Attach emm region to buses
+    Attach EMM region to buses
     """
     # Read the shapefile using geopandas
     shape = gpd.read_file(path_shape, crs=distance_crs)
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     regional_fees_path = snakemake.input.regional_fees_path
     distance_crs = snakemake.params.distance_crs
     nc_path = snakemake.input.network
-    horizon = config["scenario"]["planning_horizons"][0]
+    horizon = 2020 if config["scenario"]["planning_horizons"][0] == 2023 else config["scenario"]["planning_horizons"][0]
 
     regional_fees = pd.read_csv(regional_fees_path)
     network = pypsa.Network(nc_path)

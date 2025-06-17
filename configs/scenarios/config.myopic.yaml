@@ -78,7 +78,7 @@ costs:
 
 policy_config:
   hydrogen:
-    temporal_matching: "hour" #either "hour", "month", "year", "no_temporal_matching"
+    temporal_matching: "hourly" # either "hourly", "monthly", "yearly", "no_temporal_matching"
 
 demand_data:
   base_year: 2021

@@ -1228,7 +1228,8 @@ def extra_functionality(n, snapshots):
     if temportal_matching_period == "no_temporal_matching":
         logger.info("no h2 temporal constraint set")
 
-    elif temportal_matching_period in ["hour", "month", "year"]:
+    elif temportal_matching_period in ["hourly", "monthly", "yearly"]:
+        temportal_matching_period = temportal_matching_period[:-2]
         hydrogen_temporal_constraint(n, additionality, temportal_matching_period)
 
     else:

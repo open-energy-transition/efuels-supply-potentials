@@ -477,7 +477,6 @@ if config["custom_industry"]["enable"]:
             gadm_layer_id=config["build_shape_options"]["gadm_layer_id"],
             alternative_clustering=config["cluster_options"]["alternative_clustering"],
             industry_database=config["custom_data"]["industry_database"],
-            base_year=config["custom_industry"]["base_year"],
         input:
             uscity_map="data/industry_data/uscities.csv",
             ethanol_plants="data/industry_data/ethanolcapacity.xlsx",

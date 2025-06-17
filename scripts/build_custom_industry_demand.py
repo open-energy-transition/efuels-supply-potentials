@@ -277,8 +277,13 @@ if __name__ == "__main__":
     gadm_layer_id = snakemake.params.gadm_layer_id
     gadm_clustering = snakemake.params.alternative_clustering
     shapes_path = snakemake.input.shapes_path
-    base_year = int(snakemake.params.base_year)
-    no_years = int(snakemake.wildcards.planning_horizons) - base_year
+    base_year = 2023
+    if snakemake.wildcards.planning_horizons == "2020":
+        logger.info(f"planning_horizons is {snakemake.wildcards.planning_horizons}, "
+        f"but the input data for the industry is for 2023, so no_years = 0")
+        no_years = 2023 - base_year
+    else:
+        no_years = int(snakemake.wildcards.planning_horizons) - base_year
 
     # load US cities locational information
     uscities = pd.read_csv(snakemake.input.uscity_map)

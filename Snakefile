@@ -393,18 +393,18 @@ if config["countries"] == ["US"]:
             "scripts/modify_aviation_demand.py"
 
 if config["demand_distribution"]["enable"]:
-   rule preprocess_demand_data:
-       input:
-           demand_utility_path="data/demand_data/table_10_EIA_utility_sales.xlsx",
-           country_gadm_path=PYPSA_EARTH_DIR + "resources/" + RDIR + "shapes/country_shapes.geojson",
-           erst_path="data/demand_data/Electric_Retail_Service_Territories.geojson",
-           gadm_usa_path="data/demand_data/gadm41_USA_1.json",
-           eia_per_capita_path="data/demand_data/use_es_capita.xlsx",
-           additional_demand_path="data/demand_data/HS861_2010-.xlsx",
-       output:
-           utility_demand_path="data/demand_data/ERST_mapped_demand_centroids.geojson"
-       script:
-           "scripts/preprocess_demand_data.py"
+    rule preprocess_demand_data:
+        input:
+            demand_utility_path="data/demand_data/table_10_EIA_utility_sales.xlsx",
+            country_gadm_path=PYPSA_EARTH_DIR + "resources/" + RDIR + "shapes/country_shapes.geojson",
+            erst_path="data/demand_data/Electric_Retail_Service_Territories.geojson",
+            gadm_usa_path="data/demand_data/gadm41_USA_1.json",
+            eia_per_capita_path="data/demand_data/use_es_capita.xlsx",
+            additional_demand_path="data/demand_data/HS861_2010-.xlsx",
+        output:
+            utility_demand_path="data/demand_data/ERST_mapped_demand_centroids.geojson"
+        script:
+            "scripts/preprocess_demand_data.py"
 
 
     rule retrieve_demand_data:
@@ -540,7 +540,7 @@ if config["foresight"] == "myopic":
             overrides="data/override_component_attrs",
 
 
-if config["set_custom_distribution_fees"] == "true":
+if config["demand_distribution"]["set_custom_distribution_fees"]:
     use rule prepare_sector_network from pypsa_earth with:
         output:
             PYPSA_EARTH_DIR + RESDIR

@@ -33,6 +33,7 @@ demand_distribution:
   holes_area_threshold: 100
   nprocesses: 4
   plotting: true
+  set_custom_distribution_fees: true # true, false
 
 demand_projection:
   planning_horizon: 2023
@@ -53,7 +54,6 @@ custom_industry:
   biogenic_co2: false # define output of ethanol from starch CC as biogenic CO2 to be used in Fischer-Tropsch
   grid_H2: true # mark output of electrolysis as grid H2 (which can be used in Fischer-Tropsch)
 
-set_custom_distribution_fees: "true" # "true", "false"
 
 custom_databundles:
   bundle_cutouts_USA:

@@ -835,7 +835,27 @@ def add_h2_network_cap(n, cap):
 
 def hydrogen_temporal_constraint(n, additionality, time_period):
     """
-        Set temporal matching for hydrogen production
+    Enforces temporal matching constraints for hydrogen production based on renewable energy sources.
+
+    Parameters:
+    -----------
+    n : pypsa.Network
+        The PyPSA network object containing the energy system model.
+    additionality : bool
+        If True, only new renewable energy sources built in the current planning horizon are considered.
+    time_period : str
+        Specifies the temporal matching period. Valid options are "hour", "month", "year", or "no_temporal_matching".
+
+    Description:
+    ------------
+    This function calculates the renewable energy generation and storage dispatch over the specified time period
+    and ensures that hydrogen production via electrolysis does not exceed the allowed excess of renewable energy.
+    It adds constraints to the PyPSA model to enforce this temporal matching.
+
+    Raises:
+    -------
+    ValueError:
+        If the `time_period` is invalid or not supported.
     """
     res_techs = [
         "csp",

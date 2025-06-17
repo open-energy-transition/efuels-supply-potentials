@@ -485,6 +485,7 @@ if config["custom_industry"]["enable"]:
             + RDIR
             + "bus_regions/regions_onshore_elec_s{simpl}_{clusters}.geojson",
             pypsa_earth_industrial_database=PYPSA_EARTH_DIR + "data/industrial_database.csv",
+            industry_growth_cagr=PYPSA_EARTH_DIR + "data/demand/industry_growth_cagr.csv",
         output:
             industrial_energy_demand_per_node=PYPSA_EARTH_DIR + "resources/"
             + SECDIR

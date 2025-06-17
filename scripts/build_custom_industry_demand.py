@@ -277,6 +277,13 @@ if __name__ == "__main__":
     gadm_layer_id = snakemake.params.gadm_layer_id
     gadm_clustering = snakemake.params.alternative_clustering
     shapes_path = snakemake.input.shapes_path
+    base_year = 2023
+    if snakemake.wildcards.planning_horizons == "2020":
+        logger.info(f"planning_horizons is {snakemake.wildcards.planning_horizons}, "
+        f"but the input data for the industry is for 2023, so no_years = 0")
+        no_years = 2023 - base_year
+    else:
+        no_years = int(snakemake.wildcards.planning_horizons) - base_year
 
     # load US cities locational information
     uscities = pd.read_csv(snakemake.input.uscity_map)
@@ -333,13 +340,58 @@ if __name__ == "__main__":
     # Reset index and rename columns
     custom_industrial_database = custom_industrial_database.reset_index().rename(columns={"gadm_1": "bus"})
 
-    # Groupby buses and industry, and sum the production capacity
-    industrial_demand = custom_industrial_database.groupby(["bus", "industry"])["capacity"].sum().reset_index()
+    # Save country associated to each bus
+    bus_to_country = custom_industrial_database.groupby("bus")["country"].first()
 
-    # Format the industry demand by pivoting
-    industrial_demand = industrial_demand.pivot(index="bus", columns="industry", values="capacity").rename_axis("MWh/a (kton/a)").reset_index().fillna(0)
+    # Groupby buses and industry, and sum the production capacity
+    industrial_demand = custom_industrial_database.groupby(["bus", "industry", "country"])["capacity"].sum().reset_index()
+
+    industrial_demand = industrial_demand.pivot(index=["bus", "country"], columns="industry", values="capacity").reset_index().fillna(0)
+    custom_industry_to_cagr_map = {
+        "Cement": "non-metallic minerals",
+        "Electric arc": "iron and steel",
+        "DRI + Electric arc": "iron and steel",
+        "Integrated steelworks": "iron and steel",
+        "ammonia": "chemical and petrochemical",
+        "ethanol": "chemical and petrochemical",
+    }
+
+    cagr = pd.read_csv(snakemake.input.industry_growth_cagr, index_col=0)
+
+    for country in industrial_demand['country'].unique():
+        if country not in cagr.index:
+            _logger.warning(f"No industry growth data for {country}, using DEFAULT.")
+            cagr.loc[country] = cagr.loc["DEFAULT"]
+        else:
+            cagr.loc[country] = cagr.loc[country].fillna(cagr.loc["DEFAULT"])
+
+    cagr = cagr.loc[industrial_demand['country'].unique()]
+
+    # Compute growth rates
+    growth_factors = (1 + cagr) ** no_years
+
+    # Build growth_factors DataFrame
+    growth_factors_custom = pd.DataFrame(
+        index=industrial_demand.index,
+        columns=industrial_demand.columns.drop(['bus', 'country']),
+        dtype=float
+    )
+
+    for industry in growth_factors_custom.columns:
+        sector_cagr = custom_industry_to_cagr_map.get(industry)
+        if sector_cagr is None:
+            _logger.warning(f"No CAGR mapping for industry {industry}. Using growth factor = 1.")
+            growth_factors_custom[industry] = 1.0
+        else:
+            growth_factors_custom[industry] = industrial_demand['country'].map(
+                lambda c: growth_factors.loc[c, sector_cagr])
+
+    # Apply growth rates
+    industrial_demand_scaled = industrial_demand.copy()
+    for industry in growth_factors_custom.columns:
+        industrial_demand_scaled[industry] *= growth_factors_custom[industry]
 
     # Save the industrial database to CSV
-    industrial_demand.to_csv(snakemake.output.industrial_energy_demand_per_node, index=False)
+    industrial_demand_scaled.to_csv(snakemake.output.industrial_energy_demand_per_node, index=False)
     logger.info("Custom industry demands were saved to CSV")
     

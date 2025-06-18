@@ -74,7 +74,7 @@ if __name__ == "__main__":
     nc_path = snakemake.input.network
     horizon = 2020 if int(snakemake.wildcards.planning_horizons) == 2023 else int(snakemake.wildcards.planning_horizons)
 
-    regional_fees = pd.read_csv(regional_fees_path)
+    regional_fees = pd.read_csv(regional_fees_path).fillna(0)
     network = pypsa.Network(nc_path)
 
     attach_emm_region_to_buses(network, shape_path, distance_crs)

@@ -58,6 +58,10 @@ renewable:
 costs:
   year: 2020
 
+policy_config:
+  hydrogen:
+    temporal_matching: "no_temporal_matching" # either "hourly", "monthly", "yearly", "no_temporal_matching"
+
 demand_data:
   base_year: 2021
 

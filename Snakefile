@@ -40,7 +40,6 @@ SECDIR = run["sector_name"] + "/" if run.get("sector_name") else ""
 SDIR = config["summary_dir"].strip("/") + f"/{SECDIR}"
 RESDIR = config["results_dir"].strip("/") + f"/{SECDIR}"
 
-
 module pypsa_earth:
     snakefile:
         "submodules/pypsa-earth/Snakefile"
@@ -692,6 +691,26 @@ if config["foresight"] == "myopic":
     ruleorder: solve_custom_network_myopic > solve_network_myopic
 
 
+if config["demand_distribution"]["set_custom_distribution_fees"]:
+    use rule prepare_sector_network from pypsa_earth with:
+        output:
+            PYPSA_EARTH_DIR + RESDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_distribution_fees.nc",
+
+    rule set_custom_distribution_fees:
+        params:
+            distance_crs=config["crs"]["distance_crs"],
+        input:
+            shape_path="data/EIA_market_module_regions/EMM_regions.geojson",
+            regional_fees_path="data/EIA_market_module_regions/regional_fees.csv",
+            network=PYPSA_EARTH_DIR + RESDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_distribution_fees.nc",
+        output:
+            PYPSA_EARTH_DIR + RESDIR
+            + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}.nc",
+        script:
+            "scripts/set_custom_distribution_fees.py"
+
 if config["foresight"] == "overnight" and config["state_policy"] != "off":    
     rule solve_custom_sector_network:
         params:
@@ -731,7 +750,6 @@ if config["foresight"] == "overnight" and config["state_policy"] != "off":
 
         
     ruleorder: solve_custom_sector_network > solve_sector_network
-
 
 rule test_modify_prenetwork:
     input:

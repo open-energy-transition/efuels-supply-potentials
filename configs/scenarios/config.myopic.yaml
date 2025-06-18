@@ -11,8 +11,10 @@ enable:
   download_osm_data: true  # If 'true', OpenStreetMap data will be downloaded for the above given countries
 
 run:
-  name: "US_2040" # use this to keep track of runs with different settings
-  sector_name: "US_2040"
+  name: "US_myopic" # use this to keep track of runs with different settings
+  sector_name: "US_myopic"
+
+foresight: myopic
 
 scenario:
   simpl: ['']
@@ -20,6 +22,8 @@ scenario:
   clusters: [10]
   opts: [24H]
   planning_horizons:
+  - 2030
+  - 2035
   - 2040
   sopts:
   - "24H"
@@ -35,7 +39,7 @@ saf_mandate:
   saf_scenario: EU # EU (default), EU+, EU-
 
 demand_projection:
-  planning_horizon: 2040 # only needed for power model, sector model takes demand from UN data using planning_horizon
+  planning_horizon: 2030 # only needed for power model, sector model takes demand from UN data using planning_horizon
   scenario: "Medium"
   data_centers_load: true
 
@@ -46,7 +50,6 @@ policies:
 custom_industry:
   CCS_retrofit: [ethanol, ammonia, steel, cement]
 
-
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes
   simplify_network:
@@ -54,11 +57,9 @@ cluster_options:
 
 electricity:
   extendable_carriers:
-
-    Generator: [solar, onwind, offwind-ac, offwind-dc, csp, geothermal]
+    Generator: [solar, onwind, offwind-ac, offwind-dc]
     Store: [battery, H2]
 
-  powerplants_filter: DateOut >= 2040 and DateIn < 2040
   custom_powerplants: "replace" #  "false" use only powerplantmatching (ppm) data, "merge" combines ppm and custom powerplants, "replace" use only custom powerplants
 
   conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, geothermal, biomass]
@@ -73,13 +74,13 @@ renewable:
       method: eia
 
 costs:
-  year: 2040
-
-demand_data:
-  base_year: 2021
+  year: 2030
 
 custom_data:
   airports: true
+
+existing_capacities:
+  threshold_capacity: 5 # MW, below this threshold capacities are not added in separate horizon
 
 sector:
   electricity_distribution_grid: true
@@ -93,10 +94,16 @@ sector:
   SMR CC: false
 
   land_transport_fuel_cell_share:
+    AB_2030: 0.0
+    AB_2035: 0.0
     AB_2040: 0.0
   land_transport_electric_share:
+    AB_2030: 0.165 # 0.041 (Reference) 0.165 (Medium) 0.191 (High)
+    AB_2035: 0.275 # 0.053 (Reference) 0.275 (Medium) 0.332 (High)
     AB_2040: 0.353 # 0.064 (Reference) 0.353 (Medium) 0.462 (High)
   shipping_hydrogen_share:
+    AB_2030: 0.00
+    AB_2035: 0.00
     AB_2040: 0.00
 
 solving:

@@ -1221,16 +1221,16 @@ def extra_functionality(n, snapshots):
     add_lossy_bidirectional_link_constraints(n)
 
     additionality = snakemake.config["policy_config"]["hydrogen"]["additionality"]
-    temportal_matching_period = snakemake.config["policy_config"]["hydrogen"][
+    temporal_matching_period = snakemake.config["policy_config"]["hydrogen"][
         "temporal_matching"
     ]
 
-    if temportal_matching_period == "no_temporal_matching":
+    if temporal_matching_period == "no_temporal_matching":
         logger.info("no h2 temporal constraint set")
 
-    elif temportal_matching_period in ["hourly", "monthly", "yearly"]:
-        temportal_matching_period = temportal_matching_period[:-2]
-        hydrogen_temporal_constraint(n, additionality, temportal_matching_period)
+    elif temporal_matching_period in ["hourly", "monthly", "yearly"]:
+        temporal_matching_period = temporal_matching_period[:-2]
+        hydrogen_temporal_constraint(n, additionality, temporal_matching_period)
 
     else:
         raise ValueError(

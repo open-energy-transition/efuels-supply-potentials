@@ -857,22 +857,13 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
     ValueError:
         If the `time_period` is invalid or not supported.
     """
-    res_techs = [
-        "csp",
-        "solar",
-        "onwind",
-        "offwind-ac",
-        "offwind-dc",
-        "ror",
-    ]
-
-    res_stor_techs = ["hydro"]
+    temporal_matching_carriers = snakemake.params.temporal_matching_carriers
 
     allowed_excess = snakemake.config["policy_config"]["hydrogen"]["allowed_excess"]
 
-    res_gen_index = n.generators.loc[n.generators.carrier.isin(res_techs)].index
+    res_gen_index = n.generators.loc[n.generators.carrier.isin(temporal_matching_carriers)].index
     res_stor_index = n.storage_units.loc[
-        n.storage_units.carrier.isin(res_stor_techs)
+        n.storage_units.carrier.isin(temporal_matching_carriers)
     ].index
 
     if additionality:

@@ -61,6 +61,7 @@ costs:
 policy_config:
   hydrogen:
     temporal_matching: "no_temporal_matching" # either "hourly", "monthly", "yearly", "no_temporal_matching"
+    temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro]
 
 demand_data:
   base_year: 2021

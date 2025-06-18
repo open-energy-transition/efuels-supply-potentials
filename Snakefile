@@ -654,6 +654,7 @@ if config["foresight"] == "myopic":
                 "co2_sequestration_potential", 200
             ),
             augmented_line_connection=config["augmented_line_connection"],
+            temporal_matching_carriers=config["policy_config"]["hydrogen"]["temporal_matching_carriers"],
         input:
             ces_path="data/current_electricity_state_policies/clean_targets.csv",
             res_path="data/current_electricity_state_policies/res_targets.csv",
@@ -697,6 +698,7 @@ if config["foresight"] == "overnight" and config["state_policy"] != "off":
         params:
             solving=config["solving"],
             augmented_line_connection=config["augmented_line_connection"],
+            temporal_matching_carriers=config["policy_config"]["hydrogen"]["temporal_matching_carriers"],
         input:
             ces_path="data/current_electricity_state_policies/clean_targets.csv",
             res_path="data/current_electricity_state_policies/res_targets.csv",

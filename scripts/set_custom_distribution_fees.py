@@ -72,7 +72,7 @@ if __name__ == "__main__":
     regional_fees_path = snakemake.input.regional_fees_path
     distance_crs = snakemake.params.distance_crs
     nc_path = snakemake.input.network
-    horizon = 2020 if config["scenario"]["planning_horizons"][0] == 2023 else config["scenario"]["planning_horizons"][0]
+    horizon = 2020 if int(snakemake.wildcards.planning_horizons) == 2023 else int(snakemake.wildcards.planning_horizons)
 
     regional_fees = pd.read_csv(regional_fees_path)
     network = pypsa.Network(nc_path)

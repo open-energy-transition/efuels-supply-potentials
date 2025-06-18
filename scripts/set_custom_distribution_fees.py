@@ -72,7 +72,7 @@ if __name__ == "__main__":
     regional_fees_path = snakemake.input.regional_fees_path
     distance_crs = snakemake.params.distance_crs
     nc_path = snakemake.input.network
-    horizon = 2020 if int(snakemake.wildcards.planning_horizons) == 2023 else int(snakemake.wildcards.planning_horizons)
+    horizon = 2023 if int(snakemake.wildcards.planning_horizons) == 2020 else int(snakemake.wildcards.planning_horizons)
 
     regional_fees = pd.read_csv(regional_fees_path).fillna(0)
     network = pypsa.Network(nc_path)
@@ -94,7 +94,7 @@ if __name__ == "__main__":
             
             mask = (network.links.bus0.isin(region_idx)) & (network.links.index.str.contains(" electricity distribution grid"))
             network.links.loc[mask, "marginal_cost"] = dist_fee
-            logger.info(f"set distribution fee of {dist_fee} for {region}")
+            logger.info(f"set distribution fee of {dist_fee} USD/MWh for {region}")
 
     
     network.export_to_netcdf(snakemake.output[0])

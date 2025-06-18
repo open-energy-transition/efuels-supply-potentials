@@ -844,7 +844,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
     additionality : bool
         If True, only new renewable energy sources built in the current planning horizon are considered.
     time_period : str
-        Specifies the temporal matching period. Valid options are "hourly", "monthly", "yearly", or "no_temporal_matching".
+        Specifies the temporal matching period. Valid options are "hour", "month", "year", or "no_temporal_matching".
 
     Description:
     ------------
@@ -876,7 +876,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
     ].index
 
     if additionality:
-        # get new generators and storage_units
+        # get newly built generators and storage_units only
         new_gens = n.generators.loc[
             n.generators.build_year == int(snakemake.wildcards.planning_horizons)
         ].index

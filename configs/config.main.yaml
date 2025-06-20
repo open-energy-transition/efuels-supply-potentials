@@ -28,6 +28,16 @@ costs:
     dac: "moderate"
   financial_case: "market" # only used if `country_specific_data: "US"`; can be "market" or "r&d"
   discountrate: [0.071] #, 0.086, 0.111]
+  marginal_cost:
+    solar: -27.50 # USD/MWh - 45 Y (Source: https://atb.nrel.gov/electricity/2024/financial_cases_&_methods)
+    onwind: -27.50 # USD/MWh - 45 Y (Source: https://atb.nrel.gov/electricity/2024/financial_cases_&_methods)
+    # hydro: -6.00 # USD/MWh - 45 Y (Source: https://atb.nrel.gov/electricity/2024/financial_cases_&_methods)
+    biomass: -27.50 # USD/MWh - 45 Y (Source: https://atb.nrel.gov/electricity/2024/financial_cases_&_methods)
+    ethanol capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
+    ammonia capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
+    cement capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
+    steel capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
+    direct air capture: -130.00 # USD/t_CO2 - 45 Q (utilization)
 
 # defining the aviation demand scenario
 aviation_demand_scenario:

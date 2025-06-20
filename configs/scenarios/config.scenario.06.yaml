@@ -11,8 +11,8 @@ enable:
   download_osm_data: true  # If 'true', OpenStreetMap data will be downloaded for the above given countries
 
 run:
-  name: "US_myopic" # use this to keep track of runs with different settings
-  sector_name: "US_myopic"
+  name: "US_scenario_06" # use this to keep track of runs with different settings
+  sector_name: "US_scenario_06"
 
 foresight: myopic
 

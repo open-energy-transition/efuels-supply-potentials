@@ -1,6 +1,20 @@
 # SPDX-FileCopyrightText:  Open Energy Transition gGmbH
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Scenario n. 6 - Sensitivity - High climate ambition & ReFuel EU
+#
+# | Temporal matching        | Hourly matching                           | Yes                                                              |
+# | Aviation sector          | Aviation demand                           | Central                                                          |
+# |                          | e-kerosene blending mandate               | ReFuel EU                                                        |
+# | Demand projections       | Electricity demand + EV share             | High                                                             |
+# | Costs                    | Electricity generation (NREL ATB)         | Moderate + tax credits                                           |
+# |                          | Electrolysis (ICCT IRA assumptions)       | Moderate + tax credits                                           |
+# |                          | DAC                                       | Moderate + tax credits                                           |
+# |                          | Point-source CO₂ capture (NPC)            | Conservative + tax credits                                       |
+# | Supply constraint        | CO2 supply                                | Biogenic sources + DAC                                           |
+# | Power sector development | Transmission expansion                    | Optimal transmission expansion                                   |
+# |                          | State policies for electricity generation | Current policies + 90% clean electricity by 2040 (country level) |
 
 countries: ["US"]
 

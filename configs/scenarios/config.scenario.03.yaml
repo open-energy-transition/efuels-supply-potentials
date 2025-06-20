@@ -1,6 +1,21 @@
 # SPDX-FileCopyrightText:  Open Energy Transition gGmbH
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Scenario n. 3 - Reference - ReFuel EU+
+#
+# | Temporal matching        | Hourly matching                           | Yes                                   |
+# | Aviation sector          | Aviation demand                           | Central                               |
+# |                          | e-kerosene blending mandate               | ReFuel EU+                            |
+# | Demand projections       | Electricity demand + EV share             | Medium                                |
+# | Costs                    | Electricity generation (NREL ATB)         | Moderate + tax credits                |
+# |                          | Electrolysis (ICCT IRA assumptions)       | Moderate (no tax credits)             |
+# |                          | DAC                                       | Moderate + tax credits                |
+# |                          | Point-source CO₂ capture (NPC)            | Conservative + tax credits            |
+# | Supply constraint        | CO2 supply                                | Biogenic & non-biogenic sources + DAC |
+# | Power sector development | Transmission expansion                    | No new expansion *                    |
+# |                          | State policies for electricity generation | Current policies                      |
+# * Optimal transmission expansion if infeasible
 
 countries: ["US"]
 

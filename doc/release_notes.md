@@ -8,6 +8,9 @@
 
 Please list contributions, add reference to PRs if present.
 
+
+* Adjust `prepare_costs` in custom scripts (necessary to use universal currency conversion) [PR #75](https://github.com/open-energy-transition/efuels-supply-potentials/pull/75)
+
 * Enable **myopic optimization** [PR #66](https://github.com/open-energy-transition/efuels-supply-potentials/pull/66)
 
 * Add custom rule to **apply state/country-wise constraints for clean/RES technologies** [PR #53](https://github.com/open-energy-transition/efuels-supply-potentials/pull/53)

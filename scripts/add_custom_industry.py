@@ -741,7 +741,7 @@ def define_grid_H2(n):
     logger.info("Added grid H2 carrier and buses")
 
     # get electrolyzers
-    electrolysis_carriers = ["H2 Electrolysis", "Alkaline electrolyzer", "PEM electrolyzer", "SOEC"]
+    electrolysis_carriers = ["Alkaline electrolyzer large", "PEM electrolyzer", "SOEC"]
     electrolyzers = n.links.query("carrier in @electrolysis_carriers")
 
     # reroute output of electrolyzers from H2 to grid H2

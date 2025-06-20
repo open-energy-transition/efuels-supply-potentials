@@ -123,6 +123,9 @@ sector:
     oil: oil
     coal: coal
     biomass: biomass
+  hydrogen:
+    production_technologies: ["Alkaline electrolyzer large", "PEM electrolyzer", "SOEC"]
+    cc: false # Default CC technologies from PyPSA-Earth (not influencing ethanol, ammonia, cement and still carbon capture retrofits
 
   SMR CC: false
 

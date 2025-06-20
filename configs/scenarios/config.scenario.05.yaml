@@ -48,7 +48,7 @@ policies:
   country: ["CES"] # "CES" to adopt country-wise clean electricity generation constraint (90% clean electricity by 2040), otherwise empty
 
 custom_industry:
-  CCS_retrofit: [ethanol]
+  biogenic_co2: true
 
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes

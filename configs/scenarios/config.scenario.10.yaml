@@ -49,6 +49,7 @@ policies:
 
 custom_industry:
   CCS_retrofit: [ethanol]
+  biogenic_co2: true
 
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes

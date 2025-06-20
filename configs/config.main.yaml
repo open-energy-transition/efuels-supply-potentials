@@ -70,10 +70,10 @@ custom_industry:
   ammonia: true
   steel: true
   cement: true
-  CCS_retrofit: [] # [ethanol, ammonia, steel, cement]
+  CCS_retrofit: [ethanol, ammonia, steel, cement] # [ethanol, ammonia, steel, cement]
   production_flexibility: []
   H2_DRI: false
-  biogenic_co2: true # define output of ethanol from starch CC as biogenic CO2 to be used in Fischer-Tropsch
+  biogenic_co2: false # define output of ethanol from starch CC as biogenic CO2 to be used in Fischer-Tropsch
   grid_H2: true # mark output of electrolysis as grid H2 (which can be used in Fischer-Tropsch)
   other_electricity: true # add other electricity as a consumption
 

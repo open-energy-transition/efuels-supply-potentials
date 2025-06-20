@@ -78,8 +78,8 @@ snakemake -call solve_sector_networks_myopic --configfile configs/scenarios/conf
 |`set_saf_mandate`        |Any base or scenario config file         |Adds e-kerosene buses to enable split of aviation demand and sets SAF mandate if enabled|
 |`build_custom_industry_demand` |Any base or scenario config file   |Estimates node level demands for selected custom industries (e.g. ammonia, ethanol, cement, and steel)|
 |`add_custom_industry`    |Any base or scenario config file         |Adds selected custom industries into the network|
-| `prepare_growth_rate_scenarios`  | Any base or scenario config file          | Allows automatic fetching of correct growth rate files according to the demand_projection scenario name                                                                |
-| `solve_custom_sector_network`  | Any base or scenario config file          | Allows state/country-wise clean/RES polices to be applied as constraints. The constraints is turned on by default.                                                                |
+|`prepare_growth_rate_scenarios`  | Any base or scenario config file          | Allows automatic fetching of correct growth rate files according to the demand_projection scenario name                                                                |
+|`solve_custom_sector_network`  | Any base or scenario config file          | Allows state/country-wise clean/RES polices to be applied as constraints. The constraints is turned on by default.                                                                |
 
 
 ### Retrieve rules
@@ -121,8 +121,10 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 ## 4.2. Direct commits to PyPSA-Earth
 
 1. [PR #32](https://github.com/open-energy-transition/pypsa-earth/pull/34): Disable implicit calculations and assigning of industry demands for steel and cement industries, because they are added explicitly.
+2. [PR #36](https://github.com/open-energy-transition/pypsa-earth/pull/36): Introduce custom H2 production technologies.
 2. [PR #38](https://github.com/open-energy-transition/pypsa-earth/pull/38): Enable correct functioning of myopic optimization.
 3. [PR #40](https://github.com/open-energy-transition/pypsa-earth/pull/40): Adjusts calculation of `no_years` to properly run 2023 scenario.
+4. [PR #50](https://github.com/open-energy-transition/pypsa-earth/pull/50): Introduce Universal Currency Conversion to use USD as reference currency.
 
 ## 5. Validation
 

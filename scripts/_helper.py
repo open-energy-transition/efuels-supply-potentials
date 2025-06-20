@@ -17,7 +17,7 @@ import re
 from pathlib import Path 
 from zipfile import ZipFile
 from pypsa.components import component_attrs, components
-from google_drive_downloader import GoogleDriveDownloader as gdd
+import googledrivedownloader as gdd
 import warnings
 warnings.filterwarnings("ignore")
 

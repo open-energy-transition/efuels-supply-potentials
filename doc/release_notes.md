@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Adjust `prepare_costs` in custom scripts (necessary to use universal currency conversion) [PR #75](https://github.com/open-energy-transition/efuels-supply-potentials/pull/75)
+
 * Implement **hourly matching for hydrogen production** [PR #73](https://github.com/open-energy-transition/efuels-supply-potentials/pull/73)
 
 * Enable **myopic optimization** [PR #66](https://github.com/open-energy-transition/efuels-supply-potentials/pull/66)

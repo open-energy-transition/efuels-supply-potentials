@@ -17,7 +17,17 @@ retrieve_from_gdrive:
 
 costs:
   output_currency: "USD"
-  default_USD_to_EUR: 0.7532 # previously USD2013_to_EUR2013; should be sufficient as current data from 'technology-data` are either in EUR or USD; [EUR/USD] ECB: https://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-usd.en.html
+  default_USD_to_EUR: 0.7532 # previously USD2013_to_EUR2013; should be sufficient as current data from `technology-data` are either in EUR or USD; [EUR/USD] ECB: https://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-usd.en.html
+  year: 2030
+  technology_data_version: v0.13.2
+  country_specific_data: "US" # (optional) country-specific data are currently available only for "US"
+  cost_scenario: "moderate" # only used if `country_specific_data: "US"`; can be "moderate", "advanced" or "conservative"
+  cost_scenario_by_technology_group: # (optional): overwrites for some specific technology groups
+    electricity: "moderate"
+    H2_electrolysis: "moderate"
+    dac: "moderate"
+  financial_case: "market" # only used if `country_specific_data: "US"`; can be "market" or "r&d"
+  discountrate: [0.071] #, 0.086, 0.111]
 
 # defining the aviation demand scenario
 aviation_demand_scenario:
@@ -56,6 +66,11 @@ custom_industry:
   biogenic_co2: true # define output of ethanol from starch CC as biogenic CO2 to be used in Fischer-Tropsch
   grid_H2: true # mark output of electrolysis as grid H2 (which can be used in Fischer-Tropsch)
   other_electricity: true # add other electricity as a consumption
+
+sector:
+  hydrogen:
+    production_technologies: ["Alkaline electrolyzer large", "PEM electrolyzer", "SOEC"]
+    cc: false # Default CC technologies from PyPSA-Earth (not influencing ethanol, ammonia, cement and still carbon capture retrofits
 
 custom_databundles:
   bundle_cutouts_USA:

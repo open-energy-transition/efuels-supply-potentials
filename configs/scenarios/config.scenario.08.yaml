@@ -75,6 +75,11 @@ renewable:
 
 costs:
   year: 2030
+  cost_scenario: "moderate" # only used if `country_specific_data: "US"`; can be "moderate", "advanced" or "conservative"
+  cost_scenario_by_technology_group: # (optional): overwrites for some specific technology groups
+    electricity: "moderate"
+    H2_electrolysis: "advanced"
+    dac: "moderate"
 
 policy_config:
   hydrogen:

@@ -373,8 +373,12 @@ def set_lifetimes(n, costs):
     """
     powerplant_carriers = {
         "Link": ["CCGT", "OCGT", "coal", "oil", "biomass"],
-        "Generator": ["nuclear", "solar", "onwind", "offwind-ac", "geothermal", "ror"],
+        "Generator": ["nuclear", "solar", "onwind", "offwind-ac", "geothermal", "ror", "csp"],
     }
+
+    # rename csp-tower to csp for properly reading lifetime
+    costs.rename(index={"csp-tower":"csp"}, inplace=True)
+
     for c in n.iterate_components(["Link", "Generator"]):
         # get powerplants with infinite lifetime
         mask = c.df.carrier.isin(powerplant_carriers[c.name]) & np.isinf(c.df.lifetime)

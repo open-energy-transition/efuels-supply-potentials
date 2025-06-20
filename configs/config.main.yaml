@@ -24,7 +24,6 @@ saf_mandate:
   ekerosene_split: true # separate e-kerosene as separate bus
   non_spatial_ekerosene: true # connects all e-kerosene buses with a single E-kerosene-main bus to model 0 cost of transport and store
   enable_mandate: false # enable SAF mandate
-  saf_scenario: EU # EU (default), EU+, EU-
 
 demand_distribution:
   enable: true
@@ -36,10 +35,10 @@ demand_distribution:
 
 demand_projection:
   planning_horizon: 2023
-  scenario: "Reference"
-  data_centers_load: false
+  scenario: "Medium"
+  data_centers_load: true
 
-state_policy: "on" # "off", "on"
+state_policy: "on" # "off", "on" manage application of renewable/clean energy policies at State- or country-level
 
 custom_industry:
   enable: true
@@ -50,10 +49,9 @@ custom_industry:
   CCS_retrofit: [] # [ethanol, ammonia, steel, cement]
   production_flexibility: []
   H2_DRI: false
-  biogenic_co2: false # define output of ethanol from starch CC as biogenic CO2 to be used in Fischer-Tropsch
+  biogenic_co2: true # define output of ethanol from starch CC as biogenic CO2 to be used in Fischer-Tropsch
   grid_H2: true # mark output of electrolysis as grid H2 (which can be used in Fischer-Tropsch)
   other_electricity: true # add other electricity as a consumption
-
 
 custom_databundles:
   bundle_cutouts_USA:

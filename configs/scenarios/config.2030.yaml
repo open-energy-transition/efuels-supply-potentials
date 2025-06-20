@@ -46,7 +46,6 @@ policies:
 custom_industry:
   CCS_retrofit: [ethanol, ammonia, steel, cement]
 
-
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes
   simplify_network:
@@ -73,6 +72,12 @@ renewable:
 
 costs:
   year: 2030
+
+policy_config:
+  hydrogen:
+    temporal_matching: "hourly" # either "hourly", "monthly", "yearly", "no_temporal_matching"
+    additionality: true
+    temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro, nuclear]
 
 demand_data:
   base_year: 2021

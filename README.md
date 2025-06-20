@@ -125,6 +125,7 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 2. [PR #38](https://github.com/open-energy-transition/pypsa-earth/pull/38): Enable correct functioning of myopic optimization.
 3. [PR #40](https://github.com/open-energy-transition/pypsa-earth/pull/40): Adjusts calculation of `no_years` to properly run 2023 scenario.
 4. [PR #50](https://github.com/open-energy-transition/pypsa-earth/pull/50): Introduce Universal Currency Conversion to use USD as reference currency.
+5. [PR #54](https://github.com/open-energy-transition/pypsa-earth/pull/54): Introduce currncy conversion in `simplify_network`.
 
 ## 5. Validation
 

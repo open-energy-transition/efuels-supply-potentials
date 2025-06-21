@@ -1,6 +1,21 @@
 # SPDX-FileCopyrightText:  Open Energy Transition gGmbH
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Scenario n. 9 - Sensitivity - Conservative electrolyzer costs
+#
+# | Temporal matching        | Hourly matching                           | Yes                                   |
+# | Aviation sector          | Aviation demand                           | Central                               |
+# |                          | e-kerosene blending mandate               | ReFuel EU                             |
+# | Demand projections       | Electricity demand + EV share             | Medium                                |
+# | Costs                    | Electricity generation (NREL ATB)         | Moderate + tax credits                |
+# |                          | Electrolysis (ICCT IRA assumptions)       | Conservative + tax credits            |
+# |                          | DAC                                       | Moderate + tax credits                |
+# |                          | Point-source CO₂ capture (NPC)            | Conservative + tax credits            |
+# | Supply constraint        | CO2 supply                                | Biogenic & non-biogenic sources + DAC |
+# | Power sector development | Transmission expansion                    | No new expansion *                    |
+# |                          | State policies for electricity generation | Current policies                      |
+# * Optimal transmission expansion if infeasible
 
 countries: ["US"]
 
@@ -11,18 +26,22 @@ enable:
   download_osm_data: true  # If 'true', OpenStreetMap data will be downloaded for the above given countries
 
 run:
-  name: "US_2030" # use this to keep track of runs with different settings
-  sector_name: "US_2030"
+  name: "US_scenario_09" # use this to keep track of runs with different settings
+  sector_name: "US_scenario_09"
+
+foresight: myopic
 
 scenario:
   simpl: ['']
   ll: ['copt']
-  clusters: [10]
-  opts: [24H]
+  clusters: [100]
+  opts: [3H]
   planning_horizons:
   - 2030
+  - 2035
+  - 2040
   sopts:
-  - "24H"
+  - "3H"
 
 aviation_demand_scenario:
   country: US
@@ -31,11 +50,11 @@ aviation_demand_scenario:
 saf_mandate:
   ekerosene_split: true # separate e-kerosene as separate bus
   non_spatial_ekerosene: true # connects all e-kerosene buses with a single E-kerosene-main bus to model 0 cost of transport and store
-  enable_mandate: false # enable SAF mandate
+  enable_mandate: true # enable SAF mandate
   saf_scenario: EU # EU (default), EU+, EU-
 
 demand_projection:
-  planning_horizon: 2030
+  planning_horizon: 2030 # only needed for power model, sector model takes demand from UN data using planning_horizon
   scenario: "Medium"
   data_centers_load: true
 
@@ -56,7 +75,6 @@ electricity:
     Generator: [solar, onwind, offwind-ac, offwind-dc, csp, geothermal, nuclear, OCGT, CCGT, biomass]
     Store: [battery, H2]
 
-  powerplants_filter: DateOut >= 2030 and DateIn < 2030
   custom_powerplants: "replace" #  "false" use only powerplantmatching (ppm) data, "merge" combines ppm and custom powerplants, "replace" use only custom powerplants
 
   conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, geothermal, biomass]
@@ -72,6 +90,15 @@ renewable:
 
 costs:
   year: 2030
+  cost_scenario: "moderate" # only used if `country_specific_data: "US"`; can be "moderate", "advanced" or "conservative"
+  cost_scenario_by_technology_group: # (optional): overwrites for some specific technology groups
+    electricity: "moderate"
+    H2_electrolysis: "conservative"
+    dac: "moderate"
+  marginal_cost:
+    Alkaline electrolyzer large: -90.00 # USD/MWh - 45 V (max credit 3.00 $/kg_H2)
+    PEM electrolyzer: -90.00 # USD/MWh - 45 V (max credit 3.00 $/kg_H2)
+    SOEC: -90.00 # USD/MWh - 45 V (max credit 3.00 $/kg_H2)
 
 policy_config:
   hydrogen:
@@ -84,6 +111,9 @@ demand_data:
 
 custom_data:
   airports: true
+
+existing_capacities:
+  threshold_capacity: 5 # MW, below this threshold capacities are not added in separate horizon
 
 sector:
   electricity_distribution_grid: true
@@ -101,10 +131,16 @@ sector:
 
   land_transport_fuel_cell_share:
     AB_2030: 0.0
+    AB_2035: 0.0
+    AB_2040: 0.0
   land_transport_electric_share:
     AB_2030: 0.165 # 0.041 (Reference) 0.165 (Medium) 0.191 (High)
+    AB_2035: 0.275 # 0.053 (Reference) 0.275 (Medium) 0.332 (High)
+    AB_2040: 0.353 # 0.064 (Reference) 0.353 (Medium) 0.462 (High)
   shipping_hydrogen_share:
     AB_2030: 0.00
+    AB_2035: 0.00
+    AB_2040: 0.00
 
 solving:
   options:

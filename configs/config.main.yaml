@@ -84,11 +84,6 @@ custom_industry:
   grid_H2: true # mark output of electrolysis as grid H2 (which can be used in Fischer-Tropsch)
   other_electricity: true # add other electricity as a consumption
 
-sector:
-  hydrogen:
-    production_technologies: ["Alkaline electrolyzer large", "PEM electrolyzer", "SOEC"]
-    cc: false # Default CC technologies from PyPSA-Earth (not influencing ethanol, ammonia, cement and still carbon capture retrofits
-
 custom_databundles:
   bundle_cutouts_USA:
     countries: [US]

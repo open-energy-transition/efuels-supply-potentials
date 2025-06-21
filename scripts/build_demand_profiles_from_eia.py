@@ -321,4 +321,4 @@ if __name__ == "__main__":
         df_demand_profiles = add_data_center_demand(df_demand_profiles, spatial_gadm_bus_mapping, data_center_demand)
 
     # save demand_profiles.csv
-     df_demand_profiles.to_csv(snakemake.output.demand_profile_path)
+    df_demand_profiles.to_csv(snakemake.output.demand_profile_path)

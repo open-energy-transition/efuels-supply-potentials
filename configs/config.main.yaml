@@ -33,10 +33,10 @@ costs:
     onwind: -27.50 # USD/MWh - 45 Y (Source: https://atb.nrel.gov/electricity/2024/financial_cases_&_methods)
     # hydro: -6.00 # USD/MWh - 45 Y (Source: https://atb.nrel.gov/electricity/2024/financial_cases_&_methods)
     biomass: -27.50 # USD/MWh - 45 Y (Source: https://atb.nrel.gov/electricity/2024/financial_cases_&_methods)
-    ethanol capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
-    ammonia capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
-    cement capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
-    steel capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
+    ethanol carbon capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
+    ammonia carbon capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
+    cement carbon capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
+    steel carbon capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
     direct air capture: -130.00 # USD/t_CO2 - 45 Q (utilization)
 
 # defining the aviation demand scenario

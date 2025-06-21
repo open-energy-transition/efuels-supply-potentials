@@ -155,7 +155,7 @@ def read_scaling_factor(demand_scenario, horizon):
     return scaling_factor
 
 
-def get_spatial_mapping(pypsa_network, gadm_shape_path):
+def get_spatial_mapping(pypsa_network, gadm_shape_path, geo_crs):
     """
     Determines gadm to bus mapping
     Parameters
@@ -163,7 +163,9 @@ def get_spatial_mapping(pypsa_network, gadm_shape_path):
     pypsa_network: netcdf file
         base.nc network
     gadm_shape_path: str
-        path to gadm sahpe file
+        path to gadm shape file
+    geo_crs: str
+        Geographical CRS
     Returns
     -------
     spatial_gadm_bus_mapping: pandas series
@@ -176,7 +178,7 @@ def get_spatial_mapping(pypsa_network, gadm_shape_path):
     buses_gdf = gpd.GeoDataFrame(
         pypsa_network.buses,
         geometry=gpd.points_from_xy(pypsa_network.buses.x, pypsa_network.buses.y),
-        crs=snakemake.params.geo_crs,
+        crs=geo_crs,
     ).reset_index()
 
     # map gadm shapes to each bus
@@ -306,8 +308,7 @@ if __name__ == "__main__":
     )
 
     # get spatial GADM to bus mapping
-    gadm_shape_path = snakemake.input.gadm_shape
-    spatial_gadm_bus_mapping = get_spatial_mapping(pypsa_network, gadm_shape_path)
+    spatial_gadm_bus_mapping = get_spatial_mapping(pypsa_network, snakemake.input.gadm_shape, snakemake.params.geo_crs)
 
     # scale demand for future scenarios
     if snakemake.params.demand_horizon >= 2025:
@@ -316,9 +317,8 @@ if __name__ == "__main__":
 
     # set data center demand profiles
     if snakemake.config["demand_projection"]["data_centers_load"]:
-        data_center_profiles_path = snakemake.params.data_center_profiles
-        data_center_demand = read_data_center_profiles(snakemake.params.demand_horizon, data_center_profiles_path)
+        data_center_demand = read_data_center_profiles(snakemake.params.demand_horizon, snakemake.params.data_center_profiles)
         df_demand_profiles = add_data_center_demand(df_demand_profiles, spatial_gadm_bus_mapping, data_center_demand)
 
     # save demand_profiles.csv
-    df_demand_profiles.to_csv(snakemake.output.demand_profile_path)
+     df_demand_profiles.to_csv(snakemake.output.demand_profile_path)

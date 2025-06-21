@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Add **data center loads for sector model** [PR #81](https://github.com/open-energy-transition/efuels-supply-potentials/pull/81)
+
 * Adjust `prepare_costs` in custom scripts (necessary to use universal currency conversion) [PR #75](https://github.com/open-energy-transition/efuels-supply-potentials/pull/75)
 
 * Implement **hourly matching for hydrogen production** [PR #73](https://github.com/open-energy-transition/efuels-supply-potentials/pull/73)

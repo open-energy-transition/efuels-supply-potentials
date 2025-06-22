@@ -57,15 +57,6 @@ renewable:
 
 costs:
   year: 2020
-  marginal_cost:
-    solar: 0.00
-    onwind: 0.00
-    biomass: 0.00
-    ethanol carbon capture retrofit: 0.00
-    ammonia carbon capture retrofit: 0.00
-    cement carbon capture retrofit: 0.00
-    steel carbon capture retrofit: 0.00
-    direct air capture: 0.00
 
 policy_config:
   hydrogen:

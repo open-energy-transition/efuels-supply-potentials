@@ -126,7 +126,8 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 3. [PR #40](https://github.com/open-energy-transition/pypsa-earth/pull/40): Adjusts calculation of `no_years` to properly run 2023 scenario.
 4. [PR #50](https://github.com/open-energy-transition/pypsa-earth/pull/50): Introduce Universal Currency Conversion to use USD as reference currency.
 5. [PR #51](https://github.com/open-energy-transition/pypsa-earth/pull/51): Add US cost configurations and split scenarios per technology group.
-6. [PR #54](https://github.com/open-energy-transition/pypsa-earth/pull/54): Introduce currncy conversion in `simplify_network`.
+6. [PR #56](https://github.com/open-energy-transition/pypsa-earth/pull/56): Introduce currency conversion in `simplify_network`.
+7. [PR #57](https://github.com/open-energy-transition/pypsa-earth/pull/57) [PR #58](https://github.com/open-energy-transition/pypsa-earth/pull/58) [PR #59](https://github.com/open-energy-transition/pypsa-earth/pull/59): Fix logic for currency conversion to handle past and future years and introduce clear log and warning messages.
 
 ## 5. Validation
 

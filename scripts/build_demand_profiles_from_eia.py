@@ -155,26 +155,30 @@ def read_scaling_factor(demand_scenario, horizon):
     return scaling_factor
 
 
-def get_spatial_mapping(pypsa_network):
+def get_spatial_mapping(pypsa_network, gadm_shape_path, geo_crs):
     """
     Determines gadm to bus mapping
     Parameters
     ----------
     pypsa_network: netcdf file
         base.nc network
+    gadm_shape_path: str
+        path to gadm shape file
+    geo_crs: str
+        Geographical CRS
     Returns
     -------
     spatial_gadm_bus_mapping: pandas series
         Mapping of GADM regions to base network buses
     """
     # read gadm file
-    gadm_shape = gpd.read_file(snakemake.input.gadm_shape)
+    gadm_shape = gpd.read_file(gadm_shape_path)
 
     # create geodataframe out of x and y coordinates of buses
     buses_gdf = gpd.GeoDataFrame(
         pypsa_network.buses,
         geometry=gpd.points_from_xy(pypsa_network.buses.x, pypsa_network.buses.y),
-        crs=snakemake.params.geo_crs,
+        crs=geo_crs,
     ).reset_index()
 
     # map gadm shapes to each bus
@@ -225,19 +229,21 @@ def scale_demand_profiles(df_demand_profiles, spatial_gadm_bus_mapping, scaling_
     return scaled_demand_profiles
 
 
-def read_data_center_profiles(horizon):
+def read_data_center_profiles(horizon, data_center_profiles_path):
     """
     Reads statewise data center profiles for given horizon
     Parameters
     ----------
     horizon: int
         Horizon of the data center profiles
+    data_center_profiles_path: str
+        Path to data center profiles file
     Returns
     -------
     statewise_data_center_load: pandas series
         Statewise data center demand for selected horizon
     """
-    foldername = os.path.join(BASE_PATH, snakemake.params.data_center_profiles)
+    foldername = os.path.join(BASE_PATH, data_center_profiles_path)
     filename = f"data_center_profile_{horizon}_by_state.csv"
     data_center_profile = pd.read_csv(os.path.join(foldername, filename))
     statewise_data_center_load = data_center_profile.groupby("region_code")["load_GW"].mean()
@@ -302,7 +308,7 @@ if __name__ == "__main__":
     )
 
     # get spatial GADM to bus mapping
-    spatial_gadm_bus_mapping = get_spatial_mapping(pypsa_network)
+    spatial_gadm_bus_mapping = get_spatial_mapping(pypsa_network, snakemake.input.gadm_shape, snakemake.params.geo_crs)
 
     # scale demand for future scenarios
     if snakemake.params.demand_horizon >= 2025:
@@ -311,7 +317,7 @@ if __name__ == "__main__":
 
     # set data center demand profiles
     if snakemake.config["demand_projection"]["data_centers_load"]:
-        data_center_demand = read_data_center_profiles(snakemake.params.demand_horizon)
+        data_center_demand = read_data_center_profiles(snakemake.params.demand_horizon, snakemake.params.data_center_profiles)
         df_demand_profiles = add_data_center_demand(df_demand_profiles, spatial_gadm_bus_mapping, data_center_demand)
 
     # save demand_profiles.csv

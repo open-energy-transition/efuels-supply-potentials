@@ -507,6 +507,9 @@ if config["custom_industry"]["enable"]:
             biogenic_co2=config["custom_industry"]["biogenic_co2"],
             grid_h2=config["custom_industry"]["grid_H2"],
             other_electricity=config["custom_industry"]["other_electricity"],
+            data_centers=config["demand_projection"]["data_centers_load"],
+            data_center_profiles="data/data_center_profiles/",
+            geo_crs=config["crs"]["geo_crs"],
         input:
             industrial_energy_demand_per_node=PYPSA_EARTH_DIR + "resources/"
             + SECDIR
@@ -516,6 +519,7 @@ if config["custom_industry"]["enable"]:
             + "energy_totals_{demand}_{planning_horizons}.csv",
             network=lambda w: f"{PYPSA_EARTH_DIR}results/{SECDIR}prenetworks/elec_s{w.simpl}_{w.clusters}_ec_l{w.ll}_{w.opts}_{w.sopts}_{w.planning_horizons}_{w.discountrate}_{w.demand}{saf_suffix}.nc",
             costs=PYPSA_EARTH_DIR + "resources/" + RDIR + "costs_{planning_horizons}.csv",
+            gadm_shape="data/demand_data/gadm41_USA_1.json",
         output:
             modified_network=PYPSA_EARTH_DIR + "results/"
             + SECDIR

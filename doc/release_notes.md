@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Add **data center loads for sector model** [PR #81](https://github.com/open-energy-transition/efuels-supply-potentials/pull/81)
+
 * Prepare config files to define scenarios and review electrolyzer carriers [PR #76](https://github.com/open-energy-transition/efuels-supply-potentials/pull/76)
 
 * Adjust `prepare_costs` in custom scripts (necessary to use universal currency conversion) [PR #75](https://github.com/open-energy-transition/efuels-supply-potentials/pull/75)

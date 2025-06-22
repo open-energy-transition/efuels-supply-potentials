@@ -114,7 +114,7 @@ Cherry-picking allows applying specific commits from one branch to another. We c
 9.  [PR #1465](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1465): Enable power plants filtering using query.
 10. [PR #1468](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1468): Include missing efficiency gains and growth rates for other energy use.
 11. [PR #1479](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1479): Update link for North America cutout.
-12. [PR #1486](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1486): Align prepare_transport_data_input with new structure of the Wikipedia page table.
+12. [PR #1486](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1486): Align `prepare_transport_data_input` with new structure of the Wikipedia page table.
 
 Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-pick) on cherry-picking in Git to get more familiar with procedure.
 

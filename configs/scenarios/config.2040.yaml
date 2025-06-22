@@ -31,7 +31,7 @@ aviation_demand_scenario:
 saf_mandate:
   ekerosene_split: true # separate e-kerosene as separate bus
   non_spatial_ekerosene: true # connects all e-kerosene buses with a single E-kerosene-main bus to model 0 cost of transport and store
-  enable_mandate: true # enable SAF mandate
+  enable_mandate: false # enable SAF mandate
   saf_scenario: EU # EU (default), EU+, EU-
 
 demand_projection:
@@ -53,8 +53,7 @@ cluster_options:
 
 electricity:
   extendable_carriers:
-
-    Generator: [solar, onwind, offwind-ac, offwind-dc, csp, geothermal]
+    Generator: [solar, onwind, offwind-ac, offwind-dc, csp, geothermal, nuclear, OCGT, CCGT, biomass]
     Store: [battery, H2]
 
   powerplants_filter: DateOut >= 2040 and DateIn < 2040
@@ -94,7 +93,10 @@ sector:
     oil: oil
     coal: coal
     biomass: biomass
+  hydrogen:
+    production_technologies: ["Alkaline electrolyzer large", "PEM electrolyzer", "SOEC", "SMR"]
 
+  cc: false # Default CC technologies from PyPSA-Earth (not influencing ethanol, ammonia, cement and still carbon capture retrofits
   SMR CC: false
 
   land_transport_fuel_cell_share:

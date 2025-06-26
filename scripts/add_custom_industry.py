@@ -864,7 +864,7 @@ def add_data_centers_load(n):
         Adds data centers loads based on state-wise data
     """
     # data center demand year
-    demand_horizon = 2023 if snakemake.wildcards.planning_horizons == 2020 else snakemake.wildcards.planning_horizons
+    demand_horizon = "2023" if snakemake.wildcards.planning_horizons == "2020" else snakemake.wildcards.planning_horizons
 
     # read data center loads data for given horizon
     demand_data_centers = read_data_center_profiles(demand_horizon, snakemake.params.data_center_profiles)
@@ -901,7 +901,7 @@ if __name__ == "__main__":
             clusters=10,
             opts="Co2L-24H",
             sopts="24H",
-            planning_horizons=2020,
+            planning_horizons="2020",
             discountrate="0.071",
             demand="AB",
         )

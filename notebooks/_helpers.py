@@ -314,24 +314,14 @@ def filter_and_group_small_carriers(df, threshold=0.005):
     return df_filtered
 
 
-def plot_electricity_dispatch(n, carrier_colors, key="", start_date=None, end_date=None, ymax=None):
-    import matplotlib.pyplot as plt
-    import matplotlib.dates as mdates
-    import re
-
-    match = re.search(r'\d{4}', key)
-    year = match.group() if match else ""
-
-    title_suffix = f"{year}" if not (
-        start_date and end_date) else f"{year} ({start_date} to {end_date})"
-    snapshots_slice = slice(
-        start_date, end_date) if start_date and end_date else slice(None)
-    sliced_snapshots_index = n.snapshots[snapshots_slice]
+def calculate_dispatch(n, start_date=None, end_date=None):
+    snapshots_slice = slice(start_date, end_date) if start_date and end_date else slice(None)
+    snapshots = n.snapshots[snapshots_slice]
 
     valid_carriers = {
-        'solar', 'wind', 'onwind', 'offwind', 'hydro',
-        'ror', 'gas', 'OCGT', 'CCGT', 'biomass',
-        'geothermal', 'nuclear', 'coal', 'oil'
+        'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac', 'nuclear',
+        'geothermal', 'ror', 'hydro',
+        'gas', 'OCGT', 'CCGT', 'oil', 'coal', 'biomass', 'lignite',
     }
 
     gen = n.generators[n.generators.carrier.isin(valid_carriers)]
@@ -342,41 +332,96 @@ def plot_electricity_dispatch(n, carrier_colors, key="", start_date=None, end_da
     sto_dispatch = n.storage_units_t.p.loc[snapshots_slice, sto.index].groupby(
         n.storage_units.loc[sto.index, 'carrier'], axis=1).sum()
 
-    link = n.links[n.links.carrier.isin(
-        valid_carriers) & n.links.p_nom_opt.notnull()]
+    link = n.links[n.links.carrier.isin(valid_carriers) & n.links.p_nom_opt.notnull()]
     link_dispatch = n.links_t.p1.loc[snapshots_slice, link.index].groupby(
         n.links.loc[link.index, 'carrier'], axis=1).sum()
 
     supply = pd.concat([gen_dispatch, sto_dispatch, link_dispatch], axis=1)
     supply = supply.groupby(supply.columns, axis=1).sum()
-    supply = supply.clip(lower=0) / 1e3  # MW → GW
-    supply = supply[[c for c in supply.columns if c in carrier_colors]]
+    supply = supply.clip(lower=0)
 
-    fig, ax = plt.subplots(figsize=(15, 6))
-    plt.style.use('ggplot')
+    freq = pd.infer_freq(snapshots)
+    timestep_hours = 1 if freq is None else pd.Timedelta(freq).total_seconds() / 3600
 
-    supply.plot(
-        kind='area',
-        stacked=True,
-        linewidth=0,
-        color=[carrier_colors.get(c, 'gray') for c in supply.columns],
-        ax=ax
-    )
+    supply_gw = supply / 1e3  # MW → GW
 
-    ax.set_title(f"Electricity Dispatch – {title_suffix}", fontsize=16)
-    ax.set_ylabel("Power (GW)")
-    ax.set_xlabel("Time")
-    ax.legend(loc='upper left', bbox_to_anchor=(1.01, 1.0))
-    ax.set_xlim(sliced_snapshots_index[0], sliced_snapshots_index[-1])
+    energy_mwh = supply.sum(axis=1) * timestep_hours
+    total_gwh = energy_mwh.sum() / 1e3  # MWh → GWh
 
-    # Clean monthly ticks
-    months = pd.date_range(
-        start=sliced_snapshots_index[0].replace(day=1),
-        end=sliced_snapshots_index[-1],
-        freq='MS'
-    )
-    ax.set_xticks(months)
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
+    return total_gwh, supply_gw
+
+def plot_electricity_dispatch(networks, carrier_colors, start_date=None, end_date=None, ymax=None):
+    summary_list = []
+    max_y = 0
+
+    # Calcola dispatch per ogni network e trova il massimo valore per scala comune
+    for key, n in networks.items():
+        print(f"Processing network: {key}")
+        total_gwh, supply_gw = calculate_dispatch(n, start_date, end_date)
+        summary_list.append({"Network": key, "Total Dispatch (GWh)": total_gwh})
+        max_y = max(max_y, supply_gw.sum(axis=1).max())
+
+    y_max_plot = ymax if ymax is not None else max_y
+
+    fig, axes = plt.subplots(len(networks), 1, figsize=(15, 5 * len(networks)), sharex=True)
+
+    if len(networks) == 1:
+        axes = [axes]
+
+    # Plot dispatch for each network
+    for ax, (key, n) in zip(axes, networks.items()):
+        _, supply_gw = calculate_dispatch(n, start_date, end_date)
+        supply_gw.plot.area(
+            stacked=True,
+            linewidth=0,
+            color=[carrier_colors.get(c, 'gray') for c in supply_gw.columns],
+            ax=ax,
+            legend=False
+        )
+        ax.set_title(f"Electricity Dispatch – {key}")
+        ax.set_ylabel("Power (GW)")
+        ax.set_ylim(0, y_max_plot)
+        ax.grid(True)
+
+    axes[-1].set_xlabel("Time")
+    plt.tight_layout(rect=[0, 0, 0.85, 1])
+
+    # Legenda unica a destra
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper right', bbox_to_anchor=(0.93, 0.95))
+
+    plt.show()
+
+    return summary_list
+
+def compute_and_plot_load(n, key="", ymax=None, start_date=None, end_date=None):
+    freq = pd.infer_freq(n.loads_t.p_set.index)
+    snapshot_hours = 1 if freq is None else pd.Timedelta(freq).total_seconds() / 3600
+
+    dynamic_load_gw = n.loads_t.p_set.sum(axis=1) / 1e3
+    total_dynamic_gwh = (n.loads_t.p_set.sum(axis=1) * snapshot_hours).sum() / 1e3
+
+    static_loads = n.loads[~n.loads.index.isin(n.loads_t.p_set.columns)]
+    static_load_gw = static_loads["p_set"].sum() / 1e3
+    total_hours = len(n.loads_t.p_set.index) * snapshot_hours
+    total_static_gwh = static_load_gw * total_hours
+
+    # Aggiungi qui il calcolo del dispatch totale
+    total_dispatch_gwh, _ = calculate_dispatch(n, start_date, end_date)
+
+    # Plot electric load
+    fig, ax = plt.subplots(figsize=(14,5))
+    ax.plot(dynamic_load_gw.index, dynamic_load_gw.values, label="Dynamic Load (GW)")
+    ax.hlines(static_load_gw, dynamic_load_gw.index.min(), dynamic_load_gw.index.max(),
+              colors="red", linestyles="--", label="Static Load (GW)")
+
+    start = dynamic_load_gw.index.min().replace(day=1)
+    end = dynamic_load_gw.index.max()
+    month_starts = pd.date_range(start=start, end=end, freq='MS')
+
+    ax.set_xlim(start, end)
+    ax.set_xticks(month_starts)
+    ax.set_xticklabels(month_starts.strftime('%b'))
     ax.tick_params(axis='x', rotation=0)
 
     if ymax:
@@ -384,5 +429,21 @@ def plot_electricity_dispatch(n, carrier_colors, key="", start_date=None, end_da
     else:
         ax.set_ylim(bottom=0)
 
+    ax.set_title(f"Electric Load Profile - {key}")
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Load (GW)")
+    ax.legend()
+    ax.grid(True)
+
     plt.tight_layout(rect=[0, 0, 0.88, 1])
     plt.show()
+
+    # Restituisci anche il totale dispatch per riepilogo
+    return {
+        "key": key,
+        "mean_dynamic_load_gw": dynamic_load_gw.mean(),
+        "total_dynamic_gwh": total_dynamic_gwh,
+        "static_load_gw": static_load_gw,
+        "total_static_gwh": total_static_gwh,
+        "total_dispatch_gwh": total_dispatch_gwh,
+    }

@@ -862,6 +862,10 @@ def calculate_lcoe_summary_and_map(n, shapes):
     table.columns = [f"{carrier} {metric} [{'USD/MWh' if metric=='lcoe' else 'TWh'}]" for metric, carrier in table.columns]
     table = table.reset_index()
 
+    # Replace NaN in dispatch columns only
+    dispatch_cols = [col for col in table.columns if 'dispatch' in col.lower()]
+    table[dispatch_cols] = table[dispatch_cols].fillna(0.0)
+    
     # Add weighted average LCOE per grid_region as a simple column
     table['Weighted Average LCOE (USD/MWh)'] = table['grid_region'].map(weighted_avg_grid_region).round(2)
 

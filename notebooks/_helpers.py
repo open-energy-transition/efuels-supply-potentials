@@ -3,46 +3,68 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import os
-import re
-import pypsa
-import numpy as np
 import pandas as pd
-import geopandas as gpd
+import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
+import re
+import pycountry
 
+import pypsa
+from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
+from pathlib import Path
 
-def attach_region_to_buses(network, path_shapes, distance_crs="EPSG:4326"):
+import cartopy.crs as ccrs # For plotting maps
+import geopandas as gpd
+from shapely.geometry import Point
+from shapely.geometry import box
+from matplotlib.offsetbox import AnnotationBbox, AuxTransformBox
+from matplotlib.patches import Wedge
+import matplotlib.path as mpath
+import matplotlib.transforms as mtransforms
+import matplotlib.lines as mlines
+from matplotlib.legend_handler import HandlerPatch
+import matplotlib.dates as mdates
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
+import plotly.express as px
+import plotly.graph_objects as go
+
+from shapely.geometry import LineString
+import matplotlib.patches as mpatches
+from matplotlib.lines import Line2D
+
+import warnings
+warnings.filterwarnings("ignore")
+
+def attach_grid_region_to_buses(network, path_shapes, distance_crs="EPSG:4326"):
     """
-    Attach region to buses
+    Attach grid region to buses
     """
     # Read the shapefile using geopandas
     shapes = gpd.read_file(path_shapes, crs=distance_crs)
-    shapes.rename(columns={"GRID_REGIO": "Region"}, inplace=True)
+    shapes.rename(columns={"GRID_REGIO": "Grid Region"}, inplace=True)
 
     ac_dc_carriers = ["AC", "DC"]
-    location_mapping = network.buses.query(
-        "carrier in @ac_dc_carriers")[["x", "y"]]
+    location_mapping = network.buses.query("carrier in @ac_dc_carriers")[["x", "y"]]
 
-    network.buses["x"] = network.buses["location"].map(
-        location_mapping["x"]).fillna(0)
-    network.buses["y"] = network.buses["location"].map(
-        location_mapping["y"]).fillna(0)
-
+    network.buses["x"] = network.buses["location"].map(location_mapping["x"]).fillna(0)
+    network.buses["y"] = network.buses["location"].map(location_mapping["y"]).fillna(0)
+    
     pypsa_gpd = gpd.GeoDataFrame(
-        network.buses,
-        geometry=gpd.points_from_xy(network.buses.x, network.buses.y),
-        crs=4326
-    )
+            network.buses, 
+            geometry=gpd.points_from_xy(network.buses.x, network.buses.y), 
+            crs=4326
+        )
 
     bus_cols = network.buses.columns
-    bus_cols = list(bus_cols) + ["region"]
+    bus_cols = list(bus_cols) + ["grid_region"]
 
     st_buses = gpd.sjoin_nearest(shapes, pypsa_gpd, how="right")
 
-    network.buses["region"] = st_buses["Region"]
+    network.buses["grid_region"] = st_buses["Grid Region"]
 
     return network
-
 
 def attach_state_to_buses(network, path_shapes, distance_crs="EPSG:4326"):
     """
@@ -296,7 +318,315 @@ def plot_h2_capacities_bar(network):
     plt.tight_layout()
     plt.show()
 
+def create_hydrogen_capacity_map(network, path_shapes, distance_crs=4326, min_capacity_mw=10):
+    """
+    Create a map with pie charts showing hydrogen electrolyzer capacity breakdown by type for each state
+    """
+    if hasattr(network, 'links') and len(network.links) > 0:
+            # Filter for hydrogen-related links (electrolyzers)
+            # Common naming patterns for electrolyzers in PyPSA
+            hydrogen_links = network.links[
+                network.links['carrier'].str.contains('H2|hydrogen|electroly|SOEC', case=False, na=False) |
+                network.links.index.str.contains('H2|hydrogen|electroly|SOEC', case=False, na=False)
+            ].copy()
+    
+    capacity_data = hydrogen_links.merge(
+                network.buses[['state']], 
+                left_on='bus0',  # Assuming bus0 is the electrical connection
+                right_index=True, 
+                how='left'
+            )
+    
+    # capacity_data = links_with_state
+    
+    # Convert MW to MW (keep as MW for hydrogen as capacities are typically smaller)
+    capacity_data['p_nom_mw'] = capacity_data['p_nom_opt']
+    
+    print(f"Found hydrogen capacity data for {capacity_data['state'].nunique()} states")
+    print("Electrolyzer types found:", capacity_data['carrier'].unique().tolist())
+    
+    # Step 2: Read and prepare shapefile
+    shapes = gpd.read_file(path_shapes, crs=distance_crs)
+    shapes["ISO_1"] = shapes["ISO_1"].apply(lambda x: x.split("-")[1])
+    shapes.rename(columns={"ISO_1": "State"}, inplace=True)
+    
+    # Get state centroids for pie chart placement
+    shapes_centroid = shapes.copy()
+    shapes_centroid['centroid'] = shapes_centroid.geometry.centroid
+    shapes_centroid['cent_x'] = shapes_centroid.centroid.x
+    shapes_centroid['cent_y'] = shapes_centroid.centroid.y
+    
+    # Step 3: Define colors for electrolyzer types
+    unique_carriers = capacity_data['carrier'].unique()
+    colors = plt.cm.Set2(np.linspace(0, 1, len(unique_carriers)))
+    carrier_colors = dict(zip(unique_carriers, colors))
+    
+    # Customize colors for common electrolyzer types
+    custom_colors = {
+        'H2 Electrolysis': '#1f77b4',           # Blue
+        'alkaline': '#ff7f0e',                  # Orange  
+        'PEM': '#2ca02c',                       # Green
+        'SOEC': '#d62728',                      # Red
+        'AEL': '#9467bd',                       # Purple
+        'electrolyzer': '#8c564b',              # Brown
+        'hydrogen': '#e377c2',                  # Pink
+        'H2': '#7f7f7f',                        # Gray
+    }
+    
+    # Update carrier_colors with custom colors
+    for carrier, color in custom_colors.items():
+        if carrier in carrier_colors:
+            carrier_colors[carrier] = color
+    
+    # Step 4: Create the plot
+    fig, ax = plt.subplots(figsize=(30, 20))
+    
+    # Plot the base map
+    shapes.plot(ax=ax, color='lightgray', edgecolor='black', alpha=0.3)
+    
+    # Group capacity data by state
+    state_capacity = capacity_data.groupby('state').agg({
+        'p_nom_mw': 'sum'
+    }).reset_index()
+    
+    # Filter states with minimum capacity
+    states_to_plot = state_capacity['state'].tolist()
+    
+    print(f"Plotting {len(states_to_plot)} states with ≥{min_capacity_mw} MW hydrogen capacity")
+    
+    # Step 5: Create pie charts for each state
+    for state in states_to_plot:
+        state_data = capacity_data[capacity_data['state'] == state]
+        
+        if len(state_data) == 0:
+            continue
+            
+        # Get state centroid
+        state_centroid = shapes_centroid[shapes_centroid['State'] == state]
+        if len(state_centroid) == 0:
+            continue
+            
+        cent_x = state_centroid['cent_x'].iloc[0]
+        cent_y = state_centroid['cent_y'].iloc[0]
+        
+        # Prepare pie chart data
+        sizes = state_data['p_nom_mw'].values
+        labels = state_data['carrier'].values
+        colors_list = [carrier_colors[carrier] for carrier in labels]
+        
+        # Calculate pie chart radius based on total capacity
+        total_capacity = sizes.sum()
+        # Scale radius based on capacity (adjusted for MW scale)
+        max_capacity = state_capacity['p_nom_mw'].max()
+        radius = 0.3 + (total_capacity / max_capacity) * 1.5
+        
+        # Create pie chart
+        pie_wedges, texts = ax.pie(sizes, colors=colors_list, center=(cent_x, cent_y), 
+                                  radius=radius, startangle=90)
+        
+        # Add capacity label
+        ax.annotate(f'{total_capacity:.0f} MW', 
+                   xy=(cent_x, cent_y - radius - 0.3), 
+                   ha='center', va='top', fontsize=12, fontweight='bold')
+    
+    # Step 6: Create legend
+    legend_elements = []
+    for carrier, color in carrier_colors.items():
+        if carrier in capacity_data['carrier'].values:
+            # Clean up carrier names for legend
+            display_name = carrier.replace('_', ' ').title()
+            legend_elements.append(mpatches.Patch(color=color, label=display_name))
+    
+    ax.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(1, 0.5), 
+             fontsize=14, title='Electrolyzer Type', title_fontsize=16)
+    
+    # Step 7: Formatting - Expand map boundaries
+    x_buffer = (shapes.total_bounds[2] - shapes.total_bounds[0]) * 0.1
+    y_buffer = (shapes.total_bounds[3] - shapes.total_bounds[1]) * 0.1
+    
+    ax.set_xlim([-130, -65])
+    ax.set_ylim([20,55])
+    ax.set_aspect('equal')
+    ax.axis('off')
+    
+    ax.set_title('Installed Hydrogen Electrolyzer Capacity by State and Type', 
+                fontsize=24, fontweight='bold', pad=30)
+    
+    # Add subtitle
+    ax.text(0.5, 0.02, f'Note: Only states with ≥{min_capacity_mw} MW electrolyzer capacity are shown', 
+           transform=ax.transAxes, ha='center', fontsize=14, style='italic')
+    
+    plt.tight_layout()
+    return fig, ax, capacity_data
 
+def print_hydrogen_capacity_summary(capacity_data):
+    """Print summary statistics of the hydrogen capacity data"""
+    if len(capacity_data) == 0:
+        print("No hydrogen capacity data to summarize.")
+        return
+        
+    print("=== HYDROGEN ELECTROLYZER CAPACITY SUMMARY ===")
+    print(f"Total installed hydrogen capacity: {capacity_data['p_nom'].sum():.1f} MW")
+    print(f"Number of states with hydrogen capacity: {capacity_data['state'].nunique()}")
+    print(f"Number of electrolyzer types: {capacity_data['carrier'].nunique()}")
+    
+    print("\n=== TOP 10 STATES BY HYDROGEN CAPACITY ===")
+    state_totals = capacity_data.groupby('state')['p_nom'].sum().sort_values(ascending=False)
+    for i, (state, capacity) in enumerate(state_totals.head(10).items()):
+        print(f"{i+1:2d}. {state}: {capacity:.1f} MW")
+    
+    print("\n=== ELECTROLYZER TYPE MIX (NATIONAL) ===")
+    carrier_totals = capacity_data.groupby('carrier')['p_nom'].sum().sort_values(ascending=False)
+    total_national = carrier_totals.sum()
+    for carrier, capacity in carrier_totals.items():
+        print(f"{carrier:25s}: {capacity:8.1f} MW ({capacity/total_national*100:5.1f}%)")
+
+def create_ft_capacity_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_kw=10):
+    """
+    Create a geographic map with full circles showing FT capacity per state in kilowatts (kW).
+    """
+
+    # Extract year from network name
+    year_match = re.search(r'\d{4}', network_name)
+    year_str = f" – {year_match.group()}" if year_match else ""
+
+    # Filter FT-related links
+    ft_links = network.links[
+        network.links['carrier'].str.contains('FT|Fischer|Tropsch', case=False, na=False) |
+        network.links.index.str.contains('FT|Fischer|Tropsch', case=False, na=False)
+    ].copy()
+
+    if ft_links.empty:
+        print(f"No FT links found in the network: {network_name}")
+        return None, None, None
+
+    # Merge with bus info (state + coordinates)
+    links_with_state = ft_links.merge(
+        network.buses[['state', 'x', 'y']],
+        left_on='bus0',
+        right_index=True,
+        how='left'
+    )
+    links_with_state['p_nom_kw'] = links_with_state['p_nom_opt'] * 1000
+
+    # Load and prepare shapefile
+    shapes = gpd.read_file(path_shapes, crs=distance_crs)
+    shapes["ISO_1"] = shapes["ISO_1"].apply(lambda x: x.split("-")[1])
+    shapes.rename(columns={"ISO_1": "State"}, inplace=True)
+
+    # Group by state
+    state_capacity = links_with_state.groupby('state').agg({'p_nom_kw': 'sum'}).reset_index()
+    states_to_plot = state_capacity[state_capacity['p_nom_kw'] >= min_capacity_kw]['state'].tolist()
+
+    # Setup geographic plot
+    fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={"projection": ccrs.PlateCarree()})
+    bbox = box(-130, 20, -60, 50)
+    shapes_clip = shapes.to_crs(epsg=4326).clip(bbox)
+    shapes_clip.plot(ax=ax, facecolor='whitesmoke', edgecolor='gray', alpha=0.7, linewidth=0.5)
+
+    # Plot circles
+    pie_scale = 0.04
+    for state in states_to_plot:
+        data = links_with_state[links_with_state['state'] == state]
+        if data.empty:
+            continue
+        x = data['x'].mean()
+        y = data['y'].mean()
+        if pd.isna(x) or pd.isna(y):
+            continue
+        total_kw = data['p_nom_kw'].sum()
+        if total_kw == 0:
+            continue
+
+        radius = np.clip(np.sqrt(total_kw) * pie_scale, 0.1, 2.5)
+        circle = plt.Circle((x, y), radius, color='#B22222', alpha=0.6,
+                            transform=ccrs.PlateCarree(), zorder=4, linewidth=0)
+        ax.add_patch(circle)
+
+        # Optional: label with numeric capacity
+        ax.text(x, y - radius - 0.3, f'{int(total_kw)} kW',
+                ha='center', va='top', fontsize=9, fontweight='bold',
+                transform=ccrs.PlateCarree())
+
+    # Final layout
+    ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
+    ax.set_title(f"Fischer-Tropsch Capacity by State (in kW){year_str}", fontsize=16, pad=20)
+    ax.axis('off')
+    plt.tight_layout()
+
+    return fig, ax, links_with_state
+
+def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_kw=10):
+    """
+    Create a map showing total FT capacity per grid region (in kW) as full circles.
+    """
+
+    import re
+
+    # Extract year from network name
+    year_match = re.search(r'\d{4}', network_name)
+    year_str = f" – {year_match.group()}" if year_match else ""
+
+    # Attach grid region to buses
+    network = attach_grid_region_to_buses(network, path_shapes, distance_crs)
+
+    # Filter FT-related links
+    ft_links = network.links[
+        network.links['carrier'].str.contains('FT|Fischer|Tropsch', case=False, na=False) |
+        network.links.index.str.contains('FT|Fischer|Tropsch', case=False, na=False)
+    ].copy()
+
+    if ft_links.empty:
+        print(f"No FT links found in the network: {network_name}")
+        return None, None, None
+
+    # Merge link data with grid_region, x, y from bus0
+    links_with_grid_region = ft_links.merge(
+        network.buses[["grid_region", "x", "y"]],
+        left_on="bus0",
+        right_index=True,
+        how="left"
+    )
+    links_with_grid_region["p_nom_kw"] = links_with_grid_region["p_nom_opt"] * 1000
+
+    # Aggregate capacity per grid region
+    grid_region_capacity = links_with_grid_region.groupby("grid_region").agg(
+        total_kw=("p_nom_kw", "sum"),
+        x=("x", "mean"),
+        y=("y", "mean")
+    ).reset_index()
+
+    # Filter small values
+    grid_region_capacity = grid_region_capacity[grid_region_capacity["total_kw"] >= min_capacity_kw]
+
+    # Set up map
+    fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={"projection": ccrs.PlateCarree()})
+
+    bbox = box(-130, 20, -60, 50)
+    shapes = gpd.read_file(path_shapes, crs=distance_crs)
+    shapes = shapes.to_crs(epsg=4326).clip(bbox)
+    shapes.plot(ax=ax, facecolor='whitesmoke', edgecolor='gray', alpha=0.7, linewidth=0.5)
+
+    # Plot circles
+    pie_scale = 0.04
+    for _, row in grid_region_capacity.iterrows():
+        x, y, total_kw = row["x"], row["y"], row["total_kw"]
+        radius = np.clip(np.sqrt(total_kw) * pie_scale, 0.1, 2.5)
+        circle = plt.Circle((x, y), radius, color='#B22222', alpha=0.6,
+                            transform=ccrs.PlateCarree(), zorder=4, linewidth=0)
+        ax.add_patch(circle)
+
+        ax.text(x, y - radius - 0.3, f'{int(total_kw)} kW',
+                ha='center', va='top', fontsize=9, fontweight='bold',
+                transform=ccrs.PlateCarree())
+
+    ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
+    ax.set_title(f"Fischer-Tropsch Capacity by Grid Region {year_str}", fontsize=16, pad=20)
+    ax.axis('off')
+    plt.tight_layout()
+
+    return fig, ax, grid_region_capacity
+    
 def filter_and_group_small_carriers(df, threshold=0.005):
     """
     Filters a DataFrame to group small contributors into an 'other' category.
@@ -312,7 +642,6 @@ def filter_and_group_small_carriers(df, threshold=0.005):
     if not other_carriers.empty:
         df_filtered['other'] = df[other_carriers].sum(axis=1)
     return df_filtered
-
 
 def calculate_dispatch(n, start_date=None, end_date=None):
     snapshots_slice = slice(start_date, end_date) if start_date and end_date else slice(None)
@@ -354,7 +683,6 @@ def plot_electricity_dispatch(networks, carrier_colors, start_date=None, end_dat
     summary_list = []
     max_y = 0
 
-    # Calcola dispatch per ogni network e trova il massimo valore per scala comune
     for key, n in networks.items():
         print(f"Processing network: {key}")
         total_gwh, supply_gw = calculate_dispatch(n, start_date, end_date)
@@ -363,33 +691,37 @@ def plot_electricity_dispatch(networks, carrier_colors, start_date=None, end_dat
 
     y_max_plot = ymax if ymax is not None else max_y
 
-    fig, axes = plt.subplots(len(networks), 1, figsize=(15, 5 * len(networks)), sharex=True)
+    fig, axes = plt.subplots(len(networks), 1, figsize=(22, 5 * len(networks)), sharex=True)
 
     if len(networks) == 1:
         axes = [axes]
 
-    # Plot dispatch for each network
     for ax, (key, n) in zip(axes, networks.items()):
         _, supply_gw = calculate_dispatch(n, start_date, end_date)
         supply_gw.plot.area(
+            ax=ax,
             stacked=True,
             linewidth=0,
             color=[carrier_colors.get(c, 'gray') for c in supply_gw.columns],
-            ax=ax,
-            legend=False
+            legend=False  # niente legenda automatica
         )
         ax.set_title(f"Electricity Dispatch – {key}")
         ax.set_ylabel("Power (GW)")
         ax.set_ylim(0, y_max_plot)
         ax.grid(True)
 
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(
+            handles, labels,
+            loc='center left',
+            bbox_to_anchor=(1.02, 0.5),
+            title='Carrier',
+            fontsize='small',
+            title_fontsize='medium'
+        )
+
     axes[-1].set_xlabel("Time")
-    plt.tight_layout(rect=[0, 0, 0.85, 1])
-
-    # Legenda unica a destra
-    handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc='upper right', bbox_to_anchor=(0.93, 0.95))
-
+    plt.tight_layout(rect=[0, 0, 0.80, 1])  # spazio extra a destra
     plt.show()
 
     return summary_list
@@ -406,7 +738,6 @@ def compute_and_plot_load(n, key="", ymax=None, start_date=None, end_date=None):
     total_hours = len(n.loads_t.p_set.index) * snapshot_hours
     total_static_gwh = static_load_gw * total_hours
 
-    # Aggiungi qui il calcolo del dispatch totale
     total_dispatch_gwh, _ = calculate_dispatch(n, start_date, end_date)
 
     # Plot electric load
@@ -438,7 +769,6 @@ def compute_and_plot_load(n, key="", ymax=None, start_date=None, end_date=None):
     plt.tight_layout(rect=[0, 0, 0.88, 1])
     plt.show()
 
-    # Restituisci anche il totale dispatch per riepilogo
     return {
         "key": key,
         "mean_dynamic_load_gw": dynamic_load_gw.mean(),
@@ -447,3 +777,136 @@ def compute_and_plot_load(n, key="", ymax=None, start_date=None, end_date=None):
         "total_static_gwh": total_static_gwh,
         "total_dispatch_gwh": total_dispatch_gwh,
     }
+
+def calculate_lcoe_summary_and_map(n, shapes):
+    snapshot_weights = n.snapshot_weightings.generators
+
+    valid_carriers = {
+        'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac', 'nuclear',
+        'geothermal', 'ror', 'hydro',
+        'gas', 'OCGT', 'CCGT', 'oil', 'coal', 'biomass', 'lignite',
+    }
+
+    # Generators
+    gen = n.generators[n.generators.carrier.isin(valid_carriers)].copy()
+    gen_dispatch = n.generators_t.p[gen.index].multiply(snapshot_weights, axis=0)
+    gen['energy'] = gen_dispatch.sum()
+    gen = gen[(gen.p_nom_opt > 0) & (gen.energy > 0)]
+    gen['lcoe'] = (gen.capital_cost * gen.p_nom_opt + gen.marginal_cost * gen.energy) / gen.energy
+    gen['type'] = 'generator'
+
+    # Storage units
+    sto = n.storage_units[n.storage_units.carrier.isin(valid_carriers)].copy()
+    sto_dispatch = n.storage_units_t.p[sto.index].clip(lower=0).multiply(snapshot_weights, axis=0)
+    sto['energy'] = sto_dispatch.sum()
+    sto = sto[(sto.p_nom_opt > 0) & (sto.energy > 0)]
+    sto['lcoe'] = (sto.capital_cost * sto.p_nom_opt + sto.marginal_cost * sto.energy) / sto.energy
+    sto['type'] = 'storage'
+
+    # Links
+    link = n.links[n.links.carrier.isin(valid_carriers)].copy()
+    link_dispatch = n.links_t.p1[link.index].multiply(snapshot_weights, axis=0)
+    link['energy'] = link_dispatch.sum()
+    link = link[(link.p_nom_opt > 0) & (link.energy > 0)]
+    link['lcoe'] = (link.capital_cost * link.p_nom_opt + link.marginal_cost * link.energy) / link.energy
+    link['type'] = 'link'
+
+    # Combine and merge
+    gen_data = gen[['bus', 'carrier', 'lcoe', 'type', 'energy']]
+    sto_data = sto[['bus', 'carrier', 'lcoe', 'type', 'energy']]
+    link_data = link[['bus1', 'carrier', 'lcoe', 'type', 'energy']].rename(columns={'bus1': 'bus'})
+
+    lcoe_data = pd.concat([gen_data, sto_data, link_data], axis=0).dropna()
+    lcoe_data = lcoe_data.merge(n.buses[['x', 'y', 'grid_region']], left_on='bus', right_index=True)
+
+    # Weighted mean LCOE per bus
+    def weighted_avg(df):
+        return (df['lcoe'] * df['energy']).sum() / df['energy'].sum()
+
+    lcoe_by_bus = (
+        lcoe_data.groupby('bus')
+        .apply(lambda df: pd.Series({
+            'weighted_lcoe': weighted_avg(df),
+            'x': df['x'].iloc[0],
+            'y': df['y'].iloc[0],
+            'grid_region': df['grid_region'].iloc[0]
+        }))
+        .reset_index()
+    )
+
+    # Aggregate by grid_region and carrier for weighted avg LCOE and dispatch
+    region_summary = (
+        lcoe_data.groupby(['grid_region', 'carrier'])
+        .agg(
+            dispatch_mwh=('energy', 'sum'),
+            total_cost=('lcoe', lambda x: (x * lcoe_data.loc[x.index, 'energy']).sum())
+        )
+        .reset_index()
+    )
+
+    # Calculate weighted avg LCOE per carrier & grid_region
+    region_summary['lcoe'] = region_summary['total_cost'] / region_summary['dispatch_mwh']
+
+    # Convert dispatch to TWh
+    region_summary['dispatch'] = region_summary['dispatch_mwh'] / 1e6
+
+    # Calculate weighted average LCOE per grid_region (all carriers)
+    weighted_avg_grid_region = (
+        region_summary.groupby('grid_region').apply(
+            lambda df: (df['dispatch_mwh'] * df['lcoe']).sum() / df['dispatch_mwh'].sum()
+        )
+    )
+
+    # Pivot to wide table for carriers
+    table = region_summary.pivot(index='grid_region', columns='carrier', values=['lcoe', 'dispatch'])
+    table.columns = [f"{carrier} {metric} [{'USD/MWh' if metric=='lcoe' else 'TWh'}]" for metric, carrier in table.columns]
+    table = table.reset_index()
+
+    # Add weighted average LCOE per grid_region as a simple column
+    table['Weighted Average LCOE (USD/MWh)'] = table['grid_region'].map(weighted_avg_grid_region).round(2)
+
+    # Round dispatch and lcoe to 2 decimals
+    for col in table.columns:
+        if col != 'grid_region':
+            table[col] = table[col].round(2)
+
+    # Color scale limits for the map based on weighted averages
+    vmin = lcoe_by_bus['weighted_lcoe'].quantile(0.05)
+    vmax = max(vmin, min(weighted_avg_grid_region.max() * 1.1, lcoe_by_bus['weighted_lcoe'].max()))
+
+    # GeoDataFrame for plotting
+    geometry = [Point(xy) for xy in zip(lcoe_by_bus['x'], lcoe_by_bus['y'])]
+    lcoe_gdf = gpd.GeoDataFrame(lcoe_by_bus, geometry=geometry, crs=shapes.crs).to_crs(shapes.crs)
+
+    return lcoe_gdf, table, lcoe_by_bus, lcoe_data, vmin, vmax
+
+def plot_lcoe_map_by_grid_region(lcoe_by_bus, lcoe_data, shapes, title=None, key=None, ax=None):
+    grid_region_lcoe = (
+        lcoe_by_bus.merge(lcoe_data[['bus', 'energy']], left_on='bus', right_on='bus', how='left')
+        .groupby('grid_region')
+        .apply(lambda df: (df['weighted_lcoe'] * df['energy']).sum() / df['energy'].sum())
+        .reset_index(name='weighted_lcoe')
+    )
+
+    shapes = shapes.rename(columns={'GRID_REGIO': 'grid_region'})
+    shapes_lcoe = shapes.merge(grid_region_lcoe, on='grid_region', how='left')
+
+    vmin = shapes_lcoe['weighted_lcoe'].quantile(0.05)
+    vmax = shapes_lcoe['weighted_lcoe'].quantile(0.95)
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(12, 10), subplot_kw={'projection': ccrs.PlateCarree()})
+
+    shapes_lcoe.plot(column='weighted_lcoe', cmap=plt.cm.get_cmap('RdYlGn_r'),
+                     linewidth=0.8, edgecolor='0.8', legend=True,
+                     vmin=vmin, vmax=vmax, ax=ax)
+
+    ax.set_extent([-130, -65, 20, 55], crs=ccrs.PlateCarree())
+    ax.axis('off')
+
+    if title:
+        ax.set_title(title)
+    elif key:
+        ax.set_title(f"LCOE Map for {key}")
+    else:
+        ax.set_title("Weighted Average LCOE per Grid Region")

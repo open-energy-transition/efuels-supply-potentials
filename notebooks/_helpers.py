@@ -671,41 +671,63 @@ def filter_and_group_small_carriers(df, threshold=0.005):
 
 
 def calculate_dispatch(n, start_date=None, end_date=None):
-    snapshots_slice = slice(
-        start_date, end_date) if start_date and end_date else slice(None)
+    # 1. Select time window
+    snapshots_slice = slice(start_date, end_date) if start_date and end_date else slice(None)
     snapshots = n.snapshots[snapshots_slice]
 
-    valid_carriers = {
+    # 2. Duration of each timestep
+    timestep_hours = (snapshots[1] - snapshots[0]).total_seconds() / 3600
+
+    # 3. Define valid carriers
+    gen_and_sto_carriers = {
         'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac', 'nuclear',
-        'geothermal', 'ror', 'hydro',
-        'gas', 'OCGT', 'CCGT', 'oil', 'coal', 'biomass', 'lignite',
+        'geothermal', 'ror', 'hydro', 'biomass', 'lignite'
     }
+    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT']
+    valid_carriers = gen_and_sto_carriers.union(link_carriers)
 
-    gen = n.generators[n.generators.carrier.isin(valid_carriers)]
-    gen_dispatch = n.generators_t.p.loc[snapshots_slice, gen.index].groupby(
-        n.generators.loc[gen.index, 'carrier'], axis=1).sum()
+    # 4. Identify electric buses
+    electric_buses = set(
+        n.buses.index[
+            ~n.buses.carrier.str.contains("heat|gas|H2|oil|coal", case=False, na=False)
+        ]
+    )
 
-    sto = n.storage_units[n.storage_units.carrier.isin(valid_carriers)]
-    sto_dispatch = n.storage_units_t.p.loc[snapshots_slice, sto.index].groupby(
-        n.storage_units.loc[sto.index, 'carrier'], axis=1).sum()
+    # 5. GENERATORS
+    gen = n.generators[n.generators.carrier.isin(gen_and_sto_carriers)]
+    gen_p = n.generators_t.p.loc[snapshots_slice, gen.index].clip(lower=0)
+    gen_dispatch = gen_p.groupby(gen['carrier'], axis=1).sum()
 
-    link = n.links[n.links.carrier.isin(
-        valid_carriers) & n.links.p_nom_opt.notnull()]
-    link_dispatch = n.links_t.p1.loc[snapshots_slice, link.index].groupby(
-        n.links.loc[link.index, 'carrier'], axis=1).sum()
+    # 6. STORAGE
+    sto = n.storage_units[n.storage_units.carrier.isin(gen_and_sto_carriers)]
+    sto_p = n.storage_units_t.p.loc[snapshots_slice, sto.index].clip(lower=0)
+    sto_dispatch = sto_p.groupby(sto['carrier'], axis=1).sum()
 
+    # 7. LINKS: only from conventional carriers and to electric buses
+    link_frames = []
+    for carrier in link_carriers:
+        links = n.links[
+            (n.links.carrier == carrier) &
+            (n.links.bus1.isin(electric_buses))
+        ]
+        if links.empty:
+            continue
+        p1 = n.links_t.p1.loc[snapshots_slice, links.index].clip(upper=0)
+        p1_positive = -p1
+        df = p1_positive.groupby(links['carrier'], axis=1).sum()
+        link_frames.append(df)
+
+    link_dispatch = pd.concat(link_frames, axis=1) if link_frames else pd.DataFrame(index=snapshots)
+
+    # 8. COMBINE all sources
     supply = pd.concat([gen_dispatch, sto_dispatch, link_dispatch], axis=1)
     supply = supply.groupby(supply.columns, axis=1).sum()
     supply = supply.clip(lower=0)
 
-    freq = pd.infer_freq(snapshots)
-    timestep_hours = 1 if freq is None else pd.Timedelta(
-        freq).total_seconds() / 3600
-
+    # 9. Convert to GW and GWh
     supply_gw = supply / 1e3  # MW → GW
-
     energy_mwh = supply.sum(axis=1) * timestep_hours
-    total_gwh = energy_mwh.sum() / 1e3  # MWh → GWh
+    total_gwh = energy_mwh.sum() / 1e3  # → GWh
 
     return total_gwh, supply_gw
 
@@ -762,8 +784,8 @@ def plot_electricity_dispatch(networks, carrier_colors, start_date=None, end_dat
 
 def compute_and_plot_load(n, key="", ymax=None, start_date=None, end_date=None):
     freq = pd.infer_freq(n.loads_t.p_set.index)
-    snapshot_hours = 1 if freq is None else pd.Timedelta(
-        freq).total_seconds() / 3600
+    snapshots = n.snapshots
+    snapshot_hours = (snapshots[1] - snapshots[0]).total_seconds() / 3600
 
     dynamic_load_gw = n.loads_t.p_set.sum(axis=1) / 1e3
     total_dynamic_gwh = (n.loads_t.p_set.sum(

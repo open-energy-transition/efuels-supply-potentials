@@ -1130,3 +1130,219 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
         
     plt.tight_layout()
     plt.show()
+
+
+def compute_emissions_from_links(net):
+    results = []
+
+    bus_cols = [col for col in net.links.columns if re.fullmatch(r"bus\d+", col)]
+
+    for i, row in net.links.iterrows():
+        carrier = row["carrier"]
+        link_name = i
+        co2_atmosphere = 0.0
+        co2_stored = 0.0
+
+        for j, bus_col in enumerate(bus_cols):
+            bus_val = str(row[bus_col]).lower().strip()
+            p_col = f"p{j}"
+
+            if p_col not in net.links_t or link_name not in net.links_t[p_col]:
+                continue
+
+            flow = net.links_t[p_col][link_name].mean() * 8760  # MWh/year
+
+            if "co2 atmosphere" in bus_val or "co2 atmoshpere" in bus_val:
+                co2_atmosphere -= flow
+            elif "co2 stored" in bus_val:
+                co2_stored += flow
+
+        results.append({
+            "link": link_name,
+            "carrier": carrier,
+            "co2_atmosphere": co2_atmosphere,
+            "co2_stored": co2_stored,
+        })
+
+    df = pd.DataFrame(results)
+    df = df[(df["co2_atmosphere"] != 0) | (df["co2_stored"] != 0)]
+
+    # Group per carrier and convert in Mt
+    summary = df.groupby("carrier")[["co2_atmosphere", "co2_stored"]].sum().reset_index()
+    summary["net_emissions"] = summary["co2_atmosphere"] - summary["co2_stored"]
+
+    summary[["co2_atmosphere", "co2_stored", "net_emissions"]] = (
+        summary[["co2_atmosphere", "co2_stored", "net_emissions"]] / 1e6
+    ).round(2)
+
+    summary = summary.rename(columns={
+        "co2_atmosphere": "co2_atmosphere [Mt CO2]",
+        "co2_stored": "co2_stored [Mt CO2]",
+        "net_emissions": "net_emissions [Mt CO2]"
+    })
+
+    return summary
+
+
+def compute_emissions_grouped(net, carrier_groups):
+
+    results = []
+
+    bus_cols = [col for col in net.links.columns if re.fullmatch(r"bus\d+", col)]
+
+    for i, row in net.links.iterrows():
+        carrier = row["carrier"]
+        link_name = i
+        co2_atmosphere = 0.0
+        co2_stored = 0.0
+
+        for j, bus_col in enumerate(bus_cols):
+            bus_val = str(row[bus_col]).lower().strip()
+            p_col = f"p{j}"
+
+            if p_col not in net.links_t or link_name not in net.links_t[p_col]:
+                continue
+
+            flow = net.links_t[p_col][link_name].mean() * 8760  # MWh/year
+
+            if "co2 atmosphere" in bus_val or "co2 atmoshpere" in bus_val:
+                co2_atmosphere -= flow
+            elif "co2 stored" in bus_val:
+                co2_stored += flow
+
+        results.append({
+            "link": link_name,
+            "carrier": carrier,
+            "co2_atmosphere": co2_atmosphere,
+            "co2_stored": co2_stored,
+        })
+
+    df = pd.DataFrame(results)
+
+    all_grouped_carriers = set(sum(carrier_groups.values(), []))
+    df = df[df["carrier"].isin(all_grouped_carriers)]
+
+    carrier_summary = df.groupby("carrier")[["co2_atmosphere", "co2_stored"]].sum().reset_index()
+
+    group_results = []
+    for group_name, group_carriers in carrier_groups.items():
+        group_df = carrier_summary[carrier_summary["carrier"].isin(group_carriers)]
+        co2_atm = group_df["co2_atmosphere"].sum()
+        co2_stored = group_df["co2_stored"].sum()
+        net_emissions = co2_atm - co2_stored
+
+        group_results.append({
+            "carrier_group": group_name,
+            "co2_atmosphere [Mt CO2]": round(co2_atm / 1e6, 2),
+            "co2_stored [Mt CO2]": round(co2_stored / 1e6, 2),
+            "net_emissions [Mt CO2]": round(net_emissions / 1e6, 2)
+        })
+
+    return pd.DataFrame(group_results)
+
+
+def compute_emissions_by_state(net, carrier_groups):
+
+    results = []
+
+    bus_cols = [col for col in net.links.columns if re.fullmatch(r"bus\d+", col)]
+
+    for i, row in net.links.iterrows():
+        carrier = row["carrier"]
+        link_name = i
+        co2_atmos = 0.0
+        co2_stored = 0.0
+
+        group = next((g for g, carriers in carrier_groups.items() if carrier in carriers), None)
+        if group is None:
+            continue
+
+        for j, bus_col in enumerate(bus_cols):
+            bus_val = str(row[bus_col]).lower().strip()
+            p_col = f"p{j}"
+
+            if p_col not in net.links_t or link_name not in net.links_t[p_col]:
+                continue
+
+            flow = net.links_t[p_col][link_name].mean() * 8760  # Mt CO2/year
+
+            if "co2 atmosphere" in bus_val or "co2 atmoshpere" in bus_val:
+                co2_atmos -= flow
+            elif "co2 stored" in bus_val:
+                co2_stored += flow
+
+        state = "Unknown"
+        for bus_col in bus_cols:
+            bus = row[bus_col]
+            if bus in net.buses.index:
+                s = net.buses.loc[bus, "state"]
+                if pd.notna(s) and s != "Unknown":
+                    state = s
+                    break
+
+        results.append({
+            "state": state,
+            "group": group,
+            "co2_atmosphere": co2_atmos,
+            "co2_stored": co2_stored
+        })
+
+    df = pd.DataFrame(results)
+
+    summary = df.groupby(["state", "group"])[["co2_atmosphere", "co2_stored"]].sum().reset_index()
+    summary["net_emissions"] = summary["co2_atmosphere"] - summary["co2_stored"]
+
+    summary[["co2_atmosphere", "co2_stored", "net_emissions"]] = (
+        summary[["co2_atmosphere", "co2_stored", "net_emissions"]] / 1e6 # Convert to MtCO2
+    ).round(2)
+
+    return summary
+
+def plot_emissions_maps_by_group(all_state_emissions, path_shapes, title):
+
+    # Upload shapefile and force CRS
+    gdf_states = gpd.read_file(path_shapes).to_crs("EPSG:4326")
+    gdf_states["State"] = gdf_states["ISO_1"].str[-2:]
+
+    groups = all_state_emissions["group"].unique()
+    n = len(groups)
+    ncols = 2
+    nrows = int(np.ceil(n / ncols))
+
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8 * ncols, 8 * nrows))
+    axes = axes.flat if n > 1 else [axes]
+
+    for i, group in enumerate(groups):
+        ax = axes[i]
+        df_group = all_state_emissions[all_state_emissions["group"] == group].copy()
+        df_group = df_group.rename(columns={"State": "State"})
+
+        merged = gdf_states.merge(df_group, on="State", how="left")
+        
+        merged.plot(
+            column="net_emissions",
+            cmap="Reds",
+            legend=True,
+            ax=ax,
+            missing_kwds={"color": "lightgrey", "label": "No data"},
+            edgecolor="black"
+        )
+        
+        ax.set_title(f"{group}", fontsize=12)
+        ax.set_xlim([-180, -65])
+        ax.set_ylim([15, 75])
+        ax.axis("off")
+
+        leg = ax.get_legend()
+        if leg:
+            leg.set_bbox_to_anchor((1, 0.5))
+            for t in leg.get_texts():
+                t.set_fontsize(8)
+
+    for j in range(i + 1, len(axes)):
+        axes[j].axis("off")
+
+    fig.suptitle(f"Net Emissions by process and State [MtCO2/yr] - {title}", fontsize=18)
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.9)
+    plt.show()

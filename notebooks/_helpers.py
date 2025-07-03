@@ -846,6 +846,9 @@ def calculate_lcoe_summary_and_map(n, shapes):
         'geothermal', 'ror', 'hydro',
         'gas', 'OCGT', 'CCGT', 'oil', 'coal', 'biomass', 'lignite',
     }
+    
+    # Identify electric buses (exclude heat, gas, H2, oil, coal buses)
+    electric_buses = set(n.buses.query("carrier == 'AC'").index)
 
     # Generators
     gen = n.generators[n.generators.carrier.isin(valid_carriers)].copy()
@@ -868,9 +871,21 @@ def calculate_lcoe_summary_and_map(n, shapes):
     sto['type'] = 'storage'
 
     # Links
-    link = n.links[n.links.carrier.isin(valid_carriers)].copy()
-    link_dispatch = n.links_t.p1[link.index].multiply(snapshot_weights, axis=0)
-    link['energy'] = link_dispatch.sum()
+    # Select only links going to electric buses and with p_nom_opt > 0
+    link = n.links[
+        (n.links.carrier.isin(valid_carriers)) &
+        (n.links.bus1.isin(electric_buses)) &
+        (n.links.p_nom_opt > 0)
+    ].copy()
+    
+    # Take only actual output (p1 < 0 → output), clip to keep only negative, and make positive
+    link_dispatch = -n.links_t.p1[link.index].clip(upper=0)
+    
+    # Multiply by snapshot weights (if needed)
+    weighted_link_dispatch = link_dispatch.multiply(snapshot_weights, axis=0)
+    
+    # Sum energy
+    link['energy'] = weighted_link_dispatch.sum()
     link = link[(link.p_nom_opt > 0) & (link.energy > 0)]
     link['lcoe'] = (link.capital_cost * link.p_nom_opt +
                     link.marginal_cost * link.energy) / link.energy
@@ -1151,3 +1166,122 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
         
     plt.tight_layout()
     plt.show()
+
+def plot_lcoh_maps_by_grid_region(networks, shapes, h2_carriers, output_threshold=1.0):
+    """
+    Compute and plot weighted average LCOH per grid region for each year in USD/kg H2.
+
+    Parameters:
+    - networks: dict of PyPSA networks (year -> network)
+    - shapes: GeoDataFrame with grid region geometries
+    - h2_carriers: list of hydrogen production carrier names
+    - output_threshold: minimum hydrogen output (MWh) to include a link in calculations
+    """
+
+    all_results = []
+
+    # Normalize the grid_region column name
+    for col in ["Grid Region", "GRID_REGIO", "grid_region"]:
+        if col in shapes.columns:
+            shapes = shapes.rename(columns={col: "grid_region"})
+            break
+    else:
+        raise KeyError("No 'grid_region' column found in shapes GeoDataFrame")
+
+    for year, network in networks.items():
+        print(f"Processing year: {year}")
+
+        hydrogen_links = network.links[network.links.carrier.isin(h2_carriers)]
+        if hydrogen_links.empty:
+            print("  No valid H2 links, skipping.")
+            continue
+
+        link_ids = hydrogen_links.index
+
+        # Energy flows: electricity in (MWh), H2 out (MWh)
+        p0 = network.links_t.p0[link_ids]
+        p1 = network.links_t.p1[link_ids]
+        h2_output = -p1.sum()  # flip sign: production is negative in PyPSA
+
+        # Filter valid links by output threshold
+        valid_links = h2_output > output_threshold
+        if valid_links.sum() == 0:
+            print(f"  No links with H2 output > {output_threshold} MWh, skipping.")
+            continue
+
+        # Electricity prices by input bus
+        prices = pd.DataFrame(index=p0.index, columns=link_ids)
+        for link in link_ids:
+            bus = hydrogen_links.loc[link, "bus0"]
+            prices[link] = network.buses_t.marginal_price[bus]
+
+        # Calculate electricity cost (USD) per link (sum over time)
+        elec_cost = (p0.loc[:, valid_links] * prices.loc[:, valid_links]).sum()
+
+        capex = hydrogen_links.loc[valid_links, "capital_cost"]
+        opex = hydrogen_links.loc[valid_links, "marginal_cost"]
+        h2_output_valid = h2_output[valid_links]
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            # Calculate LCOH in USD/MWh H2
+            lcoh = (capex + opex + elec_cost) / h2_output_valid
+            lcoh = lcoh.replace([np.inf, -np.inf], np.nan)
+
+            # Convert USD/MWh to USD/kg (1 MWh H2 ≈ 33.33 kg)
+            lcoh_kg = lcoh / 33.33
+
+        df = pd.DataFrame({
+            "lcoh": lcoh_kg,
+            "h2_output": h2_output_valid,
+            "bus": hydrogen_links.loc[valid_links, "bus0"]
+        })
+
+        df["grid_region"] = df["bus"].map(network.buses["grid_region"])
+        df["year"] = year
+        df = df.dropna(subset=["grid_region", "lcoh", "h2_output"])
+
+        all_results.append(df)
+
+    if not all_results:
+        print("No valid data for LCOH plotting.")
+        return
+
+    all_df = pd.concat(all_results, ignore_index=True)
+
+    region_lcoh = (
+        all_df.groupby(["grid_region", "year"])
+        .apply(lambda g: pd.Series({
+            "weighted_lcoh": (g["lcoh"] * g["h2_output"]).sum() / g["h2_output"].sum()
+        }))
+        .reset_index()
+    )
+
+    plot_df = shapes.merge(region_lcoh, on="grid_region", how="left")
+
+    for year in sorted(region_lcoh.year.unique()):
+        fig, ax = plt.subplots(figsize=(12, 10), subplot_kw={"projection": ccrs.PlateCarree()})
+
+        year_df = plot_df[plot_df.year == year]
+
+        vmin = year_df["weighted_lcoh"].quantile(0.05)
+        vmax = year_df["weighted_lcoh"].quantile(0.95)
+
+        year_df.plot(
+            column="weighted_lcoh",
+            cmap="RdYlGn_r",
+            linewidth=0.8,
+            edgecolor="0.8",
+            legend=True,
+            legend_kwds={
+                "label": "LCOH (USD/kg H₂)",
+                "orientation": "vertical"
+            },
+            vmin=vmin,
+            vmax=vmax,
+            ax=ax
+        )
+
+        ax.set_extent([-130, -65, 20, 55], crs=ccrs.PlateCarree())
+        ax.axis("off")
+        ax.set_title(f"LCOH – {year.split('_')[-1]}", fontsize=14)
+        plt.show()

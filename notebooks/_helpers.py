@@ -572,7 +572,7 @@ def create_ft_capacity_map(network, path_shapes, network_name="Network", distanc
     # Final layout
     ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
     ax.set_title(
-        f"Fischer-Tropsch Capacity by State (in kW){year_str}", fontsize=16, pad=20)
+        f"Fischer-Tropsch Capacity by State (in kW){year_str}")
     ax.axis('off')
     plt.tight_layout()
 
@@ -681,9 +681,9 @@ def calculate_dispatch(n, start_date=None, end_date=None):
     # 3. Define valid carriers
     gen_and_sto_carriers = {
         'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac', 'nuclear',
-        'geothermal', 'ror', 'hydro', 'biomass', 'lignite'
+        'geothermal', 'ror', 'hydro'
     }
-    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT']
+    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass']
     valid_carriers = gen_and_sto_carriers.union(link_carriers)
 
     # 4. Identify electric buses
@@ -1147,8 +1147,7 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
     ax.set_extent([-130, -60, 20, 50], crs=ccrs.PlateCarree())
     ax.autoscale(False)
 
-    ax.set_title(f'Installed Hydrogen Electrolyzer Capacity for {title}', 
-                fontsize=12, fontweight='bold', pad=30)
+    ax.set_title(f'Installed electrolyzer capacity for {title}')
         
     plt.tight_layout()
     plt.show()

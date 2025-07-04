@@ -1273,7 +1273,7 @@ def plot_lcoh_maps_by_grid_region(networks, shapes, h2_carriers, output_threshol
             edgecolor="0.8",
             legend=True,
             legend_kwds={
-                "label": "LCOH (USD/kg H₂)",
+                "label": "LCOH (USD/kg H2)",
                 "orientation": "vertical"
             },
             vmin=vmin,
@@ -1285,3 +1285,76 @@ def plot_lcoh_maps_by_grid_region(networks, shapes, h2_carriers, output_threshol
         ax.axis("off")
         ax.set_title(f"LCOH – {year.split('_')[-1]}", fontsize=14)
         plt.show()
+
+def calculate_weighted_lcoh_table_by_year(networks, h2_carriers, output_threshold=1.0):
+    """
+    Calculate weighted average LCOH (USD/kg) and total hydrogen dispatch (kg)
+    per grid region for each year, matching the logic of the plotting function.
+
+    Parameters:
+    - networks: dict of PyPSA networks {year: network}
+    - h2_carriers: list of hydrogen carrier names
+    - output_threshold: minimum hydrogen output (MWh) to include a link
+
+    Returns:
+    - dict of DataFrames keyed by year string, each DataFrame contains:
+      ['grid_region', 'Weighted Average LCOH (USD/kg)', 'Total Hydrogen Dispatch (kg)']
+    """
+    import re
+    all_results = {}
+
+    for year_key, network in networks.items():
+        # Extract simple year string matching plot title style
+        year_str = str(year_key)
+        simple_year = year_str.split('_')[-1]  # e.g. 'network_2025' → '2025'
+
+        hydrogen_links = network.links[network.links.carrier.isin(h2_carriers)]
+        if hydrogen_links.empty:
+            continue
+
+        link_ids = hydrogen_links.index
+        p0 = network.links_t.p0[link_ids]
+        p1 = network.links_t.p1[link_ids]
+        h2_output = -p1.sum()
+
+        valid_links = h2_output > output_threshold
+        if valid_links.sum() == 0:
+            continue
+
+        prices = pd.DataFrame(index=p0.index, columns=link_ids)
+        for link in link_ids:
+            bus = hydrogen_links.loc[link, "bus0"]
+            prices[link] = network.buses_t.marginal_price[bus]
+
+        elec_cost = (p0.loc[:, valid_links] * prices.loc[:, valid_links]).sum()
+        capex = hydrogen_links.loc[valid_links, "capital_cost"]
+        opex = hydrogen_links.loc[valid_links, "marginal_cost"]
+        h2_output_valid = h2_output[valid_links]
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            lcoh = (capex + opex + elec_cost) / h2_output_valid
+            lcoh = lcoh.replace([np.inf, -np.inf], np.nan)
+            lcoh_kg = lcoh / 33.33
+
+        df_bus = pd.DataFrame({
+            "lcoh": lcoh_kg,
+            "h2_output": h2_output_valid,
+            "bus": hydrogen_links.loc[valid_links, "bus0"]
+        })
+
+        df_bus["grid_region"] = df_bus["bus"].map(network.buses["grid_region"])
+        df_bus = df_bus.dropna(subset=["grid_region", "lcoh", "h2_output"])
+
+        region_summary = (
+            df_bus.groupby('grid_region')
+            .apply(lambda g: pd.Series({
+                'Weighted Average LCOH (USD/kg)': (g['lcoh'] * g['h2_output']).sum() / g['h2_output'].sum(),
+                'Total Hydrogen Dispatch (tons)': g['h2_output'].sum() * 33.33 / 1000 # MWh --> tons
+            }))
+            .reset_index()
+        )
+
+        all_results[simple_year] = region_summary.round(2)
+
+    return all_results
+

@@ -1162,7 +1162,8 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
     ax.set_extent([-130, -60, 20, 50], crs=ccrs.PlateCarree())
     ax.autoscale(False)
 
-    ax.set_title(f'Installed electrolyzer capacity for {title}')
+    year = str(title)[-4:]
+    ax.set_title(f'Installed electrolyzer capacity - {year}')
         
     plt.tight_layout()
     plt.show()
@@ -1424,3 +1425,85 @@ def calculate_total_generation_by_carrier(network, start_date=None, end_date=Non
     total_energy_twh = total_energy_twh.sort_values(ascending=False)
 
     return total_energy_twh
+
+def plot_hourly_hydrogen_dispatch_all(networks, h2_carriers, output_threshold=1.0):
+    """
+    Plot hourly hydrogen dispatch per carrier (stacked area plot) for each network in the input dictionary.
+    All plots share the same y-axis scale.
+    
+    Parameters:
+    - networks: dict of PyPSA networks (e.g. {'scenario_2025': network, ...})
+    - h2_carriers: list of hydrogen-producing carrier names (e.g. ['PEM', 'SOEC'])
+    - output_threshold: minimum total energy (MWh) to include a link in the analysis
+    """
+    # First pass: find global max dispatch to fix y-axis scale
+    global_max = 0
+    dispatch_series_by_network = {}
+
+    for key, network in networks.items():
+        h2_links = network.links[network.links.carrier.isin(h2_carriers)]
+        if h2_links.empty:
+            continue
+
+        link_ids = h2_links.index
+        p1 = network.links_t.p1[link_ids]
+        h2_output = -p1  # Flip sign: PyPSA convention
+
+        data = {}
+        for carrier in h2_carriers:
+            carrier_links = h2_links[h2_links.carrier == carrier].index
+            if carrier_links.empty:
+                continue
+
+            output = h2_output[carrier_links]
+            output = output.loc[:, output.sum() > output_threshold]
+            if output.empty:
+                continue
+
+            data[carrier] = output.sum(axis=1)
+
+        if not data:
+            continue
+
+        df = pd.DataFrame(data)
+        df = df * 0.03333  # Convert to tons
+        dispatch_series_by_network[key] = df
+
+        max_dispatch = df.sum(axis=1).max()
+        if max_dispatch > global_max:
+            global_max = max_dispatch
+
+    if not dispatch_series_by_network:
+        print("No valid hydrogen dispatch data found.")
+        return
+
+    # Second pass: generate plots with fixed y-axis
+    for key, df in dispatch_series_by_network.items():
+        fig, ax = plt.subplots(figsize=(15, 5))
+        df.plot.area(ax=ax, linewidth=0)
+        year = key[-4:]  # Extract the year
+        ax.set_title(f"Electricity Dispatch – {year}")
+        ax.set_title(f"Hydrogen Dispatch by Carrier – {year}", fontsize=14)
+        ax.set_ylabel("Hydrogen Dispatch (tons/hour)")
+        ax.set_xlabel("Time")
+        ax.set_ylim(0, global_max * 1.05)  # add 5% headroom
+        ax.grid(axis='y', linestyle='--', alpha=0.5)
+    
+        start = df.index.min().replace(day=1)
+        end = df.index.max()
+        month_starts = pd.date_range(start=start, end=end, freq='MS')
+    
+        ax.set_xlim(start, end)
+        ax.set_xticks(month_starts)
+        ax.set_xticklabels(month_starts.strftime('%b'))
+        ax.tick_params(axis='x', rotation=0)        
+        
+        ax.legend(
+            title="Carrier",
+            loc='center left',
+            bbox_to_anchor=(1.02, 0.5),
+            frameon=False
+        )
+
+        plt.tight_layout(rect=[0, 0, 0.85, 1])
+        plt.show()

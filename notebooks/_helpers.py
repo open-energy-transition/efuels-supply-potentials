@@ -1498,3 +1498,143 @@ def plot_hourly_hydrogen_dispatch_all(networks, h2_carriers, output_threshold=1.
 
         plt.tight_layout(rect=[0, 0, 0.85, 1])
         plt.show()
+
+def analyze_fischer_tropsch_costs_by_region(networks: dict):
+    """
+    Compute and display total Fischer-Tropsch fuel production and
+    total marginal cost (USD/MWh) by grid region for each network.
+    """
+    for name, n in networks.items():
+        # 1. Identify Fischer-Tropsch links
+        ft_links = n.links[n.links.carrier.str.contains("Fischer", case=False, na=False)].copy()
+        if ft_links.empty:
+            print(f"\n{name}: No Fischer-Tropsch links found.")
+            continue
+
+        ft_link_ids = ft_links.index
+
+        # 2. Extract hourly marginal prices for input buses (H2, CO2, electricity)
+        price_dict = {}
+        for link in ft_link_ids:
+            price_dict[link] = {
+                "h2_price":   n.buses_t.marginal_price[ft_links.at[link, "bus0"]],
+                "co2_price":  n.buses_t.marginal_price[ft_links.at[link, "bus2"]],
+                "elec_price": n.buses_t.marginal_price[ft_links.at[link, "bus3"]],
+            }
+
+        # 3. Multiply prices × flows to compute total input cost per link
+        p0 = n.links_t.p0[ft_link_ids]
+        p2 = n.links_t.p2[ft_link_ids]
+        p3 = n.links_t.p3[ft_link_ids]
+        p1 = n.links_t.p1[ft_link_ids]
+
+        marginal_cost_inputs = {}
+        for link in ft_link_ids:
+            cost_h2   = (p0[link] * price_dict[link]["h2_price"]).sum()
+            cost_co2  = (p2[link] * price_dict[link]["co2_price"]).sum()
+            cost_elec = (p3[link] * price_dict[link]["elec_price"]).sum()
+            total_input_cost = cost_h2 + cost_co2 + cost_elec
+            marginal_cost_inputs[link] = total_input_cost
+
+        # 4. Compute total marginal cost per MWh of fuel output (input + technical cost)
+        marginal_cost_total = {}
+        for link in ft_link_ids:
+            output_mwh = -p1[link].sum()
+            if output_mwh <= 0:
+                continue
+            tech_cost = ft_links.at[link, "marginal_cost"] * output_mwh
+            total_cost_per_mwh = (marginal_cost_inputs[link] + tech_cost) / output_mwh
+            marginal_cost_total[link] = {
+                "bus": ft_links.at[link, "bus1"],
+                "production [MWh]": output_mwh,
+                "marginal_cost_total [USD/MWh]": total_cost_per_mwh
+            }
+
+        # 5. Map each link's output bus to its grid_region
+        df_links = pd.DataFrame.from_dict(marginal_cost_total, orient="index")
+        bus_to_region = n.buses["grid_region"].to_dict()
+        df_links["grid_region"] = df_links["bus"].map(bus_to_region)
+        df_links = df_links.dropna(subset=["grid_region"])
+
+        # 6. Aggregate by grid_region (sum production, weighted average of cost)
+        grouped = df_links.groupby("grid_region")
+        sum_prod = grouped["production [MWh]"].sum()
+        weighted_cost = grouped.apply(
+            lambda g: (g["marginal_cost_total [USD/MWh]"] * g["production [MWh]"]).sum() / g["production [MWh]"].sum()
+        )
+
+        df_region_result = pd.DataFrame({
+            "production [MWh]": sum_prod,
+            "marginal_cost_total [USD/MWh]": weighted_cost
+        })
+
+        # 7. Round to 2 decimals
+        df_region_result = df_region_result.round(2)
+
+        # Reset index to make 'grid_region' a visible column
+        df_region_result = df_region_result.reset_index()
+
+        # Rename columns
+        df_region_result = df_region_result.rename(columns={
+            "grid_region": "Grid region",
+            "production [MWh]": "Production (MWh)",
+            "marginal_cost_total [USD/MWh]": "e-kerosene marginal cost (USD/MWh)"
+        })
+
+        # Format numbers and hide index
+        styled = df_region_result.style.format({
+            "Production (MWh)": "{:,.2f}",
+            "e-kerosene marginal cost (USD/MWh)": "{:,.2f}"
+        }).hide(axis="index")
+
+        # Extract year from network name
+        match = re.search(r"\d{4}", name)
+        year = match.group() if match else "unknown"
+
+        print(f"\nYear: {year}")
+        display(styled)
+
+def compute_aviation_fuel_demand(networks):
+    results = {}
+
+    for name, n in networks.items():
+        # Estrai l'anno
+        year = ''.join(filter(str.isdigit, name[-4:]))
+
+        # Trova i load per ciascun carrier
+        kerosene_load_names = n.loads[n.loads.carrier == "kerosene for aviation"].index
+        ekerosene_load_names = n.loads[n.loads.carrier == "e-kerosene for aviation"].index
+
+        # Durata in ore per timestep
+        weightings = n.snapshot_weightings.generators
+
+        # Energia in MWh
+        kerosene_mwh = n.loads_t.p[kerosene_load_names].multiply(weightings, axis=0).sum().sum()
+        ekerosene_mwh = n.loads_t.p[ekerosene_load_names].multiply(weightings, axis=0).sum().sum()
+
+        # Conversione in TWh
+        kerosene_twh = kerosene_mwh / 1e6
+        ekerosene_twh = ekerosene_mwh / 1e6
+
+        # Salva nel dizionario
+        results[year] = {
+            "Kerosene (TWh)": kerosene_twh,
+            "e-Kerosene (TWh)": ekerosene_twh
+        }
+
+    # Crea DataFrame
+    df = pd.DataFrame.from_dict(results, orient="index")
+    df.index.name = "Year"
+    df.reset_index(inplace=True)
+
+    # Totali e percentuali
+    df["Total (TWh)"] = df["Kerosene (TWh)"] + df["e-Kerosene (TWh)"]
+    df["e-Kerosene Share (%)"] = (df["e-Kerosene (TWh)"] / df["Total (TWh)"]) * 100
+
+    # Rimuove quasi-zero
+    df[df.select_dtypes(include='number').columns] = df.select_dtypes(include='number').applymap(
+        lambda x: 0 if abs(x) < 1e-6 else x
+    )
+
+    return df
+

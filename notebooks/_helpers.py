@@ -26,6 +26,7 @@ import matplotlib.lines as mlines
 from matplotlib.legend_handler import HandlerPatch
 import matplotlib.dates as mdates
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib.font_manager import FontProperties
 
 import plotly.express as px
 import plotly.graph_objects as go
@@ -277,7 +278,7 @@ def compute_h2_capacities(network):
         how='left'
     )
 
-    capacity_data['p_nom_kw'] = capacity_data['p_nom_opt'] * 1000
+    capacity_data['p_nom_kw'] = capacity_data['p_nom_opt'] # MW
     h2_capacity_data = capacity_data.pivot_table(
         index='bus0',
         columns='carrier',
@@ -313,7 +314,7 @@ def plot_h2_capacities_bar(network, title):
         kind='bar',
         stacked=True,
         title=f'Hydrogen Electrolyzer Capacity by Region and Type: {title}',
-        ylabel='Capacity (kW)',
+        ylabel='Capacity (MW)',
         xlabel='Region',
     )
 
@@ -1008,21 +1009,15 @@ def plot_lcoe_map_by_grid_region(lcoe_by_bus, lcoe_data, shapes, title=None, key
     else:
         ax.set_title("Weighted Average LCOE (USD/MWh) per Grid Region")
 
-
 def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onshore):
-    """
-    Plot the H2 capacities on a map.
-    """
-    
+
     h2_carriers_links = ['H2 pipeline repurposed', 'H2 pipeline']
-    h2_carriers_buses = ['Alkaline electrolyzer large', 'PEM electrolyzer', 'SOEC',]
-    
+    h2_carriers_buses = ['Alkaline electrolyzer large', 'PEM electrolyzer', 'SOEC']
+
     net = network.copy()
-    assign_location(net)
-
     h2_capacity_data = compute_h2_capacities(net)[h2_carriers_buses]
-
     net.links.query("carrier in @h2_carriers_links", inplace=True)
+
     valid_buses = net.buses.dropna(subset=["x", "y"])
     valid_buses = valid_buses[
         (valid_buses["x"] > -200) & (valid_buses["x"] < 200) &
@@ -1032,141 +1027,136 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
     fig, ax = plt.subplots(figsize=(14, 10), subplot_kw={"projection": ccrs.PlateCarree()})
     bbox = box(-130, 20, -60, 50)
     regions_onshore_clipped = regions_onshore.to_crs(epsg=4326).clip(bbox)
-    regions_onshore_clipped.plot(
-            ax=ax,
-            facecolor='whitesmoke',
-            edgecolor='gray',
-            alpha=0.7,
-            linewidth=0.5,
-            zorder=0,
-        )
+    regions_onshore_clipped.plot(ax=ax, facecolor='whitesmoke', edgecolor='gray',
+                                 alpha=0.7, linewidth=0.5, zorder=0)
 
-    line_scale = 5e-3
-    net.plot(
-            ax=ax,
-            bus_sizes=0,
-            bus_alpha=0,
-            # link_widths=net.links.p_nom_opt / line_scale,
-            line_colors='teal',
-            link_colors='turquoise',
-            color_geomap=False,
-            flow=None,
-            branch_components=['Link'],
-            boundaries=[-130, -60, 20, 50],  # view showing
-        )
-    pie_scale = 1
+    line_scale = 5e2
+    net.plot(ax=ax,
+             bus_sizes=0,
+             bus_alpha=0,
+             link_widths=net.links.p_nom_opt / line_scale,
+             line_colors='teal',
+             link_colors='turquoise',
+             color_geomap=False,
+             flow=None,
+             branch_components=['Link'],
+             boundaries=[-130, -60, 20, 50])
+
+    max_cap = h2_capacity_data.sum(axis=1).max()
 
     for bus_id, capacities in h2_capacity_data.iterrows():
+        if bus_id not in valid_buses.index:
+            continue
         x, y = valid_buses.loc[bus_id, ['x', 'y']]
         if not bbox.contains(gpd.points_from_xy([x], [y])[0]):
             continue
 
-        values = capacities.values
-        total = values.sum()
-        if total == 0:
+        total = capacities.sum()
+        if total < 10:
             continue
 
-        size = np.clip(np.sqrt(total) * pie_scale, 0.1, 1.5)
+        radius = np.clip(np.sqrt(total) * 0.02, 0.3, 2.0)
         colors = [tech_colors.get(c, 'gray') for c in capacities.index]
-        
+
         start_angle = 0
-        for val, color in zip(values, colors):
+        for val, color in zip(capacities.values, colors):
             if val == 0:
                 continue
-            angle = 360 * val / total  # proporzione rispetto al totale del nodo
-            wedge = Wedge(
-                center=(x, y),
-                r=size * 0.5,
-                theta1=start_angle,
-                theta2=start_angle + angle,
-                facecolor=color,
-                edgecolor='k',
-                linewidth=0.3,
-                transform=ccrs.PlateCarree()._as_mpl_transform(ax),
-                zorder=5,
-            )
+            angle = 360 * val / total
+            wedge = Wedge(center=(x, y),
+                          r=radius,
+                          theta1=start_angle,
+                          theta2=start_angle + angle,
+                          facecolor=color,
+                          edgecolor='k',
+                          linewidth=0.3,
+                          transform=ccrs.PlateCarree()._as_mpl_transform(ax),
+                          zorder=5)
             ax.add_patch(wedge)
             start_angle += angle
-            # ax.annotate(f'{total:.02f} kW', 
-            #            xy=(x, y - size - 0.3), 
-            #            ha='center', va='top', fontsize=5, fontweight='bold')
 
-    class HandlerCircle(HandlerPatch):
-        def create_artists(self, legend, orig_handle,
-                            xdescent, ydescent, width, height, fontsize, trans):
-            center = (width / 2, height / 2)
-            radius = orig_handle.get_radius()
-            p = plt.Circle(center, radius)
-            self.update_prop(p, orig_handle, legend)
-            p.set_transform(trans)
-            return [p]
+        ax.text(x, y + radius + 0.3,
+                f"{total:.1e} MW",
+                transform=ccrs.PlateCarree(),
+                fontsize=8,
+                ha='center',
+                va='bottom',
+                zorder=6,
+                bbox=dict(facecolor='white', edgecolor='gray',
+                          boxstyle='round,pad=0.2', alpha=0.7))
 
-    # Legends
-    bus_caps = [0.1, 0.5, 1]
-    bus_patches = []
-    for cap in bus_caps:
-        r_in_map = np.sqrt(cap)
-        r_pts = r_in_map * fig.dpi * 2
-        circ = plt.Circle((0, 0), radius=r_pts / 0.2 / fig.dpi, color='gray', alpha=0.5)
-        bus_patches.append(circ)
+    # --- LEGENDS ---
+    legend_anchor_x = 1.05
+    bold_fp = FontProperties(weight='bold', size=10)
 
-    bus_legend = ax.legend(
-        bus_patches,
-        [f"{cap} kW" for cap in bus_caps],
-        title="Bus Capacity",
-        title_fontsize=10,
-        fontsize=10,
-        frameon=False,
-        handler_map={mpatches.Circle: HandlerCircle()},
-        loc='upper right',
-        bbox_to_anchor=(1.05, 0.95),
-        labelspacing=0.9,
-    )
-
-    link_caps = [0.1, 0.5, 1]
-    # link_scale = 12
-    link_patches = [
-        mlines.Line2D([], [], color='turquoise', linewidth=cap, label=f"{cap} kW")
-        for cap in link_caps
+    # Electrolyzer Capacity Legend
+    legend_caps = [1e1, 1e2, 1e3]
+    legend_elements = [
+        plt.Line2D([0], [0], marker='o', color='gray',
+                   markersize=np.clip(np.sqrt(cap) * 0.02, 0.3, 2.0) * 20,
+                   alpha=0.4, linestyle='None', label=f'{cap:.0e} MW')
+        for cap in legend_caps
     ]
-    link_legend = ax.legend(
-        handles=link_patches,
-        title="H2 Pipeline",
-        title_fontsize=10,
-        fontsize=8,
-        frameon=False,
-        loc='upper right',
-        bbox_to_anchor=(1.05, 0.70)
-    )
+    cap_legend = ax.legend(handles=legend_elements,
+                           title="Electrolyzer Capacity",
+                           title_fontproperties=bold_fp,
+                           fontsize=9,
+                           loc='upper left',
+                           bbox_to_anchor=(legend_anchor_x, 1),
+                           frameon=False,
+                           labelspacing=2.5,
+                           handletextpad=1.2) 
 
+    # H2 pipeline legend
+    link_caps_MW = [10, 100, 1000]
+    # Apply a visual scaling factor to improve legend visibility
+    legend_line_scale_factor = 2.5  # Adjust this if needed
+    
+    link_patches = [
+        mlines.Line2D([], [], color='turquoise',
+                      linewidth=(cap / line_scale) * legend_line_scale_factor,
+                      label=f"{cap} MW")
+        for cap in link_caps_MW
+    ]
+
+    line_legend = ax.legend(handles=link_patches,
+                            title="H2 Pipeline",
+                            title_fontproperties=FontProperties(weight='bold'),
+                            fontsize=9,
+                            loc='upper left',
+                            bbox_to_anchor=(legend_anchor_x, 0.6),
+                            frameon=False,
+                            labelspacing=1.0)
+
+    # Technology legend
     carrier_handles = [
-            mpatches.Patch(color=tech_colors.get(c, 'gray'), label=nice_names.get(c, c))
-            for c in sorted(h2_capacity_data.columns) if h2_capacity_data[c].sum() > 0
-        ]
-    carrier_legend = ax.legend(
-        handles=carrier_handles,
-        title="Carriers",
-        title_fontsize=10,
-        fontsize=10,
-        frameon=False,
-        loc='upper right',
-        bbox_to_anchor=(1.05, 0.55),
-        ncol=1,
-        labelspacing=0.9,
-    )
+        mpatches.Patch(color=tech_colors.get(c, 'gray'),
+                       label=nice_names.get(c, c))
+        for c in sorted(h2_capacity_data.columns)
+        if h2_capacity_data[c].sum() > 0
+    ]
+    tech_legend = ax.legend(handles=carrier_handles,
+                            title="Electrolyzer technologies",
+                            title_fontproperties=FontProperties(weight='bold'),
+                            fontsize=9,
+                            loc='upper left',
+                            bbox_to_anchor=(legend_anchor_x, 0.35),
+                            frameon=False,
+                            labelspacing=1.0)
 
-    ax.add_artist(bus_legend)
-    ax.add_artist(link_legend)
-    ax.add_artist(carrier_legend)
+    tech_legend._legend_title_box._text.set_ha("left")
+
+    # Add in order
+    ax.add_artist(cap_legend)
+    ax.add_artist(line_legend)
+    ax.add_artist(tech_legend)
 
     ax.set_extent([-130, -60, 20, 50], crs=ccrs.PlateCarree())
-    ax.autoscale(False)
 
-    year = str(title)[-4:]
-    ax.set_title(f'Installed electrolyzer capacity - {year}')
-        
+    ax.set_title(f'Installed electrolyzer capacity - {title} (MW) (only nodes ≥ 10 MW)')
     plt.tight_layout()
     plt.show()
+
 
 def plot_lcoh_maps_by_grid_region(networks, shapes, h2_carriers, output_threshold=1.0):
     """

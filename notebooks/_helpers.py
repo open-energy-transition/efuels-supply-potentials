@@ -979,7 +979,7 @@ def calculate_lcoe_summary_and_map(n, shapes):
     return lcoe_gdf, table, lcoe_by_bus, lcoe_data, vmin, vmax
 
 
-def plot_lcoe_map_by_grid_region(lcoe_by_bus, lcoe_data, shapes, title=None, key=None, ax=None):
+def plot_lcoe_map_by_grid_region(lcoe_by_bus, lcoe_data, shapes, title=None, key=None, ax=None, vmin=None, vmax=None):
     grid_region_lcoe = (
         lcoe_by_bus.merge(lcoe_data[['bus', 'energy']],
                           left_on='bus', right_on='bus', how='left')
@@ -991,8 +991,10 @@ def plot_lcoe_map_by_grid_region(lcoe_by_bus, lcoe_data, shapes, title=None, key
     shapes = shapes.rename(columns={'GRID_REGIO': 'grid_region'})
     shapes_lcoe = shapes.merge(grid_region_lcoe, on='grid_region', how='left')
 
-    vmin = shapes_lcoe['weighted_lcoe'].quantile(0.05)
-    vmax = shapes_lcoe['weighted_lcoe'].quantile(0.95)
+    if vmin is None:
+        vmin = shapes_lcoe['weighted_lcoe'].quantile(0.05)
+    if vmax is None:
+        vmax = shapes_lcoe['weighted_lcoe'].quantile(0.95)
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 10), subplot_kw={
@@ -1183,11 +1185,10 @@ def plot_lcoh_maps_by_grid_region(networks, shapes, h2_carriers, output_threshol
         raise KeyError("No 'grid_region' column found in shapes GeoDataFrame")
 
     for year, network in networks.items():
-        print(f"Processing year: {year}")
 
         hydrogen_links = network.links[network.links.carrier.isin(h2_carriers)]
         if hydrogen_links.empty:
-            print("  No valid H2 links, skipping.")
+            print("  No valid H2 links for year {year}, skipping.")
             continue
 
         link_ids = hydrogen_links.index
@@ -1252,14 +1253,15 @@ def plot_lcoh_maps_by_grid_region(networks, shapes, h2_carriers, output_threshol
 
     plot_df = shapes.merge(region_lcoh, on="grid_region", how="left")
 
+# Compute global vmin and vmax over all years
+    vmin = plot_df["weighted_lcoh"].quantile(0.05)
+    vmax = plot_df["weighted_lcoh"].quantile(0.95)
+
     for year in sorted(region_lcoh.year.unique()):
         fig, ax = plt.subplots(figsize=(12, 10), subplot_kw={"projection": ccrs.PlateCarree()})
-
+    
         year_df = plot_df[plot_df.year == year]
-
-        vmin = year_df["weighted_lcoh"].quantile(0.05)
-        vmax = year_df["weighted_lcoh"].quantile(0.95)
-
+    
         year_df.plot(
             column="weighted_lcoh",
             cmap="RdYlGn_r",
@@ -1274,7 +1276,7 @@ def plot_lcoh_maps_by_grid_region(networks, shapes, h2_carriers, output_threshol
             vmax=vmax,
             ax=ax
         )
-
+    
         ax.set_extent([-130, -65, 20, 55], crs=ccrs.PlateCarree())
         ax.axis("off")
         ax.set_title(f"LCOH – {year.split('_')[-1]}", fontsize=14)

@@ -736,7 +736,6 @@ def calculate_dispatch(n, start_date=None, end_date=None):
 def plot_electricity_dispatch(networks, carrier_colors, start_date=None, end_date=None, ymax=None):
     summary_list = []
     max_y = 0
-    supply_gw = supply_gw.resample('24H').mean()
     
     for key, n in networks.items():
         print(f"Processing network: {key}")
@@ -755,12 +754,15 @@ def plot_electricity_dispatch(networks, carrier_colors, start_date=None, end_dat
 
     for ax, (key, n) in zip(axes, networks.items()):
         _, supply_gw = calculate_dispatch(n, start_date, end_date)
+        supply_gw.index = pd.to_datetime(supply_gw.index)
+        supply_gw = supply_gw.resample('24H').mean()
+        
         supply_gw.plot.area(
             ax=ax,
             stacked=True,
             linewidth=0,
             color=[carrier_colors.get(c, 'gray') for c in supply_gw.columns],
-            legend=False  # niente legenda automatica
+            legend=False
         )
         ax.set_title(f"Electricity Dispatch – {key}")
         ax.set_ylabel("Power (GW)")
@@ -778,7 +780,7 @@ def plot_electricity_dispatch(networks, carrier_colors, start_date=None, end_dat
         )
 
     axes[-1].set_xlabel("Time")
-    plt.tight_layout(rect=[0, 0, 0.80, 1])  # spazio extra a destra
+    plt.tight_layout(rect=[0, 0, 0.80, 1])
     plt.show()
 
     return summary_list
@@ -1417,7 +1419,7 @@ def calculate_total_generation_by_carrier(network, start_date=None, end_date=Non
 
     return total_energy_twh
 
-def plot_hourly_hydrogen_dispatch_all(networks, h2_carriers, output_threshold=1.0):
+def plot_hydrogen_dispatch(networks, h2_carriers, output_threshold=1.0):
     """
     Plot hourly hydrogen dispatch per carrier (stacked area plot) for each network in the input dictionary.
     All plots share the same y-axis scale.
@@ -1457,7 +1459,9 @@ def plot_hourly_hydrogen_dispatch_all(networks, h2_carriers, output_threshold=1.
             continue
 
         df = pd.DataFrame(data)
-        df = df * 0.03333  # Convert to tons
+        df.index = pd.to_datetime(df.index)
+        df = df.resample('24H').mean()
+        df = df * 0.03  # Convert to tons
         dispatch_series_by_network[key] = df
 
         max_dispatch = df.sum(axis=1).max()
@@ -1474,7 +1478,7 @@ def plot_hourly_hydrogen_dispatch_all(networks, h2_carriers, output_threshold=1.
         df.plot.area(ax=ax, linewidth=0)
         year = key[-4:]  # Extract the year
         ax.set_title(f"Electricity Dispatch – {year}")
-        ax.set_title(f"Hydrogen Dispatch by Carrier – {year}", fontsize=14)
+        ax.set_title(f"Hydrogen Dispatch by technology – {year}", fontsize=14)
         ax.set_ylabel("Hydrogen Dispatch (tons/hour)")
         ax.set_xlabel("Time")
         ax.set_ylim(0, global_max * 1.05)  # add 5% headroom
@@ -1490,7 +1494,7 @@ def plot_hourly_hydrogen_dispatch_all(networks, h2_carriers, output_threshold=1.
         ax.tick_params(axis='x', rotation=0)        
         
         ax.legend(
-            title="Carrier",
+            title="Technology",
             loc='center left',
             bbox_to_anchor=(1.02, 0.5),
             frameon=False

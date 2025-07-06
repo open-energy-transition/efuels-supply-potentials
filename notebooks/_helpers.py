@@ -736,7 +736,8 @@ def calculate_dispatch(n, start_date=None, end_date=None):
 def plot_electricity_dispatch(networks, carrier_colors, start_date=None, end_date=None, ymax=None):
     summary_list = []
     max_y = 0
-
+    supply_gw = supply_gw.resample('24H').mean()
+    
     for key, n in networks.items():
         print(f"Processing network: {key}")
         total_gwh, supply_gw = calculate_dispatch(n, start_date, end_date)

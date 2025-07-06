@@ -424,8 +424,8 @@ rename_tech:
   SOEC: Hydrogen & Electrolyzers
   Sabatier: Hydrogen & Electrolyzers
   V2G: Transport
-  battery charger: Transport
-  battery discharger: Transport
+  battery charger: Storage
+  battery discharger: Storage
   biogas to gas: Fossil Fuels
   biomass EOP: Industry
   cement finishing: Industry

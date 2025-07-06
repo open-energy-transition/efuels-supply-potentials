@@ -14,7 +14,7 @@ import pypsa
 from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
 from pathlib import Path
 
-import cartopy.crs as ccrs  # For plotting maps
+import cartopy.crs as ccrs # For plotting maps
 import geopandas as gpd
 from shapely.geometry import Point
 from shapely.geometry import box
@@ -34,6 +34,7 @@ import plotly.graph_objects as go
 from shapely.geometry import LineString
 import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
+import yaml
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -497,57 +498,47 @@ def print_hydrogen_capacity_summary(capacity_data):
         print(
             f"{carrier:25s}: {capacity:8.1f} MW ({capacity/total_national*100:5.1f}%)")
 
-
-def create_ft_capacity_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_kw=10):
+def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_gw=0.01):
     """
-    Create a geographic map with full circles showing FT capacity per state in kilowatts (kW).
+    Create a geographic map with simple round circles showing FT capacity per state in gigawatts (GW).
     """
 
-    # Extract year from network name
     year_match = re.search(r'\d{4}', network_name)
     year_str = f" – {year_match.group()}" if year_match else ""
 
-    # Filter FT-related links
     ft_links = network.links[
         network.links['carrier'].str.contains('FT|Fischer|Tropsch', case=False, na=False) |
-        network.links.index.str.contains(
-            'FT|Fischer|Tropsch', case=False, na=False)
+        network.links.index.str.contains('FT|Fischer|Tropsch', case=False, na=False)
     ].copy()
 
     if ft_links.empty:
         print(f"No FT links found in the network: {network_name}")
         return None, None, None
 
-    # Merge with bus info (state + coordinates)
     links_with_state = ft_links.merge(
         network.buses[['state', 'x', 'y']],
         left_on='bus0',
         right_index=True,
         how='left'
     )
-    links_with_state['p_nom_kw'] = links_with_state['p_nom_opt'] * 1000
+    links_with_state['p_nom_gw'] = links_with_state['p_nom_opt'] / 1000
 
-    # Load and prepare shapefile
     shapes = gpd.read_file(path_shapes, crs=distance_crs)
     shapes["ISO_1"] = shapes["ISO_1"].apply(lambda x: x.split("-")[1])
     shapes.rename(columns={"ISO_1": "State"}, inplace=True)
 
-    # Group by state
-    state_capacity = links_with_state.groupby(
-        'state').agg({'p_nom_kw': 'sum'}).reset_index()
-    states_to_plot = state_capacity[state_capacity['p_nom_kw']
-                                    >= min_capacity_kw]['state'].tolist()
+    state_capacity = links_with_state.groupby('state').agg({'p_nom_gw': 'sum'}).reset_index()
+    states_to_plot = state_capacity[state_capacity['p_nom_gw'] >= min_capacity_gw]['state'].tolist()
 
-    # Setup geographic plot
-    fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={
-                           "projection": ccrs.PlateCarree()})
-    bbox = box(-130, 20, -60, 50)
+    fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={"projection": ccrs.PlateCarree()})
+    bbox = box(-130, 20, -65, 50)
     shapes_clip = shapes.to_crs(epsg=4326).clip(bbox)
-    shapes_clip.plot(ax=ax, facecolor='whitesmoke',
-                     edgecolor='gray', alpha=0.7, linewidth=0.5)
+    shapes_clip.plot(ax=ax, facecolor='whitesmoke', edgecolor='gray', alpha=0.7, linewidth=0.5)
 
-    # Plot circles
-    pie_scale = 0.04
+    lon_min, lon_max = -130, -65
+    lat_min, lat_max = 20, 50
+    pie_scale = 0.6
+
     for state in states_to_plot:
         data = links_with_state[links_with_state['state'] == state]
         if data.empty:
@@ -556,36 +547,38 @@ def create_ft_capacity_map(network, path_shapes, network_name="Network", distanc
         y = data['y'].mean()
         if pd.isna(x) or pd.isna(y):
             continue
-        total_kw = data['p_nom_kw'].sum()
-        if total_kw == 0:
+        if not (lon_min < x < lon_max and lat_min < y < lat_max):
             continue
 
-        radius = np.clip(np.sqrt(total_kw) * pie_scale, 0.1, 2.5)
+        total_gw = data['p_nom_gw'].sum()
+        if total_gw == 0:
+            continue
+
+        radius = np.clip(total_gw * pie_scale, 0.1, 3.5)
         circle = plt.Circle((x, y), radius, color='#B22222', alpha=0.6,
                             transform=ccrs.PlateCarree(), zorder=4, linewidth=0)
         ax.add_patch(circle)
 
-        # Optional: label with numeric capacity
-        ax.text(x, y - radius - 0.3, f'{int(total_kw)} kW',
+        ax.text(x, y - radius - 0.3, f'{total_gw:.2f} GW',
                 ha='center', va='top', fontsize=9, fontweight='bold',
                 transform=ccrs.PlateCarree())
 
-    # Final layout
-    ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
-    ax.set_title(
-        f"Fischer-Tropsch Capacity by State (in kW){year_str}")
+    ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+    ax.set_xlim(lon_min, lon_max)
+    ax.set_ylim(lat_min, lat_max)
+    ax.autoscale(False)
+    ax.set_position([0.05, 0.05, 0.9, 0.9])
+
+    ax.set_title(f"Fischer-Tropsch Capacity by State (GW){year_str}", fontsize=14)
     ax.axis('off')
-    plt.tight_layout()
+    plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
 
     return fig, ax, links_with_state
 
-
-def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_kw=10):
+def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_gw=0.01):
     """
-    Create a map showing total FT capacity per grid region (in kW) as full circles.
+    Create a map showing total FT capacity per grid region (GW) as full circles with linear radius scaling.
     """
-
-    import re
 
     # Extract year from network name
     year_match = re.search(r'\d{4}', network_name)
@@ -594,8 +587,7 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
     # Filter FT-related links
     ft_links = network.links[
         network.links['carrier'].str.contains('FT|Fischer|Tropsch', case=False, na=False) |
-        network.links.index.str.contains(
-            'FT|Fischer|Tropsch', case=False, na=False)
+        network.links.index.str.contains('FT|Fischer|Tropsch', case=False, na=False)
     ].copy()
 
     if ft_links.empty:
@@ -609,45 +601,44 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
         right_index=True,
         how="left"
     )
-    links_with_grid_region["p_nom_kw"] = links_with_grid_region["p_nom_opt"] * 1000
+    links_with_grid_region["p_nom_gw"] = links_with_grid_region["p_nom_opt"] / 1000
 
     # Aggregate capacity per grid region
     grid_region_capacity = links_with_grid_region.groupby("grid_region").agg(
-        total_kw=("p_nom_kw", "sum"),
+        total_gw=("p_nom_gw", "sum"),
         x=("x", "mean"),
         y=("y", "mean")
     ).reset_index()
 
     # Filter small values
-    grid_region_capacity = grid_region_capacity[grid_region_capacity["total_kw"]
-                                                >= min_capacity_kw]
+    grid_region_capacity = grid_region_capacity[grid_region_capacity["total_gw"] >= min_capacity_gw]
 
     # Set up map
-    fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={
-                           "projection": ccrs.PlateCarree()})
-
+    fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={"projection": ccrs.PlateCarree()})
     bbox = box(-130, 20, -60, 50)
     shapes = gpd.read_file(path_shapes, crs=distance_crs)
     shapes = shapes.to_crs(epsg=4326).clip(bbox)
-    shapes.plot(ax=ax, facecolor='whitesmoke',
-                edgecolor='gray', alpha=0.7, linewidth=0.5)
+    shapes.plot(ax=ax, facecolor='whitesmoke', edgecolor='gray', alpha=0.7, linewidth=0.5)
 
-    # Plot circles
-    pie_scale = 0.04
+    # Plot circles with linear scaling
+    pie_scale = 0.6  # degrees per GW
+    min_radius = 0.1
+    max_radius = 3.5
+
     for _, row in grid_region_capacity.iterrows():
-        x, y, total_kw = row["x"], row["y"], row["total_kw"]
-        radius = np.clip(np.sqrt(total_kw) * pie_scale, 0.1, 2.5)
+        x, y, total_gw = row["x"], row["y"], row["total_gw"]
+        radius = np.clip(total_gw * pie_scale, min_radius, max_radius)
+
         circle = plt.Circle((x, y), radius, color='#B22222', alpha=0.6,
                             transform=ccrs.PlateCarree(), zorder=4, linewidth=0)
         ax.add_patch(circle)
 
-        ax.text(x, y - radius - 0.3, f'{int(total_kw)} kW',
+        ax.text(x, y - radius - 0.3, f'{total_gw:.2f} GW',
                 ha='center', va='top', fontsize=9, fontweight='bold',
                 transform=ccrs.PlateCarree())
 
     ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
-    ax.set_title(
-        f"Fischer-Tropsch Capacity by Grid Region {year_str}", fontsize=16, pad=20)
+    ax.set_title(f"Fischer-Tropsch Capacity by Grid Region (GW){year_str}", fontsize=16, pad=20)
     ax.axis('off')
     plt.tight_layout()
 
@@ -1110,7 +1101,7 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
                            bbox_to_anchor=(legend_anchor_x, 1),
                            frameon=False,
                            labelspacing=2.5,
-                           handletextpad=1.2) 
+                           handletextpad=1.0) 
 
     # H2 pipeline legend
     link_caps_MW = [10, 100, 1000]
@@ -1129,7 +1120,7 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
                             title_fontproperties=FontProperties(weight='bold'),
                             fontsize=9,
                             loc='upper left',
-                            bbox_to_anchor=(legend_anchor_x, 0.6),
+                            bbox_to_anchor=(legend_anchor_x, 0.65),
                             frameon=False,
                             labelspacing=1.0)
 
@@ -1145,7 +1136,7 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
                             title_fontproperties=FontProperties(weight='bold'),
                             fontsize=9,
                             loc='upper left',
-                            bbox_to_anchor=(legend_anchor_x, 0.35),
+                            bbox_to_anchor=(legend_anchor_x, 0.34),
                             frameon=False,
                             labelspacing=1.0)
 
@@ -1201,7 +1192,7 @@ def plot_lcoh_maps_by_grid_region(networks, shapes, h2_carriers, output_threshol
         # Filter valid links by output threshold
         valid_links = h2_output > output_threshold
         if valid_links.sum() == 0:
-            print(f"  No links with H2 output > {output_threshold} MWh, skipping.")
+            print(f"  No links with H2 output > {output_threshold} MWh in {year}, skipping.")
             continue
 
         # Electricity prices by input bus

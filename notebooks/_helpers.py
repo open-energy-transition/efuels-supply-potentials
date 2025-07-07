@@ -534,8 +534,12 @@ def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network"
     states_to_plot = state_capacity[state_capacity['p_nom_gw']
                                     >= min_capacity_gw]['state'].tolist()
 
+<<<<<<< Updated upstream
     fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={
                            "projection": ccrs.PlateCarree()})
+=======
+    fig, ax = plt.subplots(figsize=(10, 6), subplot_kw={"projection": ccrs.PlateCarree()})
+>>>>>>> Stashed changes
     bbox = box(-130, 20, -65, 50)
     shapes_clip = shapes.to_crs(epsg=4326).clip(bbox)
     shapes_clip.plot(ax=ax, facecolor='whitesmoke',
@@ -543,7 +547,7 @@ def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network"
 
     lon_min, lon_max = -130, -65
     lat_min, lat_max = 20, 50
-    pie_scale = 0.6
+    pie_scale = 0.3
 
     for state in states_to_plot:
         data = links_with_state[links_with_state['state'] == state]
@@ -562,11 +566,13 @@ def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network"
 
         radius = np.clip(total_gw * pie_scale, 0.1, 3.5)
         circle = plt.Circle((x, y), radius, color='#B22222', alpha=0.6,
-                            transform=ccrs.PlateCarree(), zorder=4, linewidth=0)
+                            transform=ccrs.PlateCarree(), zorder=4, linewidth=1)
+        
         ax.add_patch(circle)
-
+    
         ax.text(x, y - radius - 0.3, f'{total_gw:.2f} GW',
-                ha='center', va='top', fontsize=9, fontweight='bold',
+                ha='center', va='top', fontsize=9, fontweight='normal',
+                bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.2'),
                 transform=ccrs.PlateCarree())
 
     ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
@@ -624,8 +630,12 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
                                                 >= min_capacity_gw]
 
     # Set up map
+<<<<<<< Updated upstream
     fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={
                            "projection": ccrs.PlateCarree()})
+=======
+    fig, ax = plt.subplots(figsize=(10, 6), subplot_kw={"projection": ccrs.PlateCarree()})
+>>>>>>> Stashed changes
     bbox = box(-130, 20, -60, 50)
     shapes = gpd.read_file(path_shapes, crs=distance_crs)
     shapes = shapes.to_crs(epsg=4326).clip(bbox)
@@ -633,7 +643,7 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
                 edgecolor='gray', alpha=0.7, linewidth=0.5)
 
     # Plot circles with linear scaling
-    pie_scale = 0.6  # degrees per GW
+    pie_scale = 0.3  # degrees per GW
     min_radius = 0.1
     max_radius = 3.5
 
@@ -641,12 +651,14 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
         x, y, total_gw = row["x"], row["y"], row["total_gw"]
         radius = np.clip(total_gw * pie_scale, min_radius, max_radius)
 
-        circle = plt.Circle((x, y), radius, color='#B22222', alpha=0.6,
-                            transform=ccrs.PlateCarree(), zorder=4, linewidth=0)
+        circle = plt.Circle((x, y), radius,
+                            facecolor='#B22222', edgecolor='gray', alpha=0.6,
+                            linewidth=1, transform=ccrs.PlateCarree(), zorder=4)
         ax.add_patch(circle)
 
         ax.text(x, y - radius - 0.3, f'{total_gw:.2f} GW',
-                ha='center', va='top', fontsize=9, fontweight='bold',
+                ha='center', va='top', fontsize=9, fontweight='normal',
+                bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.2'),
                 transform=ccrs.PlateCarree())
 
     ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
@@ -676,15 +688,20 @@ def filter_and_group_small_carriers(df, threshold=0.005):
 
 
 def calculate_dispatch(n, start_date=None, end_date=None):
+<<<<<<< Updated upstream
     # 1. Select time window
     snapshots_slice = slice(
         start_date, end_date) if start_date and end_date else slice(None)
+=======
+    # Select time window
+    snapshots_slice = slice(start_date, end_date) if start_date and end_date else slice(None)
+>>>>>>> Stashed changes
     snapshots = n.snapshots[snapshots_slice]
 
-    # 2. Duration of each timestep
+    # Duration of each timestep
     timestep_hours = (snapshots[1] - snapshots[0]).total_seconds() / 3600
 
-    # 3. Define valid carriers
+    # Define valid carriers
     gen_and_sto_carriers = {
         'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac', 'nuclear',
         'geothermal', 'ror', 'hydro'
@@ -692,7 +709,7 @@ def calculate_dispatch(n, start_date=None, end_date=None):
     link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass']
     valid_carriers = gen_and_sto_carriers.union(link_carriers)
 
-    # 4. Identify electric buses
+    # Identify electric buses
     electric_buses = set(
         n.buses.index[
             ~n.buses.carrier.str.contains(
@@ -700,17 +717,17 @@ def calculate_dispatch(n, start_date=None, end_date=None):
         ]
     )
 
-    # 5. GENERATORS
+    # Generators
     gen = n.generators[n.generators.carrier.isin(gen_and_sto_carriers)]
     gen_p = n.generators_t.p.loc[snapshots_slice, gen.index].clip(lower=0)
     gen_dispatch = gen_p.groupby(gen['carrier'], axis=1).sum()
 
-    # 6. STORAGE
+    # Storage
     sto = n.storage_units[n.storage_units.carrier.isin(gen_and_sto_carriers)]
     sto_p = n.storage_units_t.p.loc[snapshots_slice, sto.index].clip(lower=0)
     sto_dispatch = sto_p.groupby(sto['carrier'], axis=1).sum()
 
-    # 7. LINKS: only from conventional carriers and to electric buses
+    # Links: only from conventional carriers and to electric buses
     link_frames = []
     for carrier in link_carriers:
         links = n.links[
@@ -727,12 +744,12 @@ def calculate_dispatch(n, start_date=None, end_date=None):
     link_dispatch = pd.concat(
         link_frames, axis=1) if link_frames else pd.DataFrame(index=snapshots)
 
-    # 8. COMBINE all sources
+    # Combine all sources
     supply = pd.concat([gen_dispatch, sto_dispatch, link_dispatch], axis=1)
     supply = supply.groupby(supply.columns, axis=1).sum()
     supply = supply.clip(lower=0)
 
-    # 9. Convert to GW and GWh
+    # Convert to GW and GWh
     supply_gw = supply / 1e3  # MW → GW
     energy_mwh = supply.sum(axis=1) * timestep_hours
     total_gwh = energy_mwh.sum() / 1e3  # → GWh
@@ -1100,7 +1117,7 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
                 bbox=dict(facecolor='white', edgecolor='gray',
                           boxstyle='round,pad=0.2', alpha=0.7))
 
-    # --- LEGENDS ---
+    # Legends
     legend_anchor_x = 1.05
     bold_fp = FontProperties(weight='bold', size=10)
 
@@ -1139,7 +1156,7 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
                             title_fontproperties=FontProperties(weight='bold'),
                             fontsize=9,
                             loc='upper left',
-                            bbox_to_anchor=(legend_anchor_x, 0.65),
+                            bbox_to_anchor=(legend_anchor_x, 0.60),
                             frameon=False,
                             labelspacing=1.0)
 
@@ -1168,8 +1185,12 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
 
     ax.set_extent([-130, -60, 20, 50], crs=ccrs.PlateCarree())
 
+<<<<<<< Updated upstream
     ax.set_title(
         f'Installed electrolyzer capacity - {title} (MW) (only nodes ≥ 10 MW)')
+=======
+    ax.set_title(f'Installed electrolyzer capacity - {title} (only nodes ≥ 10 MW)\n')
+>>>>>>> Stashed changes
     plt.tight_layout()
     plt.show()
 
@@ -1528,23 +1549,32 @@ def plot_hydrogen_dispatch(networks, h2_carriers, output_threshold=1.0):
         plt.tight_layout(rect=[0, 0, 0.85, 1])
         plt.show()
 
+<<<<<<< Updated upstream
 
 def analyze_fischer_tropsch_costs_by_region(networks: dict):
+=======
+def analyze_ft_costs_by_region(networks: dict):
+>>>>>>> Stashed changes
     """
     Compute and display total Fischer-Tropsch fuel production and
     total marginal cost (USD/MWh) by grid region for each network.
     """
     for name, n in networks.items():
+<<<<<<< Updated upstream
         # 1. Identify Fischer-Tropsch links
         ft_links = n.links[n.links.carrier.str.contains(
             "Fischer", case=False, na=False)].copy()
+=======
+        # Identify Fischer-Tropsch links
+        ft_links = n.links[n.links.carrier.str.contains("Fischer", case=False, na=False)].copy()
+>>>>>>> Stashed changes
         if ft_links.empty:
             print(f"\n{name}: No Fischer-Tropsch links found.")
             continue
 
         ft_link_ids = ft_links.index
 
-        # 2. Extract hourly marginal prices for input buses (H2, CO2, electricity)
+        # Extract hourly marginal prices for input buses (H2, CO2, electricity)
         price_dict = {}
         for link in ft_link_ids:
             price_dict[link] = {
@@ -1553,7 +1583,7 @@ def analyze_fischer_tropsch_costs_by_region(networks: dict):
                 "elec_price": n.buses_t.marginal_price[ft_links.at[link, "bus3"]],
             }
 
-        # 3. Multiply prices × flows to compute total input cost per link
+        # Multiply prices × flows to compute total input cost per link
         p0 = n.links_t.p0[ft_link_ids]
         p2 = n.links_t.p2[ft_link_ids]
         p3 = n.links_t.p3[ft_link_ids]
@@ -1567,7 +1597,7 @@ def analyze_fischer_tropsch_costs_by_region(networks: dict):
             total_input_cost = cost_h2 + cost_co2 + cost_elec
             marginal_cost_inputs[link] = total_input_cost
 
-        # 4. Compute total marginal cost per MWh of fuel output (input + technical cost)
+        # Compute total marginal cost per MWh of fuel output (input + technical cost)
         marginal_cost_total = {}
         for link in ft_link_ids:
             output_mwh = -p1[link].sum()
@@ -1582,13 +1612,13 @@ def analyze_fischer_tropsch_costs_by_region(networks: dict):
                 "marginal_cost_total [USD/MWh]": total_cost_per_mwh
             }
 
-        # 5. Map each link's output bus to its grid_region
+        # Map each link's output bus to its grid_region
         df_links = pd.DataFrame.from_dict(marginal_cost_total, orient="index")
         bus_to_region = n.buses["grid_region"].to_dict()
         df_links["grid_region"] = df_links["bus"].map(bus_to_region)
         df_links = df_links.dropna(subset=["grid_region"])
 
-        # 6. Aggregate by grid_region (sum production, weighted average of cost)
+        # Aggregate by grid_region (sum production, weighted average of cost)
         grouped = df_links.groupby("grid_region")
         sum_prod = grouped["production [MWh]"].sum()
         weighted_cost = grouped.apply(
@@ -1601,7 +1631,7 @@ def analyze_fischer_tropsch_costs_by_region(networks: dict):
             "marginal_cost_total [USD/MWh]": weighted_cost
         })
 
-        # 7. Round to 2 decimals
+        # Round to 2 decimals
         df_region_result = df_region_result.round(2)
 
         # Reset index to make 'grid_region' a visible column
@@ -1624,7 +1654,7 @@ def analyze_fischer_tropsch_costs_by_region(networks: dict):
         match = re.search(r"\d{4}", name)
         year = match.group() if match else "unknown"
 
-        print(f"\nYear: {year}")
+        print(f"\nYear: {year}\n")
         display(styled)
 
 
@@ -1675,6 +1705,7 @@ def compute_aviation_fuel_demand(networks):
         lambda x: 0 if abs(x) < 1e-6 else x
     )
 
+<<<<<<< Updated upstream
     return df
 
 
@@ -1912,3 +1943,6 @@ def plot_emissions_maps_by_group(all_state_emissions, path_shapes, title):
     plt.tight_layout()
     plt.subplots_adjust(top=0.9)
     plt.show()
+=======
+    return df
+>>>>>>> Stashed changes

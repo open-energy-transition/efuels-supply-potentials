@@ -534,12 +534,7 @@ def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network"
     states_to_plot = state_capacity[state_capacity['p_nom_gw']
                                     >= min_capacity_gw]['state'].tolist()
 
-<<<<<<< Updated upstream
-    fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={
-                           "projection": ccrs.PlateCarree()})
-=======
-    fig, ax = plt.subplots(figsize=(10, 6), subplot_kw={"projection": ccrs.PlateCarree()})
->>>>>>> Stashed changes
+    fig, ax = plt.subplots(figsize=(12, 6), subplot_kw={"projection": ccrs.PlateCarree()})
     bbox = box(-130, 20, -65, 50)
     shapes_clip = shapes.to_crs(epsg=4326).clip(bbox)
     shapes_clip.plot(ax=ax, facecolor='whitesmoke',
@@ -630,12 +625,7 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
                                                 >= min_capacity_gw]
 
     # Set up map
-<<<<<<< Updated upstream
-    fig, ax = plt.subplots(figsize=(16, 12), subplot_kw={
-                           "projection": ccrs.PlateCarree()})
-=======
-    fig, ax = plt.subplots(figsize=(10, 6), subplot_kw={"projection": ccrs.PlateCarree()})
->>>>>>> Stashed changes
+    fig, ax = plt.subplots(figsize=(12, 6), subplot_kw={"projection": ccrs.PlateCarree()})
     bbox = box(-130, 20, -60, 50)
     shapes = gpd.read_file(path_shapes, crs=distance_crs)
     shapes = shapes.to_crs(epsg=4326).clip(bbox)
@@ -688,14 +678,8 @@ def filter_and_group_small_carriers(df, threshold=0.005):
 
 
 def calculate_dispatch(n, start_date=None, end_date=None):
-<<<<<<< Updated upstream
-    # 1. Select time window
-    snapshots_slice = slice(
-        start_date, end_date) if start_date and end_date else slice(None)
-=======
     # Select time window
     snapshots_slice = slice(start_date, end_date) if start_date and end_date else slice(None)
->>>>>>> Stashed changes
     snapshots = n.snapshots[snapshots_slice]
 
     # Duration of each timestep
@@ -1185,12 +1169,7 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
 
     ax.set_extent([-130, -60, 20, 50], crs=ccrs.PlateCarree())
 
-<<<<<<< Updated upstream
-    ax.set_title(
-        f'Installed electrolyzer capacity - {title} (MW) (only nodes ≥ 10 MW)')
-=======
     ax.set_title(f'Installed electrolyzer capacity - {title} (only nodes ≥ 10 MW)\n')
->>>>>>> Stashed changes
     plt.tight_layout()
     plt.show()
 
@@ -1549,25 +1528,15 @@ def plot_hydrogen_dispatch(networks, h2_carriers, output_threshold=1.0):
         plt.tight_layout(rect=[0, 0, 0.85, 1])
         plt.show()
 
-<<<<<<< Updated upstream
 
-def analyze_fischer_tropsch_costs_by_region(networks: dict):
-=======
 def analyze_ft_costs_by_region(networks: dict):
->>>>>>> Stashed changes
     """
     Compute and display total Fischer-Tropsch fuel production and
     total marginal cost (USD/MWh) by grid region for each network.
     """
     for name, n in networks.items():
-<<<<<<< Updated upstream
-        # 1. Identify Fischer-Tropsch links
-        ft_links = n.links[n.links.carrier.str.contains(
-            "Fischer", case=False, na=False)].copy()
-=======
         # Identify Fischer-Tropsch links
         ft_links = n.links[n.links.carrier.str.contains("Fischer", case=False, na=False)].copy()
->>>>>>> Stashed changes
         if ft_links.empty:
             print(f"\n{name}: No Fischer-Tropsch links found.")
             continue
@@ -1662,7 +1631,7 @@ def compute_aviation_fuel_demand(networks):
     results = {}
 
     for name, n in networks.items():
-        # Estrai l'anno
+        # Extract year
         year = ''.join(filter(str.isdigit, name[-4:]))
 
         # Trova i load per ciascun carrier
@@ -1671,26 +1640,24 @@ def compute_aviation_fuel_demand(networks):
         ekerosene_load_names = n.loads[n.loads.carrier ==
                                        "e-kerosene for aviation"].index
 
-        # Durata in ore per timestep
+        # Timestep duration
         weightings = n.snapshot_weightings.generators
 
-        # Energia in MWh
+        # Energy in MWh
         kerosene_mwh = n.loads_t.p[kerosene_load_names].multiply(
             weightings, axis=0).sum().sum()
         ekerosene_mwh = n.loads_t.p[ekerosene_load_names].multiply(
             weightings, axis=0).sum().sum()
 
-        # Conversione in TWh
+        # Conversion in TWh
         kerosene_twh = kerosene_mwh / 1e6
         ekerosene_twh = ekerosene_mwh / 1e6
 
-        # Salva nel dizionario
         results[year] = {
             "Kerosene (TWh)": kerosene_twh,
             "e-Kerosene (TWh)": ekerosene_twh
         }
 
-    # Crea DataFrame
     df = pd.DataFrame.from_dict(results, orient="index")
     df.index.name = "Year"
     df.reset_index(inplace=True)
@@ -1700,12 +1667,11 @@ def compute_aviation_fuel_demand(networks):
     df["e-Kerosene Share (%)"] = (df["e-Kerosene (TWh)"] /
                                   df["Total (TWh)"]) * 100
 
-    # Rimuove quasi-zero
+    # Remove values close to zero
     df[df.select_dtypes(include='number').columns] = df.select_dtypes(include='number').applymap(
         lambda x: 0 if abs(x) < 1e-6 else x
     )
 
-<<<<<<< Updated upstream
     return df
 
 
@@ -1943,6 +1909,3 @@ def plot_emissions_maps_by_group(all_state_emissions, path_shapes, title):
     plt.tight_layout()
     plt.subplots_adjust(top=0.9)
     plt.show()
-=======
-    return df
->>>>>>> Stashed changes

@@ -263,61 +263,118 @@ def assign_location(n):
 
 def compute_h2_capacities(network):
     """
-    Compute the total capacities of hydrogen-related components in the network.
+    Compute the total capacities (in MW) of hydrogen-related components in the network.
     Returns a DataFrame with the total capacities for each hydrogen-related component.
     """
+    h2_carriers_buses = [
+        'Alkaline electrolyzer large', 'Alkaline electrolyzer medium', 'Alkaline electrolyzer small',
+        'PEM electrolyzer', 'SOEC',
+    ]
 
-    h2_carriers_buses = ['Alkaline electrolyzer large',
-                         'PEM electrolyzer', 'SOEC',]
+    # Filter hydrogen-related links
+    hydrogen_links = network.links.query("carrier in @h2_carriers_buses").copy()
 
-    hydrogen_links = network.links.query(
-        "carrier in @h2_carriers_buses").copy()
+    # Merge with bus metadata (state and grid_region)
     capacity_data = hydrogen_links.merge(
-        network.buses[['state']],
+        network.buses[['state', 'grid_region']],
         left_on='bus0',
         right_index=True,
         how='left'
     )
 
-    capacity_data['p_nom_kw'] = capacity_data['p_nom_opt']  # MW
+    # Use p_nom_opt directly (already in MW)
+    capacity_data['p_nom_mw'] = capacity_data['p_nom_opt']
+
+    # Pivot table to aggregate capacity by carrier and bus
     h2_capacity_data = capacity_data.pivot_table(
         index='bus0',
         columns='carrier',
-        values='p_nom_kw',
+        values='p_nom_mw',
         fill_value=0
     )
 
+    # Add state and grid_region information
     h2_capacity_data['state'] = h2_capacity_data.index.map(network.buses.state)
-    h2_capacity_data['region'] = h2_capacity_data.index.map(
-        network.buses.grid_region)
+    h2_capacity_data['grid_region'] = h2_capacity_data.index.map(network.buses.grid_region)
 
     return h2_capacity_data
 
 
-def plot_h2_capacities_bar(network, title):
+def plot_h2_capacities_by_state(grouped, title, ymax, max_n_states, bar_width=0.5, height=5):
     """
-    Plot the total hydrogen electrolyzer capacity by type for each state.
+    Plot with fixed x-axis limits to preserve bar width across different state counts.
     """
-    h2_cap = compute_h2_capacities(network)
+    if grouped.empty:
+        print(f"Skipping plot for {title} (no data)")
+        return
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
-    h2_cap.groupby(['state'])[['Alkaline electrolyzer large', 'PEM electrolyzer', 'SOEC']].sum().plot(
-        ax=ax1,
-        kind='bar',
-        stacked=True,
-        title=f'Hydrogen Electrolyzer Capacity by State and Type: {title}',
-        ylabel='Capacity (kW)',
-        xlabel='State',
-    )
+    state = grouped.index.tolist()
+    n = len(state)
+    x = np.arange(n)
 
-    h2_cap.groupby(['region'])[['Alkaline electrolyzer large', 'PEM electrolyzer', 'SOEC']].sum().plot(
-        ax=ax2,
-        kind='bar',
-        stacked=True,
-        title=f'Hydrogen Electrolyzer Capacity by Region and Type: {title}',
-        ylabel='Capacity (MW)',
-        xlabel='Region',
-    )
+    techs = grouped.columns.tolist()
+    bottoms = np.zeros(n)
+
+    fig, ax = plt.subplots(figsize=(max_n_states * bar_width * 3.5, height))
+
+    for tech in techs:
+        ax.bar(x, grouped[tech].values, bar_width, bottom=bottoms, label=tech)
+        bottoms += grouped[tech].values
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(state, rotation=30, ha='center')
+    ax.set_xlabel("State")
+    ax.set_ylabel("Capacity (MW)")
+
+    if ymax > 0:
+        ax.set_ylim(0, ymax * 1.05)
+    else:
+        ax.set_ylim(0, 1)
+
+    ax.set_xlim(-0.5, max_n_states - 0.5)
+
+    ax.set_title(f"\nHydrogen electrolyzer capacity by State and technology - {title}\n")
+    ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1), frameon=False)
+
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_h2_capacities_by_grid_region(grouped, title, ymax, max_n_grid_regions, bar_width=0.5, height=5):
+    """
+    Plot with fixed x-axis limits to preserve bar width across different grid regions counts.
+    """
+    if grouped.empty:
+        print(f"Skipping plot for {title} (no data)")
+        return
+
+    grid_region = grouped.index.tolist()
+    n = len(grid_region)
+    x = np.arange(n)
+
+    techs = grouped.columns.tolist()
+    bottoms = np.zeros(n)
+
+    fig, ax = plt.subplots(figsize=(max_n_grid_regions * bar_width * 5.5, height))
+
+    for tech in techs:
+        ax.bar(x, grouped[tech].values, bar_width, bottom=bottoms, label=tech)
+        bottoms += grouped[tech].values
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(grid_region, rotation=30, ha='center')
+    ax.set_xlabel("Grid Region")
+    ax.set_ylabel("Capacity (MW)")
+
+    if ymax > 0:
+        ax.set_ylim(0, ymax * 1.05)
+    else:
+        ax.set_ylim(0, 1)
+
+    ax.set_xlim(-0.5, max_n_grid_regions - 0.5)
+
+    ax.set_title(f"\nHydrogen electrolyzer capacity by Grid Region and technology - {title}\n")
+    ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1), frameon=False)
 
     plt.tight_layout()
     plt.show()
@@ -329,11 +386,10 @@ def create_hydrogen_capacity_map(network, path_shapes, distance_crs=4326, min_ca
     """
     if hasattr(network, 'links') and len(network.links) > 0:
         # Filter for hydrogen-related links (electrolyzers)
-        # Common naming patterns for electrolyzers in PyPSA
         hydrogen_links = network.links[
-            network.links['carrier'].str.contains('H2|hydrogen|electroly|SOEC', case=False, na=False) |
+            network.links['carrier'].str.contains('electrolyzer|SOEC', case=False, na=False) |
             network.links.index.str.contains(
-                'H2|hydrogen|electroly|SOEC', case=False, na=False)
+                'electrolyzer|SOEC', case=False, na=False)
         ].copy()
 
     capacity_data = hydrogen_links.merge(
@@ -364,7 +420,7 @@ def create_hydrogen_capacity_map(network, path_shapes, distance_crs=4326, min_ca
     shapes_centroid['cent_x'] = shapes_centroid.centroid.x
     shapes_centroid['cent_y'] = shapes_centroid.centroid.y
 
-    # Step 3: Define colors for electrolyzer types
+    # Define colors for electrolyzer types
     unique_carriers = capacity_data['carrier'].unique()
     colors = plt.cm.Set2(np.linspace(0, 1, len(unique_carriers)))
     carrier_colors = dict(zip(unique_carriers, colors))
@@ -386,7 +442,7 @@ def create_hydrogen_capacity_map(network, path_shapes, distance_crs=4326, min_ca
         if carrier in carrier_colors:
             carrier_colors[carrier] = color
 
-    # Step 4: Create the plot
+    # Create the plot
     fig, ax = plt.subplots(figsize=(30, 20))
 
     # Plot the base map
@@ -403,7 +459,7 @@ def create_hydrogen_capacity_map(network, path_shapes, distance_crs=4326, min_ca
     print(
         f"Plotting {len(states_to_plot)} states with ≥{min_capacity_mw} MW hydrogen capacity")
 
-    # Step 5: Create pie charts for each state
+    # Create pie charts for each state
     for state in states_to_plot:
         state_data = capacity_data[capacity_data['state'] == state]
 
@@ -438,7 +494,7 @@ def create_hydrogen_capacity_map(network, path_shapes, distance_crs=4326, min_ca
                     xy=(cent_x, cent_y - radius - 0.3),
                     ha='center', va='top', fontsize=12, fontweight='bold')
 
-    # Step 6: Create legend
+    # Create legend
     legend_elements = []
     for carrier, color in carrier_colors.items():
         if carrier in capacity_data['carrier'].values:

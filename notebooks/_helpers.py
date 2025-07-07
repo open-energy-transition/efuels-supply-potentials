@@ -598,7 +598,7 @@ def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network"
 
     lon_min, lon_max = -130, -65
     lat_min, lat_max = 20, 50
-    pie_scale = 0.3
+    pie_scale = 0.2
 
     for state in states_to_plot:
         data = links_with_state[links_with_state['state'] == state]
@@ -689,7 +689,7 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
                 edgecolor='gray', alpha=0.7, linewidth=0.5)
 
     # Plot circles with linear scaling
-    pie_scale = 0.3  # degrees per GW
+    pie_scale = 0.2  # degrees per GW
     min_radius = 0.1
     max_radius = 3.5
 
@@ -909,74 +909,62 @@ def compute_and_plot_load(n, key="", ymax=None, start_date=None, end_date=None):
 def calculate_lcoe_summary_and_map(n, shapes):
     snapshot_weights = n.snapshot_weightings.generators
 
-    valid_carriers = {
-        'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac', 'nuclear',
-        'geothermal', 'ror', 'hydro',
-        'gas', 'OCGT', 'CCGT', 'oil', 'coal', 'biomass', 'lignite',
+    # Define carrier sets by component
+    gen_carriers = {
+        'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac',
+        'nuclear', 'geothermal', 'ror', 'hydro'
     }
 
-    # Identify electric buses (exclude heat, gas, H2, oil, coal buses)
-    electric_buses = set(n.buses.query("carrier == 'AC'").index)
+    storage_carriers = {
+        'battery', 'hydro', 'PHS'  # Customize based on actual model
+    }
+
+    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass', 'lignite']
+
+    electric_buses = set(n.buses[n.buses.carrier == 'AC'].index)
 
     # Generators
-    gen = n.generators[n.generators.carrier.isin(valid_carriers)].copy()
-    gen_dispatch = n.generators_t.p[gen.index].multiply(
-        snapshot_weights, axis=0)
+    gen = n.generators[n.generators.carrier.isin(gen_carriers)].copy()
+    gen_dispatch = n.generators_t.p[gen.index].multiply(snapshot_weights, axis=0)
     gen['energy'] = gen_dispatch.sum()
     gen = gen[(gen.p_nom_opt > 0) & (gen.energy > 0)]
-    gen['lcoe'] = (gen.capital_cost * gen.p_nom_opt +
-                   gen.marginal_cost * gen.energy) / gen.energy
+    gen['lcoe'] = (gen.capital_cost * gen.p_nom_opt + gen.marginal_cost * gen.energy) / gen.energy
     gen['type'] = 'generator'
 
     # Storage units
-    sto = n.storage_units[n.storage_units.carrier.isin(valid_carriers)].copy()
-    sto_dispatch = n.storage_units_t.p[sto.index].clip(
-        lower=0).multiply(snapshot_weights, axis=0)
+    sto = n.storage_units[n.storage_units.carrier.isin(storage_carriers)].copy()
+    sto_dispatch = n.storage_units_t.p[sto.index].clip(lower=0).multiply(snapshot_weights, axis=0)
     sto['energy'] = sto_dispatch.sum()
     sto = sto[(sto.p_nom_opt > 0) & (sto.energy > 0)]
-    sto['lcoe'] = (sto.capital_cost * sto.p_nom_opt +
-                   sto.marginal_cost * sto.energy) / sto.energy
+    sto['lcoe'] = (sto.capital_cost * sto.p_nom_opt + sto.marginal_cost * sto.energy) / sto.energy
     sto['type'] = 'storage'
 
-    # Links
-    # Select only links going to electric buses and with p_nom_opt > 0
+    # Links (using p1 logic consistent with total generation)
     link = n.links[
-        (n.links.carrier.isin(valid_carriers)) &
+        (n.links.carrier.isin(link_carriers)) &
         (n.links.bus1.isin(electric_buses)) &
         (n.links.p_nom_opt > 0)
     ].copy()
 
-    # Take only actual output (p1 < 0 → output), clip to keep only negative, and make positive
     link_dispatch = -n.links_t.p1[link.index].clip(upper=0)
-
-    # Multiply by snapshot weights (if needed)
     weighted_link_dispatch = link_dispatch.multiply(snapshot_weights, axis=0)
-
-    # Sum energy
     link['energy'] = weighted_link_dispatch.sum()
     link = link[(link.p_nom_opt > 0) & (link.energy > 0)]
-    link['lcoe'] = (link.capital_cost * link.p_nom_opt +
-                    link.marginal_cost * link.energy) / link.energy
+    link['lcoe'] = (link.capital_cost * link.p_nom_opt + link.marginal_cost * link.energy) / link.energy
     link['type'] = 'link'
 
-    # Combine and merge
+    # Merge data
     gen_data = gen[['bus', 'carrier', 'lcoe', 'type', 'energy']]
     sto_data = sto[['bus', 'carrier', 'lcoe', 'type', 'energy']]
-    link_data = link[['bus1', 'carrier', 'lcoe', 'type', 'energy']].rename(columns={
-                                                                           'bus1': 'bus'})
+    link_data = link[['bus1', 'carrier', 'lcoe', 'type', 'energy']].rename(columns={'bus1': 'bus'})
 
     lcoe_data = pd.concat([gen_data, sto_data, link_data], axis=0).dropna()
-    lcoe_data = lcoe_data.merge(
-        n.buses[['x', 'y', 'grid_region']], left_on='bus', right_index=True)
-
-    # Weighted mean LCOE per bus
-    def weighted_avg(df):
-        return (df['lcoe'] * df['energy']).sum() / df['energy'].sum()
+    lcoe_data = lcoe_data.merge(n.buses[['x', 'y', 'grid_region']], left_on='bus', right_index=True)
 
     lcoe_by_bus = (
         lcoe_data.groupby('bus')
         .apply(lambda df: pd.Series({
-            'weighted_lcoe': weighted_avg(df),
+            'weighted_lcoe': (df['lcoe'] * df['energy']).sum() / df['energy'].sum(),
             'x': df['x'].iloc[0],
             'y': df['y'].iloc[0],
             'grid_region': df['grid_region'].iloc[0]
@@ -984,61 +972,61 @@ def calculate_lcoe_summary_and_map(n, shapes):
         .reset_index()
     )
 
-    # Aggregate by grid_region and carrier for weighted avg LCOE and dispatch
     region_summary = (
         lcoe_data.groupby(['grid_region', 'carrier'])
         .agg(
             dispatch_mwh=('energy', 'sum'),
-            total_cost=('lcoe', lambda x: (
-                x * lcoe_data.loc[x.index, 'energy']).sum())
+            total_cost=('lcoe', lambda x: (x * lcoe_data.loc[x.index, 'energy']).sum())
         )
         .reset_index()
     )
-
-    # Calculate weighted avg LCOE per carrier & grid_region
-    region_summary['lcoe'] = region_summary['total_cost'] / \
-        region_summary['dispatch_mwh']
-
-    # Convert dispatch to TWh
+    region_summary['lcoe'] = region_summary['total_cost'] / region_summary['dispatch_mwh']
     region_summary['dispatch'] = region_summary['dispatch_mwh'] / 1e6
 
-    # Calculate weighted average LCOE per grid_region (all carriers)
     weighted_avg_grid_region = (
-        region_summary.groupby('grid_region').apply(
-            lambda df: (df['dispatch_mwh'] * df['lcoe']
-                        ).sum() / df['dispatch_mwh'].sum()
-        )
+        region_summary.groupby('grid_region')
+        .apply(lambda df: (df['dispatch_mwh'] * df['lcoe']).sum() / df['dispatch_mwh'].sum())
     )
 
-    # Pivot to wide table for carriers
-    table = region_summary.pivot(
-        index='grid_region', columns='carrier', values=['lcoe', 'dispatch'])
+    table = region_summary.pivot(index='grid_region', columns='carrier', values=['lcoe', 'dispatch'])
     table.columns = [
-        f"{carrier} {metric} [{'USD/MWh' if metric == 'lcoe' else 'TWh'}]" for metric, carrier in table.columns]
+        f"{carrier} {metric} ({'USD/MWh' if metric == 'lcoe' else 'TWh'})"
+        for metric, carrier in table.columns
+    ]
     table = table.reset_index()
 
-    # Replace NaN in dispatch columns only
     dispatch_cols = [col for col in table.columns if 'dispatch' in col.lower()]
-    table[dispatch_cols] = table[dispatch_cols].fillna(0.0)
+    for col in dispatch_cols:
+        table[col] = pd.to_numeric(table[col], errors='coerce').fillna(0.0)
 
-    # Add weighted average LCOE per grid_region as a simple column
-    table['Weighted Average LCOE (USD/MWh)'] = table['grid_region'].map(
-        weighted_avg_grid_region).round(2)
+    lcoe_cols = [col for col in table.columns if 'lcoe' in col.lower()]
 
-    # Round dispatch and lcoe to 2 decimals
+    min_dispatch_threshold = 1  # TWh
+    for lcoe_col in lcoe_cols:
+        carrier = lcoe_col.split(" ")[0]
+        dispatch_col = next((col for col in dispatch_cols if col.startswith(carrier + " ")), None)
+        if dispatch_col:
+            mask = table[dispatch_col] < min_dispatch_threshold
+            table.loc[mask, lcoe_col] = np.nan
+
+    table[lcoe_cols] = table[lcoe_cols].applymap(lambda x: '-' if pd.isna(x) else round(x, 2))
+
+    grid_region_weighted_lcoe = (
+        lcoe_by_bus.merge(lcoe_data[['bus', 'energy']], on='bus', how='left')
+        .groupby('grid_region')
+        .apply(lambda df: (df['weighted_lcoe'] * df['energy']).sum() / df['energy'].sum())
+    )
+    table['Weighted Average LCOE (USD/MWh)'] = table['grid_region'].map(grid_region_weighted_lcoe).round(2)
+
     for col in table.columns:
         if col != 'grid_region':
-            table[col] = table[col].round(2)
+            table[col] = table[col].round(2) if table[col].dtype != object else table[col]
 
-    # Color scale limits for the map based on weighted averages
     vmin = lcoe_by_bus['weighted_lcoe'].quantile(0.05)
-    vmax = max(vmin, min(weighted_avg_grid_region.max()
-               * 1.1, lcoe_by_bus['weighted_lcoe'].max()))
+    vmax = max(vmin, min(weighted_avg_grid_region.max() * 1.1, lcoe_by_bus['weighted_lcoe'].max()))
 
-    # GeoDataFrame for plotting
     geometry = [Point(xy) for xy in zip(lcoe_by_bus['x'], lcoe_by_bus['y'])]
-    lcoe_gdf = gpd.GeoDataFrame(
-        lcoe_by_bus, geometry=geometry, crs=shapes.crs).to_crs(shapes.crs)
+    lcoe_gdf = gpd.GeoDataFrame(lcoe_by_bus, geometry=geometry, crs=shapes.crs).to_crs(shapes.crs)
 
     return lcoe_gdf, table, lcoe_by_bus, lcoe_data, vmin, vmax
 
@@ -1429,7 +1417,7 @@ def calculate_weighted_lcoh_table_by_year(networks, h2_carriers, output_threshol
 def calculate_total_generation_by_carrier(network, start_date=None, end_date=None):
     import pandas as pd
 
-    # === 1. Time setup ===
+    # Time setup
     snapshots_slice = slice(
         start_date, end_date) if start_date and end_date else slice(None)
     snapshots = network.snapshots[snapshots_slice]
@@ -1442,7 +1430,7 @@ def calculate_total_generation_by_carrier(network, start_date=None, end_date=Non
     }
     link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass', 'lignite']
 
-    # === 3. Identify electric buses ===
+    # Identify electric buses
     electric_buses = set(
         network.buses.index[
             ~network.buses.carrier.str.contains(
@@ -1450,7 +1438,7 @@ def calculate_total_generation_by_carrier(network, start_date=None, end_date=Non
         ]
     )
 
-    # === 4. Generators ===
+    # Generators
     gen = network.generators[network.generators.carrier.isin(
         gen_and_sto_carriers)]
     gen_p = network.generators_t.p.loc[snapshots_slice, gen.index].clip(
@@ -1458,7 +1446,7 @@ def calculate_total_generation_by_carrier(network, start_date=None, end_date=Non
     gen_dispatch = gen_p.groupby(gen['carrier'], axis=1).sum()
     gen_energy_mwh = gen_dispatch.sum() * timestep_h
 
-    # === 5. Storage units ===
+    # Storage units
     sto = network.storage_units[network.storage_units.carrier.isin(
         gen_and_sto_carriers)]
     sto_p = network.storage_units_t.p.loc[snapshots_slice, sto.index].clip(
@@ -1466,7 +1454,7 @@ def calculate_total_generation_by_carrier(network, start_date=None, end_date=Non
     sto_dispatch = sto_p.groupby(sto['carrier'], axis=1).sum()
     sto_energy_mwh = sto_dispatch.sum() * timestep_h
 
-    # === 6. Link-based generation ===
+    # Link-based generation
     link_energy_twh = {}
 
     for carrier in link_carriers:
@@ -1486,7 +1474,7 @@ def calculate_total_generation_by_carrier(network, start_date=None, end_date=Non
 
     link_dispatch = pd.Series(link_energy_twh)
 
-    # === 7. Combine all sources ===
+    # Combine all sources
     total_energy_twh = pd.concat([
         gen_energy_mwh / 1e6,    # MW → TWh
         sto_energy_mwh / 1e6,
@@ -1633,8 +1621,8 @@ def analyze_ft_costs_by_region(networks: dict):
                 marginal_cost_inputs[link] + tech_cost) / output_mwh
             marginal_cost_total[link] = {
                 "bus": ft_links.at[link, "bus1"],
-                "production [MWh]": output_mwh,
-                "marginal_cost_total [USD/MWh]": total_cost_per_mwh
+                "production (MWh)": output_mwh,
+                "marginal_cost_total (USD/MWh)": total_cost_per_mwh
             }
 
         # Map each link's output bus to its grid_region
@@ -1645,15 +1633,15 @@ def analyze_ft_costs_by_region(networks: dict):
 
         # Aggregate by grid_region (sum production, weighted average of cost)
         grouped = df_links.groupby("grid_region")
-        sum_prod = grouped["production [MWh]"].sum()
+        sum_prod = grouped["production (MWh)"].sum()
         weighted_cost = grouped.apply(
-            lambda g: (g["marginal_cost_total [USD/MWh]"] *
-                       g["production [MWh]"]).sum() / g["production [MWh]"].sum()
+            lambda g: (g["marginal_cost_total (USD/MWh)"] *
+                       g["production (MWh)"]).sum() / g["production (MWh)"].sum()
         )
 
         df_region_result = pd.DataFrame({
-            "production [MWh]": sum_prod,
-            "marginal_cost_total [USD/MWh]": weighted_cost
+            "production (MWh)": sum_prod,
+            "marginal_cost_total (USD/MWh)": weighted_cost
         })
 
         # Round to 2 decimals
@@ -1665,8 +1653,8 @@ def analyze_ft_costs_by_region(networks: dict):
         # Rename columns
         df_region_result = df_region_result.rename(columns={
             "grid_region": "Grid region",
-            "production [MWh]": "Production (MWh)",
-            "marginal_cost_total [USD/MWh]": "e-kerosene marginal cost (USD/MWh)"
+            "production (MWh)": "Production (MWh)",
+            "marginal_cost_total (USD/MWh)": "e-kerosene marginal cost (USD/MWh)",
         })
 
         # Format numbers and hide index

@@ -375,6 +375,281 @@ nice_names:
   clinker: Clinker
   cement: Cement
   biogenic co2: Biogenic Carbon Dioxide
+
+
+rename_tech_capex:
+  # Wind
+  Onshore Wind: wind
+  Offshore Wind (AC): wind
+  Offshore Wind (DC): wind
+
+  # Solar
+  Solar: solar
+  solar rooftop: solar
+  Csp: solar
+  residential urban decentral solar thermal: solar
+  services urban decentral solar thermal: solar
+  urban central solar thermal: solar
+  services rural solar thermal: solar
+  residential rural solar thermal: solar
+
+  # Fossil generators
+  coal: fossil generator
+  oil: fossil generator
+  lignite: fossil generator
+  gas: fossil generator
+  CCGT: fossil generator
+  OCGT: fossil generator
+  urban central gas CHP: fossil generator
+
+  # Biomass generators
+  biomass: biomass generator
+  biomass EOP: biomass generator
+  urban central solid biomass CHP: biomass generator
+  bioethanol crop: biomass generator
+
+  # Industry infrastructure
+  ethanol from starch: industry infrastructure
+  ethanol from starch CC: industry infrastructure
+  BF-BOF: industry infrastructure
+  BF-BOF CC: industry infrastructure
+  DRI: industry infrastructure
+  DRI CC: industry infrastructure
+  EAF: industry infrastructure
+  cement finishing: industry infrastructure
+  dry clinker: industry infrastructure
+  dry clinker CC: industry infrastructure
+  process emissions: industry infrastructure
+  scrap steel: industry infrastructure
+  clinker: industry infrastructure
+  iron ore: industry infrastructure
+  gas for industry: industry infrastructure
+
+  # Hydro
+  Run of River: hydroelectricity
+  Pumped Hydro Storage: hydroelectricity
+  Reservoir & Dam: hydroelectricity
+
+  # Storage
+  battery: storage
+  battery charger: storage
+  battery discharger: storage
+  home battery: storage
+  home battery charger: storage
+  home battery discharger: storage
+  Li ion: storage
+  co2 stored: storage
+
+  # Carbon capture
+  DAC: carbon capture
+
+  # Heating
+  residential urban decentral air heat pump: heating
+  services urban decentral air heat pump: heating
+  residential rural ground heat pump: heating
+  services rural ground heat pump: heating
+  urban central air heat pump: heating
+  services urban decentral resistive heater: heating
+  residential urban decentral resistive heater: heating
+  urban central resistive heater: heating
+  services rural resistive heater: heating
+  residential rural resistive heater: heating
+  urban central water tanks: heating
+  residential urban decentral water tanks: heating
+  residential rural water tanks: heating
+  services urban decentral water tanks: heating
+  services rural water tanks: heating
+  services urban decentral water tanks charger: heating
+  residential rural water tanks charger: heating
+  residential rural water tanks discharger: heating
+  services rural water tanks charger: heating
+  services rural water tanks discharger: heating
+  residential urban decentral water tanks charger: heating
+  residential urban decentral water tanks discharger: heating
+  urban central water tanks charger: heating
+  urban central water tanks discharger: heating
+  services urban decentral water tanks discharger: heating
+  urban central gas boiler: heating
+  services urban decentral gas boiler: heating
+  residential urban decentral gas boiler: heating
+  services rural gas boiler: heating
+  residential rural gas boiler: heating
+
+  # Transmission
+  electricity distribution grid: transmission
+  DC: transmission
+  CO2 pipeline: transmission
+  B2B: transmission
+  V2G: transmission
+  solid biomass transport: transmission
+
+  # Other generators
+  Nuclear: nuclear
+  Geothermal: geothermal
+
+  # Emissions
+  co2 vent: emissions
+
+  # Hydrogen
+  SMR: hydrogen
+  SMR CC: hydrogen
+  SOEC: hydrogen
+  PEM electrolyzer: hydrogen
+  Alkaline electrolyzer large: hydrogen
+  H2 pipeline: hydrogen
+  H2 pipeline repurposed: hydrogen
+  grid H2: hydrogen
+  H2: hydrogen
+  H2 Fuel Cell: hydrogen
+
+  # E-fuels synthesis
+  Fischer-Tropsch: efuels synthesis
+  Haber-Bosch: efuels synthesis
+  Sabatier: efuels synthesis
+  e-kerosene-to-main: efuels synthesis
+  e-kerosene-to-oil: efuels synthesis
+  main-to-e-kerosene: efuels synthesis
+  e-kerosene: efuels synthesis
+  helmeth: efuels synthesis
+
+  # Biofuels synthesis
+  biogas to gas: biofuels synthesis
+
+
+rename_tech_opex:
+  # Wind (tax credit)
+  Onshore Wind: wind tax credits
+  Offshore Wind (AC): wind tax credits
+  Offshore Wind (DC): wind tax credits
+
+  # Solar (tax credit)
+  Solar: solar tax credits
+  solar rooftop: solar tax credits
+  Csp: solar tax credits
+  urban central solar thermal: solar tax credits
+  residential urban decentral solar thermal: solar tax credits
+  services urban decentral solar thermal: solar tax credits
+  residential rural solar thermal: solar tax credits
+  services rural solar thermal: solar tax credits
+
+  # Fossil fuels
+  gas: fossil fuels
+  coal: fossil fuels
+  oil: fossil fuels
+  CCGT: fossil fuels
+  urban central gas CHP: fossil fuels
+  gas for industry: fossil fuels
+
+  # Biomass fuels
+  biomass: biomass fuels
+  biomass EOP: biomass fuels
+  ethanol from starch: biomass fuels
+  ethanol from starch CC: biomass fuels
+  bioethanol crop: biomass fuels
+
+  # Industry opex
+  BF-BOF: industry opex
+  BF-BOF CC: industry opex
+  DRI: industry opex
+  DRI CC: industry opex
+  EAF: industry opex
+  cement finishing: industry opex
+  dry clinker: industry opex
+  dry clinker CC: industry opex
+  process emissions: industry opex
+  scrap steel: industry opex
+  clinker: industry opex
+  iron ore: industry opex
+
+  # Hydro (tax credit)
+  Run of River: hydro tax credits
+  Pumped Hydro Storage: hydro tax credits
+  Reservoir & Dam: hydro tax credits
+
+  # Nuclear (tax credit)
+  Nuclear: nuclear tax credits
+
+  # Storage
+  battery: storage
+  battery charger: storage
+  battery discharger: storage
+  home battery: storage
+  home battery charger: storage
+  home battery discharger: storage
+  Li ion: storage
+  co2 stored: storage
+
+  # Carbon capture
+  DAC: carbon capture
+
+  # Heating
+  residential urban decentral air heat pump: heating
+  services urban decentral air heat pump: heating
+  residential rural ground heat pump: heating
+  services rural ground heat pump: heating
+  urban central air heat pump: heating
+  services urban decentral resistive heater: heating
+  residential urban decentral resistive heater: heating
+  urban central resistive heater: heating
+  services rural resistive heater: heating
+  residential rural resistive heater: heating
+  urban central water tanks: heating
+  residential urban decentral water tanks: heating
+  residential rural water tanks: heating
+  services urban decentral water tanks: heating
+  services rural water tanks: heating
+  services urban decentral water tanks charger: heating
+  residential rural water tanks charger: heating
+  residential rural water tanks discharger: heating
+  services rural water tanks charger: heating
+  services rural water tanks discharger: heating
+  residential urban decentral water tanks charger: heating
+  residential urban decentral water tanks discharger: heating
+  urban central water tanks charger: heating
+  urban central water tanks discharger: heating
+  services urban decentral water tanks discharger: heating
+  urban central gas boiler: heating
+  services urban decentral gas boiler: heating
+  residential urban decentral gas boiler: heating
+  services rural gas boiler: heating
+  residential rural gas boiler: heating
+
+  # Transmission
+  electricity distribution grid: transmission
+  DC: transmission
+  CO2 pipeline: transmission
+  B2B: transmission
+  V2G: transmission
+  solid biomass transport: transmission
+
+  # Emissions
+  co2 vent: emissions
+
+  # Hydrogen
+  SMR: hydrogen
+  SMR CC: hydrogen
+  SOEC: hydrogen
+  PEM electrolyzer: hydrogen
+  Alkaline electrolyzer large: hydrogen
+  H2 pipeline: hydrogen
+  H2 pipeline repurposed: hydrogen
+  grid H2: hydrogen
+  H2: hydrogen
+  H2 Fuel Cell: hydrogen
+
+  # E-fuels synthesis
+  Fischer-Tropsch: efuels synthesis
+  Haber-Bosch: efuels synthesis
+  Sabatier: efuels synthesis
+  e-kerosene-to-main: efuels synthesis
+  e-kerosene-to-oil: efuels synthesis
+  main-to-e-kerosene: efuels synthesis
+  e-kerosene: efuels synthesis
+  helmeth: efuels synthesis
+
+  # Biofuels synthesis
+  biogas to gas: biofuels synthesis
+
 rename_tech:
   Csp: solar
   Geothermal: geothermal
@@ -382,52 +657,52 @@ rename_tech:
   Offshore Wind (AC): wind
   Offshore Wind (DC): wind
   Onshore Wind: wind
-  Run of River: hydro
+  Run of River: hydroelectricity
   Solar: solar
-  bioethanol crop: Biofuels
+  bioethanol crop: biomass
   biomass: biomass
-  coal: coal
+  coal: fossil fuels
   gas: Fossil Fuels
   iron ore: Industry
-  lignite: Fossil Fuels
-  oil: oil
-  residential rural solar thermal: Heating
-  residential urban decentral solar thermal: Heating
-  scrap steel: Industry
+  lignite: fossil fuels
+  oil: fossil fuels
+  residential rural solar thermal: heating
+  residential urban decentral solar thermal: heating
+  scrap steel: other
   services rural solar thermal: Heating
   services urban decentral solar thermal: Heating
   solar rooftop: solar
   urban central solar thermal: Heating
-  AC: Infrastructure
+  AC: transmission
   Alkaline electrolyzer large: Hydrogen & Electrolyzers
   B2B: Others
-  BEV charger: Transport
+  BEV charger: Storage
   BF-BOF: Industry
   BF-BOF CC: Industry
   CCGT: gas
-  CO2 pipeline: Infrastructure
+  CO2 pipeline: transmission
   DAC: Industry
-  DC: Infrastructure
+  DC: transmission
   DRI: Industry
   DRI CC: Industry
   EAF: Industry
-  Fischer-Tropsch: Industry
+  Fischer-Tropsch: efuels synthesis
   H2: Hydrogen & Electrolyzers
   H2 Fuel Cell: Hydrogen & Electrolyzers
   H2 pipeline: Hydrogen & Electrolyzers
   H2 pipeline repurposed: Hydrogen & Electrolyzers
   Haber-Bosch: Hydrogen & Electrolyzers
-  OCGT: gas
+  OCGT: Fossil
   PEM electrolyzer: Hydrogen & Electrolyzers
   SMR: Hydrogen & Electrolyzers
   SMR CC: Hydrogen & Electrolyzers
   SOEC: Hydrogen & Electrolyzers
   Sabatier: Hydrogen & Electrolyzers
-  V2G: Transport
+  V2G: Storage
   battery charger: Storage
   battery discharger: Storage
   biogas to gas: Fossil Fuels
-  biomass EOP: Industry
+  # biomass EOP: Industry
   cement finishing: Industry
   co2 vent: Emissions
   dry clinker: Industry
@@ -440,8 +715,8 @@ rename_tech:
   gas for industry: Fossil Fuels
   grid H2: Hydrogen & Electrolyzers
   helmeth: Hydrogen & Electrolyzers
-  home battery charger: Transport
-  home battery discharger: Transport
+  home battery charger: Storage
+  home battery discharger: Storage
   main-to-e-kerosene: Transport
   process emissions: Emissions
   residential rural gas boiler: Heating
@@ -467,7 +742,7 @@ rename_tech:
   solid biomass for industry: Industry
   solid biomass transport: Transport
   urban central air heat pump: Heating
-  urban central gas CHP: Infrastructure
+  urban central gas CHP: Heating
   urban central gas boiler: Heating
   urban central resistive heater: Heating
   urban central solid biomass CHP: Heating
@@ -490,7 +765,7 @@ rename_tech:
   land transport EV: Transport
   land transport oil: Fossil Fuels
   land transport oil emissions: Emissions
-  low-temperature heat for industry: Industry
+  low-temperature heat for industry: Heating
   naphtha for industry: Fossil Fuels
   oil emissions: Emissions
   other electricity: Others
@@ -505,12 +780,12 @@ rename_tech:
   services electricity: Others
   services gas: Fossil Fuels
   services oil: Fossil Fuels
-  services rural heat: Others
-  services urban decentral heat: Others
+  services rural heat: Heating
+  services urban decentral heat: Heating
   shipping oil: Fossil Fuels
   shipping oil emissions: Emissions
-  steel BF-BOF: Industry
-  steel EAF: Industry
+  steel BF-BOF: Infrastructure
+  steel EAF: Infrastructure
   urban central heat: Heating
   Pumped Hydro Storage: hydro
   Reservoir & Dam: hydro

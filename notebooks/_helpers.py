@@ -1948,8 +1948,9 @@ def plot_emissions_maps_by_group(all_state_emissions, path_shapes, title, vmin=N
         axes[j].axis("off")
 
     fig.suptitle(
-        f"Net CO2 emissions by process and State (Mt CO2/year) - {title}", fontsize=12)
+        f"Net CO2 emissions by process and State (Mt CO2/year) - {title}", fontsize=14)
     plt.tight_layout()
+    plt.subplots_adjust(top=0.96)
     plt.show()
 
 def evaluate_res_ces_by_state(networks, ces, res, ces_carriers, res_carriers):

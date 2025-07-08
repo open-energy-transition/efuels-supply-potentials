@@ -913,7 +913,7 @@ def calculate_lcoe_summary_and_map(n, shapes):
     # Define carrier sets by component
     gen_carriers = {
         'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac',
-        'nuclear', 'geothermal', 'ror', 'hydro'
+        'nuclear', 'geothermal', 'ror', 'hydro', 'solar rooftop',
     }
 
     storage_carriers = {

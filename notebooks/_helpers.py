@@ -2426,3 +2426,60 @@ def plot_stacked_costs_by_year(cost_data, cost_type_label, tech_colors=None):
 
     plt.show()
 
+
+def calculate_total_inputs_outputs_ft(networks, ft_carrier="Fischer-Tropsch"):
+    """
+    Calculates input/output flows for Fischer-Tropsch:
+    - electricity (TWh)
+    - hydrogen (TWh) + tons
+    - fuel (TWh)
+    - CO2 used (Mt)
+    """
+    results = []
+
+    for name, net in networks.items():
+        ft_links = net.links[net.links.carrier == ft_carrier]
+        if ft_links.empty:
+            continue
+
+        ft_link_ids = ft_links.index
+
+        if len(net.snapshots) > 1:
+            timestep = net.snapshots[1] - net.snapshots[0]
+            timestep_hours = timestep.total_seconds() / 3600
+        else:
+            timestep_hours = 1.0
+
+        def safe_energy(df, ids):
+            try:
+                return (df[ids] * timestep_hours).sum().sum()
+            except KeyError:
+                return 0.0
+
+        elec_input = safe_energy(net.links_t.p3, ft_link_ids) / 1e6
+        h2_input = safe_energy(net.links_t.p0, ft_link_ids) / 1e6
+        fuel_output = safe_energy(net.links_t.p1, ft_link_ids) / 1e6
+        co2_input_mt = safe_energy(net.links_t.p2, ft_link_ids) / 1e6
+
+        # Convert hydrogen energy to tons
+        h2_tons = h2_input * 1e9 / 33.33 / 1000  # TWh → kWh → kg → tons
+
+        # Extract year from network name
+        match = re.search(r"\d{4}", name)
+        if not match:
+            continue
+        year = int(match.group())
+
+        results.append({
+            "Year": year,
+            "Used electricity (TWh)": elec_input,
+            "Used hydrogen (TWh)": h2_input,
+            "Used hydrogen (t)": h2_tons,
+            "Used CO2 (Mt)": co2_input_mt,
+            "Produced e-kerosene (TWh)": -fuel_output,
+        })
+
+    df = pd.DataFrame(results)
+    df["Year"] = df["Year"].astype(int)
+    df = df.sort_values("Year")
+    return df

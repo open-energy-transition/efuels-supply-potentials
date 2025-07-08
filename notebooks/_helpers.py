@@ -634,7 +634,7 @@ def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network"
     ax.set_position([0.05, 0.05, 0.9, 0.9])
 
     ax.set_title(
-        f"Fischer-Tropsch Capacity by State (GW){year_str}", fontsize=14)
+        f"Fischer-Tropsch Capacity by State (GW){year_str}", fontsize=12)
     ax.axis('off')
     plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
 
@@ -829,7 +829,7 @@ def plot_electricity_dispatch(networks, carrier_colors, start_date=None, end_dat
             color=[carrier_colors.get(c, 'gray') for c in supply_gw.columns],
             legend=False
         )
-        ax.set_title(f"Electricity Dispatch – {key}")
+        ax.set_title(f"Electricity dispatch – {key}")
         ax.set_ylabel("Power (GW)")
         ax.set_ylim(0, y_max_plot)
         ax.grid(True)
@@ -2336,7 +2336,93 @@ def compute_installed_capacity_by_carrier(networks, nice_names=None, display_res
 
     if display_result:
         print("\nInstalled capacity by technology (GW)\n")
-        from IPython.display import display
         display(carrier_capacity_df)
 
     return carrier_capacity_df
+
+def compute_system_costs(network, rename_capex, rename_opex, general_rename, name_tag):
+    costs_raw = network.statistics()[['Capital Expenditure', 'Operational Expenditure']]
+    year_str = name_tag[-4:]
+
+    # CAPEX
+    capex_raw = costs_raw[['Capital Expenditure']].reset_index()
+    capex_raw['tech_label'] = capex_raw['carrier'].map(rename_capex).fillna(capex_raw['carrier'])
+    capex_raw['main_category'] = capex_raw['tech_label'].map(general_rename).fillna(capex_raw['tech_label'])
+    capex_grouped = capex_raw.groupby('tech_label', as_index=False).agg({
+        'Capital Expenditure': 'sum',
+        'main_category': 'first'
+    })
+    capex_grouped['cost_type'] = 'Capital expenditure'
+    capex_grouped.rename(columns={'Capital Expenditure': 'cost_billion'}, inplace=True)
+    capex_grouped['cost_billion'] /= 1e9
+    capex_grouped['year'] = year_str
+
+    # OPEX
+    opex_raw = costs_raw[['Operational Expenditure']].reset_index()
+    opex_raw['tech_label'] = opex_raw['carrier'].map(rename_opex).fillna(opex_raw['carrier'])
+    opex_raw['main_category'] = opex_raw['tech_label'].map(general_rename).fillna(opex_raw['tech_label'])
+    opex_grouped = opex_raw.groupby('tech_label', as_index=False).agg({
+        'Operational Expenditure': 'sum',
+        'main_category': 'first'
+    })
+    opex_grouped['cost_type'] = 'Operational expenditure'
+    opex_grouped.rename(columns={'Operational Expenditure': 'cost_billion'}, inplace=True)
+    opex_grouped['cost_billion'] /= 1e9
+    opex_grouped['year'] = year_str
+
+    return pd.concat([capex_grouped, opex_grouped], ignore_index=True)
+
+def plot_stacked_costs_by_year(cost_data, cost_type_label, tech_colors=None):
+    data_filtered = cost_data[cost_data['cost_type'] == cost_type_label].copy()
+    data_filtered = data_filtered[data_filtered['cost_billion'] != 0]
+
+    pivot_table = data_filtered.pivot_table(
+        index='year',
+        columns='tech_label',
+        values='cost_billion',
+        aggfunc='sum'
+    ).fillna(0)
+
+    label_to_category_map = data_filtered.set_index('tech_label')['main_category'].to_dict()
+
+    def get_color(tech_label):
+        category = label_to_category_map.get(tech_label, tech_label)
+        return tech_colors.get(category, '#999999')
+
+    color_values = [get_color(label) for label in pivot_table.columns]
+
+    ax = pivot_table.plot(
+        kind='bar',
+        stacked=True,
+        color=color_values,
+        figsize=(12, 6)
+    )
+    ax.axhline(0, color='black', linewidth=1, linestyle='-')
+    ax.set_xlabel("Years (-)")
+    plt.ylabel(f"{cost_type_label} (Billion USD)")
+    plt.title(f"{cost_type_label}")
+    plt.xticks(rotation=0)
+    plt.tight_layout()
+
+    handles, labels = ax.get_legend_handles_labels()
+    label_to_handle = dict(zip(labels, handles))
+
+    visible_labels = pivot_table.columns[(pivot_table != 0).any(axis=0)]
+    visible_labels_str = [str(l) for l in visible_labels]
+
+    filtered_labels = [l for l in visible_labels_str if l in label_to_handle]
+    filtered_handles = [label_to_handle[l] for l in filtered_labels]
+
+    if filtered_handles:
+        ax.legend(
+            filtered_handles,
+            filtered_labels,
+            title="Technology",
+            bbox_to_anchor=(1.05, 1),
+            loc='upper left'
+        )
+    else:
+        ax.legend().remove()
+
+    plt.show()
+

@@ -348,7 +348,7 @@ nice_names:
   ror: Run-of-River hydro
   solar: Utility-scale solar
   csp: CSP
-  solid biomass: Solid Biomass
+  solid biomass: Solid biomass
   biogas: Biogas
   co2: CO2
   h2: Hydrogen
@@ -358,7 +358,7 @@ nice_names:
   water tanks: Water Tanks
   solar rooftop: Rooftop solar
   solar thermal: Solar thermal
-  e-kerosene: e-Kerosene
+  e-kerosene: e-kerosene
   residential rural heat: Residential rural heat
   residential rural water tanks: Residential Rural Water Tanks
   residential rural solar thermal: Residential Rural Solar Thermal
@@ -396,9 +396,9 @@ rename_tech_capex:
   Offshore Wind (DC): Wind
 
   # Solar
-  Solar: solar
-  solar rooftop: solar
-  Csp: solar
+  Solar: Solar
+  solar rooftop: Solar
+  Csp: Solar
   residential urban decentral solar thermal: Solar
   services urban decentral solar thermal: Solar
   urban central solar thermal: Solar
@@ -419,41 +419,53 @@ rename_tech_capex:
   biomass EOP: Biomass generator
   urban central solid biomass CHP: Biomass generator
   bioethanol crop: Biomass generator
+  solid biomass: Biomass generator
+  biogas: Biomass generator
 
-  # Industry infrastructure
-  ethanol from starch: Industry infrastructure
-  ethanol from starch CC: Industry infrastructure
-  BF-BOF: Industry infrastructure
-  BF-BOF CC: Industry infrastructure
-  DRI: Industry infrastructure
-  DRI CC: Industry infrastructure
-  EAF: Industry infrastructure
-  cement finishing: Industry infrastructure
-  dry clinker: Industry infrastructure
-  dry clinker CC: Industry infrastructure
-  process emissions: Industry infrastructure
-  scrap steel: Industry infrastructure
-  clinker: Industry infrastructure
-  iron ore: Industry infrastructure
-  gas for industry: Industry infrastructure
-
+  # Industry 
+  ethanol from starch: Industry
+  ethanol from starch CC: Industry carbon capture
+  BF-BOF: Industry
+  BF-BOF CC: Industry
+  DRI: Industry
+  DRI CC: Industry carbon capture
+  EAF: Industry
+  cement finishing: Industry
+  dry clinker: Industry
+  dry clinker CC: Industry carbon capture
+  process emissions: Industry
+  scrap steel: Industry
+  clinker: Industry
+  iron ore: Industry
+  gas for industry: Industry
+  iron ore store: Industry
+  scrap steel store: Industry
+  clinker store: Industry
+  solid biomass for industry: Industry
+  bioethanol crop store: Industry
+  SMR: Industry
+  SMR CC: Industry carbon capture
+  
   # Hydro
-  Run of River: Hydroelectricity
-  Pumped Hydro Storage: Hydroelectricity
-  Reservoir & Dam: Hydroelectricity
+  Run of River: Hydropower
+  Pumped Hydro Storage: Hydropower
+  Reservoir & Dam: Hydropower
 
   # Storage
   battery: Storage
   battery charger: Storage
   battery discharger: Storage
   home battery: Storage
-  home battery charger: storage
+  home battery charger: Storage
   home battery discharger: Storage
   Li ion: Storage
   co2 stored: Storage
+  battery storage: Storage
+  H2 Store Tank: Storage
+  BEV charger: Storage
 
   # Carbon capture
-  DAC: carbon capture
+  DAC: DAC
 
   # Heating
   residential urban decentral air heat pump: Heating
@@ -486,6 +498,7 @@ rename_tech_capex:
   residential urban decentral gas boiler: Heating
   services rural gas boiler: Heating
   residential rural gas boiler: Heating
+  urban central solid biomass CHP: Heating
 
   # Transmission
   electricity distribution grid: Transmission
@@ -494,6 +507,7 @@ rename_tech_capex:
   B2B: Transmission
   V2G: Transmission
   solid biomass transport: Transmission
+  AC: Transmission
 
   # Other generators
   Nuclear: Nuclear
@@ -501,18 +515,24 @@ rename_tech_capex:
 
   # Emissions
   co2 vent: Emissions
+  process emissions: Emissions
+  gas emissions: Emissions
+  industry coal emissions: Emissions
+  industry oil emissions: Emissions
+  land transport oil emissions: Emissions
+  oil emissions: Emissions
+  shipping oil emissions: Emissions
+  co2: Emissions
 
-  # Hydrogen
-  SMR: Hydrogen
-  SMR CC: Hydrogen
-  SOEC: Hydrogen
-  PEM electrolyzer: Hydrogen
-  Alkaline electrolyzer large: Hydrogen
-  H2 pipeline: Hydrogen
-  H2 pipeline repurposed: Hydrogen
-  grid H2: Hydrogen
-  H2: Hydrogen
-  H2 Fuel Cell: Hydrogen
+  # Hydrogen & Electrolyzers
+  SOEC: Hydrogen & Electrolyzers
+  PEM electrolyzer: Hydrogen & Electrolyzers
+  Alkaline electrolyzer large: Hydrogen & Electrolyzers
+  H2 pipeline: Hydrogen & Electrolyzers
+  H2 pipeline repurposed: Hydrogen & Electrolyzers
+  grid H2: Hydrogen & Electrolyzers
+  H2: Hydrogen & Electrolyzers
+  H2 Fuel Cell: Hydrogen & Electrolyzers
 
   # e-fuels synthesis
   Fischer-Tropsch: e-fuels synthesis
@@ -526,7 +546,6 @@ rename_tech_capex:
 
   # Biofuels synthesis
   biogas to gas: Biofuels synthesis
-
 
 rename_tech_opex:
   # Wind (tax credit)
@@ -553,46 +572,57 @@ rename_tech_opex:
   gas for industry: Fossil fuels
 
   # Biomass fuels
-  biomass: biomass fuels
-  biomass EOP: biomass fuels
-  ethanol from starch: biomass fuels
-  ethanol from starch CC: biomass fuels
-  bioethanol crop: biomass fuels
+  biomass: Biomass fuels
+  biomass EOP: Biomass fuels
+  ethanol from starch: Biomass fuels
+  ethanol from starch CC: Biomass fuels
+  bioethanol crop: Biomass fuels
+  solid biomass: Biomass fuels
+  biogas: Biomass fuels
 
   # Industry OPEX
   BF-BOF: Industry OPEX
-  BF-BOF CC: Industry OPEX
+  BF-BOF CC: Industry carbon capture OPEX
   DRI: Industry OPEX
-  DRI CC: Industry OPEX
+  DRI CC: Industry carbon capture OPEX
   EAF: Industry OPEX
   cement finishing: Industry OPEX
   dry clinker: Industry OPEX
-  dry clinker CC: Industry OPEX
-  process emissions: Industry OPEX
+  dry clinker CC: Industry carbon capture OPEX
   scrap steel: Industry OPEX
   clinker: Industry OPEX
   iron ore: Industry OPEX
+  iron ore store: Industry OPEX
+  scrap steel store: Industry OPEX
+  clinker store: Industry OPEX
+  solid biomass for industry: Industry OPEX
+  bioethanol crop store: Industry OPEX
+  SMR: Industry OPEX
+  SMR CC: Industry carbon capture OPEX
 
   # Hydro (tax credit)
-  Run of River: hydro tax credits
-  Pumped Hydro Storage: hydro tax credits
-  Reservoir & Dam: hydro tax credits
+  Run of River: Hydropower tax credits
+  Pumped Hydro Storage: Hydropower tax credits
+  Reservoir & Dam: Hydropower tax credits
 
   # Nuclear (tax credit)
-  Nuclear: nuclear tax credits
+  Nuclear: Nuclear tax credits
 
   # Storage
-  battery: storage
-  battery charger: storage
-  battery discharger: storage
-  home battery: storage
-  home battery charger: storage
-  home battery discharger: storage
-  Li ion: storage
-  co2 stored: storage
+  battery: Storage
+  battery charger: Storage
+  battery discharger: Storage
+  home battery: Storage
+  home battery charger: Storage
+  home battery discharger: Storage
+  Li ion: Storage
+  co2 stored: Storage
+  battery storage: Storage
+  H2 Store Tank: Storage
+  BEV charger: Storage
 
   # Carbon capture
-  DAC: carbon capture
+  DAC: DAC
 
   # Heating
   residential urban decentral air heat pump: Heating
@@ -625,6 +655,7 @@ rename_tech_opex:
   residential urban decentral gas boiler: Heating
   services rural gas boiler: Heating
   residential rural gas boiler: Heating
+  urban central solid biomass CHP: Heating
 
   # Transmission
   electricity distribution grid: Transmission
@@ -633,29 +664,38 @@ rename_tech_opex:
   B2B: Transmission
   V2G: Transmission
   solid biomass transport: Transmission
+  AC: Transmission
 
   # Emissions
   co2 vent: Emissions
+  process emissions: Emissions
+  gas emissions: Emissions
+  industry coal emissions: Emissions
+  industry oil emissions: Emissions
+  land transport oil emissions: Emissions
+  oil emissions: Emissions
+  shipping oil emissions: Emissions
+  co2: Emissions
 
-  # Hydrogen
-  SMR: Hydrogen
-  SMR CC: Hydrogen
-  SOEC: Hydrogen
-  PEM electrolyzer: Hydrogen
-  Alkaline electrolyzer large: Hydrogen
-  H2 pipeline: Hydrogen
-  H2 pipeline repurposed: Hydrogen
-  grid H2: Hydrogen
-  H2: Hydrogen
-  H2 Fuel Cell: Hydrogen
+  # Hydrogen & Electrolyzers
+  SMR: Hydrogen & Electrolyzers
+  SMR CC: Hydrogen & Electrolyzers
+  SOEC: Hydrogen & Electrolyzers
+  PEM electrolyzer: Hydrogen & Electrolyzers
+  Alkaline electrolyzer large: Hydrogen & Electrolyzers
+  H2 pipeline: Hydrogen & Electrolyzers
+  H2 pipeline repurposed: Hydrogen & Electrolyzers
+  grid H2: Hydrogen & Electrolyzers
+  H2: Hydrogen & Electrolyzers
+  H2 Fuel Cell: Hydrogen & Electrolyzers
 
   # E-fuels synthesis
   Fischer-Tropsch: e-fuels synthesis
-  Haber-Bosch: efuels synthesis
+  Haber-Bosch: e-fuels synthesis
   Sabatier: e-fuels synthesis
   e-kerosene-to-main: e-fuels synthesis
   e-kerosene-to-oil: e-fuels synthesis
-  main-to-e-kerosene: efuels synthesis
+  main-to-e-kerosene: e-fuels synthesis
   e-kerosene: e-fuels synthesis
   helmeth: e-fuels synthesis
 
@@ -669,7 +709,7 @@ rename_tech:
   Offshore Wind (AC): Wind
   Offshore Wind (DC): Wind
   Onshore Wind: Wind
-  Run of River: Hydroelectricity
+  Run of River: Hydropower
   Solar: Solar
   bioethanol crop: Biomass
   biomass: Biomass
@@ -775,7 +815,7 @@ rename_tech:
   industry oil emissions: Emissions
   kerosene for aviation: Transport
   land transport EV: Transport
-  land transport oil: Fossil Fuels
+  land transport oil: Fossil fuels
   land transport oil emissions: Emissions
   low-temperature heat for industry: Heating
   naphtha for industry: Fossil Fuels
@@ -799,19 +839,20 @@ rename_tech:
   steel BF-BOF: Industry
   steel EAF: Industry
   urban central heat: Heating
-  Pumped Hydro Storage: Hydroelectricity
-  Reservoir & Dam: Hydroelectricity
+  Pumped Hydro Storage: Hydropower
+  Reservoir & Dam: Hydropower
   H2 Store Tank: Storage
   battery: Storage
   battery storage: Storage
-  bioethanol crop store: Storage
+  bioethanol crop store: Industry
   biogas: biomass
   clinker store: Storage
   co2: Emissions
   co2 stored: Storage
   e-kerosene: Transport
   home battery: Storage
-  iron ore store: Storage
+  iron ore store: Industry
+  scrap steel store: Industry
   residential rural water tanks: Heating
   residential urban decentral water tanks: Heating
   scrap steel store: Storage
@@ -819,23 +860,33 @@ rename_tech:
   services urban decentral water tanks: Heating
   urban central water tanks: Heating
   solid biomass: Biomass
+
 renamed_tech_colors:
-  Biofuels: '#66c2a5'
+  Biofuels synthesis: '#66c2a5'
   Emissions: '#7f7f7f'
-  Fossil Fuels: '#8c564b'
+  Fossil generator: '#8c564b'
+  Fossil fuels: '#8c564b'
   Heating: '#d62728'
+  Hydrogen: '#1f77b4'
   Hydrogen & Electrolyzers: '#1f77b4'
   Industry: '#9467bd'
-  Infrastructure: '#bcbd22'
+  Industry OPEX: '#9467bd'
+  Industry carbon capture: '#373170'
+  Industry carbon capture OPEX: '#373170'
+  Transmission: '#cda434'
   Others: '#c7c7c7'
   Storage: '#17becf'
   Transport: '#ff7f0e'
-  biomass: '#2ca02c'
-  coal: '#4d4d4d'
-  gas: '#1f77b4'
-  geothermal: '#aca64b'
-  hydro: '#1f78b4'
-  nuclear: '#e377c2'
-  oil: '#7f3b08'
-  solar: '#ffdd57'
-  wind: '#a6cee3'
+  Biomass generator: '#2ca02c'
+  Biomass fuels: '#2ca02c'
+  Geothermal: '#e35812'
+  Hydropower: '#298c81'
+  Hydropower tax credits: '#298c81'
+  Nuclear: '#e377c2'
+  Nuclear tax credits: '#e377c2'
+  Oil: '#7f3b08'
+  Solar: '#ffdd57'
+  Solar tax credits: '#ffdd57'
+  Wind: '#a6cee3'
+  Wind tax credits: '#a6cee3'
+  e-fuels synthesis: '#73ffb2'

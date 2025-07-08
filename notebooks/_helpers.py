@@ -493,7 +493,7 @@ def create_hydrogen_capacity_map(network, path_shapes, distance_crs=4326, min_ca
         # Add capacity label
         ax.annotate(f'{total_capacity:.0f} MW',
                     xy=(cent_x, cent_y - radius - 0.3),
-                    ha='center', va='top', fontsize=12, fontweight='bold')
+                    ha='center', va='top', fontsize=12)
 
     # Create legend
     legend_elements = []
@@ -517,7 +517,7 @@ def create_hydrogen_capacity_map(network, path_shapes, distance_crs=4326, min_ca
     ax.axis('off')
 
     ax.set_title('Installed Hydrogen Electrolyzer Capacity by State and Type',
-                 fontsize=24, fontweight='bold', pad=30)
+                 fontsize=24, pad=30)
 
     # Add subtitle
     ax.text(0.5, 0.02, f'Note: Only states with ≥{min_capacity_mw} MW electrolyzer capacity are shown',
@@ -1165,7 +1165,7 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
                            loc='upper left',
                            bbox_to_anchor=(legend_anchor_x, 1),
                            frameon=False,
-                           labelspacing=2.5,
+                           labelspacing=2.2,
                            handletextpad=1.0)
 
     # H2 pipeline legend
@@ -2057,3 +2057,286 @@ def evaluate_res_ces_by_state(networks, ces, res, ces_carriers, res_carriers):
 
     return results
 
+def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, regions_onshore):
+    import pandas as pd
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+    import matplotlib.lines as mlines
+    from matplotlib.patches import Wedge
+    from matplotlib.legend_handler import HandlerPatch
+    import geopandas as gpd
+    import cartopy.crs as ccrs
+    from shapely.geometry import box
+
+    # Define generation/link carriers
+    gen_carriers = {
+        "onwind", "offwind-ac", "offwind-dc", "solar", "solar rooftop",
+        "csp", "nuclear", "geothermal", "ror", "PHS",
+    }
+    link_carriers = {
+        "OCGT", "CCGT", "coal", "oil", "biomass", "biomass CHP", "gas CHP"
+    }
+
+    # Generator and storage capacity
+    gen_p_nom_opt = n.generators[n.generators.carrier.isin(gen_carriers)]
+    gen_p_nom_opt = gen_p_nom_opt.groupby(["bus", "carrier"]).p_nom_opt.sum()
+
+    sto_p_nom_opt = n.storage_units[n.storage_units.carrier.isin(gen_carriers)]
+    sto_p_nom_opt = sto_p_nom_opt.groupby(["bus", "carrier"]).p_nom_opt.sum()
+
+    # Link capacity
+    link_mask = (
+        n.links.efficiency.notnull()
+        & (n.links.p_nom_opt > 0)
+        & n.links.carrier.isin(link_carriers)
+    )
+    electricity_links = n.links[link_mask].copy()
+    electricity_links["electric_output"] = electricity_links.p_nom_opt * electricity_links.efficiency
+    link_p_nom_opt = electricity_links.groupby(["bus1", "carrier"]).electric_output.sum()
+    link_p_nom_opt.index = link_p_nom_opt.index.set_names(["bus", "carrier"])
+
+    # Combine all
+    bus_carrier_capacity = pd.concat([gen_p_nom_opt, sto_p_nom_opt, link_p_nom_opt])
+    bus_carrier_capacity = bus_carrier_capacity.groupby(level=[0, 1]).sum()
+    bus_carrier_capacity = bus_carrier_capacity[bus_carrier_capacity > 0]
+
+    # Valid buses with coordinates
+    valid_buses = n.buses.dropna(subset=["x", "y"])
+    valid_buses = valid_buses[
+        (valid_buses["x"] > -200) & (valid_buses["x"] < 200) &
+        (valid_buses["y"] > -90) & (valid_buses["y"] < 90)
+    ]
+
+    def normalize_bus_name(bus_name):
+        return bus_name.replace(" low voltage", "")
+
+    bus_carrier_capacity = bus_carrier_capacity.reset_index()
+    bus_carrier_capacity['bus'] = bus_carrier_capacity['bus'].apply(normalize_bus_name)
+    bus_carrier_capacity['carrier'] = bus_carrier_capacity['carrier'].replace({
+        'offwind-ac': 'offwind',
+        'offwind-dc': 'offwind'
+    })
+    bus_carrier_capacity = bus_carrier_capacity.groupby(['bus', 'carrier'], as_index=False).sum()
+    bus_carrier_capacity = bus_carrier_capacity.set_index(['bus', 'carrier']).squeeze()
+    capacity_df = bus_carrier_capacity.unstack(fill_value=0)
+    capacity_df = capacity_df.loc[capacity_df.index.intersection(valid_buses.index)]
+
+    # Setup map
+    fig, ax = plt.subplots(figsize=(18, 10), subplot_kw={"projection": ccrs.PlateCarree()})
+    bbox = box(-130, 20, -60, 50)
+    regions_onshore_clipped = regions_onshore.to_crs(epsg=4326).clip(bbox)
+
+    regions_onshore_clipped.plot(
+        ax=ax,
+        facecolor='whitesmoke',
+        edgecolor='gray',
+        alpha=0.7,
+        linewidth=0.5,
+        zorder=0,
+    )
+
+    # Store original links and apply filter
+    original_links = n.links.copy()
+    n.links = n.links[n.links.index.isin(electricity_links.index)]
+
+    # Plot network
+    line_scale = 5e3
+    n.plot(
+        ax=ax,
+        bus_sizes=0,
+        bus_alpha=0,
+        line_widths=n.lines.s_nom_opt / line_scale,
+        link_widths=n.links.p_nom_opt / line_scale,
+        line_colors='teal',
+        link_colors='turquoise',
+        color_geomap=False,
+        flow=None,
+    )
+    n.links = original_links
+
+    # Draw pie charts for buses
+    pie_scale = 0.003
+    for bus_id, capacities in capacity_df.iterrows():
+        x, y = valid_buses.loc[bus_id, ['x', 'y']]
+        if not bbox.contains(gpd.points_from_xy([x], [y])[0]):
+            continue
+        values = capacities.values
+        total = values.sum()
+        if total == 0:
+            continue
+        size = np.clip(np.sqrt(total) * pie_scale, 0.1, 1.5)
+        colors = [tech_colors.get(c, 'gray') for c in capacities.index]
+        start_angle = 0
+        for val, color in zip(values, colors):
+            if val == 0:
+                continue
+            angle = 360 * val / total
+            wedge = Wedge(
+                center=(x, y),
+                r=size,
+                theta1=start_angle,
+                theta2=start_angle + angle,
+                facecolor=color,
+                edgecolor='k',
+                linewidth=0.3,
+                transform=ccrs.PlateCarree()._as_mpl_transform(ax),
+                zorder=5,
+            )
+            ax.add_patch(wedge)
+            start_angle += angle
+
+    class HandlerCircle(HandlerPatch):
+        def create_artists(self, legend, orig_handle,
+                           xdescent, ydescent, width, height, fontsize, trans):
+            center = (width / 2, height / 2)
+            radius = orig_handle.get_radius()
+            p = plt.Circle(center, radius)
+            self.update_prop(p, orig_handle, legend)
+            p.set_transform(trans)
+            return [p]
+
+    # Legends
+    bus_caps = [5, 10, 50]
+    bus_patches = [plt.Circle((0, 0), radius=np.sqrt(cap) * pie_scale, color='gray', alpha=0.5) for cap in bus_caps]
+    bus_legend = ax.legend(
+        bus_patches,
+        [f"{cap} GW" for cap in bus_caps],
+        title="Bus Capacity",
+        title_fontsize=10,
+        fontsize=8,
+        frameon=False,
+        handler_map={mpatches.Circle: HandlerCircle()},
+        loc='upper right',
+        bbox_to_anchor=(1.085, 1.0),
+        labelspacing=1.1,
+    )
+
+    ac_caps = [5e3, 20e3, 50e3]
+    ac_patches = [
+        mlines.Line2D([], [], color='teal', linewidth=cap / line_scale, label=f"{int(cap/1e3)} GW")
+        for cap in ac_caps
+    ]
+    ac_legend = ax.legend(
+        handles=ac_patches,
+        title="AC Line Capacity",
+        title_fontsize=10,
+        fontsize=8,
+        frameon=False,
+        loc='upper right',
+        bbox_to_anchor=(1.1, 0.84),
+        labelspacing=1.1
+    )
+
+    dc_caps = [2e3, 5e3, 10e3]
+    dc_patches = [
+        mlines.Line2D([], [], color='turquoise', linewidth=cap / line_scale, label=f"{int(cap/1e3)} GW")
+        for cap in dc_caps
+    ]
+    dc_legend = ax.legend(
+        handles=dc_patches,
+        title="DC Link Capacity",
+        title_fontsize=10,
+        fontsize=8,
+        frameon=False,
+        loc='upper right',
+        bbox_to_anchor=(1.1, 0.69),
+        labelspacing=1.1
+    )
+
+    carrier_handles = [
+        mpatches.Patch(color=tech_colors.get(c, 'gray'), label=nice_names.get(c, c))
+        for c in sorted(capacity_df.columns) if capacity_df[c].sum() > 0
+    ]
+    carrier_legend = ax.legend(
+        handles=carrier_handles,
+        title="Technology",
+        title_fontsize=10.5,
+        fontsize=8.3,
+        frameon=False,
+        loc='upper right',
+        bbox_to_anchor=(1.125, 0.55),
+        ncol=2,
+        labelspacing=1.05,
+    )
+
+    ax.add_artist(bus_legend)
+    ax.add_artist(ac_legend)
+    ax.add_artist(dc_legend)
+    ax.add_artist(carrier_legend)
+
+    ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
+    ax.autoscale(False)
+    year = key[-4:]
+    ax.set_title(f"Installed electricity generation and transmission capacity – {year}", fontsize=14)
+
+    plt.tight_layout()
+    plt.show()
+
+def compute_installed_capacity_by_carrier(networks, nice_names=None, display_result=True):
+    import pandas as pd
+
+    totals_by_carrier = {}
+
+    for name, net in networks.items():
+        gen_carriers = {
+            "onwind", "offwind-ac", "offwind-dc", "solar", "solar rooftop",
+            "csp", "nuclear", "geothermal", "ror", "PHS", "hydro",
+        }
+        link_carriers = {
+            "OCGT", "CCGT", "coal", "oil", "biomass", "biomass CHP", "gas CHP"
+        }
+
+        # Generators
+        gen = net.generators.copy()
+        gen['carrier'] = gen['carrier'].replace({'offwind-ac': 'offwind', 'offwind-dc': 'offwind'})
+        gen = gen[gen.carrier.isin(gen_carriers)]
+        gen_totals = gen.groupby('carrier')['p_nom_opt'].sum()
+
+        # Storage
+        sto = net.storage_units.copy()
+        sto = sto[sto.carrier.isin(gen_carriers)]
+        sto_totals = sto.groupby('carrier')['p_nom_opt'].sum()
+
+        # Links (efficiency-scaled output)
+        links = net.links.copy()
+        mask = (
+            links.efficiency.notnull()
+            & (links.p_nom_opt > 0)
+            & links.carrier.isin(link_carriers)
+        )
+        links = links[mask]
+        links_totals = links.groupby('carrier').apply(
+            lambda df: (df['p_nom_opt'] * df['efficiency']).sum()
+        )
+
+        # Combine and store
+        all_totals = pd.concat([gen_totals, sto_totals, links_totals])
+        all_totals = all_totals.groupby(all_totals.index).sum()
+        all_totals = all_totals[all_totals > 0]
+        totals_by_carrier[name] = all_totals
+
+    # Assemble final dataframe
+    carrier_capacity_df = pd.DataFrame(totals_by_carrier).fillna(0)
+
+    # Extract years and sort
+    carrier_capacity_df.columns = [int(name[-4:]) for name in carrier_capacity_df.columns]
+    carrier_capacity_df = carrier_capacity_df[sorted(carrier_capacity_df.columns)]
+
+    # Convert to GW
+    carrier_capacity_df = carrier_capacity_df / 1000
+    carrier_capacity_df = carrier_capacity_df.round(2)
+
+    # Filter rows with any nonzero value
+    carrier_capacity_df = carrier_capacity_df.loc[carrier_capacity_df.sum(axis=1) > 0]
+
+    # Rename index if nice_names is provided
+    if nice_names:
+        carrier_capacity_df = carrier_capacity_df.rename(index=nice_names)
+
+    if display_result:
+        print("\nInstalled capacity by technology (GW)\n")
+        from IPython.display import display
+        display(carrier_capacity_df)
+
+    return carrier_capacity_df

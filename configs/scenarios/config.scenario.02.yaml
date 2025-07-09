@@ -34,14 +34,14 @@ foresight: myopic
 scenario:
   simpl: ['']
   ll: ['copt']
-  clusters: [100]
-  opts: [3H]
+  clusters: [10]
+  opts: [24H]
   planning_horizons:
   - 2030
   - 2035
   - 2040
   sopts:
-  - "3H"
+  - "24H"
 
 aviation_demand_scenario:
   country: US
@@ -149,7 +149,8 @@ solving:
       threads: 8
       method: 2 # barrier
       crossover: 0
-      BarConvTol: 1.e-5
+      BarConvTol: 1.e-4
+      BarHomogenous: 1
 
 plotting:
   tech_colors:

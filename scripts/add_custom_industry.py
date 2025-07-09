@@ -686,6 +686,7 @@ def split_biogenic_CO2(n):
         biogenic_co2_stored_buses,
         e_nom_extendable=True,
         e_nom_max=np.inf,
+        e_cyclic=True,
         capital_cost=config["sector"]["co2_sequestration_cost"],
         carrier="biogenic co2 stored",
         bus=biogenic_co2_stored_buses,

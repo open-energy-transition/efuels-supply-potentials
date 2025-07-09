@@ -154,7 +154,7 @@ solving:
       method: 2 # barrier
       crossover: 0
       BarConvTol: 1.e-4
-      BarHomogenous: 1
+      BarHomogeneous: 1
 
 plotting:
   tech_colors:

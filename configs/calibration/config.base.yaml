@@ -62,7 +62,7 @@ costs:
   marginal_cost:
     hydro: -6.00 # USD/MWh - 45 Y (Source: https://atb.nrel.gov/electricity/2024/financial_cases_&_methods)
     ror: -6.00 # USD/MWh - 45 Y (Source: https://atb.nrel.gov/electricity/2024/financial_cases_&_methods)
-    nuclear: 9.87 # USD/MWh - 45 U (nuclear original marginal cost - 10.00 USD/MWh)
+    nuclear: 9.87 # USD/MWh - 45 U (nuclear original marginal cost - 15.00 USD/MWh)
 
 policy_config:
   hydrogen:

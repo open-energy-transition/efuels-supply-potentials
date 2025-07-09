@@ -710,7 +710,7 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
 
     ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
     ax.set_title(
-        f"Fischer-Tropsch Capacity by Grid Region (GW){year_str}", fontsize=16, pad=20)
+        f"Fischer-Tropsch Capacity by Grid Region (GW){year_str}", fontsize=12, pad=20)
     ax.axis('off')
     plt.tight_layout()
 

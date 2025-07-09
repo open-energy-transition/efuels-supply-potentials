@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* **Base year**: Remove filtering for plants with DateOut >= 2023, remove PTC to existing wind, solar and biomass plants, add PTC for existing hydro and nuclear power plants, remove data center load [PR #85](https://github.com/open-energy-transition/efuels-supply-potentials/pull/85)
+
 * Add **data center loads for sector model** [PR #81](https://github.com/open-energy-transition/efuels-supply-potentials/pull/81) and [PR #84](https://github.com/open-energy-transition/efuels-supply-potentials/pull/84)
 
 * Prepare config files to define scenarios and review electrolyzer carriers [PR #76](https://github.com/open-energy-transition/efuels-supply-potentials/pull/76)

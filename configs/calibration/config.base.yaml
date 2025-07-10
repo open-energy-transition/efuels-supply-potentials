@@ -29,17 +29,22 @@ cluster_options:
   simplify_network:
     p_threshold_drop_isolated: 0.0
 
+policies:
+  state: [] # "CES", "RES"
+  country: [] # "CES"
+
 electricity:
-  co2limit: 1.4728e+9 # 0.8 * 1.841e+9
+  co2limit: 4.35e+9 #for calibration purposes
   co2base: 226.86e+6 #base_from_2020 Locations of the 250 MMmt of CO2 emissions from the WECC 2021.
 
   extendable_carriers:
     Generator: []
     Store: [battery, H2]
 
+  powerplants_filter: DateIn < 2023
   custom_powerplants: "replace" #  "false" use only powerplantmatching (ppm) data, "merge" combines ppm and custom powerplants, "replace" use only custom powerplants
 
-  conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, lignite, geothermal, biomass]
+  conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, geothermal, biomass]
   renewable_carriers: [solar, csp, onwind, offwind-ac, offwind-dc, hydro]
 
   estimate_renewable_capacities:
@@ -52,6 +57,20 @@ renewable:
 
 costs:
   year: 2020
+  efficiency:
+      CCGT: 0.50
+  marginal_cost:
+    hydro: -6.00 # USD/MWh - 45 Y (Source: https://atb.nrel.gov/electricity/2024/financial_cases_&_methods)
+    ror: -6.00 # USD/MWh - 45 Y (Source: https://atb.nrel.gov/electricity/2024/financial_cases_&_methods)
+    nuclear: 9.87 # USD/MWh - 45 U (nuclear original marginal cost - 15.00 USD/MWh)
+
+policy_config:
+  hydrogen:
+    temporal_matching: "no_temporal_matching" # either "hourly", "monthly", "yearly", "no_temporal_matching"
+    temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro, nuclear]
+
+demand_data:
+  base_year: 2021
 
 custom_data:
   airports: true
@@ -63,9 +82,11 @@ sector:
     CCGT: gas
     oil: oil
     coal: coal
-    lignite: lignite
     biomass: biomass
+  hydrogen:
+    production_technologies: ["Alkaline electrolyzer large", "PEM electrolyzer", "SOEC", "SMR"]
 
+  cc: false # Default CC technologies from PyPSA-Earth (not influencing ethanol, ammonia, cement and still carbon capture retrofits
   SMR CC: false
 
   land_transport_fuel_cell_share:
@@ -86,7 +107,8 @@ solving:
       threads: 8
       method: 2 # barrier
       crossover: 0
-      BarConvTol: 1.e-5
+      BarConvTol: 1.e-4
+      BarHomogeneous: 1
 
 plotting:
   tech_colors:

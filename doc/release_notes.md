@@ -8,6 +8,24 @@
 
 Please list contributions, add reference to PRs if present.
 
+* **Base year**: Remove filtering for plants with DateOut >= 2023, remove PTC to existing wind, solar and biomass plants, add PTC for existing hydro and nuclear power plants, remove data center load [PR #85](https://github.com/open-energy-transition/efuels-supply-potentials/pull/85)
+
+* Add **data center loads for sector model** [PR #81](https://github.com/open-energy-transition/efuels-supply-potentials/pull/81) and [PR #84](https://github.com/open-energy-transition/efuels-supply-potentials/pull/84)
+
+* Prepare config files to define scenarios and review electrolyzer carriers [PR #76](https://github.com/open-energy-transition/efuels-supply-potentials/pull/76)
+
+* Adjust `prepare_costs` in custom scripts (necessary to use universal currency conversion) [PR #75](https://github.com/open-energy-transition/efuels-supply-potentials/pull/75)
+
+* Implement **hourly matching for hydrogen production** [PR #73](https://github.com/open-energy-transition/efuels-supply-potentials/pull/73)
+
+* Enable **myopic optimization** [PR #66](https://github.com/open-energy-transition/efuels-supply-potentials/pull/66)
+
+* Add custom rule to **apply state/country-wise constraints for clean/RES technologies** [PR #53](https://github.com/open-energy-transition/efuels-supply-potentials/pull/53)
+
+* Update link to **retrieve renewable profiles (now generated via Earth cutout)** [PR #65](https://github.com/open-energy-transition/efuels-supply-potentials/pull/65)
+
+* Update **missing DateOut for custom powerplants**, add **a script to fill missing DateOut**, and enable **powerplant filtering for future scenarios** [PR #61](https://github.com/open-energy-transition/efuels-supply-potentials/pull/61) with cherry-pick [PR #39](https://github.com/open-energy-transition/pypsa-earth/pull/39) to a working branch `efuels-supply-potentials`
+
 * Separate **biogenic CO2 stored and grid H2** [PR #60](https://github.com/open-energy-transition/efuels-supply-potentials/pull/60)
 
 * Update **head for pypsa-earth submodule** [PR #58](https://github.com/open-energy-transition/efuels-supply-potentials/pull/58) due to merge of [PR #34](https://github.com/open-energy-transition/pypsa-earth/pull/34) to a working branch `efuels-supply-potentials`

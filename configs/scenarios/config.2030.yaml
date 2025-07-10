@@ -26,19 +26,22 @@ scenario:
 
 aviation_demand_scenario:
   country: US
-  year: 2030
   scenario: central # low, central or high
 
 saf_mandate:
   ekerosene_split: true # separate e-kerosene as separate bus
   non_spatial_ekerosene: true # connects all e-kerosene buses with a single E-kerosene-main bus to model 0 cost of transport and store
-  enable_mandate: true # enable SAF mandate
+  enable_mandate: false # enable SAF mandate
   saf_scenario: EU # EU (default), EU+, EU-
 
 demand_projection:
   planning_horizon: 2030
   scenario: "Medium"
   data_centers_load: true
+
+policies:
+  state: ["CES", "RES"] # "CES" to adopt State-wise clean electricity generation constraints from currently stated policies, "RES" to adopt State-wise renewable electricity generation constraints from currently stated policies, both to apply both kinds of constraintsAdd commentMore actions
+  country: [] # "CES" to adopt country-wise clean electricity generation constraint (90% clean electricity by 2040), otherwise empty
 
 custom_industry:
   CCS_retrofit: [ethanol, ammonia, steel, cement]
@@ -50,12 +53,13 @@ cluster_options:
 
 electricity:
   extendable_carriers:
-    Generator: []
+    Generator: [solar, onwind, offwind-ac, offwind-dc, csp, geothermal, nuclear, OCGT, CCGT, biomass]
     Store: [battery, H2]
 
+  powerplants_filter: DateOut >= 2030 and DateIn < 2030
   custom_powerplants: "replace" #  "false" use only powerplantmatching (ppm) data, "merge" combines ppm and custom powerplants, "replace" use only custom powerplants
 
-  conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, lignite, geothermal, biomass]
+  conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, geothermal, biomass]
   renewable_carriers: [solar, csp, onwind, offwind-ac, offwind-dc, hydro]
 
   estimate_renewable_capacities:
@@ -69,6 +73,15 @@ renewable:
 costs:
   year: 2030
 
+policy_config:
+  hydrogen:
+    temporal_matching: "hourly" # either "hourly", "monthly", "yearly", "no_temporal_matching"
+    additionality: true
+    temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro, nuclear]
+
+demand_data:
+  base_year: 2021
+
 custom_data:
   airports: true
 
@@ -79,9 +92,11 @@ sector:
     CCGT: gas
     oil: oil
     coal: coal
-    lignite: lignite
     biomass: biomass
+  hydrogen:
+    production_technologies: ["Alkaline electrolyzer large", "PEM electrolyzer", "SOEC", "SMR"]
 
+  cc: false # Default CC technologies from PyPSA-Earth (not influencing ethanol, ammonia, cement and still carbon capture retrofits
   SMR CC: false
 
   land_transport_fuel_cell_share:

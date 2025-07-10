@@ -8,9 +8,12 @@ sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
 sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../submodules/pypsa-earth/scripts/")))
 import pandas as pd
 import numpy as np
+import geopandas as gpd
 from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
                             configure_logging, load_network
 from _helpers import prepare_costs
+from prepare_sector_network import normalize_by_country, p_set_from_scaling
+from build_demand_profiles_from_eia import read_data_center_profiles
 
 
 logger = create_logger(__name__)
@@ -683,6 +686,7 @@ def split_biogenic_CO2(n):
         biogenic_co2_stored_buses,
         e_nom_extendable=True,
         e_nom_max=np.inf,
+        e_cyclic=True,
         capital_cost=config["sector"]["co2_sequestration_cost"],
         carrier="biogenic co2 stored",
         bus=biogenic_co2_stored_buses,
@@ -740,7 +744,7 @@ def define_grid_H2(n):
     logger.info("Added grid H2 carrier and buses")
 
     # get electrolyzers
-    electrolysis_carriers = ["H2 Electrolysis", "Alkaline electrolyzer", "PEM electrolyzer", "SOEC"]
+    electrolysis_carriers = ["Alkaline electrolyzer large", "PEM electrolyzer", "SOEC"]
     electrolyzers = n.links.query("carrier in @electrolysis_carriers")
 
     # reroute output of electrolyzers from H2 to grid H2
@@ -767,6 +771,127 @@ def define_grid_H2(n):
     logger.info("Added links to connect grid H2 to H2")
 
 
+def add_other_electricity(n):
+    """
+        Adds other electricity load to the network
+    """
+    # read energy totals
+    energy_totals = pd.read_csv(snakemake.input.energy_totals, index_col=0)
+
+    # get electricity profiles for AC loads
+    temporal_resolution = n.snapshot_weightings.generators
+    ac_loads = n.loads.query("carrier in 'AC'").index
+    profile_ac = normalize_by_country(
+        n.loads_t.p_set[ac_loads].reindex(columns=ac_loads, fill_value=0.0)
+    ).fillna(0)
+
+    # add other electricity load
+    p_set = p_set_from_scaling(
+        "other electricity", profile_ac, energy_totals, temporal_resolution
+    )
+    n.madd(
+        "Load",
+        ac_loads,
+        suffix=" other electricity",
+        bus=n.loads.loc[ac_loads, "bus"],
+        p_set=p_set,
+        carrier="other electricity",
+    )
+    logger.info("Added other electricity demand")
+
+
+def get_gadm_to_bus_mapping(n, gadm_shape_path, geo_crs):
+    """
+        Maps each gadm shape to one of the AC/DC buses. For each gadm shape, the bus is assigned as:
+        1) If bus lies within gadm shape, then this bus is assigned to gadm shape
+        2) If there is no bus inside of the shape, then nearest bus is assigned to the shape
+    """
+    # build GeoDataFrame of bus locations
+    buses_gdf = gpd.GeoDataFrame(
+        n.buses,
+        geometry=gpd.points_from_xy(n.buses.x, n.buses.y),
+        crs=geo_crs,
+    ).reset_index()
+
+    # filter out AC and DC buses
+    buses_gdf = buses_gdf[buses_gdf.carrier.isin(["AC", "DC"])]
+
+    # read GADM shape
+    gadm_shape = gpd.read_file(gadm_shape_path)
+
+    # spatial join to find buses inside each shape
+    buses_in_shapes = gpd.sjoin(buses_gdf, gadm_shape, how="left", predicate="within")
+
+    # create a mapping: shape index → list of buses inside
+    shape_to_buses = (
+        buses_in_shapes.groupby("index_right")["Bus"]  # "index" from reset_index()
+        .apply(list)
+        .to_dict()
+    )
+
+    # assign bus for each GADM shape
+    assigned_buses = []
+
+    for shape_idx, shape_row in gadm_shape.iterrows():
+        # Try to get buses inside this shape
+        buses_inside = shape_to_buses.get(shape_idx, [])
+
+        if buses_inside:
+            # Choose the first one (or modify logic here if needed)
+            assigned_buses.append(buses_inside[0])
+        else:
+            # Fallback: use centroid and compute distance to all buses
+            centroid = shape_row.geometry.centroid
+
+            # Compute distance from centroid to all bus points
+            buses_gdf["distance_to_centroid"] = buses_gdf.geometry.distance(centroid)
+
+            # Choose nearest bus
+            nearest_bus = buses_gdf.sort_values("distance_to_centroid").iloc[0]["Bus"]
+            assigned_buses.append(nearest_bus)
+
+    # Add assigned bus to GADM GeoDataFrame
+    gadm_shape["assigned_bus"] = assigned_buses
+
+    # get gadm to bus mapping
+    gadm_to_bus_mapping = gadm_shape.set_index("ISO_1")["assigned_bus"]
+    gadm_to_bus_mapping.index = gadm_to_bus_mapping.index.str.replace("US-", "")
+
+    return gadm_to_bus_mapping
+
+
+def add_data_centers_load(n):
+    """
+        Adds data centers loads based on state-wise data
+    """
+    # data center demand year
+    demand_horizon = "2023" if snakemake.wildcards.planning_horizons == "2020" else snakemake.wildcards.planning_horizons
+
+    # read data center loads data for given horizon
+    demand_data_centers = read_data_center_profiles(demand_horizon, snakemake.params.data_center_profiles)
+
+    # get spatial mapping of network buses to states
+    gadm_to_bus_mapping = get_gadm_to_bus_mapping(n, snakemake.input.gadm_shape, snakemake.params.geo_crs)
+
+    # map data center demands to buses
+    bus_demand = (
+        demand_data_centers
+        .groupby(gadm_to_bus_mapping)
+        .sum()
+    )
+
+    # add static data center load to the network
+    n.madd(
+        "Load",
+        bus_demand.index,
+        suffix=" data center",
+        bus=bus_demand.index,
+        p_set=bus_demand * 1e3, # convert to MW
+        carrier="data center",
+    )
+    logger.info(f"Added data center loads")
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -777,7 +902,7 @@ if __name__ == "__main__":
             clusters=10,
             opts="Co2L-24H",
             sopts="24H",
-            planning_horizons=2020,
+            planning_horizons="2020",
             discountrate="0.071",
             demand="AB",
         )
@@ -803,9 +928,11 @@ if __name__ == "__main__":
     # Prepare the costs dataframe
     costs = prepare_costs(
         snakemake.input.costs,
-        snakemake.params.costs["USD2013_to_EUR2013"],
+        snakemake.config["costs"],
+        snakemake.params.costs["output_currency"],
         snakemake.params.costs["fill_values"],
         Nyears,
+        snakemake.params.costs["default_USD_to_EUR"],
     )
 
     # add ammonia industry
@@ -835,6 +962,14 @@ if __name__ == "__main__":
     # define electrolysis output as grid H2 to be used in Fischer-Tropsch
     if snakemake.params.grid_h2:
         define_grid_H2(n)
+
+    # add other electricity load
+    if snakemake.params.other_electricity:
+        add_other_electricity(n)
+
+    # add data center load
+    if snakemake.params.data_centers:
+        add_data_centers_load(n)
 
     # save the modified network
     n.export_to_netcdf(snakemake.output.modified_network)

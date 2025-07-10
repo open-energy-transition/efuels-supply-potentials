@@ -42,6 +42,8 @@ snakemake -call solve_sector_networks --configfile configs/calibration/config.ba
 
 ### 2.2. Running scenarios for future years
 
+#### A. Running an individual horizon
+
 To run the power model for the Reference scenario of the U.S., navigate to the working directory (`.../efuels-supply-potentials/`) and use the following command:
 ```bash
 snakemake -call solve_all_networks --configfile configs/scenarios/config.20**.yaml
@@ -52,6 +54,13 @@ snakemake -call solve_all_networks --configfile configs/scenarios/config.20**.ya
 To run the sector-coupled model for the Reference scenario, execute the command substituting the desired year to "**" in the command below:
 ```bash
 snakemake -call solve_sector_networks --configfile configs/scenarios/config.20**.yaml
+```
+
+#### B. Running for multiple horizons
+
+To run the sector-coupled model for the Reference scenario using myopic optimization for the years 2030, 2035, and 2040 consecutively, execute the following:
+```bash
+snakemake -call solve_sector_networks_myopic --configfile configs/scenarios/config.myopic.yaml
 ```
 
 ## 3. Snakemake rules
@@ -69,7 +78,9 @@ snakemake -call solve_sector_networks --configfile configs/scenarios/config.20**
 |`set_saf_mandate`        |Any base or scenario config file         |Adds e-kerosene buses to enable split of aviation demand and sets SAF mandate if enabled|
 |`build_custom_industry_demand` |Any base or scenario config file   |Estimates node level demands for selected custom industries (e.g. ammonia, ethanol, cement, and steel)|
 |`add_custom_industry`    |Any base or scenario config file         |Adds selected custom industries into the network|
-| `prepare_growth_rate_scenarios`  | Any base or scenario config file          | Allows automatic fetching of correct growth rate files according to the demand_projection scenario name                                                                |
+|`prepare_growth_rate_scenarios`  | Any base or scenario config file          | Allows automatic fetching of correct growth rate files according to the demand_projection scenario name                                                                |
+|`solve_custom_sector_network`  | Any base or scenario config file          | Allows state/country-wise clean/RES polices to be applied as constraints. The constraints is turned on by default.                                                                |
+
 
 ### Retrieve rules
 |Rule name                |Config file                              |Description        |
@@ -92,18 +103,31 @@ snakemake -call solve_sector_networks --configfile configs/scenarios/config.20**
 ### 4.1. Cherry-picking
 Cherry-picking allows applying specific commits from one branch to another. We cherry-picked the important commits from upstream pypsa-earth to our project branch ([efuels-supply-potentials](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials)). The commits of the following PRs were integrated to project branch:
 
-1. [PR #1372](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1372): Scale temporal loads based on temporal resolution.
-2. [PR #1381](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1381): Remove space in rail transport oil and electricity carriers.
-3. [PR #1400](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1400): Add US-specific demand growth rates and fuel shares (Medium scenario).
-4. [PR #1410](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1410): Fix negative transport demand.
-5. [PR #1401](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1401): Fix H2 pipeline bus names.
-6. [PR #1422](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1422): Fix renamed column in transport related wikipedia data.
+1.  [PR #1369](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1369): Restore functioning of myopic optimization.
+2.  [PR #1372](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1372): Scale temporal loads based on temporal resolution.
+3.  [PR #1381](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1381): Remove space in rail transport oil and electricity carriers.
+4.  [PR #1400](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1400): Add US-specific demand growth rates and fuel shares (Medium scenario).
+5.  [PR #1410](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1410): Fix negative transport demand.
+6.  [PR #1401](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1401): Fix H2 pipeline bus names.
+7.  [PR #1422](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1422): Fix renamed column in transport related Wikipedia data.
+8.  [PR #1428](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1428): Change source for Aluminum production data.
+9.  [PR #1465](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1465): Enable power plants filtering using query.
+10. [PR #1468](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1468): Include missing efficiency gains and growth rates for other energy use.
+11. [PR #1479](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1479): Update link for North America cutout.
+12. [PR #1486](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1486): Align `prepare_transport_data_input` with new structure of the Wikipedia page table.
 
 Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-pick) on cherry-picking in Git to get more familiar with procedure.
 
 ## 4.2. Direct commits to PyPSA-Earth
 
 1. [PR #32](https://github.com/open-energy-transition/pypsa-earth/pull/34): Disable implicit calculations and assigning of industry demands for steel and cement industries, because they are added explicitly.
+2. [PR #36](https://github.com/open-energy-transition/pypsa-earth/pull/36): Introduce custom H2 production technologies.
+2. [PR #38](https://github.com/open-energy-transition/pypsa-earth/pull/38): Enable correct functioning of myopic optimization.
+3. [PR #40](https://github.com/open-energy-transition/pypsa-earth/pull/40): Adjusts calculation of `no_years` to properly run 2023 scenario.
+4. [PR #50](https://github.com/open-energy-transition/pypsa-earth/pull/50): Introduce Universal Currency Conversion to use USD as reference currency.
+5. [PR #51](https://github.com/open-energy-transition/pypsa-earth/pull/51): Add US cost configurations and split scenarios per technology group.
+6. [PR #56](https://github.com/open-energy-transition/pypsa-earth/pull/56): Introduce currency conversion in `simplify_network`.
+7. [PR #57](https://github.com/open-energy-transition/pypsa-earth/pull/57) [PR #58](https://github.com/open-energy-transition/pypsa-earth/pull/58) [PR #59](https://github.com/open-energy-transition/pypsa-earth/pull/59): Fix logic for currency conversion to handle past and future years and introduce clear log and warning messages.
 
 ## 5. Validation
 

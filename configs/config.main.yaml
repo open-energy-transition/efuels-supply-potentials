@@ -15,17 +15,36 @@ retrieve_from_gdrive:
   base_network: true # if true, bypasses base_network rule
   renewable_profiles: true # if true, bypasses build_renewable_profiles rule
 
+costs:
+  output_currency: "USD"
+  default_USD_to_EUR: 0.7532 # previously USD2013_to_EUR2013; should be sufficient as current data from `technology-data` are either in EUR or USD; [EUR/USD] ECB: https://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-usd.en.html
+  year: 2030
+  technology_data_version: v0.13.2
+  country_specific_data: "US" # (optional) country-specific data are currently available only for "US"
+  cost_scenario: "moderate" # only used if `country_specific_data: "US"`; can be "moderate", "advanced" or "conservative"
+  cost_scenario_by_technology_group: # (optional): overwrites for some specific technology groups
+    electricity: "moderate"
+    H2_electrolysis: "moderate"
+    dac: "moderate"
+  financial_case: "market" # only used if `country_specific_data: "US"`; can be "market" or "r&d"
+  discountrate: [0.071] #, 0.086, 0.111]
+  marginal_cost:
+    ethanol carbon capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
+    ammonia carbon capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
+    cement carbon capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
+    steel carbon capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
+    direct air capture: -130.00 # USD/t_CO2 - 45 Q (utilization)
+
 # defining the aviation demand scenario
 aviation_demand_scenario:
   country: US
-  year: 2023
   scenario: central # low, central or high
 
 saf_mandate:
   ekerosene_split: true # separate e-kerosene as separate bus
   non_spatial_ekerosene: true # connects all e-kerosene buses with a single E-kerosene-main bus to model 0 cost of transport and store
   enable_mandate: false # enable SAF mandate
-  saf_scenario: EU # EU (default), EU+, EU-
+  saf_scenario: EU
 
 demand_distribution:
   enable: true
@@ -33,11 +52,20 @@ demand_distribution:
   holes_area_threshold: 100
   nprocesses: 4
   plotting: true
+  set_custom_distribution_fees: true # true, false
 
 demand_projection:
   planning_horizon: 2023
-  scenario: "Reference"
+  scenario: "Medium"
   data_centers_load: false
+
+state_policy: "on" # "off", "on" manage application of renewable/clean energy policies at State- or country-level
+
+policy_config:
+  hydrogen:
+    temporal_matching: "hourly" # either "hourly", "monthly", "yearly", "no_temporal_matching"
+    additionality: true
+    temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro, nuclear]
 
 custom_industry:
   enable: true
@@ -45,11 +73,12 @@ custom_industry:
   ammonia: true
   steel: true
   cement: true
-  CCS_retrofit: [] # [ethanol, ammonia, steel, cement]
+  CCS_retrofit: [ethanol, ammonia, steel, cement] # [ethanol, ammonia, steel, cement]
   production_flexibility: []
   H2_DRI: false
   biogenic_co2: false # define output of ethanol from starch CC as biogenic CO2 to be used in Fischer-Tropsch
   grid_H2: true # mark output of electrolysis as grid H2 (which can be used in Fischer-Tropsch)
+  other_electricity: true # add other electricity as a consumption
 
 custom_databundles:
   bundle_cutouts_USA:
@@ -57,7 +86,7 @@ custom_databundles:
     category: cutouts
     destination: "cutouts"
     urls:
-      gdrive: https://drive.google.com/file/d/10IRlnpEV9pRv1S28aezL_K0cTejGhpIA/view?usp=sharing
+      gdrive: https://drive.google.com/file/d/1Ao_kuHssRaP1qLV-IEG91Hu7E04-nBZg/view?usp=drive_link
     output: [cutouts/cutout-2013-era5.nc]
     disable_by_opt:
       build_cutout: [all]
@@ -109,7 +138,7 @@ custom_databundles:
     destination: "resources"
     urls:
       alternative_clustering: https://drive.google.com/file/d/1Bt8NVxhe2-nrw2ZTg35sgUIQ-R8A57DN/view?usp=sharing
-      voronoi_clustering: https://drive.google.com/file/d/1SEvIoLz0x23jNNeMuDSOQwHvuwtvqIfd/view?usp=sharing
+      voronoi_clustering: https://drive.google.com/file/d/1ornHEC2Wey5w3XJ3bMT30DeJU2oDI0Gk/view?usp=sharing
 
   # demand data used for demand redistribution
   bundle_demand_data_USA:

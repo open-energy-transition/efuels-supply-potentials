@@ -7,15 +7,17 @@ import sys
 from pathlib import Path
 import yaml
 import pypsa
+import pandas as pd
 import logging
 import random
 import snakemake as sm
 from pypsa.descriptors import Dict
 from snakemake.script import Snakemake
 import re
-from pathlib import Path
+from pathlib import Path 
 from zipfile import ZipFile
-from google_drive_downloader import GoogleDriveDownloader as gdd
+from pypsa.components import component_attrs, components
+import googledrivedownloader as gdd
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -310,7 +312,7 @@ def download_and_unzip_gdrive(config, destination, logger, disable_progress=Fals
     except Exception as e:
         logger.error(f"Failed to download or extract the file: {str(e)}")
         return False
-
+    
 
 def osm_raw_outputs():
     outputs = [

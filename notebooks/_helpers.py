@@ -1219,7 +1219,7 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
     plt.show()
 
 
-def plot_lcoh_maps_by_grid_region(networks, shapes, h2_carriers, output_threshold=1.0):
+def plot_lcoh_maps_by_grid_region(networks, shapes, h2_carriers, output_threshold=1.0, year_title=True):
     """
     Compute and plot weighted average LCOH per grid region for each year in USD/kg H2.
 
@@ -1337,11 +1337,11 @@ def plot_lcoh_maps_by_grid_region(networks, shapes, h2_carriers, output_threshol
 
         ax.set_extent([-130, -65, 20, 55], crs=ccrs.PlateCarree())
         ax.axis("off")
-        ax.set_title(f"LCOH – {year.split('_')[-1]}", fontsize=14)
+        ax.set_title(f"LCOH – {year.split('_')[-1] if year_title else year}", fontsize=14)
         plt.show()
 
 
-def calculate_weighted_lcoh_table_by_year(networks, h2_carriers, output_threshold=1.0):
+def calculate_weighted_lcoh_table_by_year(networks, h2_carriers, output_threshold=1.0, year_title=True):
     """
     Calculate weighted average LCOH (USD/kg) and total hydrogen dispatch (kg)
     per grid region for each year, matching the logic of the plotting function.
@@ -1409,8 +1409,10 @@ def calculate_weighted_lcoh_table_by_year(networks, h2_carriers, output_threshol
             }))
             .reset_index()
         )
-
-        all_results[simple_year] = region_summary.round(2)
+        if year_title:
+            all_results[simple_year] = region_summary.round(2)
+        else:
+            all_results[year_key] = region_summary.round(2)
 
     return all_results
 
@@ -1489,7 +1491,7 @@ def calculate_total_generation_by_carrier(network, start_date=None, end_date=Non
     return total_energy_twh
 
 
-def plot_hydrogen_dispatch(networks, h2_carriers, output_threshold=1.0):
+def plot_hydrogen_dispatch(networks, h2_carriers, output_threshold=1.0, year_title=True):
     """
     Plot hourly hydrogen dispatch per carrier (stacked area plot) for each network in the input dictionary.
     All plots share the same y-axis scale.
@@ -1547,8 +1549,8 @@ def plot_hydrogen_dispatch(networks, h2_carriers, output_threshold=1.0):
         fig, ax = plt.subplots(figsize=(15, 5))
         df.plot.area(ax=ax, linewidth=0)
         year = key[-4:]  # Extract the year
-        ax.set_title(f"Electricity Dispatch – {year}")
-        ax.set_title(f"Hydrogen Dispatch by technology – {year}", fontsize=14)
+        ax.set_title(f"Electricity Dispatch – {year if year_title else key}")
+        ax.set_title(f"Hydrogen Dispatch by technology – {year if year_title else key}", fontsize=14)
         ax.set_ylabel("Hydrogen Dispatch (tons/hour)")
         ax.set_xlabel("Time")
         ax.set_ylim(0, global_max * 1.05)  # add 5% headroom
@@ -1574,7 +1576,7 @@ def plot_hydrogen_dispatch(networks, h2_carriers, output_threshold=1.0):
         plt.show()
 
 
-def analyze_ft_costs_by_region(networks: dict):
+def analyze_ft_costs_by_region(networks: dict, year_title=True):
     """
     Compute and display total Fischer-Tropsch fuel production and
     total marginal cost (USD/MWh) by grid region for each network.
@@ -1683,7 +1685,7 @@ def analyze_ft_costs_by_region(networks: dict):
         match = re.search(r"\d{4}", name)
         year = match.group() if match else "unknown"
 
-        print(f"\nYear: {year}\n")
+        print(f"\nYear: {year if year_title else name}\n")
         display(styled)
 
 
@@ -1713,14 +1715,15 @@ def compute_aviation_fuel_demand(networks):
         kerosene_twh = kerosene_mwh / 1e6
         ekerosene_twh = ekerosene_mwh / 1e6
 
-        results[year] = {
+        results[name] = {
             "Kerosene (TWh)": kerosene_twh,
             "e-Kerosene (TWh)": ekerosene_twh
         }
 
     df = pd.DataFrame.from_dict(results, orient="index")
-    df.index.name = "Year"
+    df.index.name = "scenario"
     df.reset_index(inplace=True)
+    df['year'] = year
 
     # Totali e percentuali
     df["Total (TWh)"] = df["Kerosene (TWh)"] + df["e-Kerosene (TWh)"]
@@ -1968,7 +1971,8 @@ def plot_emissions_maps_by_group(all_state_emissions, path_shapes, title, vmin=N
     plt.subplots_adjust(top=0.96)
     plt.show()
 
-def evaluate_res_ces_by_state(networks, ces, res, ces_carriers, res_carriers):
+
+def evaluate_res_ces_by_state(networks, ces, res, ces_carriers, res_carriers, multiple_scenarios=False):
 
     results = {}
 
@@ -2068,11 +2072,14 @@ def evaluate_res_ces_by_state(networks, ces, res, ces_carriers, res_carriers):
         df["% CES target"] = df["% CES target"].apply(lambda x: "N/A" if pd.isna(x) else round(x * 100, 2))
 
         df = df[["% RES", "% RES target", "% CES", "% CES target"]].round(2)
-        results[year] = df.sort_index()
-
+        if multiple_scenarios:
+            results[name] = df.sort_index()
+        else:
+            results[year] = df.sort_index()
     return results
 
-def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, regions_onshore):
+
+def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, regions_onshore, title_year=True):
     import pandas as pd
     import numpy as np
     import matplotlib.pyplot as plt
@@ -2282,13 +2289,14 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
 
     ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
     ax.autoscale(False)
+
     year = key[-4:]
-    ax.set_title(f"Installed electricity generation and transmission capacity – {year}", fontsize=14)
+    ax.set_title(f"Installed electricity generation and transmission capacity – {year if title_year else key}", fontsize=14)
 
     plt.tight_layout()
     plt.show()
 
-def compute_installed_capacity_by_carrier(networks, nice_names=None, display_result=True):
+def compute_installed_capacity_by_carrier(networks, nice_names=None, display_result=True, column_year=True):
     import pandas as pd
 
     totals_by_carrier = {}
@@ -2335,7 +2343,8 @@ def compute_installed_capacity_by_carrier(networks, nice_names=None, display_res
     carrier_capacity_df = pd.DataFrame(totals_by_carrier).fillna(0)
 
     # Extract years and sort
-    carrier_capacity_df.columns = [int(name[-4:]) for name in carrier_capacity_df.columns]
+    if column_year == True:
+        carrier_capacity_df.columns = [int(name[-4:]) for name in carrier_capacity_df.columns]
     carrier_capacity_df = carrier_capacity_df[sorted(carrier_capacity_df.columns)]
 
     # Convert to GW
@@ -2355,6 +2364,7 @@ def compute_installed_capacity_by_carrier(networks, nice_names=None, display_res
 
     return carrier_capacity_df
 
+
 def compute_system_costs(network, rename_capex, rename_opex, general_rename, name_tag):
     costs_raw = network.statistics()[['Capital Expenditure', 'Operational Expenditure']]
     year_str = name_tag[-4:]
@@ -2371,6 +2381,7 @@ def compute_system_costs(network, rename_capex, rename_opex, general_rename, nam
     capex_grouped.rename(columns={'Capital Expenditure': 'cost_billion'}, inplace=True)
     capex_grouped['cost_billion'] /= 1e9
     capex_grouped['year'] = year_str
+    capex_grouped['scenario'] = name_tag
 
     # OPEX
     opex_raw = costs_raw[['Operational Expenditure']].reset_index()
@@ -2384,15 +2395,17 @@ def compute_system_costs(network, rename_capex, rename_opex, general_rename, nam
     opex_grouped.rename(columns={'Operational Expenditure': 'cost_billion'}, inplace=True)
     opex_grouped['cost_billion'] /= 1e9
     opex_grouped['year'] = year_str
+    opex_grouped['scenario'] = name_tag
 
     return pd.concat([capex_grouped, opex_grouped], ignore_index=True)
 
-def plot_stacked_costs_by_year(cost_data, cost_type_label, tech_colors=None):
+
+def plot_stacked_costs_by_year(cost_data, cost_type_label, tech_colors=None, index='year'):
     data_filtered = cost_data[cost_data['cost_type'] == cost_type_label].copy()
     data_filtered = data_filtered[data_filtered['cost_billion'] != 0]
 
     pivot_table = data_filtered.pivot_table(
-        index='year',
+        index=index,
         columns='tech_label',
         values='cost_billion',
         aggfunc='sum'

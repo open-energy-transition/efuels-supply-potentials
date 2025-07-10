@@ -1429,7 +1429,7 @@ def calculate_total_generation_by_carrier(network, start_date=None, end_date=Non
         'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac', 'nuclear',
         'geothermal', 'ror', 'hydro', 'solar rooftop'
     }
-    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass', 'lignite', "biomass CHP", "gas CHP"]
+    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass', 'lignite', "urban central solid biomass CHP", "urban central gas CHP"]
 
     # Identify electric buses
     electric_buses = set(
@@ -1580,13 +1580,28 @@ def analyze_ft_costs_by_region(networks: dict):
     total marginal cost (USD/MWh) by grid region for each network.
     """
     for name, n in networks.items():
-        # Identify Fischer-Tropsch links
-        ft_links = n.links[n.links.carrier.str.contains("Fischer", case=False, na=False)].copy()
+        # Identify Fischer-Tropsch links that are built or extendable with capacity
+        ft_links = n.links[
+            (n.links.carrier.str.contains("Fischer", case=False, na=False)) &
+            (
+                (n.links.get("p_nom_opt", 0) > 0) |
+                ((n.links.get("p_nom", 0) > 0) & (n.links.get("p_nom_extendable", False) == False))
+            )
+        ].copy()
+        
         if ft_links.empty:
-            print(f"\n{name}: No Fischer-Tropsch links found.")
+            print(f"\n{name}: No active Fischer-Tropsch links found.")
             continue
-
-        ft_link_ids = ft_links.index
+        
+        # Filter out links that don't appear in all links_t.p* time series
+        ft_link_ids = [
+            link for link in ft_links.index
+            if all(link in getattr(n.links_t, attr).columns for attr in ["p0", "p1", "p2", "p3"])
+        ]
+        
+        if not ft_link_ids:
+            print(f"\n{name}: No Fischer-Tropsch links with time series data.")
+            continue
 
         # Extract hourly marginal prices for input buses (H2, CO2, electricity)
         price_dict = {}

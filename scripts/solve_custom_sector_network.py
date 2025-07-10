@@ -307,15 +307,15 @@ def add_RPS_constraints(network, config_file):
         
     # define carriers for RES and CES sources
     res_carriers = ["solar", "", "onwind", "offwind-ac", "solar rooftop",
-                    "offwind-dc", "ror", "hydro", "geothermal"]
+                    "offwind-dc", "ror", "hydro", "geothermal", "biomass",
+                    "urban central solid biomass CHP", "urban central solid biomass CHP CC",
+                    ]
     ces_carriers = res_carriers + ["nuclear"]
 
     # list of carriers for conventional generation
     conventional_gen_carriers = [
         'OCGT', 'CCGT', 'oil', 'coal', 'lignite',
-        'biomass', 'urban central gas CHP', 'urban central gas CHP CC', 'biomass EOP',
-        'urban central solid biomass CHP',
-        'urban central solid biomass CHP CC'
+        'urban central gas CHP CC',
     ]
 
     # read state policies on CES constraints

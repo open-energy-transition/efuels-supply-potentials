@@ -2444,12 +2444,18 @@ def plot_stacked_costs_by_year(cost_data, cost_type_label, tech_colors=None):
 
 def calculate_total_inputs_outputs_ft(networks, ft_carrier="Fischer-Tropsch"):
     """
-    Calculates input/output flows for Fischer-Tropsch:
-    - electricity (TWh)
-    - hydrogen (TWh) + tons
-    - fuel (TWh)
-    - CO2 used (Mt)
+    Calculates input/output flows for Fischer-Tropsch across a set of PyPSA networks.
+    
+    For each network:
+    - electricity used (TWh)
+    - hydrogen used (TWh and tons)
+    - CO2 used (Mt), only negative p2 flows
+    - e-kerosene produced (TWh)
+    
+    Returns:
+        pd.DataFrame with results per year.
     """
+    
     results = []
 
     for name, net in networks.items():
@@ -2459,25 +2465,30 @@ def calculate_total_inputs_outputs_ft(networks, ft_carrier="Fischer-Tropsch"):
 
         ft_link_ids = ft_links.index
 
-        if len(net.snapshots) > 1:
-            timestep = net.snapshots[1] - net.snapshots[0]
-            timestep_hours = timestep.total_seconds() / 3600
-        else:
-            timestep_hours = 1.0
+        # Determine timestep in hours
+        timestep_hours = (
+            (net.snapshots[1] - net.snapshots[0]).total_seconds() / 3600
+            if len(net.snapshots) > 1 else 1.0
+        )
 
-        def safe_energy(df, ids):
-            try:
-                return (df[ids] * timestep_hours).sum().sum()
-            except KeyError:
-                return 0.0
+        # Helper function to get total energy (TWh) across selected links
+        def get_energy(df, link_ids):
+            df_selected = df.reindex(columns=link_ids, fill_value=0.0)
+            return (df_selected * timestep_hours).sum().sum() / 1e6  # MWh → TWh
 
-        elec_input = safe_energy(net.links_t.p3, ft_link_ids) / 1e6
-        h2_input = safe_energy(net.links_t.p0, ft_link_ids) / 1e6
-        fuel_output = safe_energy(net.links_t.p1, ft_link_ids) / 1e6
-        co2_input_mt = safe_energy(net.links_t.p2, ft_link_ids) / 1e6
+        # Energy flows
+        elec_input_twh = get_energy(net.links_t.p3, ft_link_ids)
+        h2_input_twh = get_energy(net.links_t.p0, ft_link_ids)
+        fuel_output_twh = get_energy(net.links_t.p1, ft_link_ids)
 
-        # Convert hydrogen energy to tons
-        h2_tons = h2_input * 1e9 / 33.33 / 1000  # TWh → kWh → kg → tons
+        def get_co2_flow(df, link_ids):
+            df_selected = df.reindex(columns=link_ids, fill_value=0.0)
+            return (df_selected * timestep_hours).sum().sum() / 1e6  # t → Mt
+        
+        co2_input_mt = get_co2_flow(net.links_t.p2, ft_link_ids)
+
+        # Hydrogen in tons
+        h2_tons = h2_input_twh * 1e9 / 33.33 / 1000  # TWh → kWh → kg → t
 
         # Extract year from network name
         match = re.search(r"\d{4}", name)
@@ -2487,14 +2498,128 @@ def calculate_total_inputs_outputs_ft(networks, ft_carrier="Fischer-Tropsch"):
 
         results.append({
             "Year": year,
-            "Used electricity (TWh)": elec_input,
-            "Used hydrogen (TWh)": h2_input,
+            "Used electricity (TWh)": elec_input_twh,
+            "Used hydrogen (TWh)": h2_input_twh,
             "Used hydrogen (t)": h2_tons,
             "Used CO2 (Mt)": co2_input_mt,
-            "Produced e-kerosene (TWh)": -fuel_output,
+            "Produced e-kerosene (TWh)": -fuel_output_twh,
         })
 
+    # Compile and sort results
     df = pd.DataFrame(results)
+    if df.empty:
+        return df
+
     df["Year"] = df["Year"].astype(int)
-    df = df.sort_values("Year")
-    return df
+    return df.sort_values("Year")
+
+def compute_ekerosene_production_cost_by_region(networks: dict):
+    import pandas as pd
+    import re
+
+    for name, net in networks.items():
+        year_match = re.search(r"\d{4}", name)
+        if not year_match:
+            continue
+        year = year_match.group()
+
+        ft_links = net.links[
+            (net.links.carrier.str.contains("Fischer", case=False, na=False)) &
+            (
+                (net.links.get("p_nom_opt", 0) > 0) |
+                ((net.links.get("p_nom", 0) > 0) & (net.links.get("p_nom_extendable", False) == False))
+            )
+        ]
+        if ft_links.empty:
+            continue
+
+        ft_link_ids = [
+            l for l in ft_links.index
+            if all(l in getattr(net.links_t, p).columns for p in ["p0", "p1", "p2", "p3"])
+        ]
+        if not ft_link_ids:
+            continue
+
+        timestep_hours = (
+            (net.snapshots[1] - net.snapshots[0]).total_seconds() / 3600
+            if len(net.snapshots) > 1 else 1.0
+        )
+
+        records = []
+
+        for link in ft_link_ids:
+            try:
+                region = net.buses.at[ft_links.at[link, "bus1"], "grid_region"]
+            except KeyError:
+                continue
+
+            elec_price = net.buses_t.marginal_price[ft_links.at[link, "bus3"]]
+            h2_price   = net.buses_t.marginal_price[ft_links.at[link, "bus0"]]
+            co2_price  = net.buses_t.marginal_price[ft_links.at[link, "bus2"]]
+
+            p1 = -net.links_t.p1[link] * timestep_hours  # Output (MWh)
+            p3 =  net.links_t.p3[link] * timestep_hours  # Electricity in (MWh)
+            p0 =  net.links_t.p0[link] * timestep_hours  # H2 in (MWh)
+            p2 =  net.links_t.p2[link].clip(upper=0) * timestep_hours  # CO2 in (t), negative only
+
+            prod = p1.sum() / 1e6  # MWh → TWh
+
+            if prod < 1e-3:
+                continue  # skip links with negligible production
+
+            fuel_output_safe = p1.sum()
+
+            elec_cost = (p3 * elec_price).sum() / fuel_output_safe
+            h2_cost   = (p0 * h2_price).sum() / fuel_output_safe
+            co2_cost  = (-p2 * co2_price).sum() / fuel_output_safe  # cost per MWh of product
+
+            total_cost = elec_cost + h2_cost + co2_cost  # USD/MWh of product
+
+            records.append({
+                "Grid Region": region,
+                "Production (TWh)": prod,
+                "Electricity cost (USD/MWh e-kerosene)": elec_cost,
+                "Hydrogen cost (USD/MWh e-kerosene)": h2_cost,
+                "CO2 cost (USD/MWh e-kerosene)": co2_cost,
+                "Total production cost (USD/MWh e-kerosene)": total_cost,
+            })
+
+        if not records:
+            continue
+
+        df = pd.DataFrame(records)
+
+        # Weighted average per region based on production
+        def weighted_avg(group, col):
+            return (group[col] * group["Production (TWh)"]).sum() / group["Production (TWh)"].sum()
+
+        grouped = df.groupby("Grid Region")
+        df_grouped = grouped.apply(lambda g: pd.Series({
+            "Production (TWh)": g["Production (TWh)"].sum(),
+            "Electricity cost (USD/MWh e-kerosene)": weighted_avg(g, "Electricity cost (USD/MWh e-kerosene)"),
+            "Hydrogen cost (USD/MWh e-kerosene)": weighted_avg(g, "Hydrogen cost (USD/MWh e-kerosene)"),
+            "CO2 cost (USD/MWh e-kerosene)": weighted_avg(g, "CO2 cost (USD/MWh e-kerosene)"),
+            "Total production cost (USD/MWh e-kerosene)": weighted_avg(g, "Total production cost (USD/MWh e-kerosene)"),
+        }))
+
+        df_grouped = df_grouped[df_grouped["Production (TWh)"] >= 1e-3]
+        if df_grouped.empty:
+            continue
+
+        print(f"\n{year}:\n")
+        display(
+            df_grouped.round(2).style.format({
+                "Production (TWh)": "{:,.2f}",
+                "Electricity cost (USD/MWh e-kerosene)": "{:,.2f}",
+                "Hydrogen cost (USD/MWh e-kerosene)": "{:,.2f}",
+                "CO2 cost (USD/MWh e-kerosene)": "{:.2f}",
+                "Total production cost (USD/MWh e-kerosene)": "{:,.2f}",
+            }).hide(axis="index")
+        )
+
+        total_prod = df_grouped["Production (TWh)"].sum()
+        weighted_avg_cost = (
+            (df_grouped["Total production cost (USD/MWh e-kerosene)"] * df_grouped["Production (TWh)"]).sum()
+            / total_prod
+        )
+        print(f"Weighted average production cost: {weighted_avg_cost:.2f} USD/MWh")

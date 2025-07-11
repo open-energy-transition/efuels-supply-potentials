@@ -525,14 +525,14 @@ rename_tech_capex:
   co2: Emissions
 
   # Hydrogen & Electrolyzers
-  SOEC: Hydrogen & Electrolyzers
-  PEM electrolyzer: Hydrogen & Electrolyzers
-  Alkaline electrolyzer large: Hydrogen & Electrolyzers
-  H2 pipeline: Hydrogen & Electrolyzers
-  H2 pipeline repurposed: Hydrogen & Electrolyzers
-  grid H2: Hydrogen & Electrolyzers
-  H2: Hydrogen & Electrolyzers
-  H2 Fuel Cell: Hydrogen & Electrolyzers
+  SOEC: Hydrogen
+  PEM electrolyzer: Hydrogen
+  Alkaline electrolyzer large: Hydrogen
+  H2 pipeline: Hydrogen
+  H2 pipeline repurposed: Hydrogen
+  grid H2: Hydrogen
+  H2: Hydrogen
+  H2 Fuel Cell: Hydrogen
 
   # e-fuels synthesis
   Fischer-Tropsch: e-fuels synthesis
@@ -568,6 +568,7 @@ rename_tech_opex:
   coal: Fossil fuels
   oil: Fossil fuels
   CCGT: Fossil fuels
+  OCGT: Fossil fuels
   urban central gas CHP: Fossil fuels
   gas for industry: Fossil fuels
 
@@ -605,8 +606,8 @@ rename_tech_opex:
   Pumped Hydro Storage: Hydropower tax credits
   Reservoir & Dam: Hydropower tax credits
 
-  # Nuclear (tax credit)
-  Nuclear: Nuclear tax credits
+  # Nuclear OPEX (incl. tax credit)
+  Nuclear: Nuclear OPEX (incl. tax credits)
 
   # Storage
   battery: Storage
@@ -675,19 +676,20 @@ rename_tech_opex:
   land transport oil emissions: Emissions
   oil emissions: Emissions
   shipping oil emissions: Emissions
-  co2: Emissions
+  co2: Emissions  
+  biogenic co2 stored: Emissions
 
   # Hydrogen & Electrolyzers
-  SMR: Hydrogen & Electrolyzers
-  SMR CC: Hydrogen & Electrolyzers
-  SOEC: Hydrogen & Electrolyzers
-  PEM electrolyzer: Hydrogen & Electrolyzers
-  Alkaline electrolyzer large: Hydrogen & Electrolyzers
-  H2 pipeline: Hydrogen & Electrolyzers
-  H2 pipeline repurposed: Hydrogen & Electrolyzers
-  grid H2: Hydrogen & Electrolyzers
-  H2: Hydrogen & Electrolyzers
-  H2 Fuel Cell: Hydrogen & Electrolyzers
+  SMR: Hydrogen OPEX (incl. tax credits)
+  SMR CC: Hydrogen OPEX (incl. tax credits)
+  SOEC: Hydrogen OPEX (incl. tax credits)
+  PEM electrolyzer: Hydrogen OPEX (incl. tax credits)
+  Alkaline electrolyzer large: Hydrogen OPEX (incl. tax credits)
+  H2 pipeline: Hydrogen OPEX (incl. tax credits)
+  H2 pipeline repurposed: Hydrogen OPEX (incl. tax credits)
+  grid H2: Hydrogen OPEX (incl. tax credits)
+  H2: Hydrogen OPEX (incl. tax credits)
+  H2 Fuel Cell: Hydrogen OPEX (incl. tax credits)
 
   # E-fuels synthesis
   Fischer-Tropsch: e-fuels synthesis
@@ -771,6 +773,7 @@ rename_tech:
   home battery discharger: Storage
   main-to-e-kerosene: Transport
   process emissions: Emissions
+  biogenic co2 stored: Emissions
   residential rural gas boiler: Heating
   residential rural ground heat pump: Heating
   residential rural resistive heater: Heating
@@ -848,6 +851,7 @@ rename_tech:
   biogas: biomass
   clinker store: Storage
   co2: Emissions
+  biogenic co2 stored: Emissions
   co2 stored: Storage
   e-kerosene: Transport
   home battery: Storage
@@ -868,7 +872,7 @@ renamed_tech_colors:
   Fossil fuels: '#8c564b'
   Heating: '#d62728'
   Hydrogen: '#1f77b4'
-  Hydrogen & Electrolyzers: '#1f77b4'
+  Hydrogen OPEX (incl. tax credits): '#6590ad'
   Industry: '#9467bd'
   Industry OPEX: '#9467bd'
   Industry carbon capture: '#373170'
@@ -882,8 +886,8 @@ renamed_tech_colors:
   Geothermal: '#e35812'
   Hydropower: '#298c81'
   Hydropower tax credits: '#298c81'
-  Nuclear: '#e377c2'
-  Nuclear tax credits: '#e377c2'
+  Nuclear: '#e8a9d5'
+  Nuclear OPEX (incl. tax credits): '#e377c2'
   Oil: '#7f3b08'
   Solar: '#ffdd57'
   Solar tax credits: '#ffdd57'

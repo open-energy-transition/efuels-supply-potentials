@@ -2512,3 +2512,288 @@ def calculate_total_inputs_outputs_ft(networks, ft_carrier="Fischer-Tropsch"):
     df["Year"] = df["Year"].astype(int)
     df = df.sort_values("Year")
     return df
+
+#### VALIDATION HELPERS FUNCTIONS #####
+
+def convert_two_country_code_to_three(country_code):
+    """
+    Convert a two-letter country code to a three-letter ISO country code.
+
+    Args:
+        country_code (str): Two-letter country code (ISO 3166-1 alpha-2).
+
+    Returns:
+        str: Three-letter country code (ISO 3166-1 alpha-3).
+    """
+    country = pycountry.countries.get(alpha_2=country_code)
+    return country.alpha_3
+
+
+def get_country_name(country_code):
+    """ Input:
+            country_code - two letter code of the country
+        Output:
+            country.name - corresponding name of the country
+            country.alpha_3 - three letter code of the country
+    """
+    try:
+        country = pycountry.countries.get(alpha_2=country_code)
+        return country.name, country.alpha_3 if country else None
+    except KeyError:
+        return None
+    
+
+def get_data_EIA(data_path, country_code, year):
+    """
+    Retrieves energy generation data from the EIA dataset for a specified country and year.
+
+    Args:
+        data_path (str): Path to the EIA CSV file.
+        country_code (str): Two-letter or three-letter country code (ISO).
+        year (int or str): Year for which energy data is requested.
+
+    Returns:
+        pd.DataFrame: DataFrame containing energy generation data for the given country and year, 
+                    or None if no matching country is found.
+    """
+
+    # Load EIA data from CSV file
+    data = pd.read_csv(data_path)
+
+    # Rename the second column to 'country' for consistency
+    data.rename(columns={"Unnamed: 1": "country"}, inplace=True)
+
+    # Remove leading and trailing spaces in the 'country' column
+    data["country"] = data["country"].str.strip()
+
+    # Extract the three-letter country code from the 'API' column
+    data["code_3"] = data.dropna(subset=["API"])["API"].apply(
+        lambda x: x.split('-')[2] if isinstance(x,
+                                                str) and len(x.split('-')) > 3 else x
+    )
+
+    # Get the official country name and three-letter country code using the provided two-letter code
+    country_name, country_code3 = get_country_name(country_code)
+
+    # Check if the three-letter country code exists in the dataset
+    if country_code3 and country_code3 in data.code_3.unique():
+        # Retrieve the generation data for the specified year
+        result = data.query("code_3 == @country_code3")[["country", str(year)]]
+
+    # If not found by code, search by the country name
+    elif country_name and country_name in data.country.unique():
+        # Find the country index and retrieve generation data
+        country_index = data.query("country == @country_name").index[0]
+        result = data.iloc[country_index +
+                           1:country_index+18][["country", str(year)]]
+
+    else:
+        # If no match is found, return None
+        result = None
+
+    # Convert the year column to float for numeric operations
+    result[str(year)] = result[str(year)].astype(float)
+
+    return result
+
+
+def get_demand_ember(data, country_code, year):
+    """
+    Get the electricity demand for a given country and year from Ember data.
+
+    Args:
+        data (pd.DataFrame): Ember data.
+        country_code (str): Country code (ISO 3166-1 alpha-2).
+        year (int): Year of interest.
+
+    Returns:
+        float or None: Electricity demand if found, otherwise None.
+    """
+    demand = data[(data["Year"] == year)
+                  & (data["Country code"] == country_code)
+                  & (data["Category"] == "Electricity demand")
+                  & (data["Subcategory"] == "Demand")]["Value"]
+
+    if len(demand) != 0:
+        return demand.iloc[0]
+    return None
+
+
+def preprocess_eia_data_detail(data):
+    """
+    Preprocesses the EIA energy data by renaming and filtering rows and columns.
+
+    Args:
+        data (pd.DataFrame): DataFrame containing EIA energy data.
+
+    Returns:
+        pd.DataFrame: Cleaned and preprocessed DataFrame ready for analysis.
+    """
+
+    # Strip the last 13 characters (descriptive text) from the 'country' column
+    data["country"] = data["country"].apply(lambda x: x[:-13].strip())
+
+    # Set 'country' as the index of the DataFrame
+    data.set_index("country", inplace=True)
+
+    # Rename columns to provide clarity
+    data.columns = ["EIA data"]
+
+    # Rename specific rows to match more standard terms
+    data.rename(index={"Hydroelectricity": "Hydro",
+                       "Biomass and waste": "Biomass",
+                       "Hydroelectric pumped storage": "PHS"}, inplace=True)
+
+    # Drop unwanted renewable energy categories
+    data.drop(index=["Fossil fuels", "Renewables", "Non-hydroelectric renewables",
+                     "Solar, tide, wave, fuel cell", "Tide and wave"], inplace=True)
+
+    # Filter the DataFrame to only include relevant energy sources
+    data = data.loc[["Nuclear", "Coal", "Natural gas", "Oil", "Geothermal", 
+                     "Hydro", "PHS", "Solar", "Wind", "Biomass"], :]
+    return data
+
+
+def get_generation_capacity_ember_detail(data, three_country_code, year):
+    """
+    Get electricity generation by fuel type for a given country and year from Ember data.
+
+    Args:
+        data (pd.DataFrame): Ember data.
+        three_country_code (str): Country code (ISO 3166-1 alpha-3).
+        year (int): Year of interest.
+
+    Returns:
+        pd.DataFrame: Electricity generation by fuel type.
+    """
+    generation_ember = data[
+        (data["Category"] == "Electricity generation")
+        & (data["Country code"] == three_country_code)
+        & (data["Year"] == year)
+        & (data["Subcategory"] == "Fuel")
+        & (data["Unit"] == "TWh")
+    ][["Variable", "Value"]].reset_index(drop=True)
+
+    # Drop irrelevant rows
+    drop_row = ["Other Renewables"]
+    generation_ember = generation_ember[~generation_ember["Variable"].isin(
+        drop_row)]
+
+    # Standardize fuel types
+    generation_ember = generation_ember.replace({
+        "Gas": "Natural gas",
+        "Bioenergy": "Biomass",
+        # "Coal": "Fossil fuels",
+        # "Other Fossil": "Fossil fuels"
+    })
+
+    # Group by fuel type
+    generation_ember = generation_ember.groupby("Variable").sum()
+    generation_ember.loc["Load shedding"] = 0.0
+    generation_ember.columns = ["Ember data"]
+
+    return generation_ember
+
+
+def get_installed_capacity_ember(data, three_country_code, year):
+    """
+    Get installed capacity by fuel type for a given country and year from Ember data.
+
+    Args:
+        data (pd.DataFrame): Ember data.
+        three_country_code (str): Country code (ISO 3166-1 alpha-3).
+        year (int): Year of interest.
+
+    Returns:
+        pd.DataFrame: Installed capacity by fuel type.
+    """
+    capacity_ember = data[
+        (data["Country code"] == three_country_code)
+        & (data["Year"] == year)
+        & (data["Category"] == "Capacity")
+        & (data["Subcategory"] == "Fuel")][["Variable", "Value"]].reset_index(drop=True)
+
+    # Drop irrelevant rows
+    drop_row = ["Other Renewables"]
+    capacity_ember = capacity_ember[~capacity_ember["Variable"].isin(drop_row)]
+
+    # Standardize fuel types
+    capacity_ember = capacity_ember.replace({
+        # "Gas": "Fossil fuels",
+        "Bioenergy": "Biomass",
+        # "Coal": "Fossil fuels",
+        "Other Fossil": "Fossil fuels"
+        })
+
+    capacity_ember = capacity_ember.groupby("Variable").sum()
+    capacity_ember.columns = ["Ember data"]
+
+    return capacity_ember
+
+
+def preprocess_eia_data(data):
+    """
+    Preprocesses the EIA energy data by renaming and filtering rows and columns.
+
+    Args:
+        data (pd.DataFrame): DataFrame containing EIA energy data.
+
+    Returns:
+        pd.DataFrame: Cleaned and preprocessed DataFrame ready for analysis.
+    """
+
+    # Strip the last 13 characters (descriptive text) from the 'country' column
+    data["country"] = data["country"].apply(lambda x: x[:-13].strip())
+
+    # Set 'country' as the index of the DataFrame
+    data.set_index("country", inplace=True)
+
+    # Rename columns to provide clarity
+    data.columns = ["EIA data"]
+
+    # Rename specific rows to match more standard terms
+    data.rename(index={"Hydroelectricity": "Hydro",
+                       "Biomass and waste": "Biomass",
+                       "Hydroelectric pumped storage": "PHS"}, inplace=True)
+
+    # Drop unwanted renewable energy categories
+    data.drop(index=["Renewables", "Non-hydroelectric renewables",
+                     "Geothermal", "Solar, tide, wave, fuel cell", "Tide and wave"], inplace=True)
+
+    # Filter the DataFrame to only include relevant energy sources
+    data = data.loc[["Nuclear", "Fossil fuels",
+                     "Hydro", "PHS", "Solar", "Wind", "Biomass"], :]
+
+    return data
+
+
+def get_demand_pypsa(network):
+    """
+    Get the total electricity demand from the PyPSA-Earth network.
+
+    Args:
+        network (pypsa.Network): PyPSA network object.
+
+    Returns:
+        float: Total electricity demand in TWh.
+    """
+    demand_pypsa = network.loads_t.p_set.multiply(
+        network.snapshot_weightings.objective, axis=0).sum().sum() / 1e6
+    demand_pypsa = demand_pypsa.round(4)
+    return demand_pypsa
+
+
+def preprocess_eia_demand(path, horizon):
+    statewise_df = pd.read_excel(path, sheet_name="Data")
+
+    demand_df = statewise_df.loc[statewise_df['MSN'] == 'ESTXP']
+    demand_df.set_index('State', inplace=True)
+    
+    # data is in million kWh (GWh) - hence dividing by 1e3 to get the data in TWh
+    demand_df = demand_df[int(horizon)] / 1e3
+    demand_df = demand_df.to_frame()
+    demand_df.columns = ["EIA"]
+
+    demand_df.drop(["US"], axis=0, inplace=True)
+    return demand_df
+

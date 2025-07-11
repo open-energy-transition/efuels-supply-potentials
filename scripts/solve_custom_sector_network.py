@@ -261,21 +261,24 @@ def add_RPS_constraints(network, config_file):
             )
 
         # RES dispatch from links with coefficient (biomass)
-        res_link_dispatch_with_coefficient = (
-            (
-                linexpr(
-                    (
-                        (n.snapshot_weightings.stores.apply(
-                            lambda r: r * n.links.loc[res_links_eligible.index].efficiency) * (1 - target)).T,
-                        get_var(n, "Link", "p")[res_links_eligible.index].T
+        if res_links_eligible.empty:
+            res_link_dispatch_with_coefficient = pd.Series("", index=res_generation.index)
+        else:
+            res_link_dispatch_with_coefficient = (
+                (
+                    linexpr(
+                        (
+                            (n.snapshot_weightings.stores.apply(
+                                lambda r: r * n.links.loc[res_links_eligible.index].efficiency) * (1 - target)).T,
+                            get_var(n, "Link", "p")[res_links_eligible.index].T
+                        )
                     )
+                    .T.groupby(res_links_eligible.bus1, axis=1)
+                    .apply(join_exprs)
                 )
-                .T.groupby(res_links_eligible.bus1, axis=1)
-                .apply(join_exprs)
+                .reindex(res_generation.index)
+                .fillna("")
             )
-            .reindex(res_generation.index)
-            .fillna("")
-        )
 
         # CES generation multiplied by target
         ces_generation_with_target = (

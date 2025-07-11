@@ -306,7 +306,7 @@ def add_RPS_constraints(network, config_file):
         
         
     # define carriers for RES and CES sources
-    res_carriers = ["solar", "", "onwind", "offwind-ac", "solar rooftop",
+    res_carriers = ["solar", "onwind", "offwind-ac", "solar rooftop",
                     "offwind-dc", "ror", "hydro", "geothermal", "biomass",
                     "urban central solid biomass CHP", "urban central solid biomass CHP CC",
                     ]

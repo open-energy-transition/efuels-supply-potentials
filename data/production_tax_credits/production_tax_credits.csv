@@ -4,3 +4,7 @@ ror,-6,-6,0,0
 nuclear,0,-15,0,0
 geothermal,0,-24,0,0
 biomass,0,-27.5,0,0
+solar,0,-27.5,0,0
+onwind,0,-27.5,0,0
+offwind-ac,0,-27.5,0,0
+offwind-dc,0,-27.5,0,0

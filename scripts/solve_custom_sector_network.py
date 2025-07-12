@@ -346,7 +346,7 @@ def add_RPS_constraints(network, config_file):
 
     if state_policies:
 
-        # select eligible RES/CES policies based on planning horizon, presense of target and state
+        # select eligible RES/CES policies based on planning horizon, presence of target and state
         state_policy_data = filter_policy_data(policy_data, "state")
 
         # get list of states where policies need to be applied

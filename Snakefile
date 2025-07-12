@@ -661,6 +661,7 @@ if config["foresight"] == "myopic":
         input:
             ces_path="data/current_electricity_state_policies/clean_targets.csv",
             res_path="data/current_electricity_state_policies/res_targets.csv",
+            production_tax_credits="data/production_tax_credits/production_tax_credits.csv",
             gadm_shape_path="data/demand_data/gadm41_USA_1.json",
             overrides="data/override_component_attrs",
             network=PYPSA_EARTH_DIR + RESDIR

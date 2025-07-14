@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Implement **production tax credits** removing tax credits in the base year and reviewing tax credits to renewables based on latest developments (One Big Beautiful Bill) [PR #91](https://github.com/open-energy-transition/efuels-supply-potentials/pull/91)
+
 * **Base year**: Remove filtering for plants with DateOut >= 2023, remove PTC to existing wind, solar and biomass plants, add PTC for existing hydro and nuclear power plants, remove data center load [PR #85](https://github.com/open-energy-transition/efuels-supply-potentials/pull/85)
 
 * Add **data center loads for sector model** [PR #81](https://github.com/open-energy-transition/efuels-supply-potentials/pull/81) and [PR #84](https://github.com/open-energy-transition/efuels-supply-potentials/pull/84)

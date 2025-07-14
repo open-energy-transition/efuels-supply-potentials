@@ -182,7 +182,7 @@ def apply_tax_credits_to_network(network, csv_path, planning_horizon, log_path=N
 
     modifications = []
 
-    # GENERATORS
+    # Generators
     for name, gen in network.generators.iterrows():
         carrier = gen.carrier
         build_year = gen.build_year
@@ -216,7 +216,7 @@ def apply_tax_credits_to_network(network, csv_path, planning_horizon, log_path=N
                 "original":orig, "credit":scale*credit, "final":new
             })
 
-    # LINKS (biomass)
+    # Links
     if "biomass" in credits:
         for name, link in network.links.iterrows():
             if link.carrier not in biomass_aliases:
@@ -233,7 +233,6 @@ def apply_tax_credits_to_network(network, csv_path, planning_horizon, log_path=N
                     "original": orig, "credit": credit, "final": new
                 })
 
-    # SAVE LOG
     if modifications and log_path:
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
         pd.DataFrame(modifications).to_csv(log_path, index=False)

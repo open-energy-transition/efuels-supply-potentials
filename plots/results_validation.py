@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-from scripts._helper import mock_snakemake, update_config_from_wildcards, build_directory, \
-    load_pypsa_network, load_network, PLOTS_DIR, DATA_DIR
 import warnings
 import logging
 import pycountry
@@ -12,6 +10,8 @@ import pandas as pd
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
+from scripts._helper import mock_snakemake, update_config_from_wildcards, build_directory, \
+                            load_pypsa_network, load_network, PLOTS_DIR, DATA_DIR
 warnings.filterwarnings("ignore")
 
 
@@ -108,11 +108,10 @@ def get_installed_capacity_ember(data, three_country_code, year):
 
     # Standardize fuel types
     capacity_ember = capacity_ember.replace({
-        # "Gas": "Fossil fuels",
+        "Gas": "Fossil fuels",
         "Bioenergy": "Biomass",
-        # "Coal": "Fossil fuels",
-        "Other Fossil": "Fossil fuels"
-        })
+        "Coal": "Fossil fuels",
+        "Other Fossil": "Fossil fuels"})
 
     capacity_ember = capacity_ember.groupby("Variable").sum()
     capacity_ember.columns = ["Ember data"]
@@ -397,7 +396,7 @@ def preprocess_eia_data_detail(data):
 
     # Filter the DataFrame to only include relevant energy sources
     data = data.loc[["Nuclear", "Coal", "Natural gas", "Oil",
-                     "Hydro", "PHS", "Solar", "Wind", "Biomass"], :]
+                     "Hydro", "PHS", "Solar", "Wind", "Biomass", ], :]
     return data
 
 

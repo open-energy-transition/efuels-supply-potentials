@@ -17,8 +17,8 @@ run:
 scenario:
   simpl: ['']
   ll: ['copt']
-  clusters: [10]
-  opts: [Co2L-24H]
+  clusters: [300]
+  opts: [Co2L-1H]
   planning_horizons:
   - 2020
   sopts:

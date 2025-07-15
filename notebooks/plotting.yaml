@@ -241,7 +241,7 @@ tech_colors:
   CC: '#f29dae'
   CCS: '#f29dae'
   CO2 sequestration: '#f29dae'
-  DAC: '#ff5270'
+  DAC: '#eea3ff'
   co2 stored: '#f2385a'
   co2 sequestered: '#f2682f'
   co2: '#f29dae'
@@ -406,21 +406,20 @@ rename_tech_capex:
   residential rural solar thermal: Solar
 
   # Fossil generators
-  coal: Fossil generator
-  oil: Fossil generator
-  lignite: Fossil generator
-  gas: Fossil generator
-  CCGT: Fossil generator
-  OCGT: Fossil generator
-  urban central gas CHP: Fossil generator
+  coal: Fossil generators
+  oil: Fossil generators
+  lignite: Fossil generators
+  gas: Fossil generators
+  CCGT: Fossil generators
+  OCGT: Fossil generators
+  urban central gas CHP: Fossil generators
 
   # Biomass generators
-  biomass: Biomass generator
-  biomass EOP: Biomass generator
-  urban central solid biomass CHP: Biomass generator
-  bioethanol crop: Biomass generator
-  solid biomass: Biomass generator
-  biogas: Biomass generator
+  biomass: Biomass generators
+  biomass EOP: Biomass generators
+  urban central solid biomass CHP: Biomass generators
+  solid biomass: Biomass generators
+  biogas: Biomass generators
 
   # Industry 
   ethanol from starch: Industry
@@ -445,6 +444,7 @@ rename_tech_capex:
   bioethanol crop store: Industry
   SMR: Industry
   SMR CC: Industry carbon capture
+  bioethanol crop: Industry
   
   # Hydro
   Run of River: Hydropower
@@ -459,7 +459,6 @@ rename_tech_capex:
   home battery charger: Storage
   home battery discharger: Storage
   Li ion: Storage
-  co2 stored: Storage
   battery storage: Storage
   H2 Store Tank: Storage
   BEV charger: Storage
@@ -501,13 +500,13 @@ rename_tech_capex:
   urban central solid biomass CHP: Heating
 
   # Transmission
-  electricity distribution grid: Transmission
-  DC: Transmission
-  CO2 pipeline: Transmission
-  B2B: Transmission
-  V2G: Transmission
-  solid biomass transport: Transmission
-  AC: Transmission
+  electricity distribution grid: Power distribution
+  DC: Power transmission
+  CO2 pipeline: CO2 transport
+  B2B: Power transmission
+  V2G: Power transmission
+  solid biomass transport: Biomass transport
+  AC: Power transmission
 
   # Other generators
   Nuclear: Nuclear
@@ -523,6 +522,7 @@ rename_tech_capex:
   oil emissions: Emissions
   shipping oil emissions: Emissions
   co2: Emissions
+  co2 stored: Storage
 
   # Hydrogen & Electrolyzers
   SOEC: Hydrogen
@@ -575,9 +575,6 @@ rename_tech_opex:
   # Biomass fuels
   biomass: Biomass fuels
   biomass EOP: Biomass fuels
-  ethanol from starch: Biomass fuels
-  ethanol from starch CC: Biomass fuels
-  bioethanol crop: Biomass fuels
   solid biomass: Biomass fuels
   biogas: Biomass fuels
 
@@ -600,6 +597,9 @@ rename_tech_opex:
   bioethanol crop store: Industry OPEX
   SMR: Industry OPEX
   SMR CC: Industry carbon capture OPEX
+  ethanol from starch: Industry OPEX
+  ethanol from starch CC: Industry carbon capture OPEX
+  bioethanol crop: Industry OPEX
 
   # Hydro (tax credit)
   Run of River: Hydropower tax credits
@@ -659,13 +659,13 @@ rename_tech_opex:
   urban central solid biomass CHP: Heating
 
   # Transmission
-  electricity distribution grid: Transmission
-  DC: Transmission
-  CO2 pipeline: Transmission
-  B2B: Transmission
-  V2G: Transmission
-  solid biomass transport: Transmission
-  AC: Transmission
+  electricity distribution grid: Power distribution
+  DC: Power transmission
+  CO2 pipeline: CO2 transport
+  B2B: Power transmission
+  V2G: Power transmission
+  solid biomass transport: Biomass transport
+  AC: Power transmission
 
   # Emissions
   co2 vent: Emissions
@@ -676,7 +676,7 @@ rename_tech_opex:
   land transport oil emissions: Emissions
   oil emissions: Emissions
   shipping oil emissions: Emissions
-  co2: Emissions  
+  co2: Emissions
   biogenic co2 stored: Emissions
 
   # Hydrogen & Electrolyzers
@@ -868,7 +868,7 @@ rename_tech:
 renamed_tech_colors:
   Biofuels synthesis: '#66c2a5'
   Emissions: '#7f7f7f'
-  Fossil generator: '#8c564b'
+  Fossil generators: '#8c564b'
   Fossil fuels: '#8c564b'
   Heating: '#d62728'
   Hydrogen: '#1f77b4'
@@ -877,11 +877,14 @@ renamed_tech_colors:
   Industry OPEX: '#9467bd'
   Industry carbon capture: '#373170'
   Industry carbon capture OPEX: '#373170'
-  Transmission: '#cda434'
+  Power transmission: '#cda434'
+  Power distribution: '#ff7e33'
+  CO2 transport: '#bfd5db'
+  Biomass transport: '#bae38a'
   Others: '#c7c7c7'
   Storage: '#17becf'
   Transport: '#ff7f0e'
-  Biomass generator: '#2ca02c'
+  Biomass generators: '#2ca02c'
   Biomass fuels: '#2ca02c'
   Geothermal: '#e35812'
   Hydropower: '#298c81'
@@ -894,3 +897,63 @@ renamed_tech_colors:
   Wind: '#a6cee3'
   Wind tax credits: '#a6cee3'
   e-fuels synthesis: '#73ffb2'
+
+categories_capex:
+  Fossil generators: Power & heat generation
+  Biomass generators: Power & heat generation
+  Hydropower: Power & heat generation
+  Nuclear: Power & heat generation
+  Geothermal: Power & heat generation
+  Wind: Power & heat generation
+  Solar: Power & heat generation
+  Heating: Power & heat generation  
+
+  Storage: Storage
+
+  Industry: Industry
+  Industry carbon capture: Industry
+  
+  DAC: DAC
+
+  Power transmission: Transmission & distribution
+  Power distribution: Transmission & distribution
+  CO2 transport: Transmission & distribution
+  Biomass transport: Transmission & distribution
+  
+  Emissions: Emissions
+
+  Hydrogen: Hydrogen & e-fuels
+  e-fuels synthesis: Hydrogen & e-fuels
+  
+  Biofuels synthesis: Biofuels synthesis
+
+categories_opex:
+
+  Fossil fuels: Power & heat generation
+  Biomass fuels: Power & heat generation
+  Hydropower tax credits: Power & heat generation
+  Nuclear OPEX (incl. tax credits): Power & heat generation
+  Geothermal: Power & heat generation
+  Solar tax credits: Power & heat generation
+  Wind tax credits: Power & heat generation
+  Heating: Power & heat generation
+  
+  Industry OPEX: Industry
+  Industry carbon capture OPEX: Industry
+
+  Storage: Storage
+
+  DAC: DAC
+
+  Power transmission: Transmission & distribution
+  Power distribution: Transmission & distribution
+  CO2 transport: Transmission & distribution
+  Biomass transport: Transmission & distribution
+
+  Emissions: Emissions
+
+  Hydrogen OPEX (incl. tax credits): Hydrogen & e-fuels
+  e-fuels synthesis: Hydrogen & e-fuels
+
+  Biofuels synthesis: Biofuels synthesis
+  

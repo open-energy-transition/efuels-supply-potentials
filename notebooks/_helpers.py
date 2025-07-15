@@ -21,6 +21,7 @@ from shapely.geometry import box
 from matplotlib.offsetbox import AnnotationBbox, AuxTransformBox
 from matplotlib.patches import Wedge
 import matplotlib.path as mpath
+from matplotlib.patches import Patch
 import matplotlib.transforms as mtransforms
 import matplotlib.lines as mlines
 from matplotlib.legend_handler import HandlerPatch
@@ -28,10 +29,10 @@ import matplotlib.dates as mdates
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.font_manager import FontProperties
 from IPython.display import display, HTML
-
+from collections import defaultdict
 import plotly.express as px
 import plotly.graph_objects as go
-
+from collections import OrderedDict
 from shapely.geometry import LineString
 import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
@@ -501,9 +502,8 @@ def create_hydrogen_capacity_map(network, path_shapes, distance_crs=4326, min_ca
         if carrier in capacity_data['carrier'].values:
             # Clean up carrier names for legend
             display_name = carrier.replace('_', ' ').title()
-            legend_elements.append(mpatches.Patch(
-                color=color, label=display_name))
-
+            legend_elements.append(Line2D([0], [0], color='none', label=f'— {group} —'))
+            
     ax.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(1, 0.5),
               fontsize=14, title='Electrolyzer Type', title_fontsize=16)
 
@@ -2080,16 +2080,6 @@ def evaluate_res_ces_by_state(networks, ces, res, ces_carriers, res_carriers, mu
 
 
 def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, regions_onshore, title_year=True):
-    import pandas as pd
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import matplotlib.patches as mpatches
-    import matplotlib.lines as mlines
-    from matplotlib.patches import Wedge
-    from matplotlib.legend_handler import HandlerPatch
-    import geopandas as gpd
-    import cartopy.crs as ccrs
-    from shapely.geometry import box
 
     # Define generation/link carriers
     gen_carriers = {
@@ -2145,7 +2135,7 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
     capacity_df = capacity_df.loc[capacity_df.index.intersection(valid_buses.index)]
 
     # Setup map
-    fig, ax = plt.subplots(figsize=(18, 10), subplot_kw={"projection": ccrs.PlateCarree()})
+    fig, ax = plt.subplots(figsize=(22, 10), subplot_kw={"projection": ccrs.PlateCarree()})
     bbox = box(-130, 20, -60, 50)
     regions_onshore_clipped = regions_onshore.to_crs(epsg=4326).clip(bbox)
 
@@ -2208,30 +2198,26 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
             ax.add_patch(wedge)
             start_angle += angle
 
-    class HandlerCircle(HandlerPatch):
-        def create_artists(self, legend, orig_handle,
-                           xdescent, ydescent, width, height, fontsize, trans):
-            center = (width / 2, height / 2)
-            radius = orig_handle.get_radius()
-            p = plt.Circle(center, radius)
-            self.update_prop(p, orig_handle, legend)
-            p.set_transform(trans)
-            return [p]
-
     # Legends
+
+    # Bus Capacity Legend using Line2D markers
     bus_caps = [5, 10, 50]
-    bus_patches = [plt.Circle((0, 0), radius=np.sqrt(cap) * pie_scale, color='gray', alpha=0.5) for cap in bus_caps]
+    bus_marker_sizes = [np.sqrt(cap) * pie_scale * 1000 for cap in bus_caps]
+    bus_patches = [
+        mlines.Line2D([], [], linestyle='None', marker='o', color='gray',
+                      markersize=size, label=f"{cap} GW", markerfacecolor='gray',
+                      alpha=0.5)
+        for cap, size in zip(bus_caps, bus_marker_sizes)
+    ]
     bus_legend = ax.legend(
-        bus_patches,
-        [f"{cap} GW" for cap in bus_caps],
+        handles=bus_patches,
         title="Bus Capacity",
-        title_fontsize=10,
-        fontsize=8,
+        title_fontsize=12,
+        fontsize=10,
         frameon=False,
-        handler_map={mpatches.Circle: HandlerCircle()},
         loc='upper right',
         bbox_to_anchor=(1.085, 1.0),
-        labelspacing=1.1,
+        labelspacing=1.4,
     )
 
     ac_caps = [5e3, 20e3, 50e3]
@@ -2242,11 +2228,11 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
     ac_legend = ax.legend(
         handles=ac_patches,
         title="AC Line Capacity",
-        title_fontsize=10,
-        fontsize=8,
+        title_fontsize=12,
+        fontsize=10,
         frameon=False,
         loc='upper right',
-        bbox_to_anchor=(1.1, 0.84),
+        bbox_to_anchor=(1.1, 0.83),
         labelspacing=1.1
     )
 
@@ -2258,11 +2244,11 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
     dc_legend = ax.legend(
         handles=dc_patches,
         title="DC Link Capacity",
-        title_fontsize=10,
-        fontsize=8,
+        title_fontsize=12,
+        fontsize=10,
         frameon=False,
         loc='upper right',
-        bbox_to_anchor=(1.1, 0.69),
+        bbox_to_anchor=(1.1, 0.68),
         labelspacing=1.1
     )
 
@@ -2273,11 +2259,11 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
     carrier_legend = ax.legend(
         handles=carrier_handles,
         title="Technology",
-        title_fontsize=10.5,
-        fontsize=8.3,
+        title_fontsize=13,
+        fontsize=11,
         frameon=False,
         loc='upper right',
-        bbox_to_anchor=(1.125, 0.55),
+        bbox_to_anchor=(1.125, 0.54),
         ncol=2,
         labelspacing=1.05,
     )
@@ -2295,6 +2281,7 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
 
     plt.tight_layout()
     plt.show()
+
 
 def compute_installed_capacity_by_carrier(networks, nice_names=None, display_result=True, column_year=True):
     import pandas as pd
@@ -2365,14 +2352,15 @@ def compute_installed_capacity_by_carrier(networks, nice_names=None, display_res
     return carrier_capacity_df
 
 
-def compute_system_costs(network, rename_capex, rename_opex, general_rename, name_tag):
+def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     costs_raw = network.statistics()[['Capital Expenditure', 'Operational Expenditure']]
     year_str = name_tag[-4:]
 
     # CAPEX
     capex_raw = costs_raw[['Capital Expenditure']].reset_index()
     capex_raw['tech_label'] = capex_raw['carrier'].map(rename_capex).fillna(capex_raw['carrier'])
-    capex_raw['main_category'] = capex_raw['tech_label'].map(general_rename).fillna(capex_raw['tech_label'])
+    capex_raw['main_category'] = capex_raw['tech_label']
+    
     capex_grouped = capex_raw.groupby('tech_label', as_index=False).agg({
         'Capital Expenditure': 'sum',
         'main_category': 'first'
@@ -2386,7 +2374,8 @@ def compute_system_costs(network, rename_capex, rename_opex, general_rename, nam
     # OPEX
     opex_raw = costs_raw[['Operational Expenditure']].reset_index()
     opex_raw['tech_label'] = opex_raw['carrier'].map(rename_opex).fillna(opex_raw['carrier'])
-    opex_raw['main_category'] = opex_raw['tech_label'].map(general_rename).fillna(opex_raw['tech_label'])
+    opex_raw['main_category'] = opex_raw['tech_label']
+    
     opex_grouped = opex_raw.groupby('tech_label', as_index=False).agg({
         'Operational Expenditure': 'sum',
         'main_category': 'first'
@@ -2401,9 +2390,18 @@ def compute_system_costs(network, rename_capex, rename_opex, general_rename, nam
 
 
 def plot_stacked_costs_by_year(cost_data, cost_type_label, tech_colors=None, index='year'):
-    data_filtered = cost_data[cost_data['cost_type'] == cost_type_label].copy()
-    data_filtered = data_filtered[data_filtered['cost_billion'] != 0]
 
+    # Clean data
+    data_filtered = cost_data[
+        (cost_data['cost_type'] == cost_type_label) &
+        (cost_data['cost_billion'] != 0)
+    ].copy()
+
+    if data_filtered.empty:
+        print("No data to plot.")
+        return
+
+    # Pivot table: year x tech_label
     pivot_table = data_filtered.pivot_table(
         index=index,
         columns='tech_label',
@@ -2411,48 +2409,89 @@ def plot_stacked_costs_by_year(cost_data, cost_type_label, tech_colors=None, ind
         aggfunc='sum'
     ).fillna(0)
 
-    label_to_category_map = data_filtered.set_index('tech_label')['main_category'].to_dict()
+    # Mapping dictionaries
+    label_to_macro = data_filtered.set_index('tech_label')['macro_category'].to_dict()
+    label_to_category = data_filtered.set_index('tech_label')['main_category'].to_dict()
 
-    def get_color(tech_label):
-        category = label_to_category_map.get(tech_label, tech_label)
+    # Define desired macro-category order (top-to-bottom in legend and bars)
+    desired_macro_order = [
+        'Hydrogen & e-fuels',
+        'Biofuels synthesis',
+        'DAC',
+        'Industry',
+        'Power & heat generation',
+        'Storage',
+        'Transmission & distribution',
+        'Emissions',
+        'Other'
+    ]
+    macro_order_map = {macro: i for i, macro in enumerate(desired_macro_order)}
+
+    # Final tech_label order (top to bottom)
+    all_labels = data_filtered['tech_label'].drop_duplicates().tolist()
+    ordered_labels = sorted(
+        all_labels,
+        key=lambda lbl: (macro_order_map.get(label_to_macro.get(lbl, 'Other'), 999), all_labels.index(lbl))
+    )
+
+    # Stack order is reversed (bottom to top)
+    pivot_table = pivot_table[ordered_labels[::-1]]
+
+    # Assign colors
+    def get_color(label):
+        category = label_to_category.get(label, label)
         return tech_colors.get(category, '#999999')
-
     color_values = [get_color(label) for label in pivot_table.columns]
 
+    # Plot
     ax = pivot_table.plot(
         kind='bar',
         stacked=True,
         color=color_values,
         figsize=(12, 6)
     )
-    ax.axhline(0, color='black', linewidth=1, linestyle='-')
+    ax.axhline(0, color='black', linewidth=1)
     ax.set_xlabel("Years (-)")
-    plt.ylabel(f"{cost_type_label} (Billion USD)")
-    plt.title(f"{cost_type_label}")
-    plt.xticks(rotation=0)
+    ax.set_ylabel(f"{cost_type_label} (Billion USD)")
+    ax.set_title(f"{cost_type_label}")
+    ax.set_xticklabels(pivot_table.index, rotation=0)
     plt.tight_layout()
 
-    handles, labels = ax.get_legend_handles_labels()
-    label_to_handle = dict(zip(labels, handles))
+    # Group for legend
+    grouped_labels = defaultdict(list)
+    for label in ordered_labels:
+        macro = label_to_macro.get(label, 'Other')
+        grouped_labels[macro].append(label)
 
-    visible_labels = pivot_table.columns[(pivot_table != 0).any(axis=0)]
-    visible_labels_str = [str(l) for l in visible_labels]
+    # Order groups in legend
+    legend_elements = []
+    for macro in desired_macro_order:
+        if macro in grouped_labels:
+            legend_elements.append(Patch(facecolor='none', edgecolor='none', label=f'— {macro} —'))
+            for label in grouped_labels[macro]:
+                legend_elements.append(Patch(facecolor=get_color(label), label=label))
 
-    filtered_labels = [l for l in visible_labels_str if l in label_to_handle]
-    filtered_handles = [label_to_handle[l] for l in filtered_labels]
+    ax.legend(
+        handles=legend_elements,
+        bbox_to_anchor=(1.05, 1),
+        loc='upper left'
+    )
 
-    if filtered_handles:
-        ax.legend(
-            filtered_handles,
-            filtered_labels,
-            title="Technology",
-            bbox_to_anchor=(1.05, 1),
-            loc='upper left'
-        )
-    else:
-        ax.legend().remove()
+    # Add y-limits margin
+    y_min, y_max = ax.get_ylim()
+    y_range = y_max - y_min
+    ax.set_ylim(y_min - 0.05 * y_range, y_max + 0.05 * y_range)
 
     plt.show()
+
+
+def assign_macro_category(row, categories_capex, categories_opex):
+    if row['cost_type'] == 'Capital expenditure':
+        return categories_capex.get(row['tech_label'], 'Other')
+    elif row['cost_type'] == 'Operational expenditure':
+        return categories_opex.get(row['tech_label'], 'Other')
+    else:
+        return 'Other'
 
 
 def calculate_total_inputs_outputs_ft(networks, ft_carrier="Fischer-Tropsch"):

@@ -1286,8 +1286,8 @@ def plot_lcoh_maps_by_grid_region(networks, shapes, h2_carriers, output_threshol
         # Calculate electricity cost (USD) per link (sum over time)
         elec_cost = (p0.loc[:, valid_links] * prices.loc[:, valid_links]).sum()
 
-        capex = hydrogen_links.loc[valid_links, "capital_cost"]
-        opex = hydrogen_links.loc[valid_links, "marginal_cost"]
+        capex = hydrogen_links.loc[valid_links, "capital_cost"] * hydrogen_links.loc[valid_links, "p_nom_opt"]
+        opex = hydrogen_links.loc[valid_links, "marginal_cost"] * p0.loc[:, valid_links].sum(axis=0)
         h2_output_valid = h2_output[valid_links]
 
         with np.errstate(divide="ignore", invalid="ignore"):
@@ -1398,8 +1398,8 @@ def calculate_weighted_lcoh_table_by_year(networks, h2_carriers, output_threshol
             prices[link] = network.buses_t.marginal_price[bus]
 
         elec_cost = (p0.loc[:, valid_links] * prices.loc[:, valid_links]).sum()
-        capex = hydrogen_links.loc[valid_links, "capital_cost"]
-        opex = hydrogen_links.loc[valid_links, "marginal_cost"]
+        capex = hydrogen_links.loc[valid_links, "capital_cost"] * hydrogen_links.loc[valid_links, "p_nom_opt"]
+        opex = hydrogen_links.loc[valid_links, "marginal_cost"] * p0.loc[:, valid_links].sum(axis=0)
         h2_output_valid = h2_output[valid_links]
 
         with np.errstate(divide="ignore", invalid="ignore"):

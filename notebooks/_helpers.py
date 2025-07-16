@@ -323,6 +323,11 @@ def plot_h2_capacities_by_state(grouped, title, ymax, max_n_states, bar_width=0.
         ax.bar(x, grouped[tech].values, bar_width, bottom=bottoms, label=tech)
         bottoms += grouped[tech].values
 
+    # Add value labels on top of each stacked bar
+    for i, total in enumerate(bottoms):
+        if total > 0:
+            ax.text(x[i], total + 0.01 * ymax, f"{total:.0f}", ha='center', va='bottom', fontsize=8)
+
     ax.set_xticks(x)
     ax.set_xticklabels(state, rotation=30, ha='center')
     ax.set_xlabel("State")
@@ -362,6 +367,11 @@ def plot_h2_capacities_by_grid_region(grouped, title, ymax, max_n_grid_regions, 
     for tech in techs:
         ax.bar(x, grouped[tech].values, bar_width, bottom=bottoms, label=tech)
         bottoms += grouped[tech].values
+
+    # Add text on top of each stacked bar
+    for i in range(n):
+        total = grouped.iloc[i].sum()
+        ax.text(x[i], total + 0.01 * ymax, f"{total:.0f}", ha='center', va='bottom', fontsize=8)
 
     ax.set_xticks(x)
     ax.set_xticklabels(grid_region, rotation=30, ha='center')
@@ -920,7 +930,7 @@ def calculate_lcoe_summary_and_map(n, shapes):
         'battery', 'hydro', 'PHS'  # Customize based on actual model
     }
 
-    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass', 'lignite', "biomass CHP", "gas CHP"]
+    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass', 'lignite', "urban central solid biomass CHP", "urban central gas CHP"]
 
     electric_buses = set(n.buses[n.buses.carrier == 'AC'].index)
 
@@ -950,8 +960,14 @@ def calculate_lcoe_summary_and_map(n, shapes):
     link_dispatch = -n.links_t.p1[link.index].clip(upper=0)
     weighted_link_dispatch = link_dispatch.multiply(snapshot_weights, axis=0)
     link['energy'] = weighted_link_dispatch.sum()
+
+    fuel_usage = n.links_t.p0[link.index].clip(lower=0)
+    weighted_fuel_usage = fuel_usage.multiply(snapshot_weights, axis=0)
+    link['fuel_usage'] = weighted_fuel_usage.sum()
+    link['fuel_cost'] = link.bus0.map(n.generators.marginal_cost)
+
     link = link[(link.p_nom_opt > 0) & (link.energy > 0)]
-    link['lcoe'] = (link.capital_cost * link.p_nom_opt + link.marginal_cost * link.energy) / link.energy
+    link['lcoe'] = (link.capital_cost * link.p_nom_opt + link.marginal_cost * link.energy + link.fuel_cost * link.fuel_usage) / link.energy
     link['type'] = 'link'
 
     # Merge data

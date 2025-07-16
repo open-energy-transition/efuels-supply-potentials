@@ -966,8 +966,8 @@ def calculate_lcoe_summary_and_map(n, shapes):
     link['fuel_usage'] = weighted_fuel_usage.sum()
     link['fuel_cost'] = link.bus0.map(n.generators.marginal_cost)
 
-    link = link[(link.p_nom_opt > 0) & (link.energy > 0)]
-    link['lcoe'] = (link.capital_cost * link.p_nom_opt + link.marginal_cost * link.energy + link.fuel_cost * link.fuel_usage) / link.energy
+    link = link[(link.p_nom_opt > 0) & (link.fuel_usage > 0)]
+    link['lcoe'] = (link.capital_cost * link.p_nom_opt + link.marginal_cost * link.fuel_usage + link.fuel_cost * link.fuel_usage) / link.energy
     link['type'] = 'link'
 
     # Merge data

@@ -1,10 +1,16 @@
-carrier,2023,2030,2035,2040
-hydro,-6,-6,0,0
-ror,-6,-6,0,0
-nuclear,0,-15,0,0
-geothermal,0,-24,0,0
-biomass,0,-27.5,0,0
-solar,0,-27.5,0,0
-onwind,0,-27.5,0,0
-offwind-ac,0,-27.5,0,0
-offwind-dc,0,-27.5,0,0
+carrier,credit
+nuclear,-15
+geothermal,-24
+biomass,-27.5
+solar,-27.5
+onwind,-27.5
+offwind-ac,-27.5
+offwind-dc,-27.5
+ethanol carbon capture retrofit,-85
+ammonia carbon capture retrofit,-85
+steel carbon capture retrofit,-85
+cement carbon capture retrofit,-85
+direct air capture,-180
+Alkaline electrolyzer large size,-90
+PEM electrolyzer small size,-90
+SOEC,-90

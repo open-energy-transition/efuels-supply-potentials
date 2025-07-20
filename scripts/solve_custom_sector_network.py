@@ -166,73 +166,123 @@ def prepare_network(n, solve_opts):
 def apply_tax_credits_to_network(network, csv_path, planning_horizon, log_path=None):
     """
     Apply production tax credits to marginal_cost based on carrier and build_year,
-    handling generators, storage_units, and biomass links.
+    for generators and biomass-related links. Uses marginal_cost calculated for the
+    current planning_horizon, and ensures credits are not applied multiple times.
     """
-    # Only 2030
-    if planning_horizon != 2030:
-        return
 
-    df = pd.read_csv(csv_path, index_col=0)
-    df.columns = df.columns.astype(int)
-    if 2030 not in df.columns:
-        return
-    credits = df[2030]
+    # Load credits from CSV
+    df = pd.read_csv(csv_path)
+    credits = dict(zip(df["carrier"], df["credit"]))
 
-    biomass_aliases = {"biomass", "urban central solid biomass CHP", "urban central solid biomass CHP CC"}
+    biomass_aliases = {
+        "biomass",
+        "urban central solid biomass CHP",
+        "urban central solid biomass CHP CC"
+    }
+
+    carbon_capture_carriers = {
+        "ethanol carbon capture retrofit",
+        "ammonia carbon capture retrofit",
+        "steel carbon capture retrofit",
+        "cement carbon capture retrofit",
+        "direct air capture"
+    }
+
+    electrolyzer_carriers = {
+        "Alkaline electrolyzer large size",
+        "PEM electrolyzer small size",
+        "SOEC"
+    }
 
     modifications = []
 
-    # Generators
+    # Overwrite the backup every year to reflect new load_costs() values
+    network.generators["_marginal_cost_original"] = network.generators["marginal_cost"]
+    network.links["_marginal_cost_original"] = network.links["marginal_cost"]
+
+    # === GENERATORS ===
     for name, gen in network.generators.iterrows():
         carrier = gen.carrier
         build_year = gen.build_year
-        orig = gen.marginal_cost
+        base_cost = gen["_marginal_cost_original"]
 
-        # Alias mapping
         carrier_key = "biomass" if carrier in biomass_aliases else carrier
         if carrier_key not in credits:
+            network.generators.at[name, "marginal_cost"] = base_cost
             continue
+
         credit = credits[carrier_key]
+        apply = False
+        scale = 1.0
 
-        apply, scale = False, 1.0
         if carrier_key == "nuclear":
-            apply = build_year < 2024
-        elif carrier_key in {"biomass", "geothermal"}:
-            apply = build_year >= 2025
+            if 2024 <= planning_horizon <= 2032 and build_year <= 2024:
+                apply = True
+
         elif carrier_key in {"solar", "onwind", "offwind-ac", "offwind-dc"}:
-            if build_year == 2025:
-                apply, scale = True, 1.0
-            elif build_year == 2026:
-                apply, scale = True, 0.6
-            elif build_year == 2027:
-                apply, scale = True, 0.2
+            if planning_horizon <= build_year + 10:
+                if build_year == 2025:
+                    apply = True
+                elif build_year == 2026:
+                    apply = True
+                    scale = 0.6
+                elif build_year == 2027:
+                    apply = True
+                    scale = 0.2
 
+        elif carrier_key in {"biomass", "geothermal"}:
+            if 2025 <= build_year <= 2032 and planning_horizon <= build_year + 10:
+                apply = True
+
+        elif carrier_key in carbon_capture_carriers:
+            if build_year <= 2032 and planning_horizon <= build_year + 12:
+                apply = True
+
+        elif carrier_key in electrolyzer_carriers:
+            if build_year <= 2027 and planning_horizon <= build_year + 10:
+                apply = True
+
+        # Apply or reset
         if apply:
-            new = orig + scale * credit
-            network.generators.at[name, "marginal_cost"] = new
+            new_cost = base_cost + scale * credit
+            network.generators.at[name, "marginal_cost"] = new_cost
             modifications.append({
-                "component":"generator", "name": name,
-                "carrier":carrier, "build_year":build_year,
-                "original":orig, "credit":scale*credit, "final":new
+                "component": "generator",
+                "name": name,
+                "carrier": carrier,
+                "build_year": build_year,
+                "original": base_cost,
+                "credit": scale * credit,
+                "final": new_cost
             })
+        else:
+            network.generators.at[name, "marginal_cost"] = base_cost
 
-    # Links
-    if "biomass" in credits:
-        for name, link in network.links.iterrows():
-            if link.carrier not in biomass_aliases:
-                continue
-            build_year = link.build_year if "build_year" in link else planning_horizon
-            orig = link.marginal_cost
+    # === LINKS ===
+    for name, link in network.links.iterrows():
+        if link.carrier not in biomass_aliases:
+            continue
+
+        build_year = getattr(link, "build_year", planning_horizon)
+        base_cost = link["_marginal_cost_original"]
+
+        if 2025 <= build_year <= 2032 and planning_horizon <= build_year + 10:
             credit = credits["biomass"]
-            if build_year >= 2025:
-                new = orig + credit
-                network.links.at[name, "marginal_cost"] = new
-                modifications.append({
-                    "component":"link", "name": name,
-                    "carrier": link.carrier, "build_year": build_year,
-                    "original": orig, "credit": credit, "final": new
-                })
+            new_cost = base_cost + credit
+            network.links.at[name, "marginal_cost"] = new_cost
+            modifications.append({
+                "component": "link",
+                "name": name,
+                "carrier": link.carrier,
+                "build_year": build_year,
+                "original": base_cost,
+                "credit": credit,
+                "final": new_cost
+            })
+        else:
+            network.links.at[name, "marginal_cost"] = base_cost
 
+    # Save log if requested
     if modifications and log_path:
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
         pd.DataFrame(modifications).to_csv(log_path, index=False)

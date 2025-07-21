@@ -129,6 +129,7 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 6. [PR #56](https://github.com/open-energy-transition/pypsa-earth/pull/56): Introduce currency conversion in `simplify_network`.
 7. [PR #57](https://github.com/open-energy-transition/pypsa-earth/pull/57) [PR #58](https://github.com/open-energy-transition/pypsa-earth/pull/58) [PR #59](https://github.com/open-energy-transition/pypsa-earth/pull/59): Fix logic for currency conversion to handle past and future years and introduce clear log and warning messages.
 8. [PR #63](https://github.com/open-energy-transition/pypsa-earth/pull/63): Introduce `p_max_pu` for nuclear generators (or links, if necessary) to match base year statistics and to apply it to future years.
+9. [PR #65](https://github.com/open-energy-transition/pypsa-earth/pull/65): Remove lignite from default conventional carriers.
  
 ## 5. Validation
 

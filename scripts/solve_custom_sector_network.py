@@ -162,15 +162,28 @@ def prepare_network(n, solve_opts):
 
     return n
 
-def apply_tax_credits_to_network(network, csv_path, planning_horizon, log_path=None, verbose=False):
+def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, costs, log_path=None, verbose=False):
     """
-    Apply production tax credits to marginal_cost based on carrier and build_year,
-    for generators and biomass-related links. Uses marginal_cost calculated for the
-    current planning_horizon, and ensures credits are not applied multiple times.
+    Apply production and investment tax credits to the network.
+
+    - PTC (Production Tax Credit) reduces marginal_cost for eligible generators and links.
+    - ITC (Investment Tax Credit) reduces capital_cost for eligible storage units (batteries).
+
+    Parameters:
+        network: PyPSA network object
+        ptc_path: Path to CSV file with PTC (columns: carrier, credit)
+        itc_path: Path to CSV file with ITC (columns: carrier, credit)
+        planning_horizon: Current planning year (int)
+        costs: DataFrame containing the full cost structure, including capital_cost
+        log_path: Optional path to save a log of applied modifications
+        verbose: If True, print detailed logging of applied credits
     """
 
-    df = pd.read_csv(csv_path)
-    credits = dict(zip(df["carrier"], df["credit"]))
+    modifications = []
+
+    # Load PTC file
+    ptc_df = pd.read_csv(ptc_path)
+    ptc_credits = dict(zip(ptc_df["carrier"], ptc_df["credit"]))
 
     biomass_aliases = {
         "biomass",
@@ -192,44 +205,36 @@ def apply_tax_credits_to_network(network, csv_path, planning_horizon, log_path=N
         "SOEC"
     }
 
-    modifications = []
-
+    # Apply Production Tax Credits (PTC)
     for name, gen in network.generators.iterrows():
         carrier = gen.carrier
         build_year = gen.build_year
         base_cost = gen["_marginal_cost_original"]
 
         carrier_key = "biomass" if carrier in biomass_aliases else carrier
-        if carrier_key not in credits:
+        if carrier_key not in ptc_credits:
             continue
 
-        credit = credits[carrier_key]
-        apply = False
-        scale = 1.0
+        credit = ptc_credits[carrier_key]
+        apply, scale = False, 1.0
 
         if carrier_key == "nuclear":
             if 2024 <= planning_horizon <= 2032 and build_year <= 2024:
                 apply = True
-
         elif carrier_key in {"solar", "onwind", "offwind-ac", "offwind-dc"}:
             if planning_horizon <= build_year + 10:
                 if build_year == 2025:
                     apply = True
                 elif build_year == 2026:
-                    apply = True
-                    scale = 0.6
+                    apply, scale = True, 0.6
                 elif build_year == 2027:
-                    apply = True
-                    scale = 0.2
-
+                    apply, scale = True, 0.2
         elif carrier_key in {"biomass", "geothermal"}:
             if 2025 <= build_year <= 2032 and planning_horizon <= build_year + 10:
                 apply = True
-
         elif carrier_key in carbon_capture_carriers:
             if build_year <= 2032 and planning_horizon <= build_year + 12:
                 apply = True
-
         elif carrier_key in electrolyzer_carriers:
             if build_year <= 2027 and planning_horizon <= build_year + 10:
                 apply = True
@@ -238,16 +243,12 @@ def apply_tax_credits_to_network(network, csv_path, planning_horizon, log_path=N
             new_cost = base_cost + scale * credit
             network.generators.at[name, "marginal_cost"] = new_cost
             modifications.append({
-                "component": "generator",
-                "name": name,
-                "carrier": carrier,
-                "build_year": build_year,
-                "original": base_cost,
-                "credit": scale * credit,
-                "final": new_cost
+                "component": "generator", "name": name,
+                "carrier": carrier, "build_year": build_year,
+                "original": base_cost, "credit": scale * credit, "final": new_cost
             })
             if verbose:
-                logger.info(f"[GENERATOR] {name} | +{scale * credit:.2f} credit applied")
+                logger.info(f"[PTC GEN] {name} | +{scale * credit:.2f}")
 
     for name, link in network.links.iterrows():
         if link.carrier not in biomass_aliases:
@@ -257,21 +258,42 @@ def apply_tax_credits_to_network(network, csv_path, planning_horizon, log_path=N
         base_cost = link["_marginal_cost_original"]
 
         if 2025 <= build_year <= 2032 and planning_horizon <= build_year + 10:
-            credit = credits["biomass"]
+            credit = ptc_credits["biomass"]
             new_cost = base_cost + credit
             network.links.at[name, "marginal_cost"] = new_cost
             modifications.append({
-                "component": "link",
-                "name": name,
-                "carrier": link.carrier,
-                "build_year": build_year,
-                "original": base_cost,
-                "credit": credit,
-                "final": new_cost
+                "component": "link", "name": name,
+                "carrier": link.carrier, "build_year": build_year,
+                "original": base_cost, "credit": credit, "final": new_cost
             })
             if verbose:
-                logger.info(f"[LINK] {name} | +{credit:.2f} credit applied")
+                logger.info(f"[PTC LINK] {name} | +{credit:.2f}")
 
+    # Apply Investment Tax Credits (ITC)
+    if planning_horizon <= 2032 and os.path.exists(itc_path):
+        itc_df = pd.read_csv(itc_path, index_col=0)
+
+        for carrier, row in itc_df.iterrows():
+            credit_factor = row.get("credit", 0.0)
+
+            if carrier not in network.storage_units.carrier.values:
+                continue
+
+            affected = network.storage_units.query("carrier == @carrier")
+            for idx, su in affected.iterrows():
+                orig = su.capital_cost
+                new = orig * (1 - credit_factor)
+                network.storage_units.at[idx, "capital_cost"] = new
+                modifications.append({
+                    "component": "storage_unit", "name": idx,
+                    "carrier": carrier,
+                    "original": orig, "credit_factor": credit_factor,
+                    "final": new
+                })
+                if verbose:
+                    logger.info(f"[ITC STORAGE] {idx} | -{credit_factor:.0%} capital_cost")
+
+    # --- Save log of modifications ---
     if modifications and log_path:
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
         pd.DataFrame(modifications).to_csv(log_path, index=False)
@@ -1504,9 +1526,12 @@ if __name__ == "__main__":
     logger.info(f"Applying tax credits for {snakemake.wildcards.planning_horizons}")
     apply_tax_credits_to_network(
         n,
-        csv_path=snakemake.input.production_tax_credits,
+        ptc_path=snakemake.input.production_tax_credits,
+        itc_path=snakemake.input.investment_tax_credits,
         planning_horizon=int(snakemake.wildcards.planning_horizons),
-        log_path=f"logs/tax_credit_modifications_{snakemake.wildcards.planning_horizons}.csv"
+        costs=pd.read_csv(snakemake.input.costs, index_col=0),
+        log_path=f"logs/tax_credit_modifications_{snakemake.wildcards.planning_horizons}.csv",
+        verbose=False
     )
 
     n = solve_network(

@@ -22,7 +22,7 @@ scenario:
   planning_horizons:
   - 2020
   sopts:
-  - "24H"
+  - "3H"
 
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes

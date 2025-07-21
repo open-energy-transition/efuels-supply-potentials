@@ -162,15 +162,13 @@ def prepare_network(n, solve_opts):
 
     return n
 
-
-def apply_tax_credits_to_network(network, csv_path, planning_horizon, log_path=None):
+def apply_tax_credits_to_network(network, csv_path, planning_horizon, log_path=None, verbose=False):
     """
     Apply production tax credits to marginal_cost based on carrier and build_year,
     for generators and biomass-related links. Uses marginal_cost calculated for the
     current planning_horizon, and ensures credits are not applied multiple times.
     """
 
-    # Load credits from CSV
     df = pd.read_csv(csv_path)
     credits = dict(zip(df["carrier"], df["credit"]))
 
@@ -196,11 +194,6 @@ def apply_tax_credits_to_network(network, csv_path, planning_horizon, log_path=N
 
     modifications = []
 
-    # Overwrite the backup every year to reflect new load_costs() values
-    network.generators["_marginal_cost_original"] = network.generators["marginal_cost"]
-    network.links["_marginal_cost_original"] = network.links["marginal_cost"]
-
-    # === GENERATORS ===
     for name, gen in network.generators.iterrows():
         carrier = gen.carrier
         build_year = gen.build_year
@@ -208,7 +201,6 @@ def apply_tax_credits_to_network(network, csv_path, planning_horizon, log_path=N
 
         carrier_key = "biomass" if carrier in biomass_aliases else carrier
         if carrier_key not in credits:
-            network.generators.at[name, "marginal_cost"] = base_cost
             continue
 
         credit = credits[carrier_key]
@@ -242,7 +234,6 @@ def apply_tax_credits_to_network(network, csv_path, planning_horizon, log_path=N
             if build_year <= 2027 and planning_horizon <= build_year + 10:
                 apply = True
 
-        # Apply or reset
         if apply:
             new_cost = base_cost + scale * credit
             network.generators.at[name, "marginal_cost"] = new_cost
@@ -255,10 +246,9 @@ def apply_tax_credits_to_network(network, csv_path, planning_horizon, log_path=N
                 "credit": scale * credit,
                 "final": new_cost
             })
-        else:
-            network.generators.at[name, "marginal_cost"] = base_cost
+            if verbose:
+                logger.info(f"[GENERATOR] {name} | +{scale * credit:.2f} credit applied")
 
-    # === LINKS ===
     for name, link in network.links.iterrows():
         if link.carrier not in biomass_aliases:
             continue
@@ -279,10 +269,9 @@ def apply_tax_credits_to_network(network, csv_path, planning_horizon, log_path=N
                 "credit": credit,
                 "final": new_cost
             })
-        else:
-            network.links.at[name, "marginal_cost"] = base_cost
+            if verbose:
+                logger.info(f"[LINK] {name} | +{credit:.2f} credit applied")
 
-    # Save log if requested
     if modifications and log_path:
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
         pd.DataFrame(modifications).to_csv(log_path, index=False)
@@ -1498,7 +1487,21 @@ if __name__ == "__main__":
 
     n = prepare_network(n, solving["options"])
 
-    # Apply production tax credits if applicable
+    # Ensure marginal cost restoration and initialization of original values
+    for comp_name, comp_df in [("generators", n.generators), ("links", n.links)]:
+        if "_marginal_cost_original" not in comp_df.columns:
+            comp_df["_marginal_cost_original"] = comp_df["marginal_cost"]
+        else:
+            # Set original marginal cost only for newly added rows (with NaN)
+            new_rows = comp_df["_marginal_cost_original"].isna()
+            comp_df.loc[new_rows, "_marginal_cost_original"] = comp_df.loc[new_rows, "marginal_cost"]
+
+    # Restore marginal cost to original before applying new tax credits
+    for comp_name, comp_df in [("generators", n.generators), ("links", n.links)]:
+        if "_marginal_cost_original" in comp_df.columns:
+            comp_df["marginal_cost"] = comp_df["_marginal_cost_original"]
+
+    logger.info(f"Applying tax credits for {snakemake.wildcards.planning_horizons}")
     apply_tax_credits_to_network(
         n,
         csv_path=snakemake.input.production_tax_credits,

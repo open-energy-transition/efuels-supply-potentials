@@ -49,6 +49,7 @@ if __name__ == "__main__":
     # set lifetime to CCGT and OCGT manually to 35 years
     lifetime_series['CCGT'] = 35
     lifetime_series['OCGT'] = 35
+    lifetime_series['nuclear'] = 60
     # read lifetime from costs file
     df['lifetime'] = df['Fueltype'].map(lifetime_series)
     # update DatOut to be by DateIn + lifetime where DateOut is NaN

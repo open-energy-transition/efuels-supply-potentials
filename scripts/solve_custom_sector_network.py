@@ -226,16 +226,16 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
             if build_year <= 2024 and 2024 <= planning_horizon <= 2032:
                 credit = ptc_credits.get("nuclear_existing", 0.0)
                 apply = True
-            elif build_year > 2024 and planning_horizon <= build_year + 10:
+            elif 2030 <= build_year <= 2033 and planning_horizon <= build_year + 10:
                 credit = ptc_credits.get("nuclear_new", 0.0)
                 apply = True
-        elif carrier_key in {"solar", "onwind", "offwind-ac", "offwind-dc"}:
-            if planning_horizon <= build_year + 10 and build_year <= 2027:
-                credit = ptc_credits.get(carrier_key, 0.0)
-                apply = True
+#        elif carrier_key in {"solar", "onwind", "offwind-ac", "offwind-dc"}:
+#            if planning_horizon <= build_year + 10 and build_year <= 2027:
+#                credit = ptc_credits.get(carrier_key, 0.0)
+#                apply = True
         elif carrier_key == "geothermal":
             if planning_horizon <= build_year + 10:
-                if 2025 <= build_year <= 2033:
+                if 2030 <= build_year <= 2033:
                     credit = ptc_credits.get(carrier_key, 0.0)
                     apply = True
                 elif build_year == 2034:
@@ -245,13 +245,13 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                     credit = ptc_credits.get(carrier_key, 0.0)
                     apply, scale = True, 0.5
         elif carrier_key in carbon_capture_carriers:
-            if build_year <= 2033 and planning_horizon <= build_year + 12:
+            if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
                 credit = ptc_credits.get(carrier_key, 0.0)
                 apply = True
-        elif carrier_key in electrolyzer_carriers:
-            if build_year <= 2027 and planning_horizon <= build_year + 10:
-                credit = ptc_credits.get(carrier_key, 0.0)
-                apply = True
+#        elif carrier_key in electrolyzer_carriers:
+#            if build_year <= 2027 and planning_horizon <= build_year + 10:
+#                credit = ptc_credits.get(carrier_key, 0.0)
+#                apply = True
 
         if apply:
             new_cost = base_cost + scale * credit
@@ -275,7 +275,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
 
         if planning_horizon <= build_year + 10:
             scale = 0.0
-            if 2025 <= build_year <= 2033:
+            if 2030 <= build_year <= 2033:
                 scale = 1.0
             elif build_year == 2034:
                 scale = 0.75
@@ -295,7 +295,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                     logger.info(f"[PTC LINK] {name} | +{scale * credit:.2f}")
 
     # Apply Investment Tax Credits to STORAGE UNITS (batteries)
-    if planning_horizon <= 2035 and os.path.exists(itc_path):
+    if 2030 <= planning_horizon <= 2035 and os.path.exists(itc_path):
         itc_df = pd.read_csv(itc_path, index_col=0)
 
         for carrier, row in itc_df.iterrows():
@@ -311,7 +311,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
 
                 # Determine scale based on build_year
                 scale = 0.0
-                if 2025 <= build_year <= 2033:
+                if 2030 <= build_year <= 2033:
                     scale = 1.0
                 elif build_year == 2034:
                     scale = 0.75

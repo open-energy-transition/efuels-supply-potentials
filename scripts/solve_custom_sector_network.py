@@ -508,11 +508,7 @@ def add_RPS_constraints(network, config_file):
         "ror",
         "geothermal"
         ]
-    res_link_carriers = [
-        "biomass",
-        "urban central solid biomass CHP",
-        "urban central solid biomass CHP CC"
-    ]
+    res_link_carriers = []
     res_storage_carriers = ["hydro"]
     ces_generator_carriers = res_generator_carriers + ["nuclear"]
 
@@ -525,6 +521,9 @@ def add_RPS_constraints(network, config_file):
         'lignite',
         'urban central gas CHP',
         'urban central gas CHP CC',
+        "biomass",
+        "urban central solid biomass CHP",
+        "urban central solid biomass CHP CC"
     ]
 
     # read state policies on CES constraints

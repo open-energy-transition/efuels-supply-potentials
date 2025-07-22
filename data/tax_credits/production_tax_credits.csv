@@ -1,6 +1,7 @@
 carrier,credit
-nuclear,-15
-geothermal,-24
+nuclear_existing,-15
+nuclear_new,-27.5
+geothermal,-27.5
 biomass,-27.5
 solar,-27.5
 onwind,-27.5

@@ -205,38 +205,52 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         "SOEC"
     }
 
-    # Apply Production Tax Credits (PTC)
+    # Apply Production Tax Credits to GENERATORS
     for name, gen in network.generators.iterrows():
         carrier = gen.carrier
         build_year = gen.build_year
         base_cost = gen["_marginal_cost_original"]
 
-        carrier_key = "biomass" if carrier in biomass_aliases else carrier
+        carrier_key = carrier
         if carrier_key not in ptc_credits:
             continue
 
         credit = ptc_credits[carrier_key]
         apply, scale = False, 1.0
 
+        # allow nuclear to pass even if not in ptc_credits
+        if carrier_key != "nuclear" and carrier_key not in ptc_credits:
+            continue
+
         if carrier_key == "nuclear":
-            if 2024 <= planning_horizon <= 2032 and build_year <= 2024:
+            if build_year <= 2024 and 2024 <= planning_horizon <= 2032:
+                credit = ptc_credits.get("nuclear_existing", 0.0)
+                apply = True
+            elif build_year > 2024 and planning_horizon <= build_year + 10:
+                credit = ptc_credits.get("nuclear_new", 0.0)
                 apply = True
         elif carrier_key in {"solar", "onwind", "offwind-ac", "offwind-dc"}:
-            if planning_horizon <= build_year + 10:
-                if build_year == 2025:
-                    apply = True
-                elif build_year == 2026:
-                    apply, scale = True, 0.6
-                elif build_year == 2027:
-                    apply, scale = True, 0.2
-        elif carrier_key in {"biomass", "geothermal"}:
-            if 2025 <= build_year <= 2032 and planning_horizon <= build_year + 10:
+            if planning_horizon <= build_year + 10 and build_year <= 2027:
+                credit = ptc_credits.get(carrier_key, 0.0)
                 apply = True
+        elif carrier_key == "geothermal":
+            if planning_horizon <= build_year + 10:
+                if 2025 <= build_year <= 2033:
+                    credit = ptc_credits.get(carrier_key, 0.0)
+                    apply = True
+                elif build_year == 2034:
+                    credit = ptc_credits.get(carrier_key, 0.0)
+                    apply, scale = True, 0.75
+                elif build_year == 2035:
+                    credit = ptc_credits.get(carrier_key, 0.0)
+                    apply, scale = True, 0.5
         elif carrier_key in carbon_capture_carriers:
-            if build_year <= 2032 and planning_horizon <= build_year + 12:
+            if build_year <= 2033 and planning_horizon <= build_year + 12:
+                credit = ptc_credits.get(carrier_key, 0.0)
                 apply = True
         elif carrier_key in electrolyzer_carriers:
             if build_year <= 2027 and planning_horizon <= build_year + 10:
+                credit = ptc_credits.get(carrier_key, 0.0)
                 apply = True
 
         if apply:
@@ -250,48 +264,72 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
             if verbose:
                 logger.info(f"[PTC GEN] {name} | +{scale * credit:.2f}")
 
+    # --- Apply PTC to LINKS (biomass) ---
     for name, link in network.links.iterrows():
-        if link.carrier not in biomass_aliases:
+        carrier_key = "biomass" if link.carrier in biomass_aliases else link.carrier
+        if carrier_key != "biomass" or "biomass" not in ptc_credits:
             continue
 
         build_year = getattr(link, "build_year", planning_horizon)
         base_cost = link["_marginal_cost_original"]
 
-        if 2025 <= build_year <= 2032 and planning_horizon <= build_year + 10:
-            credit = ptc_credits["biomass"]
-            new_cost = base_cost + credit
-            network.links.at[name, "marginal_cost"] = new_cost
-            modifications.append({
-                "component": "link", "name": name,
-                "carrier": link.carrier, "build_year": build_year,
-                "original": base_cost, "credit": credit, "final": new_cost
-            })
-            if verbose:
-                logger.info(f"[PTC LINK] {name} | +{credit:.2f}")
+        if planning_horizon <= build_year + 10:
+            scale = 0.0
+            if 2025 <= build_year <= 2033:
+                scale = 1.0
+            elif build_year == 2034:
+                scale = 0.75
+            elif build_year == 2035:
+                scale = 0.5
 
-    # Apply Investment Tax Credits (ITC)
-    if planning_horizon <= 2032 and os.path.exists(itc_path):
+            if scale > 0:
+                credit = ptc_credits["biomass"]
+                new_cost = base_cost + scale * credit
+                network.links.at[name, "marginal_cost"] = new_cost
+                modifications.append({
+                    "component": "link", "name": name,
+                    "carrier": link.carrier, "build_year": build_year,
+                    "original": base_cost, "credit": scale * credit, "final": new_cost
+                })
+                if verbose:
+                    logger.info(f"[PTC LINK] {name} | +{scale * credit:.2f}")
+
+    # Apply Investment Tax Credits to STORAGE UNITS (batteries)
+    if planning_horizon <= 2035 and os.path.exists(itc_path):
         itc_df = pd.read_csv(itc_path, index_col=0)
 
         for carrier, row in itc_df.iterrows():
-            credit_factor = row.get("credit", 0.0)
+            # Interpret credit as negative percent (e.g., -30 means 30% reduction)
+            credit_factor = -row.get("credit", 0.0) / 100
 
             if carrier not in network.storage_units.carrier.values:
                 continue
 
             affected = network.storage_units.query("carrier == @carrier")
             for idx, su in affected.iterrows():
-                orig = su.capital_cost
-                new = orig * (1 - credit_factor)
-                network.storage_units.at[idx, "capital_cost"] = new
-                modifications.append({
-                    "component": "storage_unit", "name": idx,
-                    "carrier": carrier,
-                    "original": orig, "credit_factor": credit_factor,
-                    "final": new
-                })
-                if verbose:
-                    logger.info(f"[ITC STORAGE] {idx} | -{credit_factor:.0%} capital_cost")
+                build_year = su.get("build_year", planning_horizon)
+
+                # Determine scale based on build_year
+                scale = 0.0
+                if 2025 <= build_year <= 2033:
+                    scale = 1.0
+                elif build_year == 2034:
+                    scale = 0.75
+                elif build_year == 2035:
+                    scale = 0.5
+
+                if scale > 0:
+                    orig = su.capital_cost
+                    new = orig * (1 - scale * credit_factor)
+                    network.storage_units.at[idx, "capital_cost"] = new
+                    modifications.append({
+                        "component": "storage_unit", "name": idx,
+                        "carrier": carrier, "build_year": build_year,
+                        "original": orig, "credit_factor": scale * credit_factor,
+                        "final": new
+                    })
+                    if verbose:
+                        logger.info(f"[ITC STORAGE] {idx} | -{scale * credit_factor:.0%} capital_cost")
 
     # --- Save log of modifications ---
     if modifications and log_path:

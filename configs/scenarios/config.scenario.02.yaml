@@ -34,14 +34,14 @@ foresight: myopic
 scenario:
   simpl: ['']
   ll: ['v1']
-  clusters: [10]
-  opts: [24H]
+  clusters: [100]
+  opts: [3H]
   planning_horizons:
   - 2030
   - 2035
   - 2040
   sopts:
-  - "24H"
+  - "3H"
 
 aviation_demand_scenario:
   country: US

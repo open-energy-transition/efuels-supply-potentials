@@ -92,7 +92,7 @@ sector:
   land_transport_fuel_cell_share:
     AB_2020: 0
   land_transport_electric_share:
-    AB_2020: 0.017
+    AB_2020: 0.012
   shipping_hydrogen_share:
     AB_2020: 0
 

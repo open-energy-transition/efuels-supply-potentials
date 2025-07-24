@@ -7,11 +7,12 @@ solar,-27.5
 onwind,-27.5
 offwind-ac,-27.5
 offwind-dc,-27.5
-ethanol carbon capture retrofit,-85
-ammonia carbon capture retrofit,-85
-steel carbon capture retrofit,-85
-cement carbon capture retrofit,-85
-direct air capture,-180
-Alkaline electrolyzer large size,-90
-PEM electrolyzer small size,-90
+ethanol from starch CC,-85
+SMR CC,-85
+DRI CC,-85
+BF-BOF CC,-85
+dry clinker CC,-85
+DAC,-180
+Alkaline electrolyzer large,-90
+PEM electrolyzer,-90
 SOEC,-90

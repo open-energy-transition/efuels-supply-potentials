@@ -191,12 +191,15 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         "urban central solid biomass CHP CC"
     }
 
-    carbon_capture_carriers = {
+    cc_credit_on_co2_stored = {
         "ethanol from starch CC",
         "SMR CC",
         "DRI CC",
-        "BF-BOF CC"
-        "dry clinker CC",
+        "BF-BOF CC",
+        "dry clinker CC"
+    }
+
+    cc_credit_on_co2_atmosphere = {
         "DAC"
     }
 
@@ -213,15 +216,11 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         base_cost = gen["_marginal_cost_original"]
 
         carrier_key = carrier
-        if carrier_key not in ptc_credits:
+        if carrier_key not in ptc_credits and carrier_key != "nuclear":
             continue
 
-        credit = ptc_credits[carrier_key]
+        credit = ptc_credits.get(carrier_key, 0.0)
         apply, scale = False, 1.0
-
-        # allow nuclear to pass even if not in ptc_credits
-        if carrier_key != "nuclear" and carrier_key not in ptc_credits:
-            continue
 
         if carrier_key == "nuclear":
             if build_year <= 2024 and 2024 <= planning_horizon <= 2032:
@@ -230,20 +229,13 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
             elif 2030 <= build_year <= 2033 and planning_horizon <= build_year + 10:
                 credit = ptc_credits.get("nuclear_new", 0.0)
                 apply = True
-#        elif carrier_key in {"solar", "onwind", "offwind-ac", "offwind-dc"}:
-#            if planning_horizon <= build_year + 10 and 2025 <= build_year <= 2027:
-#                credit = ptc_credits.get(carrier_key, 0.0)
-#                apply = True
         elif carrier_key == "geothermal":
             if planning_horizon <= build_year + 10:
                 if 2030 <= build_year <= 2033:
-                    credit = ptc_credits.get(carrier_key, 0.0)
                     apply = True
                 elif build_year == 2034:
-                    credit = ptc_credits.get(carrier_key, 0.0)
                     apply, scale = True, 0.75
                 elif build_year == 2035:
-                    credit = ptc_credits.get(carrier_key, 0.0)
                     apply, scale = True, 0.5
 
         if apply:
@@ -257,13 +249,13 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
             if verbose:
                 logger.info(f"[PTC GEN] {name} | +{scale * credit:.2f}")
 
-    # Apply PTC to LINKS (biomass, carbon capture, electrolyzers)
+    # Apply PTC to LINKS (biomass, carbon capture, electrolyzers, DAC)
     for name, link in network.links.iterrows():
         carrier = link.carrier
         build_year = getattr(link, "build_year", planning_horizon)
         base_cost = link["_marginal_cost_original"]
 
-        # Biomass (with scale based on build_year)
+        # Biomass
         if carrier in biomass_aliases:
             carrier_key = "biomass"
             if carrier_key not in ptc_credits:
@@ -290,20 +282,6 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                     if verbose:
                         logger.info(f"[PTC LINK] {name} | +{scale * credit:.2f}")
 
-        # Carbon capture
-        elif carrier in carbon_capture_carriers:
-            if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
-                credit = ptc_credits.get(carrier, 0.0)
-                new_cost = base_cost + credit
-                network.links.at[name, "marginal_cost"] = new_cost
-                modifications.append({
-                    "component": "link", "name": name,
-                    "carrier": carrier, "build_year": build_year,
-                    "original": base_cost, "credit": credit, "final": new_cost
-                })
-                if verbose:
-                    logger.info(f"[PTC LINK] {name} | +{credit:.2f}")
-
         # Electrolyzers
         elif carrier in electrolyzer_carriers:
             if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 10:
@@ -318,12 +296,63 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                 if verbose:
                     logger.info(f"[PTC LINK] {name} | +{credit:.2f}")
 
+        # Carbon Capture - CO2 stored
+        elif carrier in cc_credit_on_co2_stored:
+            if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
+
+                def get_co2_stored_efficiency(row):
+                    for key, val in row.items():
+                        if key.startswith("bus") and isinstance(val, str) and "co2 stored" in val.lower():
+                            eff_key = "efficiency" + key[3:]
+                            return row.get(eff_key, 0.0)
+                    return 0.0
+
+                tco2 = get_co2_stored_efficiency(link)
+                credit_per_t = ptc_credits.get(carrier, 0.0)
+
+                if tco2 > 0 and credit_per_t != 0.0:
+                    credit = credit_per_t * tco2
+                    new_cost = base_cost + credit
+                    network.links.at[name, "marginal_cost"] = new_cost
+                    modifications.append({
+                        "component": "link", "name": name,
+                        "carrier": carrier, "build_year": build_year,
+                        "original": base_cost, "credit": credit, "final": new_cost
+                    })
+                    if verbose:
+                        logger.info(f"[PTC LINK CC-stored] {name} | CO₂: {tco2:.3f} × {credit_per_t:.2f} → credit: {credit:.2f}")
+
+        # DAC - CO2 atmosphere
+        elif carrier in cc_credit_on_co2_atmosphere:
+            if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
+
+                def get_co2_atm_efficiency(row):
+                    for key, val in row.items():
+                        if key.startswith("bus") and isinstance(val, str) and "co2 atmosphere" in val.lower():
+                            eff_key = "efficiency" + key[3:]
+                            return row.get(eff_key, 0.0)
+                    return 0.0
+
+                tco2 = get_co2_atm_efficiency(link)
+                credit_per_t = ptc_credits.get(carrier, 0.0)
+
+                if tco2 > 0 and credit_per_t != 0.0:
+                    credit = credit_per_t * tco2
+                    new_cost = base_cost + credit
+                    network.links.at[name, "marginal_cost"] = new_cost
+                    modifications.append({
+                        "component": "link", "name": name,
+                        "carrier": carrier, "build_year": build_year,
+                        "original": base_cost, "credit": credit, "final": new_cost
+                    })
+                    if verbose:
+                        logger.info(f"[PTC LINK DAC] {name} | CO₂: {tco2:.3f} × {credit_per_t:.2f} → credit: {credit:.2f}")
+
     # Apply Investment Tax Credits to STORAGE UNITS (batteries)
     if 2030 <= planning_horizon <= 2035 and os.path.exists(itc_path):
         itc_df = pd.read_csv(itc_path, index_col=0)
 
         for carrier, row in itc_df.iterrows():
-            # Interpret credit as negative percent (e.g., -30 means 30% reduction)
             credit_factor = -row.get("credit", 0.0) / 100
 
             if carrier not in network.storage_units.carrier.values:
@@ -333,7 +362,6 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
             for idx, su in affected.iterrows():
                 build_year = su.get("build_year", planning_horizon)
 
-                # Determine scale based on build_year
                 scale = 0.0
                 if 2030 <= build_year <= 2033:
                     scale = 1.0
@@ -355,7 +383,6 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                     if verbose:
                         logger.info(f"[ITC STORAGE] {idx} | -{scale * credit_factor:.0%} capital_cost")
 
-    # --- Save log of modifications ---
     if modifications and log_path:
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
         pd.DataFrame(modifications).to_csv(log_path, index=False)

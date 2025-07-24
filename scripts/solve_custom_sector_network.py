@@ -255,7 +255,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         build_year = getattr(link, "build_year", planning_horizon)
         base_cost = link["_marginal_cost_original"]
 
-        # Biomass
+        # Biomass (PTC applied per unit of electricity output)
         if carrier in biomass_aliases:
             carrier_key = "biomass"
             if carrier_key not in ptc_credits:
@@ -271,30 +271,44 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                     scale = 0.5
 
                 if scale > 0:
-                    credit = ptc_credits[carrier_key]
-                    new_cost = base_cost + scale * credit
+                    credit_per_mwh = ptc_credits[carrier_key]
+                    elec_eff = link.get("efficiency", 0.0)
+                    credit = scale * credit_per_mwh * elec_eff
+                    new_cost = base_cost + credit
+
                     network.links.at[name, "marginal_cost"] = new_cost
                     modifications.append({
                         "component": "link", "name": name,
                         "carrier": carrier, "build_year": build_year,
-                        "original": base_cost, "credit": scale * credit, "final": new_cost
+                        "original": base_cost, "credit": credit, "final": new_cost,
+                        "efficiency": elec_eff
                     })
+
                     if verbose:
-                        logger.info(f"[PTC LINK] {name} | +{scale * credit:.2f}")
+                        logger.info(
+                            f"[PTC LINK Biomass] {name} | eff: {elec_eff:.3f} × credit: {scale * credit_per_mwh:.2f} → {credit:.2f}"
+                        )
 
         # Electrolyzers
         elif carrier in electrolyzer_carriers:
             if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 10:
-                credit = ptc_credits.get(carrier, 0.0)
-                new_cost = base_cost + credit
-                network.links.at[name, "marginal_cost"] = new_cost
-                modifications.append({
-                    "component": "link", "name": name,
-                    "carrier": carrier, "build_year": build_year,
-                    "original": base_cost, "credit": credit, "final": new_cost
-                })
-                if verbose:
-                    logger.info(f"[PTC LINK] {name} | +{credit:.2f}")
+
+                credit_per_mwh_h2 = ptc_credits.get(carrier, 0.0)
+                h2_efficiency = link.get("efficiency", 0.0)
+
+                if h2_efficiency > 0 and credit_per_mwh_h2 != 0.0:
+                    credit = credit_per_mwh_h2 * h2_efficiency
+                    new_cost = base_cost + credit
+                    network.links.at[name, "marginal_cost"] = new_cost
+                    modifications.append({
+                        "component": "link", "name": name,
+                        "carrier": carrier, "build_year": build_year,
+                        "original": base_cost, "credit": credit, "final": new_cost
+                    })
+                    if verbose:
+                        logger.info(
+                            f"[PTC LINK ELECTROLYZER] {name} | H₂ eff: {h2_efficiency:.3f} × {credit_per_mwh_h2:.2f} → credit: {credit:.2f}")
+
 
         # Carbon Capture - CO2 stored
         elif carrier in cc_credit_on_co2_stored:

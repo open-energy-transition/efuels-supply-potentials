@@ -3016,3 +3016,92 @@ def preprocess_eia_demand(path, horizon):
     demand_df.drop(["US"], axis=0, inplace=True)
     return demand_df
 
+
+def plot_stacked_costs_by_year_plotly(cost_data, cost_type_label, tech_colors=None, index='year'):
+    # Filter data
+    data_filtered = cost_data[
+        (cost_data['cost_type'] == cost_type_label) &
+        (cost_data['cost_billion'] != 0)
+    ].copy()
+
+    if data_filtered.empty:
+        print("No data to plot.")
+        return
+
+    # Pivot table: index x tech_label
+    pivot_table = data_filtered.pivot_table(
+        index=index,
+        columns='tech_label',
+        values='cost_billion',
+        aggfunc='sum'
+    ).fillna(0)
+
+    # Mapping: tech_label → macro category / main category
+    label_to_macro = data_filtered.set_index('tech_label')['macro_category'].to_dict()
+    label_to_category = data_filtered.set_index('tech_label')['main_category'].to_dict()
+
+    # Desired macro-category order
+    desired_macro_order = [
+        'Hydrogen & e-fuels', 'Biofuels synthesis', 'DAC', 'End-uses', 'Industry',
+        'Power & heat generation', 'Storage', 'Transmission & distribution',
+        'Emissions', 'Other'
+    ]
+    macro_order_map = {macro: i for i, macro in enumerate(desired_macro_order)}
+
+    # Sort tech labels by macro_category + appearance order
+    all_labels = data_filtered['tech_label'].drop_duplicates().tolist()
+    ordered_labels = sorted(
+        all_labels,
+        key=lambda lbl: (macro_order_map.get(label_to_macro.get(lbl, 'Other'), 999), all_labels.index(lbl))
+    )
+
+    # Reorder pivot table
+    pivot_table = pivot_table[ordered_labels[::-1]]  # reverse for stacking
+
+    # Assign colors
+    def get_color(label):
+        category = label_to_category.get(label, label)
+        return tech_colors.get(category, '#999999') if tech_colors else '#999999'
+
+    color_values = {label: get_color(label) for label in pivot_table.columns}
+
+    # Create Plotly figure
+    fig = go.Figure()
+
+    x_vals = pivot_table.index.astype(str)
+
+    # One trace per tech — works with negative values + interactive legend
+    for label in pivot_table.columns:
+        y_series = pivot_table[label]
+        fig.add_trace(go.Bar(
+            x=x_vals,
+            y=y_series,
+            name=label,
+            marker=dict(color=color_values[label]),
+            hovertemplate=f"%{{x}}<br>{label}: %{{y:.2f}}B USD<extra></extra>"
+        ))
+
+    # Add 0-line for clarity
+    fig.add_shape(
+        type='line',
+        xref='paper', x0=0, x1=1,
+        yref='y', y0=0, y1=0,
+        line=dict(color='black', width=1)
+    )
+
+    # Layout setup
+    fig.update_layout(
+        barmode="relative",  # stacking + mixed sign
+        title=cost_type_label,
+        xaxis_title="Years (-)",
+        yaxis_title=f"{cost_type_label} (Billion USD)",
+        template="plotly_white",
+        width=1200,
+        height=600,
+        margin=dict(l=40, r=300, t=50, b=50),
+        legend_title="Technologies",
+        legend_traceorder='reversed',
+        showlegend=True,
+    )
+
+    fig.show()

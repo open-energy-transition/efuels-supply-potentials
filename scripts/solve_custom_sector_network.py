@@ -230,7 +230,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                 credit = ptc_credits.get("nuclear_new", 0.0)
                 apply = True
 #        elif carrier_key in {"solar", "onwind", "offwind-ac", "offwind-dc"}:
-#            if planning_horizon <= build_year + 10 and build_year <= 2027:
+#            if planning_horizon <= build_year + 10 and 2025 <= build_year <= 2027:
 #                credit = ptc_credits.get(carrier_key, 0.0)
 #                apply = True
         elif carrier_key == "geothermal":

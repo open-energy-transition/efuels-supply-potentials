@@ -333,6 +333,10 @@ nice_names:
   gas: Gas
   oil: Oil
   coal: Coal
+  coal (power): coal (power)
+  gas (power): gas (power)
+  oil (power): bil (power)
+  biomass (power): biomass (power)
   lignite: Lignite
   biomass: Biomass
   OCGT: Gas OCGT
@@ -423,15 +427,15 @@ rename_tech_capex:
 
   # Industry 
   ethanol from starch: Industry
-  ethanol from starch CC: Industry carbon capture
+  ethanol from starch CC: Industry CC
   BF-BOF: Industry
   BF-BOF CC: Industry
   DRI: Industry
-  DRI CC: Industry carbon capture
+  DRI CC: Industry CC
   EAF: Industry
   cement finishing: Industry
   dry clinker: Industry
-  dry clinker CC: Industry carbon capture
+  dry clinker CC: Industry CC
   process emissions: Industry
   scrap steel: Industry
   clinker: Industry
@@ -443,7 +447,7 @@ rename_tech_capex:
   solid biomass for industry: Industry
   bioethanol crop store: Industry
   SMR: Industry
-  SMR CC: Industry carbon capture
+  SMR CC: Industry CC
   bioethanol crop: Industry
   
   # Hydro
@@ -549,65 +553,70 @@ rename_tech_capex:
 
 rename_tech_opex:
   # Wind (tax credit)
-  Onshore Wind: Wind tax credits
-  Offshore Wind (AC): Wind tax credits
-  Offshore Wind (DC): Wind tax credits
+  Onshore Wind: Wind (incl. tax credits)
+  Offshore Wind (AC): Wind (incl. tax credits)
+  Offshore Wind (DC): Wind (incl. tax credits)
 
   # Solar (tax credit)
-  Solar: Solar tax credits
-  solar rooftop: Solar tax credits
-  Csp: Solar tax credits
-  urban central solar thermal: Solar tax credits
-  residential urban decentral solar thermal: Solar tax credits
-  services urban decentral solar thermal: Solar tax credits
-  residential rural solar thermal: Solar tax credits
-  services rural solar thermal: Solar tax credits
+  Solar: Solar (incl. tax credits)
+  solar rooftop: Solar (incl. tax credits)
+  Csp: Solar (incl. tax credits)
+  urban central solar thermal: Solar (incl. tax credits)
+  residential urban decentral solar thermal: Solar (incl. tax credits)
+  services urban decentral solar thermal: Solar (incl. tax credits)
+  residential rural solar thermal: Solar (incl. tax credits)
+  services rural solar thermal: Solar (incl. tax credits)
 
   # Fossil fuels
-  gas: Fossil fuels
-  coal: Fossil fuels
-  oil: Fossil fuels
+  coal: Fossil fuels (end uses)
+  gas: Fossil fuels (end uses)
+  oil: Fossil fuels (end uses)
+  gas (power): Fossil fuels
+  coal (power): Fossil fuels
+  oil (power): Fossil fuels 
   CCGT: Fossil fuels
   OCGT: Fossil fuels
   urban central gas CHP: Fossil fuels
   gas for industry: Fossil fuels
 
   # Biomass fuels
-  biomass: Biomass fuels
+  biomass: Biomass fuels (end uses)
+  biomass (power): Biomass fuels
   biomass EOP: Biomass fuels
   solid biomass: Biomass fuels
   biogas: Biomass fuels
 
   # Industry OPEX
-  BF-BOF: Industry OPEX
-  BF-BOF CC: Industry carbon capture OPEX
-  DRI: Industry OPEX
-  DRI CC: Industry carbon capture OPEX
-  EAF: Industry OPEX
-  cement finishing: Industry OPEX
-  dry clinker: Industry OPEX
-  dry clinker CC: Industry carbon capture OPEX
-  scrap steel: Industry OPEX
-  clinker: Industry OPEX
-  iron ore: Industry OPEX
-  iron ore store: Industry OPEX
-  scrap steel store: Industry OPEX
-  clinker store: Industry OPEX
-  solid biomass for industry: Industry OPEX
-  bioethanol crop store: Industry OPEX
-  SMR: Industry OPEX
-  SMR CC: Industry carbon capture OPEX
-  ethanol from starch: Industry OPEX
-  ethanol from starch CC: Industry carbon capture OPEX
-  bioethanol crop: Industry OPEX
+  BF-BOF: Industry
+  BF-BOF CC: Industry CC (incl. tax credits)
+  DRI: Industry
+  DRI CC: Industry CC (incl. tax credits)
+  EAF: Industry
+  cement finishing: Industry
+  dry clinker: Industry
+  dry clinker CC: Industry CC (incl. tax credits)
+  scrap steel: Industry
+  clinker: Industry
+  iron ore: Industry
+  iron ore store: Industry
+  scrap steel store: Industry
+  clinker store: Industry
+  solid biomass for industry: Industry
+  bioethanol crop store: Industry
+  SMR: Industry
+  SMR CC: Industry CC (incl. tax credits)
+  ethanol from starch: Industry
+  ethanol from starch CC: Industry CC (incl. tax credits)
+  bioethanol crop: Industry
 
   # Hydro (tax credit)
-  Run of River: Hydropower tax credits
-  Pumped Hydro Storage: Hydropower tax credits
-  Reservoir & Dam: Hydropower tax credits
+  Run of River: Hydropower (incl. tax credits)
+  Pumped Hydro Storage: Hydropower (incl. tax credits)
+  Reservoir & Dam: Hydropower (incl. tax credits)
 
   # Nuclear OPEX (incl. tax credit)
-  Nuclear: Nuclear OPEX (incl. tax credits)
+  Nuclear: Nuclear (incl. tax credits)  
+  Geothermal: Geothermal (incl. tax credits)
 
   # Storage
   battery: Storage
@@ -680,16 +689,16 @@ rename_tech_opex:
   biogenic co2 stored: Emissions
 
   # Hydrogen & Electrolyzers
-  SMR: Hydrogen OPEX (incl. tax credits)
-  SMR CC: Hydrogen OPEX (incl. tax credits)
-  SOEC: Hydrogen OPEX (incl. tax credits)
-  PEM electrolyzer: Hydrogen OPEX (incl. tax credits)
-  Alkaline electrolyzer large: Hydrogen OPEX (incl. tax credits)
-  H2 pipeline: Hydrogen OPEX (incl. tax credits)
-  H2 pipeline repurposed: Hydrogen OPEX (incl. tax credits)
-  grid H2: Hydrogen OPEX (incl. tax credits)
-  H2: Hydrogen OPEX (incl. tax credits)
-  H2 Fuel Cell: Hydrogen OPEX (incl. tax credits)
+  SMR: Hydrogen (incl. tax credits)
+  SMR CC: Hydrogen (incl. tax credits)
+  SOEC: Hydrogen (incl. tax credits)
+  PEM electrolyzer: Hydrogen (incl. tax credits)
+  Alkaline electrolyzer large: Hydrogen (incl. tax credits)
+  H2 pipeline: Hydrogen (incl. tax credits)
+  H2 pipeline repurposed: Hydrogen (incl. tax credits)
+  grid H2: Hydrogen (incl. tax credits)
+  H2: Hydrogen (incl. tax credits)
+  H2 Fuel Cell: Hydrogen (incl. tax credits)
 
   # E-fuels synthesis
   Fischer-Tropsch: e-fuels synthesis
@@ -704,179 +713,17 @@ rename_tech_opex:
   # Biofuels synthesis
   biogas to gas: Biofuels synthesis
 
-rename_tech:
-  Csp: Solar
-  Geothermal: Geothermal
-  Nuclear: Nuclear
-  Offshore Wind (AC): Wind
-  Offshore Wind (DC): Wind
-  Onshore Wind: Wind
-  Run of River: Hydropower
-  Solar: Solar
-  bioethanol crop: Biomass
-  biomass: Biomass
-  coal: Fossil fuels
-  gas: Fossil Fuels
-  iron ore: Industry
-  lignite: Fossil fuels
-  oil: Fossil fuels
-  residential rural solar thermal: Heating
-  residential urban decentral solar thermal: Heating
-  scrap steel: Industry
-  services rural solar thermal: Heating
-  services urban decentral solar thermal: Heating
-  solar rooftop: Solar
-  urban central solar thermal: Heating
-  AC: Transmission
-  Alkaline electrolyzer large: Hydrogen & Electrolyzers
-  B2B: Others
-  BEV charger: Storage
-  BF-BOF: Industry
-  BF-BOF CC: Industry
-  CCGT: Fossil fuels
-  CO2 pipeline: Transmission
-  DAC: Industry
-  DC: Transmission
-  DRI: Industry
-  DRI CC: Industry
-  EAF: Industry
-  Fischer-Tropsch: e-fuels synthesis
-  H2: Hydrogen & Electrolyzers
-  H2 Fuel Cell: Hydrogen & Electrolyzers
-  H2 pipeline: Hydrogen & Electrolyzers
-  H2 pipeline repurposed: Hydrogen & Electrolyzers
-  Haber-Bosch: Hydrogen & Electrolyzers
-  OCGT: Fossil fuels
-  PEM electrolyzer: Hydrogen & Electrolyzers
-  SMR: Hydrogen & Electrolyzers
-  SMR CC: Hydrogen & Electrolyzers
-  SOEC: Hydrogen & Electrolyzers
-  Sabatier: Hydrogen & Electrolyzers
-  V2G: Storage
-  battery charger: Storage
-  battery discharger: Storage
-  biogas to gas: Fossil fuels
-  # biomass EOP: Industry
-  cement finishing: Industry
-  co2 vent: Emissions
-  dry clinker: Industry
-  dry clinker CC: Industry
-  e-kerosene-to-main: Transport
-  e-kerosene-to-oil: Transport
-  electricity distribution grid: Infrastructure
-  ethanol from starch: Industry
-  ethanol from starch CC: Industry
-  gas for industry: Fossil Fuels
-  grid H2: Hydrogen & Electrolyzers
-  helmeth: Hydrogen & Electrolyzers
-  home battery charger: Storage
-  home battery discharger: Storage
-  main-to-e-kerosene: Transport
-  process emissions: Emissions
-  biogenic co2 stored: Emissions
-  residential rural gas boiler: Heating
-  residential rural ground heat pump: Heating
-  residential rural resistive heater: Heating
-  residential rural water tanks charger: Heating
-  residential rural water tanks discharger: Heating
-  residential urban decentral air heat pump: Heating
-  residential urban decentral gas boiler: Heating
-  residential urban decentral resistive heater: Heating
-  residential urban decentral water tanks charger: Heating
-  residential urban decentral water tanks discharger: Heating
-  services rural gas boiler: Heating
-  services rural ground heat pump: Heating
-  services rural resistive heater: Heating
-  services rural water tanks charger: Heating
-  services rural water tanks discharger: Heating
-  services urban decentral air heat pump: Heating
-  services urban decentral gas boiler: Heating
-  services urban decentral resistive heater: Heating
-  services urban decentral water tanks charger: Heating
-  services urban decentral water tanks discharger: Heating
-  solid biomass for industry: Industry
-  solid biomass transport: Transport
-  urban central air heat pump: Heating
-  urban central gas CHP: Heating
-  urban central gas boiler: Heating
-  urban central resistive heater: Heating
-  urban central solid biomass CHP: Heating
-  urban central water tanks charger: Heating
-  urban central water tanks discharger: Heating
-  H2 for industry: Hydrogen & Electrolyzers
-  H2 for shipping: Hydrogen & Electrolyzers
-  NH3: Industry
-  agriculture electricity: Others
-  agriculture oil: Fossil Fuels
-  cement: Industry
-  data center: Infrastructure
-  e-kerosene for aviation: Transport
-  ethanol: Industry
-  gas emissions: Emissions
-  industry coal emissions: Emissions
-  industry electricity: Others
-  industry oil emissions: Emissions
-  kerosene for aviation: Transport
-  land transport EV: Transport
-  land transport oil: Fossil fuels
-  land transport oil emissions: Emissions
-  low-temperature heat for industry: Heating
-  naphtha for industry: Fossil Fuels
-  oil emissions: Emissions
-  other electricity: Others
-  rail transport electricity: Transport
-  rail transport oil: Fossil Fuels
-  residential biomass: biomass
-  residential gas: Fossil Fuels
-  residential oil: Fossil Fuels
-  residential rural heat: Others
-  residential urban decentral heat: Others
-  services biomass: Biomass
-  services electricity: Others
-  services gas: Fossil fuels
-  services oil: Fossil fuels
-  services rural heat: Heating
-  services urban decentral heat: Heating
-  shipping oil: Fossil fuels
-  shipping oil emissions: Emissions
-  steel BF-BOF: Industry
-  steel EAF: Industry
-  urban central heat: Heating
-  Pumped Hydro Storage: Hydropower
-  Reservoir & Dam: Hydropower
-  H2 Store Tank: Storage
-  battery: Storage
-  battery storage: Storage
-  bioethanol crop store: Industry
-  biogas: biomass
-  clinker store: Storage
-  co2: Emissions
-  biogenic co2 stored: Emissions
-  co2 stored: Storage
-  e-kerosene: Transport
-  home battery: Storage
-  iron ore store: Industry
-  scrap steel store: Industry
-  residential rural water tanks: Heating
-  residential urban decentral water tanks: Heating
-  scrap steel store: Storage
-  services rural water tanks: Heating
-  services urban decentral water tanks: Heating
-  urban central water tanks: Heating
-  solid biomass: Biomass
-
 renamed_tech_colors:
   Biofuels synthesis: '#66c2a5'
   Emissions: '#7f7f7f'
   Fossil generators: '#8c564b'
-  Fossil fuels: '#8c564b'
+  Fossil fuels (end uses): '#5e3b34'
   Heating: '#d62728'
   Hydrogen: '#1f77b4'
-  Hydrogen OPEX (incl. tax credits): '#6590ad'
+  Hydrogen (incl. tax credits): '#6590ad'
   Industry: '#9467bd'
-  Industry OPEX: '#9467bd'
-  Industry carbon capture: '#373170'
-  Industry carbon capture OPEX: '#373170'
+  Industry CC: '#373170'
+  Industry CC (incl. tax credits): '#373170'
   Power transmission: '#cda434'
   Power distribution: '#ff7e33'
   CO2 transport: '#bfd5db'
@@ -885,18 +732,22 @@ renamed_tech_colors:
   Storage: '#17becf'
   Transport: '#ff7f0e'
   Biomass generators: '#2ca02c'
-  Biomass fuels: '#2ca02c'
+  Biomass fuels (end uses): '#2ca02c'
   Geothermal: '#e35812'
+  Geothermal (incl. tax credits): '#e35812'
   Hydropower: '#298c81'
-  Hydropower tax credits: '#298c81'
+  Hydropower (incl. tax credits): '#298c81'
   Nuclear: '#e8a9d5'
-  Nuclear OPEX (incl. tax credits): '#e377c2'
+  Nuclear (incl. tax credits): '#e377c2'
   Oil: '#7f3b08'
   Solar: '#ffdd57'
-  Solar tax credits: '#ffdd57'
+  Solar (incl. tax credits): '#ffdd57'
   Wind: '#a6cee3'
-  Wind tax credits: '#a6cee3'
+  Wind (incl. tax credits): '#a6cee3'
   e-fuels synthesis: '#73ffb2'
+  Fossil fuels: '#a0522d'
+  Biomass fuels: '#3cb371'
+
 
 categories_capex:
   Fossil generators: Power & heat generation
@@ -911,7 +762,7 @@ categories_capex:
   Storage: Storage
 
   Industry: Industry
-  Industry carbon capture: Industry
+  Industry CC: Industry
   
   DAC: DAC
 
@@ -929,17 +780,20 @@ categories_capex:
 
 categories_opex:
 
+  Fossil fuels (end uses): End-uses
+  Biomass fuels (end uses): End-uses
+
   Fossil fuels: Power & heat generation
-  Biomass fuels: Power & heat generation
-  Hydropower tax credits: Power & heat generation
-  Nuclear OPEX (incl. tax credits): Power & heat generation
-  Geothermal: Power & heat generation
-  Solar tax credits: Power & heat generation
-  Wind tax credits: Power & heat generation
+  Biomass fuels: Power & heat generation  
+  Hydropower (incl. tax credits): Power & heat generation
+  Nuclear (incl. tax credits): Power & heat generation
+  Geothermal (incl. tax credits): Power & heat generation
+  Solar (incl. tax credits): Power & heat generation
+  Wind (incl. tax credits): Power & heat generation
   Heating: Power & heat generation
-  
-  Industry OPEX: Industry
-  Industry carbon capture OPEX: Industry
+
+  Industry: Industry
+  Industry CC (incl. tax credits): Industry
 
   Storage: Storage
 
@@ -952,7 +806,7 @@ categories_opex:
 
   Emissions: Emissions
 
-  Hydrogen OPEX (incl. tax credits): Hydrogen & e-fuels
+  Hydrogen (incl. tax credits): Hydrogen & e-fuels
   e-fuels synthesis: Hydrogen & e-fuels
 
   Biofuels synthesis: Biofuels synthesis

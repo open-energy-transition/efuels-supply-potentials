@@ -2376,14 +2376,14 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     capex_raw = costs_raw[['Capital Expenditure']].reset_index()
     capex_raw['tech_label'] = capex_raw['carrier'].map(rename_capex).fillna(capex_raw['carrier'])
     capex_raw['main_category'] = capex_raw['tech_label']
-    
+
     capex_grouped = capex_raw.groupby('tech_label', as_index=False).agg({
         'Capital Expenditure': 'sum',
         'main_category': 'first'
     })
     capex_grouped['cost_type'] = 'Capital expenditure'
     capex_grouped.rename(columns={'Capital Expenditure': 'cost_billion'}, inplace=True)
-    capex_grouped['cost_billion'] /= 1e9
+    capex_grouped['cost_billion'] /= 1e9  # convert to billion
     capex_grouped['year'] = year_str
     capex_grouped['scenario'] = name_tag
 
@@ -2391,18 +2391,56 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     opex_raw = costs_raw[['Operational Expenditure']].reset_index()
     opex_raw['tech_label'] = opex_raw['carrier'].map(rename_opex).fillna(opex_raw['carrier'])
     opex_raw['main_category'] = opex_raw['tech_label']
-    
+
     opex_grouped = opex_raw.groupby('tech_label', as_index=False).agg({
         'Operational Expenditure': 'sum',
         'main_category': 'first'
     })
     opex_grouped['cost_type'] = 'Operational expenditure'
     opex_grouped.rename(columns={'Operational Expenditure': 'cost_billion'}, inplace=True)
-    opex_grouped['cost_billion'] /= 1e9
+    opex_grouped['cost_billion'] /= 1e9  # convert to billion
     opex_grouped['year'] = year_str
     opex_grouped['scenario'] = name_tag
 
-    return pd.concat([capex_grouped, opex_grouped], ignore_index=True)
+    # Additional OPEX from link-based conventional generators
+    carriers_of_interest = ["coal", "gas", "oil", "biomass"]
+    results = []
+    for carrier in carriers_of_interest:
+        links = network.links[network.links.carrier == carrier]
+        for link_id in links.index:
+            try:
+                p0 = network.links_t.p0[link_id]
+                bus1 = links.loc[link_id, 'bus1']
+                marginal_price = network.buses_t.marginal_price[bus1]
+                weightings = network.snapshot_weightings['objective']
+
+                # Fuel cost
+                fuel_cost = (p0 * marginal_price * weightings).sum()
+
+                # Other OPEX
+                marginal_cost = links.loc[link_id, 'marginal_cost']
+                other_opex = (p0 * marginal_cost * weightings).sum()
+
+                total_opex = fuel_cost + other_opex
+
+                results.append({
+                    'tech_label': f'{carrier} (power)',
+                    'main_category': f'{carrier} (power)',
+                    'cost_type': 'Operational expenditure',
+                    'cost_billion': total_opex / 1e9,
+                    'year': year_str,
+                    'scenario': name_tag
+                })
+            except KeyError:
+                continue
+
+    link_opex_df = pd.DataFrame(results)
+
+    # Apply renaming also to link-based OPEX
+    link_opex_df['tech_label'] = link_opex_df['tech_label'].replace(rename_opex)
+    link_opex_df['main_category'] = link_opex_df['tech_label']
+
+    return pd.concat([capex_grouped, opex_grouped, link_opex_df], ignore_index=True)
 
 
 def plot_stacked_costs_by_year(cost_data, cost_type_label, tech_colors=None, index='year'):
@@ -2434,6 +2472,7 @@ def plot_stacked_costs_by_year(cost_data, cost_type_label, tech_colors=None, ind
         'Hydrogen & e-fuels',
         'Biofuels synthesis',
         'DAC',
+        'End-uses',
         'Industry',
         'Power & heat generation',
         'Storage',

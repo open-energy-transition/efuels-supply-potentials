@@ -3105,3 +3105,60 @@ def plot_stacked_costs_by_year_plotly(cost_data, cost_type_label, tech_colors=No
     )
 
     fig.show()
+
+def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names):
+    # Extract year from the key using regex
+    year_match = re.search(r'\d{4}', key)
+    year_str = year_match.group() if year_match else "Year N/A"
+
+    carrier_list = [
+        'CCGT lcoe (USD/MWh)', 'OCGT lcoe (USD/MWh)', 'coal lcoe (USD/MWh)', 'nuclear lcoe (USD/MWh)',
+        'oil lcoe (USD/MWh)', 'urban central gas CHP lcoe (USD/MWh)',
+        'urban central solid biomass CHP lcoe (USD/MWh)', 'biomass lcoe (USD/MWh)', 'geothermal lcoe (USD/MWh)', 
+        'hydro lcoe (USD/MWh)', 'onwind lcoe (USD/MWh)', 'ror lcoe (USD/MWh)', 'solar lcoe (USD/MWh)',
+        'solar rooftop lcoe (USD/MWh)',
+    ]
+
+    buffer_left = 100
+    buffer_right = 20
+    
+    global_min = table_df.xs('min', axis=1, level=1).min().min()
+    global_max = table_df.xs('max', axis=1, level=1).max().max()
+    
+    x_min = min(-50, global_min - buffer_left)
+    x_max = global_max + buffer_right
+
+    for region in table_df.index:
+        table_lcoe_df = table_df[table_df.columns[table_df.columns.get_level_values(0).str.contains('lcoe')]][carrier_list]
+        table_lcoe_df_region = table_lcoe_df.loc[region, :]
+
+        lcoe_tech_list = table_lcoe_df_region.xs('max', level=1).index
+
+        fig, ax = plt.subplots(figsize=(15, 8))
+
+        for i, (start, end) in enumerate(zip(
+            table_lcoe_df_region.xs('min', level=1).values,
+            table_lcoe_df_region.xs('max', level=1).values
+        )):
+            str_attach = any(np.abs([start, end]) > 1e-3)
+            width = end - start
+            ax.broken_barh([(start, width)], (i - 0.4, 0.8), hatch='///', edgecolor='white')
+            start_label = f"${round(start, 2)}" if str_attach else ""
+            end_label = f"${round(start + width, 2)}" if str_attach else ""
+            ax.text(start - .7, i, start_label, va='center', ha='right', fontsize=12)
+            ax.text(start + width + .7, i, end_label, va='center', ha='left', fontsize=12)
+
+        # Labels and formatting
+        raw_labels = [label.replace(" lcoe", "").replace(" (USD/MWh)", "") for label in lcoe_tech_list]
+        clean_labels = [nice_names.get(lbl, lbl) for lbl in raw_labels]
+        
+        ax.set_yticks(range(len(lcoe_tech_list)))
+        ax.set_yticklabels(clean_labels, fontsize=12)
+        ax.set_xlabel("\nLevelized Cost of Energy (USD/MWh)", fontsize=12)
+        ax.set_xlim(x_min, x_max)
+        ax.set_title(f"\n{region} - {year_str}", fontsize=14)
+        ax.grid(linestyle='--', alpha=0.6)
+        ax.tick_params(axis='both', labelsize=12)
+
+        plt.tight_layout()
+        plt.show()

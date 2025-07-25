@@ -3081,6 +3081,33 @@ def plot_stacked_costs_by_year_plotly(cost_data, cost_type_label, tech_colors=No
             hovertemplate=f"%{{x}}<br>{label}: %{{y:.2f}}B USD<extra></extra>"
         ))
 
+    # Macro-category legend block (annotation)
+    grouped_labels = defaultdict(list)
+    for label in ordered_labels:
+        macro = label_to_macro.get(label, 'Other')
+        grouped_labels[macro].append(label)
+
+    legend_text = ""
+    for macro in desired_macro_order:
+        if macro in grouped_labels:
+            legend_text += f"<b>{macro}</b><br>"
+            for label in grouped_labels[macro]:
+                color = color_values[label]
+                legend_text += f"<span style='color:{color}'>▇</span> {label}<br>"
+
+    # Add annotation for grouped legend
+    fig.add_annotation(
+        text=legend_text,
+        showarrow=False,
+        align="left",
+        xref="paper", yref="paper",
+        x=1.25, y=1,
+        bordercolor='black',
+        borderwidth=1,
+        bgcolor="rgba(255,255,255,0.95)",
+        font=dict(size=12),
+    )
+
     # Add 0-line for clarity
     fig.add_shape(
         type='line',
@@ -3096,12 +3123,12 @@ def plot_stacked_costs_by_year_plotly(cost_data, cost_type_label, tech_colors=No
         xaxis_title="Years (-)",
         yaxis_title=f"{cost_type_label} (Billion USD)",
         template="plotly_white",
-        width=1200,
-        height=600,
+        width=1400,
+        height=700,
         margin=dict(l=40, r=300, t=50, b=50),
         legend_title="Technologies",
         legend_traceorder='reversed',
-        showlegend=True,
+        showlegend=False,
     )
 
     fig.show()

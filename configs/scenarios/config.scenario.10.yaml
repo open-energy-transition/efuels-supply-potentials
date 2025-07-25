@@ -33,7 +33,7 @@ foresight: myopic
 
 scenario:
   simpl: ['']
-  ll: ['copt']
+  ll: ['v1']
   clusters: [100]
   opts: [3H]
   planning_horizons:

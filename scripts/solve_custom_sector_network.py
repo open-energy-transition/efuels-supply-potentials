@@ -167,7 +167,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
     Apply production and investment tax credits to the network.
 
     - PTC (Production Tax Credit) reduces marginal_cost for eligible generators and links.
-    - ITC (Investment Tax Credit) reduces capital_cost for eligible storage units (batteries).
+    - ITC (Investment Tax Credit) reduces capital_cost for eligible stores (batteries).
 
     Parameters:
         network: PyPSA network object
@@ -344,14 +344,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         elif carrier in cc_credit_on_co2_atmosphere:
             if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
 
-                def get_co2_atm_efficiency(row):
-                    for key, val in row.items():
-                        if key.startswith("bus") and isinstance(val, str) and "co2 atmosphere" in val.lower():
-                            eff_key = "efficiency" + key[3:]
-                            return row.get(eff_key, 0.0)
-                    return 0.0
-
-                tco2 = get_co2_atm_efficiency(link)
+                tco2 = link.efficiency
                 credit_per_t = ptc_credits.get(carrier, 0.0)
 
                 if tco2 > 0 and credit_per_t != 0.0:
@@ -373,10 +366,10 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         for carrier, row in itc_df.iterrows():
             credit_factor = -row.get("credit", 0.0) / 100
 
-            if carrier not in network.storage_units.carrier.values:
+            if carrier not in network.stores.carrier.values:
                 continue
 
-            affected = network.storage_units.query("carrier == @carrier")
+            affected = network.stores.query("carrier == @carrier")
             for idx, su in affected.iterrows():
                 build_year = su.get("build_year", planning_horizon)
 
@@ -391,9 +384,9 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                 if scale > 0:
                     orig = su.capital_cost
                     new = orig * (1 - scale * credit_factor)
-                    network.storage_units.at[idx, "capital_cost"] = new
+                    network.stores.at[idx, "capital_cost"] = new
                     modifications.append({
-                        "component": "storage_unit", "name": idx,
+                        "component": "store", "name": idx,
                         "carrier": carrier, "build_year": build_year,
                         "original": orig, "credit_factor": scale * credit_factor,
                         "final": new

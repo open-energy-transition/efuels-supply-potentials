@@ -2369,6 +2369,8 @@ def compute_installed_capacity_by_carrier(networks, nice_names=None, display_res
 
 
 def compute_system_costs(network, rename_capex, rename_opex, name_tag):
+    import pandas as pd
+
     costs_raw = network.statistics()[['Capital Expenditure', 'Operational Expenditure']]
     year_str = name_tag[-4:]
 
@@ -2383,7 +2385,7 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     })
     capex_grouped['cost_type'] = 'Capital expenditure'
     capex_grouped.rename(columns={'Capital Expenditure': 'cost_billion'}, inplace=True)
-    capex_grouped['cost_billion'] /= 1e9  # convert to billion
+    capex_grouped['cost_billion'] /= 1e9
     capex_grouped['year'] = year_str
     capex_grouped['scenario'] = name_tag
 
@@ -2398,7 +2400,7 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     })
     opex_grouped['cost_type'] = 'Operational expenditure'
     opex_grouped.rename(columns={'Operational Expenditure': 'cost_billion'}, inplace=True)
-    opex_grouped['cost_billion'] /= 1e9  # convert to billion
+    opex_grouped['cost_billion'] /= 1e9
     opex_grouped['year'] = year_str
     opex_grouped['scenario'] = name_tag
 
@@ -2409,17 +2411,17 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
         links = network.links[network.links.carrier == carrier]
         for link_id in links.index:
             try:
-                p0 = network.links_t.p0[link_id]
-                bus1 = links.loc[link_id, 'bus1']
-                marginal_price = network.buses_t.marginal_price[bus1]
+                p0 = network.links_t.p0[link_id]  # fuel input (negative)
+                bus0 = links.loc[link_id, 'bus0']
+                fuel_price = network.buses_t.marginal_price[bus0]
                 weightings = network.snapshot_weightings['objective']
 
-                # Fuel cost
-                fuel_cost = (p0 * marginal_price * weightings).sum()
+                # Fuel cost (positive)
+                fuel_cost = (-p0 * fuel_price * weightings).sum()
 
-                # Other OPEX
+                # Other OPEX (marginal cost of link, positive)
                 marginal_cost = links.loc[link_id, 'marginal_cost']
-                other_opex = (p0 * marginal_cost * weightings).sum()
+                other_opex = (-p0 * marginal_cost * weightings).sum()
 
                 total_opex = fuel_cost + other_opex
 
@@ -3105,7 +3107,7 @@ def plot_stacked_costs_by_year_plotly(cost_data, cost_type_label, tech_colors=No
         bordercolor='black',
         borderwidth=1,
         bgcolor="rgba(255,255,255,0.95)",
-        font=dict(size=12),
+        font=dict(size=14),
     )
 
     # Add 0-line for clarity
@@ -3116,21 +3118,29 @@ def plot_stacked_costs_by_year_plotly(cost_data, cost_type_label, tech_colors=No
         line=dict(color='black', width=1)
     )
 
-    # Layout setup
     fig.update_layout(
-        barmode="relative",  # stacking + mixed sign
-        title=cost_type_label,
-        xaxis_title="Years (-)",
-        yaxis_title=f"{cost_type_label} (Billion USD)",
+        barmode="relative",
+        title=dict(
+            text=cost_type_label,
+            font=dict(size=16)  # Titolo del grafico
+        ),
+        xaxis=dict(
+            title=dict(text="Years (-)", font=dict(size=14)),
+            tickfont=dict(size=12)
+        ),
+        yaxis=dict(
+            title=dict(text=f"{cost_type_label} (Billion USD)", font=dict(size=12)),
+            tickfont=dict(size=2)
+        ),
         template="plotly_white",
         width=1400,
         height=700,
         margin=dict(l=40, r=300, t=50, b=50),
-        legend_title="Technologies",
-        legend_traceorder='reversed',
+        legend_title=dict(text="Technologies", font=dict(size=14)),
+        legend=dict(font=dict(size=12), traceorder='reversed'),
         showlegend=False,
     )
-
+    
     fig.show()
 
 def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names):

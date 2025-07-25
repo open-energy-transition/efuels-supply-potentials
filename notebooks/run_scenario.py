@@ -71,7 +71,7 @@ scenario_data = {
 # horizon_list = [2030, 2035, 2040]  # List of horizons to analyze
 
 # Define chosen scenario numbers (1-based)
-chosen_scenarios = [1, 2, 6, 10]  # You can modify this list as needed
+chosen_scenarios = [1, 2, 5, 6, 10]  # You can modify this list as needed
 
 # Loop through only the chosen scenario indices
 for num in chosen_scenarios:

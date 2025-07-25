@@ -360,7 +360,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                         logger.info(f"[PTC LINK DAC] {name} | CO₂: {tco2:.3f} × {credit_per_t:.2f} → credit: {credit:.2f}")
 
     # Apply Investment Tax Credits to STORAGE UNITS (batteries)
-    if planning_horizon <= build_year + 10 and os.path.exists(itc_path):
+    if os.path.exists(itc_path):
         itc_df = pd.read_csv(itc_path, index_col=0)
 
         for carrier, row in itc_df.iterrows():
@@ -373,26 +373,27 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
             for idx, su in affected.iterrows():
                 build_year = su.get("build_year", planning_horizon)
 
-                scale = 0.0
-                if 2030 <= build_year <= 2033:
-                    scale = 1.0
-                elif build_year == 2034:
-                    scale = 0.75
-                elif build_year == 2035:
-                    scale = 0.5
+                if planning_horizon <= build_year + 10:
+                    scale = 0.0
+                    if 2030 <= build_year <= 2033:
+                        scale = 1.0
+                    elif build_year == 2034:
+                        scale = 0.75
+                    elif build_year == 2035:
+                        scale = 0.5
 
-                if scale > 0:
-                    orig = su.capital_cost
-                    new = orig * (1 - scale * credit_factor)
-                    network.stores.at[idx, "capital_cost"] = new
-                    modifications.append({
-                        "component": "store", "name": idx,
-                        "carrier": carrier, "build_year": build_year,
-                        "original": orig, "credit_factor": scale * credit_factor,
-                        "final": new
-                    })
-                    if verbose:
-                        logger.info(f"[ITC STORAGE] {idx} | -{scale * credit_factor:.0%} capital_cost")
+                    if scale > 0:
+                        orig = su.capital_cost
+                        new = orig * (1 - scale * credit_factor)
+                        network.stores.at[idx, "capital_cost"] = new
+                        modifications.append({
+                            "component": "store", "name": idx,
+                            "carrier": carrier, "build_year": build_year,
+                            "original": orig, "credit_factor": scale * credit_factor,
+                            "final": new
+                        })
+                        if verbose:
+                            logger.info(f"[ITC STORAGE] {idx} | -{scale * credit_factor:.0%} capital_cost")
 
     if modifications and log_path:
         os.makedirs(os.path.dirname(log_path), exist_ok=True)

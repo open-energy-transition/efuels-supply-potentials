@@ -360,7 +360,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                         logger.info(f"[PTC LINK DAC] {name} | CO₂: {tco2:.3f} × {credit_per_t:.2f} → credit: {credit:.2f}")
 
     # Apply Investment Tax Credits to STORAGE UNITS (batteries)
-    if 2030 <= planning_horizon <= 2035 and os.path.exists(itc_path):
+    if planning_horizon <= build_year + 10 and os.path.exists(itc_path):
         itc_df = pd.read_csv(itc_path, index_col=0)
 
         for carrier, row in itc_df.iterrows():

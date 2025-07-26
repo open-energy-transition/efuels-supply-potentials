@@ -20,7 +20,7 @@ scenario:
   simpl: ['']
   ll: ['copt']
   clusters: [10]
-  opts: [24H]
+  opts: [CCL-24H]
   planning_horizons:
   - 2030
   - 2035
@@ -56,6 +56,7 @@ cluster_options:
     p_threshold_drop_isolated: 0.0
 
 electricity:
+  agg_p_nom_limits: data/agg_p_nom_minmax.csv
   extendable_carriers:
     Generator: [solar, onwind, offwind-ac, offwind-dc, csp, geothermal, nuclear, OCGT, CCGT, biomass]
     Store: [battery, H2]

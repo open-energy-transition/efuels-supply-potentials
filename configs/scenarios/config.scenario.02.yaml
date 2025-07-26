@@ -88,6 +88,7 @@ renewable:
   hydro:
     normalization:
       method: eia
+    hydro_capital_cost: true
 
 costs:
   year: 2030

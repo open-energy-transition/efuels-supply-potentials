@@ -17,12 +17,12 @@ run:
 scenario:
   simpl: ['']
   ll: ['copt']
-  clusters: [10]
-  opts: [Co2L-24H]
+  clusters: [100]
+  opts: [Co2L-3H]
   planning_horizons:
   - 2020
   sopts:
-  - "24H"
+  - "3H"
 
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes
@@ -34,7 +34,7 @@ policies:
   country: [] # "CES"
 
 electricity:
-  co2limit: 4.35e+9 #for calibration purposes
+  co2limit: 4.33e+9 #for calibration purposes
   co2base: 226.86e+6 #base_from_2020 Locations of the 250 MMmt of CO2 emissions from the WECC 2021.
   
   extendable_carriers:
@@ -54,15 +54,15 @@ renewable:
   hydro:
     normalization:
       method: eia
+    hydro_capital_cost: true
 
 costs:
   year: 2020
   efficiency:
-      CCGT: 0.50
-  marginal_cost:
-    hydro: -6.00 # USD/MWh - 45 Y (Source: https://atb.nrel.gov/electricity/2024/financial_cases_&_methods)
-    ror: -6.00 # USD/MWh - 45 Y (Source: https://atb.nrel.gov/electricity/2024/financial_cases_&_methods)
-    nuclear: 9.87 # USD/MWh - 45 U (nuclear original marginal cost - 15.00 USD/MWh)
+      coal: 0.3177
+      oil: 0.2976
+      CCGT: 0.442
+      nuclear: 0.3265
 
 policy_config:
   hydrogen:
@@ -92,7 +92,7 @@ sector:
   land_transport_fuel_cell_share:
     AB_2020: 0
   land_transport_electric_share:
-    AB_2020: 0.038
+    AB_2020: 0.012
   shipping_hydrogen_share:
     AB_2020: 0
 

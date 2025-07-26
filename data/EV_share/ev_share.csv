@@ -1,11 +1,11 @@
 ,Reference,Medium,High
 2020,0.009,0.016,0.017
-2023,0.017,0.038,0.041
-2025,0.024,0.060,0.066
+2023,0.016,0.038,0.041
+2025,0.024,0.06,0.066
 2030,0.041,0.165,0.191
 2035,0.053,0.275,0.332
-2040,0.060,0.353,0.462
+2040,0.06,0.353,0.462
 2045,0.064,0.394,0.574
-2050,0.067,0.420,0.684
+2050,0.067,0.42,0.684
 ,,,
 "Source: https://data.nrel.gov/submissions/90 ; EV share includes both battery EV and plug-in hybrid EV (considering they consume, in average, 45% electricity)",,,

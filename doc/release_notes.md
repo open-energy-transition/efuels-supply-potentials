@@ -8,6 +8,14 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Implement **production tax credits** removing tax credits in the base year and reviewing tax credits to renewables based on latest developments (One Big Beautiful Bill) [PR #91](https://github.com/open-energy-transition/efuels-supply-potentials/pull/91)
+
+* Include biomass in RES and CES constraints-eligible sources [PR #90](https://github.com/open-energy-transition/efuels-supply-potentials/pull/90)
+
+* Add **capital cost for hydro** storage units [PR #93](https://github.com/open-energy-transition/efuels-supply-potentials/pull/93)
+
+* Adjust RES/CES constraints to facilitate easy **addition (removal) of biomass into (from) RES sources** [PR #90](https://github.com/open-energy-transition/efuels-supply-potentials/pull/90)
+
 * Extend lifetime of nuclear power plants to 60 years [PR #94](https://github.com/open-energy-transition/efuels-supply-potentials/pull/94)
 
 * **Base year**: Remove filtering for plants with DateOut >= 2023, remove PTC to existing wind, solar and biomass plants, add PTC for existing hydro and nuclear power plants, remove data center load [PR #85](https://github.com/open-energy-transition/efuels-supply-potentials/pull/85)

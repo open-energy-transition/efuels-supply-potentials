@@ -23,6 +23,7 @@ enable:
   retrieve_databundle_sector: true
   retrieve_cost_data: true  # true: retrieves cost data from technology data and saves in resources/costs.csv, false: uses cost data in data/costs.csv
   download_osm_data: true  # If 'true', OpenStreetMap data will be downloaded for the above given countries
+  custom_busmap: true
 
 run:
   name: "US_scenario_05" # use this to keep track of runs with different settings

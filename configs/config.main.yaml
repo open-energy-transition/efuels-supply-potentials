@@ -28,12 +28,6 @@ costs:
     dac: "moderate"
   financial_case: "market" # only used if `country_specific_data: "US"`; can be "market" or "r&d"
   discountrate: [0.071] #, 0.086, 0.111]
-  marginal_cost:
-    ethanol carbon capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
-    ammonia carbon capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
-    cement carbon capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
-    steel carbon capture retrofit: -60.00 # USD/t_CO2 - 45 Q (utilization)
-    direct air capture: -130.00 # USD/t_CO2 - 45 Q (utilization)
 
 # defining the aviation demand scenario
 aviation_demand_scenario:

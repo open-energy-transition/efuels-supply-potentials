@@ -1372,7 +1372,6 @@ def calculate_weighted_lcoh_table_by_year(networks, h2_carriers, output_threshol
     - dict of DataFrames keyed by year string, each DataFrame contains:
       ['grid_region', 'Weighted Average LCOH (USD/kg)', 'Total Hydrogen Dispatch (kg)']
     """
-    import re
     all_results = {}
 
     for year_key, network in networks.items():
@@ -1435,7 +1434,6 @@ def calculate_weighted_lcoh_table_by_year(networks, h2_carriers, output_threshol
 
 
 def calculate_total_generation_by_carrier(network, start_date=None, end_date=None):
-    import pandas as pd
 
     # Time setup
     snapshots_slice = slice(
@@ -1756,8 +1754,6 @@ def compute_aviation_fuel_demand(networks):
 
 
 def compute_emissions_from_links(net):
-    import pandas as pd
-    import re
 
     results = []
 
@@ -2301,7 +2297,6 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
 
 
 def compute_installed_capacity_by_carrier(networks, nice_names=None, display_result=True, column_year=True):
-    import pandas as pd
 
     totals_by_carrier = {}
 
@@ -2370,7 +2365,6 @@ def compute_installed_capacity_by_carrier(networks, nice_names=None, display_res
 
 
 def compute_system_costs(network, rename_capex, rename_opex, name_tag):
-    import pandas as pd
 
     costs_raw = network.statistics()[['Capital Expenditure', 'Operational Expenditure']]
     year_str = name_tag[-4:]
@@ -2624,8 +2618,6 @@ def calculate_total_inputs_outputs_ft(networks, ft_carrier="Fischer-Tropsch"):
     return df.sort_values("Year")
 
 def compute_ekerosene_production_cost_by_region(networks: dict):
-    import pandas as pd
-    import re
 
     for name, net in networks.items():
         year_match = re.search(r"\d{4}", name)

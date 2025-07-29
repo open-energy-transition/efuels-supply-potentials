@@ -11,6 +11,7 @@ import re
 import pycountry
 
 import pypsa
+import math
 from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
 from pathlib import Path
 
@@ -3143,7 +3144,8 @@ def plot_stacked_costs_by_year_plotly(cost_data, cost_type_label, tech_colors=No
     
     fig.show()
 
-def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names):
+
+def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names, use_scenario_names=False):
     # Extract year from the key using regex
     year_match = re.search(r'\d{4}', key)
     year_str = year_match.group() if year_match else "Year N/A"
@@ -3165,13 +3167,23 @@ def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names):
     x_min = min(-50, global_min - buffer_left)
     x_max = global_max + buffer_right
 
-    for region in table_df.index:
+    regions = table_df.index.tolist()
+    n_regions = len(regions)
+
+    # Subplot grid size (2 columns)
+    ncols = 2
+    nrows = math.ceil(n_regions / ncols)
+    
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(16, nrows * 5), constrained_layout=True)
+    axs = axs.flatten()
+
+    for idx, region in enumerate(regions):
+        ax = axs[idx]
+
         table_lcoe_df = table_df[table_df.columns[table_df.columns.get_level_values(0).str.contains('lcoe')]][carrier_list]
         table_lcoe_df_region = table_lcoe_df.loc[region, :]
 
         lcoe_tech_list = table_lcoe_df_region.xs('max', level=1).index
-
-        fig, ax = plt.subplots(figsize=(15, 8))
 
         for i, (start, end) in enumerate(zip(
             table_lcoe_df_region.xs('min', level=1).values,
@@ -3182,20 +3194,22 @@ def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names):
             ax.broken_barh([(start, width)], (i - 0.4, 0.8), hatch='///', edgecolor='white')
             start_label = f"${round(start, 2)}" if str_attach else ""
             end_label = f"${round(start + width, 2)}" if str_attach else ""
-            ax.text(start - .7, i, start_label, va='center', ha='right', fontsize=12)
-            ax.text(start + width + .7, i, end_label, va='center', ha='left', fontsize=12)
+            ax.text(start - .7, i, start_label, va='center', ha='right', fontsize=9)
+            ax.text(start + width + .7, i, end_label, va='center', ha='left', fontsize=9)
 
-        # Labels and formatting
         raw_labels = [label.replace(" lcoe", "").replace(" (USD/MWh)", "") for label in lcoe_tech_list]
         clean_labels = [nice_names.get(lbl, lbl) for lbl in raw_labels]
         
         ax.set_yticks(range(len(lcoe_tech_list)))
-        ax.set_yticklabels(clean_labels, fontsize=12)
-        ax.set_xlabel("\nLevelized Cost of Energy (USD/MWh)", fontsize=12)
+        ax.set_yticklabels(clean_labels, fontsize=10)
+        ax.set_xlabel("LCOE (USD/MWh)", fontsize=10)
         ax.set_xlim(x_min, x_max)
-        ax.set_title(f"\n{region} - {year_str}", fontsize=14)
-        ax.grid(linestyle='--', alpha=0.6)
-        ax.tick_params(axis='both', labelsize=12)
+        ax.set_title(f"{region} - {key if use_scenario_names else year_str}", fontsize=11)
+        ax.grid(linestyle='--', alpha=0.5)
+        ax.tick_params(axis='both', labelsize=9)
 
-        plt.tight_layout()
-        plt.show()
+    # Hide any unused axes
+    for j in range(idx + 1, len(axs)):
+        fig.delaxes(axs[j])
+
+    plt.show()

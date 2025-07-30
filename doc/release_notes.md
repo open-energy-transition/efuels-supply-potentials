@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Implement **maximum capacity constraint for geothermal** electricity generation plants [PR #95](https://github.com/open-energy-transition/efuels-supply-potentials/pull/95)
+
 * Implement **production tax credits** removing tax credits in the base year and reviewing tax credits to renewables based on latest developments (One Big Beautiful Bill) [PR #91](https://github.com/open-energy-transition/efuels-supply-potentials/pull/91)
 
 * Include biomass in RES and CES constraints-eligible sources [PR #90](https://github.com/open-energy-transition/efuels-supply-potentials/pull/90)

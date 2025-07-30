@@ -10,6 +10,13 @@ Please list contributions, add reference to PRs if present.
 
 * Implemented **pre-commit hooks** in the repository: [PR #47](https://github.com/open-energy-transition/efuels-supply-potentials/pull/47)
 
+* Implement **maximum capacity constraint for geothermal** electricity generation plants [PR #95](https://github.com/open-energy-transition/efuels-supply-potentials/pull/95)
+
+* Implement **production tax credits** removing tax credits in the base year and reviewing tax credits to renewables based on latest developments (One Big Beautiful Bill) [PR #91](https://github.com/open-energy-transition/efuels-supply-potentials/pull/91)
+
+* Include biomass in RES and CES constraints-eligible sources [PR #90](https://github.com/open-energy-transition/efuels-supply-potentials/pull/90)
+
+
 * Add **capital cost for hydro** storage units [PR #93](https://github.com/open-energy-transition/efuels-supply-potentials/pull/93)
 
 * Adjust RES/CES constraints to facilitate easy **addition (removal) of biomass into (from) RES sources** [PR #90](https://github.com/open-energy-transition/efuels-supply-potentials/pull/90)
@@ -46,13 +53,9 @@ Please list contributions, add reference to PRs if present.
 
 * Add scenario configs for 2030, 2035 and 2040 and add data for scenario definition [PR #51](https://github.com/open-energy-transition/efuels-supply-potentials/pull/51)
 
-<<<<<<< HEAD
 * Add **scenario configs for 2030, 2035 and 2040** and add data for scenario definition [PR #51](https://github.com/open-energy-transition/efuels-supply-potentials/pull/51)
 
 * Cherry-pick: [PR #1400](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1400): Add **US-specific demand growth rates and fuel shares** (Medium scenario): [PR #52](https://github.com/open-energy-transition/efuels-supply-potentials/pull/52)
-=======
-* Cherry-pick: [PR #1400](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1400): Add US-specific demand growth rates and fuel shares (Medium scenario): [PR #52](https://github.com/open-energy-transition/efuels-supply-potentials/pull/52)
->>>>>>> 1972ee3 (commit ignoring pre-commit)
 
 * Update head of the submodule to `efuels-supply-potentials` branch of `open-energy-transition/pypsa-earth` and cherry-pick [PR #1372](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1372): Scale temporal loads based on temporal resolution; [PR #1381](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1381): Remove space in rail transport oil and electricity carriers: [PR #46](https://github.com/open-energy-transition/efuels-supply-potentials/pull/46)
 

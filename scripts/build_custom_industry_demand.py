@@ -353,14 +353,14 @@ if __name__ == "__main__":
         "DRI + Electric arc": "iron and steel",
         "Integrated steelworks": "iron and steel",
         "ammonia": "chemical and petrochemical",
-        "ethanol": "chemical and petrochemical",
+        #"ethanol": "chemical and petrochemical",
     }
 
     cagr = pd.read_csv(snakemake.input.industry_growth_cagr, index_col=0)
 
     for country in industrial_demand['country'].unique():
         if country not in cagr.index:
-            _logger.warning(f"No industry growth data for {country}, using DEFAULT.")
+            logger.warning(f"No industry growth data for {country}, using DEFAULT.")
             cagr.loc[country] = cagr.loc["DEFAULT"]
         else:
             cagr.loc[country] = cagr.loc[country].fillna(cagr.loc["DEFAULT"])
@@ -380,7 +380,7 @@ if __name__ == "__main__":
     for industry in growth_factors_custom.columns:
         sector_cagr = custom_industry_to_cagr_map.get(industry)
         if sector_cagr is None:
-            _logger.warning(f"No CAGR mapping for industry {industry}. Using growth factor = 1.")
+            logger.warning(f"No CAGR mapping for industry {industry}. Using growth factor = 1.")
             growth_factors_custom[industry] = 1.0
         else:
             growth_factors_custom[industry] = industrial_demand['country'].map(

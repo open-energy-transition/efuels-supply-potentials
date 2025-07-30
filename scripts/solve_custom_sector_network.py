@@ -693,7 +693,8 @@ def add_CCL_constraints(n, config):
 
     try:
         agg_p_nom_minmax = pd.read_csv(
-            agg_p_nom_limits, index_col=list(range(2)))
+            agg_p_nom_limits, index_col=list(range(2)), header=[0, 1]
+        )[snakemake.wildcards.planning_horizons]
     except IOError:
         logger.exception(
             "Need to specify the path to a .csv file containing "
@@ -705,6 +706,14 @@ def add_CCL_constraints(n, config):
     )
 
     gen_country = n.generators.bus.map(n.buses.country)
+    
+    # Calculate existing (non-extendable) capacity per country and carrier
+    existing_capacity_per_cc = (
+        n.generators.query("not p_nom_extendable")
+        .groupby([gen_country, "carrier"])["p_nom"]
+        .sum()
+    )
+    
     # cc means country and carrier
     p_nom_per_cc = (
         pd.DataFrame(
@@ -718,16 +727,40 @@ def add_CCL_constraints(n, config):
         .groupby(["country", "carrier"])
         .p_nom.apply(join_exprs)
     )
+    
     minimum = agg_p_nom_minmax["min"].dropna()
     if not minimum.empty:
-        minconstraint = define_constraints(
-            n, p_nom_per_cc[minimum.index], ">=", minimum, "agg_p_nom", "min"
-        )
+        # Subtract existing capacity from minimum limits
+        adjusted_minimum = minimum.copy()
+        for idx in minimum.index:
+            existing_cap = existing_capacity_per_cc.get(idx, 0.0)
+            adjusted_minimum[idx] = max(0.0, minimum[idx] - existing_cap)
+        
+        # Only apply constraints where adjusted minimum > 0
+        adjusted_minimum = adjusted_minimum[adjusted_minimum > 0]
+        if not adjusted_minimum.empty:
+            available_indices = p_nom_per_cc.index.intersection(adjusted_minimum.index)
+            if not available_indices.empty:
+                minconstraint = define_constraints(
+                    n, p_nom_per_cc[available_indices], ">=", adjusted_minimum[available_indices], "agg_p_nom", "min"
+                )
+    
     maximum = agg_p_nom_minmax["max"].dropna()
     if not maximum.empty:
-        maxconstraint = define_constraints(
-            n, p_nom_per_cc[maximum.index], "<=", maximum, "agg_p_nom", "max"
-        )
+        # Subtract existing capacity from maximum limits
+        adjusted_maximum = maximum.copy()
+        for idx in maximum.index:
+            existing_cap = existing_capacity_per_cc.get(idx, 0.0)
+            adjusted_maximum[idx] = max(0.0, maximum[idx] - existing_cap)
+        
+        # Only apply constraints where adjusted maximum > 0
+        adjusted_maximum = adjusted_maximum[adjusted_maximum > 0]
+        if not adjusted_maximum.empty:
+            available_indices = p_nom_per_cc.index.intersection(adjusted_maximum.index)
+            if not available_indices.empty:
+                maxconstraint = define_constraints(
+                    n, p_nom_per_cc[available_indices], "<=", adjusted_maximum[available_indices], "agg_p_nom", "max"
+                )
 
 
 def add_EQ_constraints(n, o, scaling=1e-1):

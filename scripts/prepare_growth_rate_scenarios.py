@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # SPDX-FileCopyrightText:  Open Energy Transition gGmbH
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
@@ -10,15 +11,19 @@ import warnings
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 warnings.filterwarnings("ignore")
 
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, configure_logging, PYPSA_EARTH_DIR
+from scripts._helper import (
+    configure_logging,
+    create_logger,
+    mock_snakemake,
+    update_config_from_wildcards,
+)
 
 logger = create_logger(__name__)
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
-            "prepare_growth_factors",
-            configfile="configs/calibration/config.base.yaml"
+            "prepare_growth_factors", configfile="configs/calibration/config.base.yaml"
         )
 
     configure_logging(snakemake)
@@ -38,6 +43,8 @@ if __name__ == "__main__":
     for src, tgt in [(source_file_1, target_file_1), (source_file_2, target_file_2)]:
         if os.path.exists(src):
             shutil.copy(src, tgt)
-            logger.info(f"The selected scenario is {scenario}, thus {src} is copied to {tgt}")
+            logger.info(
+                f"The selected scenario is {scenario}, thus {src} is copied to {tgt}"
+            )
         else:
             logger.warning(f"{src} does not exist.")

@@ -230,8 +230,9 @@ def scale_demand_profiles(df_demand_profiles, spatial_gadm_bus_mapping, scaling_
 
     # merge with scaling_factor DataFrame based on region_code and time
     df_demand_long.reset_index(inplace=True)
+    target_year = df_demand_long["time"][0].year
     scaling_factor["time"] = scaling_factor["time"].apply(
-        lambda t: t.replace(year=df_demand_long["time"][0].year)
+        lambda t: t.replace(year=target_year)
     )
     df_scaled = df_demand_long.merge(
         scaling_factor, on=["region_code", "time"], how="left"
@@ -338,7 +339,9 @@ if __name__ == "__main__":
     )
 
     # get spatial GADM to bus mapping
-    spatial_gadm_bus_mapping = get_spatial_mapping(pypsa_network, snakemake.input.gadm_shape, snakemake.params.geo_crs)
+    spatial_gadm_bus_mapping = get_spatial_mapping(
+        pypsa_network, snakemake.input.gadm_shape, snakemake.params.geo_crs
+    )
 
     # scale demand for future scenarios
     if snakemake.params.demand_horizon >= 2025:
@@ -351,7 +354,9 @@ if __name__ == "__main__":
 
     # set data center demand profiles
     if snakemake.config["demand_projection"]["data_centers_load"]:
-        data_center_demand = read_data_center_profiles(snakemake.params.demand_horizon, snakemake.params.data_center_profiles)
+        data_center_demand = read_data_center_profiles(
+            snakemake.params.demand_horizon, snakemake.params.data_center_profiles
+        )
         df_demand_profiles = add_data_center_demand(
             df_demand_profiles, spatial_gadm_bus_mapping, data_center_demand
         )

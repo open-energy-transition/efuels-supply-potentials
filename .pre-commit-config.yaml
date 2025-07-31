@@ -1,12 +1,9 @@
 # SPDX-FileCopyrightText:  Open Energy Transition Open Energy Transition gGmbH
-
 #
 # SPDX-License-Identifier: CC0-1.0
-
 # Copied from https://github.com/PyPSA/pypsa-eur/pull/302/files
 
 exclude: ^(LICENSES)
-
 
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -20,13 +17,6 @@ repos:
 #  - id: check-added-large-files
 #     args: ['--maxkb=2000']
 
-# Sort package imports alphabetically
-- repo: https://github.com/PyCQA/isort
-  rev: 6.0.1
-  hooks:
-  - id: isort
-    args: ["--profile", "black", "--filter-files"]
-
 # Find common spelling mistakes in comments and docstrings
 - repo: https://github.com/codespell-project/codespell
   rev: v2.4.1
@@ -36,20 +26,12 @@ repos:
     types_or: [python, rst, markdown]
     files: ^(scripts|doc)/
 
-# # Make docstrings PEP 257 compliant
-# - repo: https://github.com/PyCQA/docformatter
-#   rev: v1.7.5
-#   hooks:
-#   - id: docformatter
-#     args: ["--in-place", "--make-summary-multi-line", "--pre-summary-newline"]
-#     entry: docformatter
-#     language: python
-#     types: [python]
-
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.4.4  # Usa l'ultima versione disponibile se necessario
+  rev: v0.12.2
   hooks:
   - id: ruff
+    types_or: [python, pyi, jupyter]
+    args: [--fix, --exit-non-zero-on-fix]
   - id: ruff-format
 
 # Find common spelling mistakes in comments and docstrings
@@ -66,7 +48,7 @@ repos:
   rev: v2.14.0
   hooks:
   - id: pretty-format-yaml
-    exclude: pinned\.yaml$
+    exclude: (pinned\.yaml|\.lock\.yaml)$
     args: [--autofix, --indent, '2', --preserve-quotes]
 
 # Use yamllint to check for valid YAML files and list syntax errors
@@ -79,7 +61,7 @@ repos:
 
 # Format Snakemake rule / workflow files
 - repo: https://github.com/snakemake/snakefmt
-  rev: v0.10.2
+  rev: v0.11.0
   hooks:
   - id: snakefmt
 

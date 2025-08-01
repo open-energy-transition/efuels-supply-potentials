@@ -162,15 +162,15 @@ def prepare_network(n, solve_opts):
 
     return n
 
-def propagate_base_efficiencies(network, base_year=2020, cutoff_year=2025):
+def propagate_base_year_efficiencies(network, base_year=2020, cutoff_year=2025):
     """
     Set efficiency values for all generators and links built in or before `cutoff_year`
-    using base-year efficiencies defined in the config (default: 2020).
-    Existing values will be overwritten.
+    using base-year efficiencies defined in `config.base.yaml`.
+    Existing values from cost file will be overwritten.
 
     Parameters:
         network: PyPSA Network object
-        base_year: Reference year for base efficiencies (default: 2020)
+        base_year: Reference year for base efficiencies
         cutoff_year: Maximum build year considered as 'existing' (default: 2025)
     """
 
@@ -1672,7 +1672,7 @@ if __name__ == "__main__":
 
     n = prepare_network(n, solving["options"])
 
-    propagate_base_efficiencies(n)
+    propagate_base_year_efficiencies(n)
 
     # Ensure marginal cost restoration and initialization of original values
     for comp_name, comp_df in [("generators", n.generators), ("links", n.links)]:

@@ -162,6 +162,36 @@ def prepare_network(n, solve_opts):
 
     return n
 
+def propagate_base_efficiencies(network, base_year=2020, cutoff_year=2025):
+    """
+    Set efficiency values for all generators and links built in or before `cutoff_year`
+    using base-year efficiencies defined in the config (default: 2020).
+    Existing values will be overwritten.
+
+    Parameters:
+        network: PyPSA Network object
+        base_year: Reference year for base efficiencies (default: 2020)
+        cutoff_year: Maximum build year considered as 'existing' (default: 2025)
+    """
+
+    base_efficiencies = {
+        "coal": 0.3195,
+        "oil": 0.3005,
+        "CCGT": 0.4429,
+        "nuclear": 0.3254,
+        "biomass": 0.30,
+    }
+
+    # Apply efficiencies to existing links
+    for name, link in network.links.iterrows():
+        if link.carrier in base_efficiencies and getattr(link, "build_year", float("inf")) <= cutoff_year:
+            network.links.at[name, "efficiency"] = base_efficiencies[link.carrier]
+
+    # Apply efficiencies to existing nuclear generators
+    for name, gen in network.generators.iterrows():
+        if gen.carrier == "nuclear" and getattr(gen, "build_year", float("inf")) <= cutoff_year:
+            network.generators.at[name, "efficiency"] = base_efficiencies["nuclear"]
+
 def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, costs, log_path=None, verbose=False):
     """
     Apply production and investment tax credits to the network.
@@ -1641,6 +1671,8 @@ if __name__ == "__main__":
         add_existing(n)
 
     n = prepare_network(n, solving["options"])
+
+    propagate_base_efficiencies(n)
 
     # Ensure marginal cost restoration and initialization of original values
     for comp_name, comp_df in [("generators", n.generators), ("links", n.links)]:

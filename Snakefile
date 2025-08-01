@@ -761,6 +761,17 @@ if config["foresight"] == "overnight" and config["state_policy"] != "off":
         
     ruleorder: solve_custom_sector_network > solve_sector_network
 
+
+use rule cluster_network from pypsa_earth with:
+    params:
+        **{k: v for k, v in rules.cluster_network.params.items() if k != "custom_busmap"},
+        custom_busmap=config["enable"].get("custom_busmap", False)
+    input:
+        **{k: v for k, v in rules.cluster_network.input.items() if k != "custom_busmap"},
+        custom_busmap=("data/custom_busmap_elec_s{simpl}_{clusters}.csv"
+                       if config["enable"].get("custom_busmap", False) else []),
+
+
 rule test_modify_prenetwork:
     input:
         prenetwork=PYPSA_EARTH_DIR + "networks/" + RDIR + "elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",

@@ -27,17 +27,20 @@ Activate `pypsa-earth` environment:
 To ensure that all team members can use the pre-commit hooks and maintain code quality across the project, follow these steps:
 
 1. Navigate to the root directory of the repository, where the .pre-commit-config.yaml file is located. Then, run the following command to install the hooks defined in the .pre-commit-config.yaml file:
-```pre-commit install
+```bash
+pre-commit install
 ```
 This command will set up the hooks in the `.git/hooks directory` (specifically the `pre-commit hook`), ensuring that the hooks are executed automatically before each commit.
 
 2. To ensure that all files comply with the defined hooks, users can run the following command manually to check and fix any issues with all files in the repository:
-```pre-commit run --a
+```bash
+pre-commit run --a
 ```
 This step is optional but recommended to make sure that any formatting or linting issues are fixed before starting to commit changes.
 
 3. Once the pre-commit hooks are installed and verified, you can proceed to make changes to the code, add them to your commit, and push them to the repository. From this point forward, pre-commit will automatically run checks on your files whenever you try to commit:
-```git add .
+```bash
+git add .
 git commit -m "Your commit message"
 ```
 If any of the hooks (such as `black`, `isort`, or `reuse lint`) detect issues (for example, formatting issues or missing license headers), the commit will be blocked, and you'll be required to fix the issues before retrying.
@@ -89,7 +92,6 @@ snakemake -call solve_sector_networks_myopic --configfile configs/scenarios/conf
 
 ## 3. Snakemake rules
 
-<<<<<<< HEAD
 |Rule name                |Config file                              |Description        |
 |-------------------------|-----------------------------------------|-------------------|
 |`validate_all`           |`config.base.yaml`, `config.base_AC.yaml`|Performs country-level validation comparing with EIA and Ember data|
@@ -101,28 +103,10 @@ snakemake -call solve_sector_networks_myopic --configfile configs/scenarios/conf
 |`preprocess_demand_data` |Any base or scenario config file         |Preprocess utlities demand data into geojson|
 |`build_demand_profiles_from_eia` |Any base or scenario config file         |Build custom demand data from eia and bypass build_demand_profiles|
 |`set_saf_mandate`        |Any base or scenario config file         |Adds e-kerosene buses to enable split of aviation demand and sets SAF mandate if enabled|
-<<<<<<< HEAD
 |`build_custom_industry_demand` |Any base or scenario config file   |Estimates node level demands for selected custom industries (e.g. ammonia, ethanol, cement, and steel)|
 |`add_custom_industry`    |Any base or scenario config file         |Adds selected custom industries into the network|
 |`prepare_growth_rate_scenarios`  | Any base or scenario config file          | Allows automatic fetching of correct growth rate files according to the demand_projection scenario name                                                                |
-|`solve_custom_sector_network`  | Any base or scenario config file          | Allows state/country-wise clean/RES polices to be applied as constraints. The constraints is turned on by default.                                                                |
-=======
-=======
-| Rule name                        | Config file                               | Description                                                                                                                                                            |
-|----------------------------------|-------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `validate_all`                   | `config.base.yaml`, `config.base_AC.yaml` | Performs country-level validation comparing with EIA and Ember data                                                                                                    |
-| `statewise_validate_all`         | `config.base_AC.yaml`                     | Performs statewise validation comparing with EIA data                                                                                                                  |
-| `get_capacity_factors`           | Any base or scenario config file          | Estimates capacity factors for renewables                                                                                                                              |
-| `process_airport_data`           | -                                         | Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand |
-| `generate_aviation_scenario`     | Any base or scenario config file          | Generates aviation demand csv file with different future scenario                                                                                                      |
-| `modify_aviation_demand`         | Any base or scenario config file          | Switches aviation demand in energy_total to custom demand                                                                                                              |
-| `preprocess_demand_data`         | Any base or scenario config file          | Preprocess utlities demand data into geojson                                                                                                                           |
-| `build_demand_profiles_from_eia` | Any base or scenario config file          | Build custom demand data from eia and bypass build_demand_profiles                                                                                                     |
-| `set_saf_mandate`                | Any base or scenario config file          | Adds e-kerosene buses to enable split of aviation demand and sets SAF mandate if enabled                                                                               |
-| `prepare_growth_rate_scenarios`  | Any base or scenario config file          | Allows automatic fetching of correct growth rate files according to the demand_projection scenario name                                                                |
->>>>>>> 1972ee3 (commit ignoring pre-commit)
-
->>>>>>> 08e2633 (implement and run pre-commit, update license files)
+|`solve_custom_sector_network`  | Any base or scenario config file          | Allows state/country-wise clean/RES polices to be applied as constraints. The constraints are turned on by default.                                                                |
 
 
 ### Retrieve rules
@@ -140,7 +124,6 @@ snakemake -call solve_sector_networks_myopic --configfile configs/scenarios/conf
 |`retrieve_demand_data`          |Any base or scenario config file         |Retrieves utility demand data from google drive to `data/demand_data/*`|
 
 * `RDIR` - scenario folder
-<<<<<<< HEAD
 
 ## 4. Updates to the working branch of PyPSA-Earth submodule
 
@@ -175,7 +158,7 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 8. [PR #63](https://github.com/open-energy-transition/pypsa-earth/pull/63): Introduce `p_max_pu` for nuclear generators (or links, if necessary) to match base year statistics and to apply it to future years.
 9. [PR #65](https://github.com/open-energy-transition/pypsa-earth/pull/65): Remove lignite from default conventional carriers.
 10. [PR #69](https://github.com/open-energy-transition/pypsa-earth/pull/69): Extend lifetime of nuclear power plants to 60 years
- 
+
 ## 5. Validation
 
 ### 5.1. Country-level validation for the base scenario
@@ -200,5 +183,3 @@ To run state-wise validation, run:
 ```bash
 snakemake -call statewise_validate_all --configfile configs/calibration/config.base_AC.yaml
 ```
-=======
->>>>>>> 08e2633 (implement and run pre-commit, update license files)

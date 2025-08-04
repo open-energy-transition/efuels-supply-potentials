@@ -689,7 +689,7 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
     ).reset_index()
 
     # Filter small values
-    grid_region_capacity = grid_region_capacity[grid_region_capacity["total_gw"]
+    grid_region_capacity_filtered = grid_region_capacity[grid_region_capacity["total_gw"]
                                                 >= min_capacity_gw]
 
     # Set up map
@@ -705,7 +705,7 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
     min_radius = 0.1
     max_radius = 3.5
 
-    for _, row in grid_region_capacity.iterrows():
+    for _, row in grid_region_capacity_filtered.iterrows():
         x, y, total_gw = row["x"], row["y"], row["total_gw"]
         radius = np.clip(total_gw * pie_scale, min_radius, max_radius)
 

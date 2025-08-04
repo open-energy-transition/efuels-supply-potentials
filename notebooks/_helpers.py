@@ -3205,3 +3205,22 @@ def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names, use_scenario_
         fig.delaxes(axs[j])
 
     plt.show()
+
+
+def compute_line_expansion_capacity(n):
+    """
+    Computes the line expansion capacity grouped by grid region.
+    
+    Parameters:
+    n (pypsa.Network): The PyPSA network object.
+    
+    Returns:
+    pd.DataFrame: DataFrame with line expansion capacity by grid region.
+    """
+    # Ensure 'grid_region' is present in lines
+    if "grid_region" not in n.lines.columns:
+        n.lines["grid_region"] = n.lines.bus0.map(n.buses.grid_region)
+    
+    # Group by 'grid_region' and sum the capacities
+    line_exp_cap = n.lines.groupby("grid_region")[["s_nom", 's_nom_opt']].sum() / 1e3  # Convert to GW
+    return line_exp_cap

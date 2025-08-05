@@ -3220,7 +3220,13 @@ def compute_line_expansion_capacity(n):
     # Ensure 'grid_region' is present in lines
     if "grid_region" not in n.lines.columns:
         n.lines["grid_region"] = n.lines.bus0.map(n.buses.grid_region)
+
+    # Ensure 'state' is present in lines
+    if "state" not in n.lines.columns:
+        n.lines["state"] = n.lines.bus0.map(n.buses.state)
     
-    # Group by 'grid_region' and sum the capacities
-    line_exp_cap = n.lines.groupby("grid_region")[["s_nom", 's_nom_opt']].sum() / 1e3  # Convert to GW
-    return line_exp_cap
+    # Group by 'grid_region' and 'state' then sum the capacities
+    line_exp_cap_grid = n.lines.groupby("grid_region")[["s_nom", 's_nom_opt']].sum() / 1e3  # Convert to GW
+    line_exp_cap_state = n.lines.groupby("state")[["s_nom", 's_nom_opt']].sum() / 1e3  # Convert to GW
+
+    return line_exp_cap_grid, line_exp_cap_state

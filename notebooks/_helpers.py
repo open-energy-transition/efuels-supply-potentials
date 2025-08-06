@@ -2972,10 +2972,10 @@ def preprocess_eia_data(data):
 
     # Drop unwanted renewable energy categories
     data.drop(index=["Renewables", "Non-hydroelectric renewables",
-                     "Geothermal", "Solar, tide, wave, fuel cell", "Tide and wave"], inplace=True)
+                     "Solar, tide, wave, fuel cell", "Tide and wave"], inplace=True)
 
     # Filter the DataFrame to only include relevant energy sources
-    data = data.loc[["Nuclear", "Fossil fuels",
+    data = data.loc[["Nuclear", "Fossil fuels", "Geothermal",
                      "Hydro", "PHS", "Solar", "Wind", "Biomass"], :]
 
     return data

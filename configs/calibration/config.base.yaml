@@ -79,7 +79,6 @@ custom_data:
 
 sector:
   electricity_distribution_grid: true
-  solar_rooftop: false
   conventional_generation: # generator : carrier
     OCGT: gas
     CCGT: gas

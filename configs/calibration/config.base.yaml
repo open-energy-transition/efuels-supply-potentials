@@ -42,7 +42,7 @@ electricity:
     Generator: []
     Store: [battery, H2]
 
-  powerplants_filter: DateIn < 2023
+  powerplants_filter: DateIn <= 2023
   custom_powerplants: "replace" #  "false" use only powerplantmatching (ppm) data, "merge" combines ppm and custom powerplants, "replace" use only custom powerplants
 
   conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, geothermal, biomass]

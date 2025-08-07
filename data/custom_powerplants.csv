@@ -1,4 +1,4 @@
-,Name,Fueltype,Technology,Set,Country,Capacity,Efficiency,Duration,Volume_Mm3,DamHeight_m,StorageCapacity_MWh,DateIn,DateRetrofit,DateMothball,DateOut,lat,lon,EIC,projectID,bus,cumcount
+index,Name,Fueltype,Technology,Set,Country,Capacity,Efficiency,Duration,Volume_Mm3,DamHeight_m,StorageCapacity_MWh,DateIn,DateRetrofit,DateMothball,DateOut,lat,lon,EIC,projectID,bus,cumcount
 0,Sand Point 1,oil,,PP,US,0.9,,,,,,2000,,,2025,55.339722,-160.497222,,,,1
 1,Sand Point 2,oil,,PP,US,0.9,,,,,,2000,,,2025,55.339722,-160.497222,,,,2
 2,Sand Point 3,oil,,PP,US,0.5,,,,,,2010,,,2035,55.339722,-160.497222,,,,3
@@ -6681,14 +6681,14 @@
 6679,Kotzebue Hybrid 16,onwind,,PP,US,0.2,,,,,,1997,,,2025,66.837778,-162.556944,,,,16
 6680,Kotzebue Hybrid 17,oil,,PP,US,1.1,,,,,,1987,,,2012,66.837778,-162.556944,,,,17
 6681,Kotzebue Hybrid 18,battery,,Store,US,1.2,,,,,,2015,,,2035,66.837778,-162.556944,,,,18
-6682,Kotzebue Hybrid 19,solar,,PP,US,0.1,,,,,,2020,,,2040,66.837778,-162.556944,,,,19
-6683,Kotzebue Hybrid 20,solar,,PP,US,0.1,,,,,,2020,,,2040,66.837778,-162.556944,,,,20
-6684,Kotzebue Hybrid 21,solar,,PP,US,0.1,,,,,,2020,,,2040,66.837778,-162.556944,,,,21
-6685,Kotzebue Hybrid 22,solar,,PP,US,0.1,,,,,,2020,,,2040,66.837778,-162.556944,,,,22
-6686,Kotzebue Hybrid 23,solar,,PP,US,0.1,,,,,,2020,,,2040,66.837778,-162.556944,,,,23
-6687,Kotzebue Hybrid 24,solar,,PP,US,0.1,,,,,,2020,,,2040,66.837778,-162.556944,,,,24
-6688,Kotzebue Hybrid 25,solar,,PP,US,0.1,,,,,,2020,,,2040,66.837778,-162.556944,,,,25
-6689,Kotzebue Hybrid 26,solar,,PP,US,0.1,,,,,,2020,,,2040,66.837778,-162.556944,,,,26
+6682,Kotzebue Hybrid 19,solar,,PP,US,0.1,,,,,,2020,,,2055,66.837778,-162.556944,,,,19
+6683,Kotzebue Hybrid 20,solar,,PP,US,0.1,,,,,,2020,,,2055,66.837778,-162.556944,,,,20
+6684,Kotzebue Hybrid 21,solar,,PP,US,0.1,,,,,,2020,,,2055,66.837778,-162.556944,,,,21
+6685,Kotzebue Hybrid 22,solar,,PP,US,0.1,,,,,,2020,,,2055,66.837778,-162.556944,,,,22
+6686,Kotzebue Hybrid 23,solar,,PP,US,0.1,,,,,,2020,,,2055,66.837778,-162.556944,,,,23
+6687,Kotzebue Hybrid 24,solar,,PP,US,0.1,,,,,,2020,,,2055,66.837778,-162.556944,,,,24
+6688,Kotzebue Hybrid 25,solar,,PP,US,0.1,,,,,,2020,,,2055,66.837778,-162.556944,,,,25
+6689,Kotzebue Hybrid 26,solar,,PP,US,0.1,,,,,,2020,,,2055,66.837778,-162.556944,,,,26
 6690,Glennallen 1,oil,,PP,US,2.6,,,,,,1976,,,2001,62.110415,-145.532529,,,,1
 6691,Glennallen 2,oil,,PP,US,2.6,,,,,,1976,,,2001,62.110415,-145.532529,,,,2
 6692,Glennallen 3,oil,,PP,US,1.2,,,,,,1999,,,2024,62.110415,-145.532529,,,,3
@@ -14724,14 +14724,14 @@
 14722,Golden Spread Panhandle Wnd Rch 1,onwind,,PP,US,78.2,,,,,,2011,,,2038,35.243611,-102.21,,,,1
 14723,Howard Wind Farm 1,onwind,,PP,US,51.3,,,,,,2011,,,2038,42.315278,-77.538333,,,,1
 14724,Howard Wind Farm 2,onwind,,PP,US,4.1,,,,,,2012,,,2039,42.315278,-77.538333,,,,2
-14725,L'Oreal Piscataway 1,solar,,PP,US,1.3,,,,,,2011,,,2026,40.554341,-74.468014,,,,1
+14725,L'Oreal Piscataway 1,solar,,PP,US,1.3,,,,,,2011,,,2046,40.554341,-74.468014,,,,1
 14726,L'Oreal Piscataway 2,solar,,PP,US,0.3,,,,,,2014,,,2049,40.554341,-74.468014,,,,2
 14727,L'Oreal Piscataway 3,solar,,PP,US,0.7,,,,,,2016,,,2051,40.554341,-74.468014,,,,3
-14728,Heller Industrial Parks 1,solar,,PP,US,0.5,,,,,,2012,,,2027,40.373898,-74.489236,,,,1
-14729,Heller Industrial Parks 2,solar,,PP,US,0.4,,,,,,2012,,,2027,40.373898,-74.489236,,,,2
-14730,Heller Industrial Parks 3,solar,,PP,US,0.2,,,,,,2012,,,2027,40.373898,-74.489236,,,,3
-14731,Heller Industrial Parks 4,solar,,PP,US,0.8,,,,,,2013,,,2028,40.373898,-74.489236,,,,4
-14732,Heller Industrial Parks 5,solar,,PP,US,2.7,,,,,,2011,,,2027,40.373898,-74.489236,,,,5
+14728,Heller Industrial Parks 1,solar,,PP,US,0.5,,,,,,2012,,,2047,40.373898,-74.489236,,,,1
+14729,Heller Industrial Parks 2,solar,,PP,US,0.4,,,,,,2012,,,2047,40.373898,-74.489236,,,,2
+14730,Heller Industrial Parks 3,solar,,PP,US,0.2,,,,,,2012,,,2047,40.373898,-74.489236,,,,3
+14731,Heller Industrial Parks 4,solar,,PP,US,0.8,,,,,,2013,,,2048,40.373898,-74.489236,,,,4
+14732,Heller Industrial Parks 5,solar,,PP,US,2.7,,,,,,2011,,,2046,40.373898,-74.489236,,,,5
 14733,Castle Rock Vineyards 1,solar,,PP,US,1,,,,,,2010,,,2045,35.801111,-119.110556,,,,1
 14734,2555 E Olympic Bl 1,solar,,PP,US,1,,,,,,2012,,,2047,34.026944,-118.224167,,,,1
 14735,LCEC Generation LLVC 1,OCGT,OCGT,PP,US,9.3,,,,,,2012,,,2047,32.978056,-103.323889,,,,1
@@ -17770,7 +17770,7 @@
 17768,Waynesville Solar Farm (MO) 1,solar,,PP,US,2.8,,,,,,2016,,,2051,37.8041,-92.2535,,,,1
 17769,Marshall Solar Farm (MO) 1,solar,,PP,US,2.8,,,,,,2016,,,2051,39.0948,-93.2104,,,,1
 17770,Havre de Grace II - E at Perryman 1,solar,,PP,US,1.4,,,,,,2016,,,2051,39.436,-76.22,,,,1
-17771,IFF Hazlet 1,solar,,PP,US,3,,,,,,2014,,,2028,40.43819,-74.160147,,,,1
+17771,IFF Hazlet 1,solar,,PP,US,3,,,,,,2014,,,2049,40.43819,-74.160147,,,,1
 17772,Stone Hill Solar CSG 1,solar,,PP,US,2,,,,,,2014,,,2049,42.059104,-71.089157,,,,1
 17773,Chisago Community Solar 1,solar,,PP,US,1,,,,,,2016,,,2051,45.413357,-92.682957,,,,1
 17774,Chisago Community Solar 2,solar,,PP,US,1,,,,,,2016,,,2051,45.413357,-92.682957,,,,2
@@ -17847,7 +17847,7 @@
 17845,Cedarville CSG 1,solar,,PP,US,0.5,,,,,,2017,,,2052,41.802697,-70.549809,,,,1
 17846,Cedarville CSG 2,solar,,PP,US,1,,,,,,2017,,,2052,41.802697,-70.549809,,,,2
 17847,Cedarville CSG 3,solar,,PP,US,1,,,,,,2017,,,2052,41.802697,-70.549809,,,,3
-17848,Freeze Solar 1,solar,,PP,US,1.5,,,,,,2013,,,2028,40.376292,-74.527849,,,,1
+17848,Freeze Solar 1,solar,,PP,US,1.5,,,,,,2013,,,2048,40.376292,-74.527849,,,,1
 17849,Millikan BESS 1,battery,,Store,US,2,,,,,,2016,,,2036,33.691,-117.833,,,,1
 17850,"Roper Farm, LLC 1",solar,,PP,US,5,,,,,,2015,,,2050,35.187475,-81.440717,,,,1
 17851,Pfizer Peapack Solar 1,solar,,PP,US,6.2,,,,,,2016,,,2051,40.711882,-74.663434,,,,1
@@ -17877,7 +17877,7 @@
 17875,"Williamston Speight Solar, LLC 1",solar,,PP,US,15,,,,,,2016,,,2051,35.887545,-77.164201,,,,1
 17876,Suwannee Solar Facility 1,solar,,PP,US,8.8,,,,,,2017,,,2052,30.376254,-83.174114,,,,1
 17877,Bluebell Solar 1,solar,,PP,US,30,,,,,,2018,,,2053,31.87,-100.828,,,,1
-17878,"PVN Milliken, LLC 1",solar,,PP,US,3,,,,,,2017,,,2047,34.038433,-117.565802,,,,1
+17878,"PVN Milliken, LLC 1",solar,,PP,US,3,,,,,,2017,,,2052,34.038433,-117.565802,,,,1
 17879,SunAnza 1,solar,,PP,US,2,,,,,,2017,,,2052,33.555267,-116.639647,,,,1
 17880,SunAnza 2,solar,,PP,US,1.4,,,,,,2020,,,2055,33.555267,-116.639647,,,,2
 17881,Eichtens Community Solar 1,solar,,PP,US,3.9,,,,,,2016,,,2051,45.382662,-92.772538,,,,1
@@ -17890,7 +17890,7 @@
 17888,"Iron Horse Solar 4, LLC 1",solar,,PP,US,4.5,,,,,,2017,,,2052,42.580047,-71.260325,,,,1
 17889,Catawba Solar LLC 1,solar,,PP,US,2,,,,,,2016,,,2051,35.61,-80.53,,,,1
 17890,"CEC Solar #1117, LLC 1",solar,,PP,US,1.5,,,,,,2018,,,2053,38.284425,-104.523951,,,,1
-17891,ACCC Mays Landing 1,solar,,PP,US,1.4,,,,,,2013,,,2028,39.460566,-74.68093,,,,1
+17891,ACCC Mays Landing 1,solar,,PP,US,1.4,,,,,,2013,,,2048,39.460566,-74.68093,,,,1
 17892,Deutsche Bank- Piscataway Solar 1,solar,,PP,US,1,,,,,,2011,,,2046,40.545755,-74.4964,,,,1
 17893,"Gemini Technologies Services, Inc. Solar 1",solar,,PP,US,1.3,,,,,,2013,,,2048,40.848445,-74.467582,,,,1
 17894,Beaver Run 1,solar,,PP,US,7.4,,,,,,2015,,,2050,41.152955,-74.638077,,,,1
@@ -22537,7 +22537,7 @@
 22535,Greenleaf 1 2,OCGT,OCGT,PP,US,34.9,,,,,,2022,,,2057,39.052922,-121.696072,,,,2
 22536,Arcelormittal Cleveland Inc 6,,,PP,US,70,,,,,,2022,,,2022,41.4739,-81.6728,,,,1
 22537,University of Michigan 1,CCGT,CCGT,PP,US,15.5,,,,,,2022,,,2057,42.281167,-83.734617,,,,1
-22538,Steamboat Hills LP 3,solar,,PP,US,2,,,,,,2022,,,2042,39.37,-119.766944,,,,1
+22538,Steamboat Hills LP 3,solar,,PP,US,2,,,,,,2022,,,2057,39.37,-119.766944,,,,1
 22539,Caterpillar 4,OCGT,OCGT,PP,US,3,,,,,,2022,,,2057,40.4175,-86.8447,,,,1
 22540,West Point (PA) 5,OCGT,OCGT,PP,US,2,,,,,,2022,,,2057,40.217963,-75.298823,,,,1
 22541,Second Imperial Geothermal 3,geothermal,,PP,US,26.5,,,,,,2022,,,2022,32.7144,-115.5356,,,,1
@@ -22555,180 +22555,180 @@
 22553,Roseville Energy Park 4,OCGT,OCGT,PP,US,30,,,,,,2022,,,2057,38.7928,-121.3811,,,,1
 22554,Roseville Energy Park 5,OCGT,OCGT,PP,US,30,,,,,,2022,,,2057,38.7928,-121.3811,,,,2
 22555,Aragonne Wind LLC 2,onwind,,PP,US,145,,,,,,2022,,,2049,34.8147,-105.0108,,,,1
-22556,Galena 2 Geothermal Power Plant 2,solar,,PP,US,3,,,,,,2022,,,2042,39.373189,-119.764507,,,,1
+22556,Galena 2 Geothermal Power Plant 2,solar,,PP,US,3,,,,,,2022,,,2057,39.373189,-119.764507,,,,1
 22557,Eastern Landfill Gas LLC 4,biomass,,PP,US,1,,,,,,2022,,,2022,39.389728,-76.392006,,,,1
 22558,Noatak 1,oil,,PP,US,0.5,,,,,,2022,,,2057,67.570931,-162.965728,,,,1
 22559,Pilot Station 2,oil,,PP,US,0.3,,,,,,2022,,,2057,61.936456,-162.880706,,,,2
 22560,Gambell 1,oil,,PP,US,0.5,,,,,,2022,,,2057,63.777058,-171.712439,,,,1
 22561,Soldotna 2,battery,,Store,US,46.5,,,,,,2022,,,2042,60.499444,-150.997222,,,,1
-22562,Mililani South Solar Farm 1,solar,,PP,US,39,,,,,,2022,,,2042,21.427916,-158.01985,,,,1
+22562,Mililani South Solar Farm 1,solar,,PP,US,39,,,,,,2022,,,2057,21.427916,-158.01985,,,,1
 22563,Mililani South Solar Farm 2,battery,,Store,US,39,,,,,,2022,,,2042,21.427916,-158.01985,,,,2
 22564,East Campus Utility Plant 3,oil,,PP,US,2.5,,,,,,2022,,,2057,39.137935,-84.504948,,,,1
 22565,McKinley Paper Co. - Washington Mill 1,waste,,PP,US,12.6,,,,,,2022,,,2022,48.134722,-123.465556,,,,1
-22566,Princeton University Cogeneration 4,solar,,PP,US,10.5,,,,,,2022,,,2042,40.341389,-74.657222,,,,1
-22567,Princeton University Cogeneration 5,solar,,PP,US,0.4,,,,,,2022,,,2042,40.341389,-74.657222,,,,2
+22566,Princeton University Cogeneration 4,solar,,PP,US,10.5,,,,,,2022,,,2057,40.341389,-74.657222,,,,1
+22567,Princeton University Cogeneration 5,solar,,PP,US,0.4,,,,,,2022,,,2057,40.341389,-74.657222,,,,2
 22568,"Hidden View Dairy, LLC 1",OCGT,OCGT,PP,US,1,,,,,,2022,,,2057,41.032778,-87.0725,,,,1
 22569,Subase Microgrid Project 1,,,PP,US,3.7,,,,,,2022,,,2022,41.400008,-72.085993,,,,1
 22570,Subase Microgrid Project 2,,,PP,US,3.7,,,,,,2022,,,2022,41.400008,-72.085993,,,,2
 22571,RE Tranquillity 2,battery,,Store,US,35,,,,,,2022,,,2042,36.581365,-120.40447,,,,1
-22572,High Shoals PV1 1,solar,,PP,US,16,,,,,,2022,,,2042,35.396478,-81.219144,,,,1
-22573,"Pine Valley Solar Farm, LLC 1",solar,,PP,US,5,,,,,,2022,,,2042,35.21812,-79.529333,,,,1
-22574,Sellers Farm Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,34.881973,-79.665351,,,,1
+22572,High Shoals PV1 1,solar,,PP,US,16,,,,,,2022,,,2057,35.396478,-81.219144,,,,1
+22573,"Pine Valley Solar Farm, LLC 1",solar,,PP,US,5,,,,,,2022,,,2057,35.21812,-79.529333,,,,1
+22574,Sellers Farm Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,34.881973,-79.665351,,,,1
 22575,Tungsten Mountain 1,geothermal,,PP,US,25.5,,,,,,2022,,,2022,39.667002,-117.693658,,,,1
 22576,Mount Sinai Hospital 1,oil,,PP,US,0.4,,,,,,2022,,,2057,40.78999,-73.953689,,,,1
-22577,Mountain View Solar (FL) 1,solar,,PP,US,54.6,,,,,,2022,,,2042,28.39799,-82.22043,,,,1
-22578,"Depot Solar Center, LLC 1",solar,,PP,US,15,,,,,,2022,,,2042,37.276278,-79.116506,,,,1
+22577,Mountain View Solar (FL) 1,solar,,PP,US,54.6,,,,,,2022,,,2057,28.39799,-82.22043,,,,1
+22578,"Depot Solar Center, LLC 1",solar,,PP,US,15,,,,,,2022,,,2057,37.276278,-79.116506,,,,1
 22579,Naval Sub Base New London Fuel Cell 1,,,PP,US,3.7,,,,,,2022,,,2022,41.4,-72.0855,,,,1
 22580,Naval Sub Base New London Fuel Cell 2,,,PP,US,3.7,,,,,,2022,,,2022,41.4,-72.0855,,,,2
-22581,"Stratford Solar Center, LLC 1",solar,,PP,US,15,,,,,,2022,,,2042,36.660483,-76.56093,,,,1
+22581,"Stratford Solar Center, LLC 1",solar,,PP,US,15,,,,,,2022,,,2057,36.660483,-76.56093,,,,1
 22582,Victoria Port Power II LLC 1,OCGT,OCGT,PP,US,50,,,,,,2022,,,2057,28.698477,-96.946125,,,,1
 22583,Victoria Port Power II LLC 2,OCGT,OCGT,PP,US,50,,,,,,2022,,,2057,28.698477,-96.946125,,,,2
-22584,Urtica Solar Project 1,solar,,PP,US,5,,,,,,2022,,,2042,47.10754,-120.68974,,,,1
-22585,Penstemon Solar Project 1,solar,,PP,US,5,,,,,,2022,,,2042,46.95931,-120.50905,,,,1
-22586,Camas Solar Project 1,solar,,PP,US,5,,,,,,2022,,,2042,46.95931,-120.50905,,,,2
+22584,Urtica Solar Project 1,solar,,PP,US,5,,,,,,2022,,,2057,47.10754,-120.68974,,,,1
+22585,Penstemon Solar Project 1,solar,,PP,US,5,,,,,,2022,,,2057,46.95931,-120.50905,,,,1
+22586,Camas Solar Project 1,solar,,PP,US,5,,,,,,2022,,,2057,46.95931,-120.50905,,,,2
 22587,Diablo Energy Storage 1,battery,,Store,US,200,,,,,,2022,,,2042,38.028792,-121.900596,,,,1
 22588,Blue Water Energy Center 1,CCGT,CCGT,PP,US,394.4,,,,,,2022,,,2057,42.773716,-82.479331,,,,1
 22589,Blue Water Energy Center 2,CCGT,CCGT,PP,US,394.4,,,,,,2022,,,2057,42.773716,-82.479331,,,,2
 22590,Blue Water Energy Center 3,CCGT,CCGT,PP,US,478.6,,,,,,2022,,,2057,42.773716,-82.479331,,,,3
-22591,Jefferson Solar 2,solar,,PP,US,8.2,,,,,,2022,,,2042,34.349567,-80.058122,,,,1
-22592,Marshall Solar 1,solar,,PP,US,2,,,,,,2022,,,2042,34.371908,-80.021614,,,,1
-22593,"North Stonington Solar Center, LLC 1",solar,,PP,US,15,,,,,,2022,,,2042,41.418331,-71.836729,,,,1
-22594,Antelope Expansion 1B 1,solar,,PP,US,17,,,,,,2022,,,2042,34.71611,-118.259161,,,,1
+22591,Jefferson Solar 2,solar,,PP,US,8.2,,,,,,2022,,,2057,34.349567,-80.058122,,,,1
+22592,Marshall Solar 1,solar,,PP,US,2,,,,,,2022,,,2057,34.371908,-80.021614,,,,1
+22593,"North Stonington Solar Center, LLC 1",solar,,PP,US,15,,,,,,2022,,,2057,41.418331,-71.836729,,,,1
+22594,Antelope Expansion 1B 1,solar,,PP,US,17,,,,,,2022,,,2057,34.71611,-118.259161,,,,1
 22595,Albert Einstein College of Medicine 1,oil,,PP,US,0.2,,,,,,2022,,,2057,40.85132,-73.8483,,,,1
 22596,Cranell Wind Farm LLC 1,onwind,,PP,US,220,,,,,,2022,,,2049,28.197778,-97.444953,,,,1
-22597,Route 19 #1 Community Solar Farm 1,solar,,PP,US,2,,,,,,2022,,,2042,42.534,-78.151,,,,1
-22598,Route 19 #2 Community Solar Farm 1,solar,,PP,US,5,,,,,,2022,,,2042,42.533807,-78.15377,,,,1
-22599,Yellow Mills Rd #1 Community Solar Farm 1,solar,,PP,US,2.3,,,,,,2022,,,2042,43.017848,-77.26049,,,,1
-22600,Yellow Mills Rd #2 Community Solar Farm 1,solar,,PP,US,2.3,,,,,,2022,,,2042,43.016419,-77.26091,,,,2
-22601,Yellow Mills Rd #3 Community Solar Farm 1,solar,,PP,US,2.3,,,,,,2022,,,2042,43.015301,-77.260662,,,,3
+22597,Route 19 #1 Community Solar Farm 1,solar,,PP,US,2,,,,,,2022,,,2057,42.534,-78.151,,,,1
+22598,Route 19 #2 Community Solar Farm 1,solar,,PP,US,5,,,,,,2022,,,2057,42.533807,-78.15377,,,,1
+22599,Yellow Mills Rd #1 Community Solar Farm 1,solar,,PP,US,2.3,,,,,,2022,,,2057,43.017848,-77.26049,,,,1
+22600,Yellow Mills Rd #2 Community Solar Farm 1,solar,,PP,US,2.3,,,,,,2022,,,2057,43.016419,-77.26091,,,,2
+22601,Yellow Mills Rd #3 Community Solar Farm 1,solar,,PP,US,2.3,,,,,,2022,,,2057,43.015301,-77.260662,,,,3
 22602,SJRR Power LLC 1,OCGT,OCGT,PP,US,50,,,,,,2022,,,2057,29.88193,-95.11148,,,,1
 22603,SJRR Power LLC 2,OCGT,OCGT,PP,US,50,,,,,,2022,,,2057,29.88193,-95.11148,,,,2
 22604,Elkhorn Battery Energy Storage System 1,battery,,Store,US,182.5,,,,,,2022,,,2042,36.808039,-121.781788,,,,1
 22605,Outer Cape Community Battery 1,battery,,Store,US,25,,,,,,2022,,,2042,42.060267,-70.19419,,,,1
 22606,Searcy Solar Hybrid 1,battery,,Store,US,10,,,,,,2022,,,2042,35.233,-91.69,,,,1
-22607,Searcy Solar Hybrid 2,solar,,PP,US,100,,,,,,2022,,,2042,35.233,-91.69,,,,2
+22607,Searcy Solar Hybrid 2,solar,,PP,US,100,,,,,,2022,,,2057,35.233,-91.69,,,,2
 22608,Foundation Dole Fresh Vegetables 1,onwind,,PP,US,2.8,,,,,,2022,,,2049,36.459294,-121.350083,,,,1
 22609,Foundation Dole Fresh Vegetables 2,onwind,,PP,US,2.8,,,,,,2022,,,2049,36.459294,-121.350083,,,,2
-22610,Skipjack Solar Center 1,solar,,PP,US,175,,,,,,2022,,,2042,37.437106,-77.158736,,,,1
-22611,West Valley West 1,solar,,PP,US,5,,,,,,2022,,,2042,42.442927,-78.632137,,,,1
-22612,West Valley East 1,solar,,PP,US,5,,,,,,2022,,,2042,42.443632,-78.632127,,,,1
+22610,Skipjack Solar Center 1,solar,,PP,US,175,,,,,,2022,,,2057,37.437106,-77.158736,,,,1
+22611,West Valley West 1,solar,,PP,US,5,,,,,,2022,,,2057,42.442927,-78.632137,,,,1
+22612,West Valley East 1,solar,,PP,US,5,,,,,,2022,,,2057,42.443632,-78.632127,,,,1
 22613,Wheatridge Hybrid 1,battery,,Store,US,30,,,,,,2022,,,2042,45.55975,-119.6338,,,,1
-22614,Wheatridge Hybrid 2,solar,,PP,US,50,,,,,,2022,,,2042,45.55975,-119.6338,,,,2
-22615,Meherrin Solar 1,solar,,PP,US,59.6,,,,,,2022,,,2042,36.59,-77.65,,,,1
+22614,Wheatridge Hybrid 2,solar,,PP,US,50,,,,,,2022,,,2057,45.55975,-119.6338,,,,2
+22615,Meherrin Solar 1,solar,,PP,US,59.6,,,,,,2022,,,2057,36.59,-77.65,,,,1
 22616,Fairbanks Wind Park 1,onwind,,PP,US,72.8,,,,,,2022,,,2049,45.683618,-86.645742,,,,1
-22617,"Stony Knoll Solar, LLC 1",solar,,PP,US,22.6,,,,,,2022,,,2042,36.288,-80.656,,,,1
+22617,"Stony Knoll Solar, LLC 1",solar,,PP,US,22.6,,,,,,2022,,,2057,36.288,-80.656,,,,1
 22618,Maverick Creek Wind 1,onwind,,PP,US,491.6,,,,,,2022,,,2049,31.262546,-99.843961,,,,1
 22619,Notre Dame Hydro 1,hydro,Pumped Storage,Store,US,2.5,,,,,,2022,,,2102,41.676,-86.2453,,,,1
 22620,"Jackson Generation, LLC 1",CCGT,CCGT,PP,US,644.3,,,,,,2022,,,2057,41.438536,-88.110626,,,,1
 22621,"Jackson Generation, LLC 2",CCGT,CCGT,PP,US,644.3,,,,,,2022,,,2057,41.438536,-88.110626,,,,1
-22622,Fighting Jays Solar Project 1,solar,,PP,US,227.5,,,,,,2022,,,2042,29.358425,-95.746388,,,,1
+22622,Fighting Jays Solar Project 1,solar,,PP,US,227.5,,,,,,2022,,,2057,29.358425,-95.746388,,,,1
 22623,Thunderhead Wind Energy LLC 1,onwind,,PP,US,300,,,,,,2022,,,2049,42.062002,-98.238961,,,,1
 22624,Syncarpha Tewksbury Hybrid CSG 1,battery,,Store,US,2,,,,,,2022,,,2042,42.593706,-71.177486,,,,1
-22625,Syncarpha Tewksbury Hybrid CSG 2,solar,,PP,US,2.8,,,,,,2022,,,2042,42.593706,-71.177486,,,,2
-22626,Syncarpha Westminster Hybrid CSG 1,solar,,PP,US,4.7,,,,,,2022,,,2042,42.593028,-71.865824,,,,1
-22627,Syncarpha Millbury Hybrid (CSG) 1,solar,,PP,US,5,,,,,,2022,,,2042,42.175203,-71.793031,,,,1
+22625,Syncarpha Tewksbury Hybrid CSG 2,solar,,PP,US,2.8,,,,,,2022,,,2057,42.593706,-71.177486,,,,2
+22626,Syncarpha Westminster Hybrid CSG 1,solar,,PP,US,4.7,,,,,,2022,,,2057,42.593028,-71.865824,,,,1
+22627,Syncarpha Millbury Hybrid (CSG) 1,solar,,PP,US,5,,,,,,2022,,,2057,42.175203,-71.793031,,,,1
 22628,Syncarpha Northbridge I Hybrid(CSG) 1,battery,,Store,US,4,,,,,,2022,,,2042,42.11239,-71.648261,,,,1
-22629,"Hertford Solar Power, LLC 1",solar,,PP,US,10,,,,,,2022,,,2042,36.268007,-77.028205,,,,1
-22630,Fort Valley State University Solar 1,solar,,PP,US,10.8,,,,,,2022,,,2042,32.501558,-83.883386,,,,1
+22629,"Hertford Solar Power, LLC 1",solar,,PP,US,10,,,,,,2022,,,2057,36.268007,-77.028205,,,,1
+22630,Fort Valley State University Solar 1,solar,,PP,US,10.8,,,,,,2022,,,2057,32.501558,-83.883386,,,,1
 22631,UC Santa Cruz Solar 1,battery,,Store,US,1,,,,,,2022,,,2042,36.9911,-122.0532,,,,1
 22632,Tajiguas Resource Recovery Project 1,biomass,,PP,US,1.1,,,,,,2022,,,2022,34.482175,-120.123485,,,,1
 22633,Tajiguas Resource Recovery Project 2,biomass,,PP,US,1.1,,,,,,2022,,,2022,34.482175,-120.123485,,,,2
-22634,Drew Solar LLC 1,solar,,PP,US,100,,,,,,2022,,,2042,32.687195,-115.665593,,,,1
-22635,Iris Solar LLC 1,solar,,PP,US,50,,,,,,2022,,,2042,30.78184,-90.19536,,,,1
-22636,Samson Solar Energy 1,solar,,PP,US,250,,,,,,2022,,,2042,33.25102,-95.193426,,,,1
-22637,USS Water Fowl Solar LLC CSG 1,solar,,PP,US,1,,,,,,2022,,,2042,44.9066,-94.160439,,,,1
-22638,Brightside 1,solar,,PP,US,50.7,,,,,,2022,,,2042,28.430988,-97.889555,,,,1
+22634,Drew Solar LLC 1,solar,,PP,US,100,,,,,,2022,,,2057,32.687195,-115.665593,,,,1
+22635,Iris Solar LLC 1,solar,,PP,US,50,,,,,,2022,,,2057,30.78184,-90.19536,,,,1
+22636,Samson Solar Energy 1,solar,,PP,US,250,,,,,,2022,,,2057,33.25102,-95.193426,,,,1
+22637,USS Water Fowl Solar LLC CSG 1,solar,,PP,US,1,,,,,,2022,,,2057,44.9066,-94.160439,,,,1
+22638,Brightside 1,solar,,PP,US,50.7,,,,,,2022,,,2057,28.430988,-97.889555,,,,1
 22639,Delta Energy Park 1,CCGT,CCGT,PP,US,58,,,,,,2022,,,2057,42.690644,-84.657783,,,,1
 22640,Delta Energy Park 2,CCGT,CCGT,PP,US,58,,,,,,2022,,,2057,42.690644,-84.657783,,,,2
 22641,Delta Energy Park 3,OCGT,OCGT,PP,US,58,,,,,,2022,,,2057,42.690644,-84.657783,,,,3
 22642,Delta Energy Park 4,CCGT,CCGT,PP,US,89.2,,,,,,2022,,,2057,42.690644,-84.657783,,,,4
-22643,Athos Solar Project 1,solar,,PP,US,250,,,,,,2022,,,2042,33.751283,-115.35499,,,,1
+22643,Athos Solar Project 1,solar,,PP,US,250,,,,,,2022,,,2057,33.751283,-115.35499,,,,1
 22644,"Lansing Renewables, LLC 1",battery,,Store,US,3,,,,,,2022,,,2042,42.59251,-76.56563,,,,1
 22645,"Granby Solar, LLC CSG 2",battery,,Store,US,2,,,,,,2022,,,2042,42.22712,-72.5222,,,,1
 22646,"Owlville Creek Solar 2, LLC 1",battery,,Store,US,3,,,,,,2022,,,2042,43.078888,-75.77222,,,,1
 22647,"Owlville Creek Solar, LLC 1",battery,,Store,US,3,,,,,,2022,,,2042,43.08748,-75.77959,,,,2
-22648,Selective Insurance 2,solar,,PP,US,0.6,,,,,,2022,,,2042,41.152222,-74.744444,,,,1
+22648,Selective Insurance 2,solar,,PP,US,0.6,,,,,,2022,,,2057,41.152222,-74.744444,,,,1
 22649,"Traverse Wind Project, LLC 1",onwind,,PP,US,999,,,,,,2022,,,2049,35.727711,-97.793184,,,,1
-22650,Wister Solar 1,solar,,PP,US,20,,,,,,2022,,,2042,33.269426,-115.502954,,,,1
+22650,Wister Solar 1,solar,,PP,US,20,,,,,,2022,,,2057,33.269426,-115.502954,,,,1
 22651,CD4 1,geothermal,,PP,US,44.4,,,,,,2022,,,2022,37.646053,-118.915794,,,,1
-22652,Lund Hill Solar 1,solar,,PP,US,150,,,,,,2022,,,2042,45.888,-120.355,,,,1
+22652,Lund Hill Solar 1,solar,,PP,US,150,,,,,,2022,,,2057,45.888,-120.355,,,,1
 22653,Hickory Park Solar Hybrid 1,battery,,Store,US,40,,,,,,2022,,,2042,31.269676,-84.176321,,,,1
-22654,Hickory Park Solar Hybrid 2,solar,,PP,US,195.5,,,,,,2022,,,2042,31.269676,-84.176321,,,,2
+22654,Hickory Park Solar Hybrid 2,solar,,PP,US,195.5,,,,,,2022,,,2057,31.269676,-84.176321,,,,2
 22655,Solar BESS Hybrid 1,OCGT,OCGT,PP,US,1,,,,,,2022,,,2057,33.979348,-84.556128,,,,1
-22656,Woodfields Solar 1,solar,,PP,US,2,,,,,,2022,,,2042,34.188925,-82.134332,,,,1
-22657,USS Goodrich Solar 1,solar,,PP,US,2,,,,,,2022,,,2042,41.076,-88.06491,,,,1
-22658,USS Sycamore Solar (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2042,41.96455,-88.66696,,,,1
-22659,River Valley Solar 1,solar,,PP,US,1.9,,,,,,2022,,,2042,45.128,-122.828,,,,1
+22656,Woodfields Solar 1,solar,,PP,US,2,,,,,,2022,,,2057,34.188925,-82.134332,,,,1
+22657,USS Goodrich Solar 1,solar,,PP,US,2,,,,,,2022,,,2057,41.076,-88.06491,,,,1
+22658,USS Sycamore Solar (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2057,41.96455,-88.66696,,,,1
+22659,River Valley Solar 1,solar,,PP,US,1.9,,,,,,2022,,,2057,45.128,-122.828,,,,1
 22660,Luna Storage 1,battery,,Store,US,100,,,,,,2022,,,2042,34.68325,-118.3053,,,,1
 22661,Golden Hill Wind 1,onwind,,PP,US,201.3,,,,,,2022,,,2049,45.562715,-120.708464,,,,1
-22662,Elora Solar 1,solar,,PP,US,150,,,,,,2022,,,2042,35.06,-86.34,,,,1
-22663,Slate Hybrid 1,solar,,PP,US,67.5,,,,,,2022,,,2042,36.226955,-119.8948,,,,1
+22662,Elora Solar 1,solar,,PP,US,150,,,,,,2022,,,2057,35.06,-86.34,,,,1
+22663,Slate Hybrid 1,solar,,PP,US,67.5,,,,,,2022,,,2057,36.226955,-119.8948,,,,1
 22664,Slate Hybrid 3,battery,,Store,US,33.8,,,,,,2022,,,2042,36.226955,-119.8948,,,,2
 22665,Slate Hybrid 4,battery,,Store,US,50,,,,,,2022,,,2042,36.226955,-119.8948,,,,3
 22666,Slate Hybrid 5,battery,,Store,US,10,,,,,,2022,,,2042,36.226955,-119.8948,,,,4
 22667,Slate Hybrid 6,battery,,Store,US,46.5,,,,,,2022,,,2042,36.226955,-119.8948,,,,5
-22668,Slate Hybrid 7,solar,,PP,US,26,,,,,,2022,,,2042,36.226955,-119.8948,,,,6
-22669,Slate Hybrid 8,solar,,PP,US,63,,,,,,2022,,,2042,36.226955,-119.8948,,,,7
-22670,Slate Hybrid 9,solar,,PP,US,93,,,,,,2022,,,2042,36.226955,-119.8948,,,,8
+22668,Slate Hybrid 7,solar,,PP,US,26,,,,,,2022,,,2057,36.226955,-119.8948,,,,6
+22669,Slate Hybrid 8,solar,,PP,US,63,,,,,,2022,,,2057,36.226955,-119.8948,,,,7
+22670,Slate Hybrid 9,solar,,PP,US,93,,,,,,2022,,,2057,36.226955,-119.8948,,,,8
 22671,Taos Mesa Energy Facility Hybrid 1,battery,,Store,US,12,,,,,,2022,,,2042,36.44,-105.62,,,,1
-22672,Taos Mesa Energy Facility Hybrid 2,solar,,PP,US,15,,,,,,2022,,,2042,36.44,-105.62,,,,2
+22672,Taos Mesa Energy Facility Hybrid 2,solar,,PP,US,15,,,,,,2022,,,2057,36.44,-105.62,,,,2
 22673,Helena Wind 1,onwind,,PP,US,268.2,,,,,,2022,,,2049,28.621959,-97.937625,,,,1
-22674,Elk Hill Solar 1 1,solar,,PP,US,20,,,,,,2022,,,2042,39.849241,-77.929148,,,,1
-22675,Pinson Solar Farm 1,solar,,PP,US,20,,,,,,2022,,,2042,34.72,-82.06,,,,1
-22676,"Lick Creek Solar, LLC 1",solar,,PP,US,50,,,,,,2022,,,2042,36.283056,-80.128265,,,,1
-22677,"Highest Power Solar, LLC 1",solar,,PP,US,48.7,,,,,,2022,,,2042,36.12,-78.25,,,,1
-22678,"Gunsight Solar, LLC 1",solar,,PP,US,75,,,,,,2022,,,2042,33.761136,-81.066705,,,,1
-22679,Samson Solar Energy III LLC 1,solar,,PP,US,250,,,,,,2022,,,2042,33.426498,-95.357449,,,,1
+22674,Elk Hill Solar 1 1,solar,,PP,US,20,,,,,,2022,,,2057,39.849241,-77.929148,,,,1
+22675,Pinson Solar Farm 1,solar,,PP,US,20,,,,,,2022,,,2057,34.72,-82.06,,,,1
+22676,"Lick Creek Solar, LLC 1",solar,,PP,US,50,,,,,,2022,,,2057,36.283056,-80.128265,,,,1
+22677,"Highest Power Solar, LLC 1",solar,,PP,US,48.7,,,,,,2022,,,2057,36.12,-78.25,,,,1
+22678,"Gunsight Solar, LLC 1",solar,,PP,US,75,,,,,,2022,,,2057,33.761136,-81.066705,,,,1
+22679,Samson Solar Energy III LLC 1,solar,,PP,US,250,,,,,,2022,,,2057,33.426498,-95.357449,,,,1
 22680,Azure Sky Solar 1,battery,,Store,US,77.6,,,,,,2022,,,2042,32.998948,-99.5985,,,,1
-22681,Bluegrass Solar 1,solar,,PP,US,79.6,,,,,,2022,,,2042,39.178761,-75.960905,,,,1
+22681,Bluegrass Solar 1,solar,,PP,US,79.6,,,,,,2022,,,2057,39.178761,-75.960905,,,,1
 22682,Dodge Flat 1,battery,,Store,US,50,,,,,,2022,,,2042,40.713024,-119.467217,,,,1
-22683,Dodge Flat 2,solar,,PP,US,200,,,,,,2022,,,2042,40.713024,-119.467217,,,,2
+22683,Dodge Flat 2,solar,,PP,US,200,,,,,,2022,,,2057,40.713024,-119.467217,,,,2
 22684,Coso Battery Storage 1,battery,,Store,US,60,,,,,,2022,,,2042,36.006945,-117.810636,,,,1
-22685,Charlie Creek Solar Power Plant 1,solar,,PP,US,74.9,,,,,,2022,,,2042,27.639778,-81.654367,,,,1
-22686,Novel Martens Solar LLC(CSG) 1,solar,,PP,US,1,,,,,,2022,,,2042,44.442361,-94.38725,,,,1
+22685,Charlie Creek Solar Power Plant 1,solar,,PP,US,74.9,,,,,,2022,,,2057,27.639778,-81.654367,,,,1
+22686,Novel Martens Solar LLC(CSG) 1,solar,,PP,US,1,,,,,,2022,,,2057,44.442361,-94.38725,,,,1
 22687,Cape San Blas 1,battery,,Store,US,5.5,,,,,,2022,,,2042,29.732141,-85.391431,,,,1
 22688,Jennings Energy Storage Facility 1,battery,,Store,US,5.5,,,,,,2022,,,2042,30.603831,-83.098058,,,,1
 22689,Micanopy Energy Storage Facility 1,battery,,Store,US,8.3,,,,,,2022,,,2042,29.5112,-82.274833,,,,1
-22690,"Energix Nokesville, LLC 1",solar,,PP,US,20,,,,,,2022,,,2042,38.672,-77.593,,,,1
+22690,"Energix Nokesville, LLC 1",solar,,PP,US,20,,,,,,2022,,,2057,38.672,-77.593,,,,1
 22691,Caddo Wind 1,onwind,,PP,US,303.2,,,,,,2022,,,2049,34.985072,-98.383823,,,,1
-22692,Palmyra PV - BD Solar Palmyra LLC 1,solar,,PP,US,5,,,,,,2022,,,2042,44.84,-69.31,,,,1
-22693,BD Solar Hancock LLC 1,solar,,PP,US,7,,,,,,2022,,,2042,44.535671,-68.354732,,,,1
-22694,Winslow PV - BD Solar 2 LLC 1,solar,,PP,US,7,,,,,,2022,,,2042,44.56,-69.59,,,,1
-22695,BD Solar Ellsworth LLC 1,solar,,PP,US,7,,,,,,2022,,,2042,44.534547,-68.378789,,,,1
-22696,"Route 66 Energy Center, LLC 1",solar,,PP,US,49.5,,,,,,2022,,,2042,35.098417,-107.614552,,,,1
-22697,Sunflower County 1,solar,,PP,US,100,,,,,,2022,,,2042,33.757767,-90.536465,,,,1
-22698,Tesla Reno GigaFactory 4,solar,,PP,US,1.1,,,,,,2022,,,2042,39.539511,-119.439158,,,,1
-22699,Tesla Reno GigaFactory 5,solar,,PP,US,1.8,,,,,,2022,,,2042,39.539511,-119.439158,,,,2
-22700,Tesla Reno GigaFactory 6,solar,,PP,US,2,,,,,,2022,,,2042,39.539511,-119.439158,,,,3
+22692,Palmyra PV - BD Solar Palmyra LLC 1,solar,,PP,US,5,,,,,,2022,,,2057,44.84,-69.31,,,,1
+22693,BD Solar Hancock LLC 1,solar,,PP,US,7,,,,,,2022,,,2057,44.535671,-68.354732,,,,1
+22694,Winslow PV - BD Solar 2 LLC 1,solar,,PP,US,7,,,,,,2022,,,2057,44.56,-69.59,,,,1
+22695,BD Solar Ellsworth LLC 1,solar,,PP,US,7,,,,,,2022,,,2057,44.534547,-68.378789,,,,1
+22696,"Route 66 Energy Center, LLC 1",solar,,PP,US,49.5,,,,,,2022,,,2057,35.098417,-107.614552,,,,1
+22697,Sunflower County 1,solar,,PP,US,100,,,,,,2022,,,2057,33.757767,-90.536465,,,,1
+22698,Tesla Reno GigaFactory 4,solar,,PP,US,1.1,,,,,,2022,,,2057,39.539511,-119.439158,,,,1
+22699,Tesla Reno GigaFactory 5,solar,,PP,US,1.8,,,,,,2022,,,2057,39.539511,-119.439158,,,,2
+22700,Tesla Reno GigaFactory 6,solar,,PP,US,2,,,,,,2022,,,2057,39.539511,-119.439158,,,,3
 22701,"Maverick Solar 6, LLC 2",battery,,Store,US,50,,,,,,2022,,,2042,33.7,-115.38,,,,1
-22702,Grassfield Solar 1,solar,,PP,US,20,,,,,,2022,,,2042,36.65,-76.35,,,,1
+22702,Grassfield Solar 1,solar,,PP,US,20,,,,,,2022,,,2057,36.65,-76.35,,,,1
 22703,"Haystack Wind Project, LLC 1",onwind,,PP,US,298,,,,,,2022,,,2049,42.26303,-97.19566,,,,1
-22704,Bay Trail Solar Power Plant 1,solar,,PP,US,74.9,,,,,,2022,,,2042,28.99999,-82.672244,,,,1
-22705,Sandy Creek Solar Power Plant 1,solar,,PP,US,74.9,,,,,,2022,,,2042,30.103137,-85.410393,,,,1
-22706,Fish Springs 1,solar,,PP,US,100,,,,,,2022,,,2042,40.074741,-119.974166,,,,1
+22704,Bay Trail Solar Power Plant 1,solar,,PP,US,74.9,,,,,,2022,,,2057,28.99999,-82.672244,,,,1
+22705,Sandy Creek Solar Power Plant 1,solar,,PP,US,74.9,,,,,,2022,,,2057,30.103137,-85.410393,,,,1
+22706,Fish Springs 1,solar,,PP,US,100,,,,,,2022,,,2057,40.074741,-119.974166,,,,1
 22707,Fish Springs 2,battery,,Store,US,25,,,,,,2022,,,2042,40.074741,-119.974166,,,,2
 22708,"Western Trail Wind, LLC 1",onwind,,PP,US,366.6,,,,,,2022,,,2049,33.85245,-99.06509,,,,1
-22709,Novel Shelly Solar LLC (CSG) 1,solar,,PP,US,1,,,,,,2022,,,2042,44.613956,-95.642669,,,,1
+22709,Novel Shelly Solar LLC (CSG) 1,solar,,PP,US,1,,,,,,2022,,,2057,44.613956,-95.642669,,,,1
 22710,Priddy Wind Project 1,onwind,,PP,US,302.4,,,,,,2022,,,2049,31.5481,-98.49491,,,,1
 22711,CED Manchester Wind 1,onwind,,PP,US,7.9,,,,,,2022,,,2049,42.469289,-91.473933,,,,1
-22712,Graphite Solar I 1,solar,,PP,US,80,,,,,,2022,,,2042,39.54844,-110.71209,,,,1
-22713,Assembly Solar III 1,solar,,PP,US,79,,,,,,2022,,,2042,43.022705,-83.942728,,,,1
-22714,Auburn Solar Project 1,solar,,PP,US,4.9,,,,,,2022,,,2042,42.13,-71.87,,,,1
+22712,Graphite Solar I 1,solar,,PP,US,80,,,,,,2022,,,2057,39.54844,-110.71209,,,,1
+22713,Assembly Solar III 1,solar,,PP,US,79,,,,,,2022,,,2057,43.022705,-83.942728,,,,1
+22714,Auburn Solar Project 1,solar,,PP,US,4.9,,,,,,2022,,,2057,42.13,-71.87,,,,1
 22715,Auburn Solar Project 2,battery,,Store,US,3.8,,,,,,2022,,,2042,42.13,-71.87,,,,2
 22716,Maryland Bioenergy Center (Jessup) 1,OCGT,OCGT,PP,US,1.1,,,,,,2022,,,2057,39.1578,-76.78042,,,,1
-22717,Anderson 6 1,solar,,PP,US,6.8,,,,,,2022,,,2042,40.085081,-85.746714,,,,1
-22718,Peru 3 1,solar,,PP,US,2.9,,,,,,2022,,,2042,40.755338,-86.105722,,,,1
+22717,Anderson 6 1,solar,,PP,US,6.8,,,,,,2022,,,2057,40.085081,-85.746714,,,,1
+22718,Peru 3 1,solar,,PP,US,2.9,,,,,,2022,,,2057,40.755338,-86.105722,,,,1
 22719,Lopeno 1,battery,,Store,US,9.9,,,,,,2022,,,2042,26.687614,-99.109418,,,,1
 22720,Pueblo BA 1,battery,,Store,US,9.9,,,,,,2022,,,2042,28.678935,-100.463708,,,,1
 22721,Pueblo BA 2,battery,,Store,US,9.9,,,,,,2022,,,2042,28.678935,-100.463708,,,,2
 22722,Zapata 1,battery,,Store,US,9.9,,,,,,2022,,,2042,26.932675,-99.233708,,,,1
 22723,Zapata 2,battery,,Store,US,9.9,,,,,,2022,,,2042,26.932675,-99.233708,,,,2
-22724,Mtn Solar 6 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2042,40.613557,-103.233735,,,,1
-22725,NSE Camber Solar PS11 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2042,40.613557,-103.233735,,,,1
-22726,NSE Camber Solar PS13 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2042,40.619084,-103.158886,,,,2
-22727,NSE Camber Solar PS6 LLC CSG 1,solar,,PP,US,2,,,,,,2022,,,2042,40.260736,-104.824172,,,,3
-22728,NSE Camber Solar PS5 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2042,40.250222,-104.839513,,,,4
-22729,Pivot Solar 12 LLC(CSG) 1,solar,,PP,US,1,,,,,,2022,,,2042,40.613557,-103.233735,,,,1
+22724,Mtn Solar 6 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2057,40.613557,-103.233735,,,,1
+22725,NSE Camber Solar PS11 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2057,40.613557,-103.233735,,,,1
+22726,NSE Camber Solar PS13 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2057,40.619084,-103.158886,,,,2
+22727,NSE Camber Solar PS6 LLC CSG 1,solar,,PP,US,2,,,,,,2022,,,2057,40.260736,-104.824172,,,,3
+22728,NSE Camber Solar PS5 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2057,40.250222,-104.839513,,,,4
+22729,Pivot Solar 12 LLC(CSG) 1,solar,,PP,US,1,,,,,,2022,,,2057,40.613557,-103.233735,,,,1
 22730,Braes Bayou Plant 1,OCGT,OCGT,PP,US,60.5,,,,,,2022,,,2057,29.480277,-95.620277,,,,1
 22731,Braes Bayou Plant 2,OCGT,OCGT,PP,US,60.5,,,,,,2022,,,2057,29.480277,-95.620277,,,,2
 22732,Braes Bayou Plant 3,OCGT,OCGT,PP,US,60.5,,,,,,2022,,,2057,29.480277,-95.620277,,,,3
@@ -22737,97 +22737,97 @@
 22735,Braes Bayou Plant 6,OCGT,OCGT,PP,US,60.5,,,,,,2022,,,2057,29.480277,-95.620277,,,,6
 22736,Braes Bayou Plant 7,OCGT,OCGT,PP,US,60.5,,,,,,2022,,,2057,29.480277,-95.620277,,,,7
 22737,Braes Bayou Plant 8,OCGT,OCGT,PP,US,60.5,,,,,,2022,,,2057,29.480277,-95.620277,,,,8
-22738,Amazon TUS2 1,solar,,PP,US,2.6,,,,,,2022,,,2042,32.129416,-110.838888,,,,1
-22739,EMWD - San Jacinto RES BCT 1,solar,,PP,US,4.2,,,,,,2022,,,2042,33.802869,-117.023567,,,,1
+22738,Amazon TUS2 1,solar,,PP,US,2.6,,,,,,2022,,,2057,32.129416,-110.838888,,,,1
+22739,EMWD - San Jacinto RES BCT 1,solar,,PP,US,4.2,,,,,,2022,,,2057,33.802869,-117.023567,,,,1
 22740,Black Rock Wind 1,onwind,,PP,US,115,,,,,,2022,,,2049,39.366803,-79.108263,,,,1
 22741,White Plains Hospital Medical Center 2,oil,,PP,US,0.5,,,,,,2022,,,2057,41.032,-73.75296,,,,1
 22742,White Plains Hospital Medical Center 7,oil,,PP,US,1.8,,,,,,2022,,,2057,41.032,-73.75296,,,,2
 22743,Mt Pleasant Community Center 1,battery,,Store,US,0.7,,,,,,2022,,,2042,41.09999,-73.77155,,,,1
-22744,Mt Pleasant Community Center 2,solar,,PP,US,0.5,,,,,,2022,,,2042,41.09999,-73.77155,,,,2
-22745,Brazoria West 1,solar,,PP,US,200,,,,,,2022,,,2042,29.191,-95.663,,,,1
-22746,Byron Highway Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,37.847114,-121.617308,,,,1
-22747,Novel Handeland Solar LLC (CSG) 1,solar,,PP,US,1,,,,,,2022,,,2042,44.782077,-95.785811,,,,1
-22748,Arlington Energy Center II 1,solar,,PP,US,100,,,,,,2022,,,2042,33.69088,-114.774944,,,,1
+22744,Mt Pleasant Community Center 2,solar,,PP,US,0.5,,,,,,2022,,,2057,41.09999,-73.77155,,,,2
+22745,Brazoria West 1,solar,,PP,US,200,,,,,,2022,,,2057,29.191,-95.663,,,,1
+22746,Byron Highway Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,37.847114,-121.617308,,,,1
+22747,Novel Handeland Solar LLC (CSG) 1,solar,,PP,US,1,,,,,,2022,,,2057,44.782077,-95.785811,,,,1
+22748,Arlington Energy Center II 1,solar,,PP,US,100,,,,,,2022,,,2057,33.69088,-114.774944,,,,1
 22749,Arlington Energy Center II 2,battery,,Store,US,132,,,,,,2022,,,2042,33.69088,-114.774944,,,,2
-22750,Novel Sunnyfield Farms Solar LLC CSG 1,solar,,PP,US,1,,,,,,2022,,,2042,44.245884,-92.546208,,,,1
-22751,Novel David Solar LLC CSG 1,solar,,PP,US,1,,,,,,2022,,,2042,44.000397,-93.501616,,,,1
-22752,Novel Denzer Solar LLC CSG 1,solar,,PP,US,1,,,,,,2022,,,2042,44.101108,-91.762882,,,,2
+22750,Novel Sunnyfield Farms Solar LLC CSG 1,solar,,PP,US,1,,,,,,2022,,,2057,44.245884,-92.546208,,,,1
+22751,Novel David Solar LLC CSG 1,solar,,PP,US,1,,,,,,2022,,,2057,44.000397,-93.501616,,,,1
+22752,Novel Denzer Solar LLC CSG 1,solar,,PP,US,1,,,,,,2022,,,2057,44.101108,-91.762882,,,,2
 22753,Hall Solar Energy Storage 1,battery,,Store,US,2.5,,,,,,2022,,,2042,34.799,-77.947,,,,1
-22754,Hall Solar Energy Storage 2,solar,,PP,US,2,,,,,,2022,,,2042,34.799,-77.947,,,,2
+22754,Hall Solar Energy Storage 2,solar,,PP,US,2,,,,,,2022,,,2057,34.799,-77.947,,,,2
 22755,Ludie Brown Solar Energy Storage 1,battery,,Store,US,2.5,,,,,,2022,,,2042,34.831,-77.77,,,,1
-22756,Ludie Brown Solar Energy Storage 2,solar,,PP,US,2,,,,,,2022,,,2042,34.831,-77.77,,,,2
+22756,Ludie Brown Solar Energy Storage 2,solar,,PP,US,2,,,,,,2022,,,2057,34.831,-77.77,,,,2
 22757,Lowe Solar Energy Storage 1,battery,,Store,US,2.5,,,,,,2022,,,2042,35.718429,-79.909481,,,,1
-22758,Lowe Solar Energy Storage 2,solar,,PP,US,2,,,,,,2022,,,2042,35.718429,-79.909481,,,,2
+22758,Lowe Solar Energy Storage 2,solar,,PP,US,2,,,,,,2022,,,2057,35.718429,-79.909481,,,,2
 22759,Spencer Meadow Solar Energy Storage 1,battery,,Store,US,2.5,,,,,,2022,,,2042,35.718429,-79.909481,,,,1
-22760,Spencer Meadow Solar Energy Storage 2,solar,,PP,US,2,,,,,,2022,,,2042,35.718429,-79.909481,,,,2
-22761,Fort Green Solar Power Plant 1,solar,,PP,US,74.9,,,,,,2022,,,2042,27.641125,-81.941581,,,,1
-22762,Coxsackie Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,42.33337,-73.8475,,,,1
-22763,Novel Stein Solar LLC CSG 1,solar,,PP,US,1,,,,,,2022,,,2042,45.389128,-92.676058,,,,1
-22764,Arlington Energy Center III 1,solar,,PP,US,131,,,,,,2022,,,2042,33.69088,-114.774944,,,,1
+22760,Spencer Meadow Solar Energy Storage 2,solar,,PP,US,2,,,,,,2022,,,2057,35.718429,-79.909481,,,,2
+22761,Fort Green Solar Power Plant 1,solar,,PP,US,74.9,,,,,,2022,,,2057,27.641125,-81.941581,,,,1
+22762,Coxsackie Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,42.33337,-73.8475,,,,1
+22763,Novel Stein Solar LLC CSG 1,solar,,PP,US,1,,,,,,2022,,,2057,45.389128,-92.676058,,,,1
+22764,Arlington Energy Center III 1,solar,,PP,US,131,,,,,,2022,,,2057,33.69088,-114.774944,,,,1
 22765,Arlington Energy Center III 2,battery,,Store,US,110,,,,,,2022,,,2042,33.69088,-114.774944,,,,2
-22766,"Central Line Solar, LLC 1",solar,,PP,US,100,,,,,,2022,,,2042,32.834322,-111.56803,,,,1
-22767,"Letts Creek Solar, LLC 1",solar,,PP,US,15,,,,,,2022,,,2042,42.274575,-84.135276,,,,1
-22768,"Pullman Solar, LLC 1",solar,,PP,US,20,,,,,,2022,,,2042,42.471622,-86.096859,,,,1
+22766,"Central Line Solar, LLC 1",solar,,PP,US,100,,,,,,2022,,,2057,32.834322,-111.56803,,,,1
+22767,"Letts Creek Solar, LLC 1",solar,,PP,US,15,,,,,,2022,,,2057,42.274575,-84.135276,,,,1
+22768,"Pullman Solar, LLC 1",solar,,PP,US,20,,,,,,2022,,,2057,42.471622,-86.096859,,,,1
 22769,"El Algodon Alto Wind Farm, LLC 1",onwind,,PP,US,200.2,,,,,,2022,,,2049,27.992706,-97.743983,,,,1
-22770,"TPE King Solar Holdings1, LLC (CSG) 1",solar,,PP,US,12.7,,,,,,2022,,,2042,41.979212,-71.581309,,,,1
+22770,"TPE King Solar Holdings1, LLC (CSG) 1",solar,,PP,US,12.7,,,,,,2022,,,2057,41.979212,-71.581309,,,,1
 22771,Kearny North Energy Storage 1,battery,,Store,US,10,,,,,,2022,,,2042,32.83347,-117.13443,,,,1
 22772,Kearny South Energy Storage 1,battery,,Store,US,10,,,,,,2022,,,2042,32.832886,-117.132292,,,,2
-22773,Slidematic at Rockford 1,solar,,PP,US,1.8,,,,,,2022,,,2042,42.206076,-89.074384,,,,1
-22774,"Rabbitbrush Solar, LLC 1",solar,,PP,US,100,,,,,,2022,,,2042,34.83,-118.32,,,,1
+22773,Slidematic at Rockford 1,solar,,PP,US,1.8,,,,,,2022,,,2057,42.206076,-89.074384,,,,1
+22774,"Rabbitbrush Solar, LLC 1",solar,,PP,US,100,,,,,,2022,,,2057,34.83,-118.32,,,,1
 22775,"Rabbitbrush Solar, LLC 2",battery,,Store,US,20,,,,,,2022,,,2042,34.83,-118.32,,,,2
-22776,Jamison Solar (FL) 1,solar,,PP,US,74.5,,,,,,2022,,,2042,27.806645,-81.955676,,,,1
-22777,Big River Solar 1,solar,,PP,US,149,,,,,,2022,,,2042,38.050141,-88.295525,,,,1
+22776,Jamison Solar (FL) 1,solar,,PP,US,74.5,,,,,,2022,,,2057,27.806645,-81.955676,,,,1
+22777,Big River Solar 1,solar,,PP,US,149,,,,,,2022,,,2057,38.050141,-88.295525,,,,1
 22778,TG East 1,onwind,,PP,US,336,,,,,,2022,,,2049,33.746323,-99.665516,,,,1
 22779,Hot Springs Energy Storage & Microgrid 1,battery,,Store,US,4.4,,,,,,2022,,,2042,35.89071,-82.82513,,,,1
-22780,Hot Springs Energy Storage & Microgrid 2,solar,,PP,US,1.9,,,,,,2022,,,2042,35.89071,-82.82513,,,,2
-22781,Big Bend II Solar 1,solar,,PP,US,45.8,,,,,,2022,,,2042,27.781988,-82.390452,,,,1
-22782,Pivot Solar 4 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2042,40.228419,-104.777024,,,,1
-22783,Pivot Solar 1 LLC (CSG) 1,solar,,PP,US,1,,,,,,2022,,,2042,39.414671,-108.090731,,,,2
-22784,Pivot Solar 14 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2042,40.266898,-103.657514,,,,3
-22785,Pivot Solar 2 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2042,40.266898,-103.657514,,,,4
-22786,Pivot Solar 15 LLC (CSG) 1,solar,,PP,US,1,,,,,,2022,,,2042,40.266856,-103.65937,,,,5
-22787,Pivot Solar 7 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2042,39.523107,-107.815344,,,,6
-22788,Pivot Solar 3 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2042,39.414671,-108.090731,,,,7
-22789,Pivot Solar 8 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2042,40.241166,-104.771384,,,,8
+22780,Hot Springs Energy Storage & Microgrid 2,solar,,PP,US,1.9,,,,,,2022,,,2057,35.89071,-82.82513,,,,2
+22781,Big Bend II Solar 1,solar,,PP,US,45.8,,,,,,2022,,,2057,27.781988,-82.390452,,,,1
+22782,Pivot Solar 4 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2057,40.228419,-104.777024,,,,1
+22783,Pivot Solar 1 LLC (CSG) 1,solar,,PP,US,1,,,,,,2022,,,2057,39.414671,-108.090731,,,,2
+22784,Pivot Solar 14 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2057,40.266898,-103.657514,,,,3
+22785,Pivot Solar 2 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2057,40.266898,-103.657514,,,,4
+22786,Pivot Solar 15 LLC (CSG) 1,solar,,PP,US,1,,,,,,2022,,,2057,40.266856,-103.65937,,,,5
+22787,Pivot Solar 7 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2057,39.523107,-107.815344,,,,6
+22788,Pivot Solar 3 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2057,39.414671,-108.090731,,,,7
+22789,Pivot Solar 8 LLC (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2057,40.241166,-104.771384,,,,8
 22790,Heartland Divide II 1,onwind,,PP,US,200,,,,,,2022,,,2049,41.720323,-94.928422,,,,1
 22791,Great Prairie Wind 1,onwind,,PP,US,1027,,,,,,2022,,,2049,36.3075,-101.53222,,,,1
 22792,Orangeville Storage 1,battery,,Store,US,24.7,,,,,,2022,,,2042,42.738686,-78.239731,,,,1
 22793,Plymouth Wind 1,onwind,,PP,US,202.7,,,,,,2022,,,2049,42.842969,-95.941257,,,,1
-22794,MD - PR97 (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2042,38.934666,-76.714819,,,,1
+22794,MD - PR97 (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2057,38.934666,-76.714819,,,,1
 22795,LeConte Energy Storage 1,battery,,Store,US,125,,,,,,2022,,,2042,32.677208,-115.670203,,,,1
-22796,"Stanly Solar, LLC 1",solar,,PP,US,50,,,,,,2022,,,2042,35.289722,-80.235556,,,,1
-22797,Main Rd Community Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,42.9976,-78.5047,,,,1
-22798,Redman North Community Solar 1,solar,,PP,US,1.5,,,,,,2022,,,2042,43.2752,-77.966,,,,1
-22799,Redman South Community Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,43.2743,-77.965,,,,2
-22800,Townline Community Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,43.0421,-78.1337,,,,1
+22796,"Stanly Solar, LLC 1",solar,,PP,US,50,,,,,,2022,,,2057,35.289722,-80.235556,,,,1
+22797,Main Rd Community Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,42.9976,-78.5047,,,,1
+22798,Redman North Community Solar 1,solar,,PP,US,1.5,,,,,,2022,,,2057,43.2752,-77.966,,,,1
+22799,Redman South Community Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,43.2743,-77.965,,,,2
+22800,Townline Community Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,43.0421,-78.1337,,,,1
 22801,West Haydenville PJ Community Solar 1,battery,,Store,US,3.6,,,,,,2022,,,2042,42.3831,-72.7111,,,,1
-22802,West Haydenville PJ Community Solar 2,solar,,PP,US,5,,,,,,2022,,,2042,42.3831,-72.7111,,,,2
+22802,West Haydenville PJ Community Solar 2,solar,,PP,US,5,,,,,,2022,,,2057,42.3831,-72.7111,,,,2
 22803,Brookwood Drive Community Solar 1,battery,,Store,US,3,,,,,,2022,,,2042,41.59,-71.0942,,,,1
-22804,Brookwood Drive Community Solar 2,solar,,PP,US,5,,,,,,2022,,,2042,41.59,-71.0942,,,,2
-22805,IL17021 Brush Creek I CSG 1,solar,,PP,US,2,,,,,,2022,,,2042,42.452243,-89.638813,,,,1
-22806,Holliday Creek Solar 1,solar,,PP,US,100,,,,,,2022,,,2042,42.56867,-94.10277,,,,1
+22804,Brookwood Drive Community Solar 2,solar,,PP,US,5,,,,,,2022,,,2057,41.59,-71.0942,,,,2
+22805,IL17021 Brush Creek I CSG 1,solar,,PP,US,2,,,,,,2022,,,2057,42.452243,-89.638813,,,,1
+22806,Holliday Creek Solar 1,solar,,PP,US,100,,,,,,2022,,,2057,42.56867,-94.10277,,,,1
 22807,Tierra Buena Energy Storage 1,battery,,Store,US,2.5,,,,,,2022,,,2042,39.17133,-121.66209,,,,1
 22808,Tierra Buena Energy Storage 2,battery,,Store,US,2.5,,,,,,2022,,,2042,39.17133,-121.66209,,,,2
 22809,Fuel Cell 3245 Yates Avenue 1,,,PP,US,5,,,,,,2022,,,2022,40.87317,-73.85519,,,,1
-22810,Arbor Hill Solar 1,solar,,PP,US,25,,,,,,2022,,,2042,41.4669,-94.26271,,,,1
-22811,Blue Springs 1,solar,,PP,US,74.5,,,,,,2022,,,2042,30.782897,-85.078686,,,,1
+22810,Arbor Hill Solar 1,solar,,PP,US,25,,,,,,2022,,,2057,41.4669,-94.26271,,,,1
+22811,Blue Springs 1,solar,,PP,US,74.5,,,,,,2022,,,2057,30.782897,-85.078686,,,,1
 22812,Ocean State BTM 1,battery,,Store,US,3,,,,,,2022,,,2042,41.938,-71.685,,,,1
-22813,Hermsdorf Solar 1,solar,,PP,US,8,,,,,,2022,,,2042,43.0596,-89.2609,,,,1
+22813,Hermsdorf Solar 1,solar,,PP,US,8,,,,,,2022,,,2057,43.0596,-89.2609,,,,1
 22814,WAL504 1,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,29.26514,-94.832945,,,,1
 22815,WAL504 2,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,29.26514,-94.832945,,,,2
 22816,WAL504 3,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,29.26514,-94.832945,,,,3
 22817,WAL565 1,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,32.101054,-96.403764,,,,4
 22818,WAL565 2,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,32.101054,-96.403764,,,,5
 22819,WAL565 3,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,32.101054,-96.403764,,,,6
-22820,"SR Clay, LLC 1",solar,,PP,US,106,,,,,,2022,,,2042,31.544831,-84.900566,,,,1
-22821,"SR Cedar Springs, LLC 1",solar,,PP,US,70,,,,,,2022,,,2042,31.2453,-85.086975,,,,1
-22822,"SR DeSoto I, LLC 1",solar,,PP,US,165,,,,,,2022,,,2042,31.886486,-84.021586,,,,1
-22823,"SR Turkey Creek, LLC 1",solar,,PP,US,50,,,,,,2022,,,2042,37.592994,-84.567965,,,,1
-22824,Calhoun Solar 1,solar,,PP,US,200,,,,,,2022,,,2042,42.338532,-85.049019,,,,1
-22825,USS Quail Solar LLC 1,solar,,PP,US,1,,,,,,2022,,,2042,45.260208,-93.791733,,,,1
+22820,"SR Clay, LLC 1",solar,,PP,US,106,,,,,,2022,,,2057,31.544831,-84.900566,,,,1
+22821,"SR Cedar Springs, LLC 1",solar,,PP,US,70,,,,,,2022,,,2057,31.2453,-85.086975,,,,1
+22822,"SR DeSoto I, LLC 1",solar,,PP,US,165,,,,,,2022,,,2057,31.886486,-84.021586,,,,1
+22823,"SR Turkey Creek, LLC 1",solar,,PP,US,50,,,,,,2022,,,2057,37.592994,-84.567965,,,,1
+22824,Calhoun Solar 1,solar,,PP,US,200,,,,,,2022,,,2057,42.338532,-85.049019,,,,1
+22825,USS Quail Solar LLC 1,solar,,PP,US,1,,,,,,2022,,,2057,45.260208,-93.791733,,,,1
 22826,"Panorama Wind, LLC 1",onwind,,PP,US,145,,,,,,2022,,,2049,40.952057,-103.907562,,,,1
 22827,Edwards Sanborn E1A 1,battery,,Store,US,144,,,,,,2022,,,2042,34.961922,-118.124208,,,,1
-22828,Edwards Sanborn E1A 2,solar,,PP,US,149.3,,,,,,2022,,,2042,34.961922,-118.124208,,,,2
+22828,Edwards Sanborn E1A 2,solar,,PP,US,149.3,,,,,,2022,,,2057,34.961922,-118.124208,,,,2
 22829,Edwards Sanborn E2 1,battery,,Store,US,120,,,,,,2022,,,2042,34.941507,-118.129025,,,,3
 22830,NMSU Solar and Storage 1,battery,,Store,US,1,,,,,,2022,,,2042,32.286048,-106.744529,,,,1
 22831,WAL1801 1,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,32.668729,-97.131834,,,,1
@@ -22836,336 +22836,336 @@
 22834,WAL3224 1,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,32.842209,-96.598028,,,,4
 22835,WAL3224 2,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,32.842209,-96.598028,,,,5
 22836,WAL3224 3,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,32.842209,-96.598028,,,,6
-22837,"Cuba 2.5ac, LLC 1",solar,,PP,US,2.5,,,,,,2022,,,2042,36.017438,-106.945963,,,,1
-22838,Luciana 1,solar,,PP,US,55.8,,,,,,2022,,,2042,35.823716,-119.062255,,,,1
-22839,Brighter Future Solar 1,solar,,PP,US,11,,,,,,2022,,,2042,35.816094,-81.371656,,,,1
+22837,"Cuba 2.5ac, LLC 1",solar,,PP,US,2.5,,,,,,2022,,,2057,36.017438,-106.945963,,,,1
+22838,Luciana 1,solar,,PP,US,55.8,,,,,,2022,,,2057,35.823716,-119.062255,,,,1
+22839,Brighter Future Solar 1,solar,,PP,US,11,,,,,,2022,,,2057,35.816094,-81.371656,,,,1
 22840,Santa Ana Storage 2 1,battery,,Store,US,20,,,,,,2022,,,2042,33.715016,-117.853984,,,,1
 22841,WAL3406 1,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,32.959048,-96.81664,,,,1
 22842,WAL3406 2,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,32.959048,-96.81664,,,,2
 22843,WAL3406 3,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,32.959048,-96.81664,,,,3
 22844,Edwards Sanborn S3 1,battery,,Store,US,33,,,,,,2022,,,2042,35.01644,-118.1225,,,,1
-22845,Edwards Sanborn S3 2,solar,,PP,US,37.7,,,,,,2022,,,2042,35.01644,-118.1225,,,,2
+22845,Edwards Sanborn S3 2,solar,,PP,US,37.7,,,,,,2022,,,2057,35.01644,-118.1225,,,,2
 22846,Edwards Sanborn S1 1,battery,,Store,US,40,,,,,,2022,,,2042,35.02769,-118.13284,,,,3
-22847,Edwards Sanborn S1 2,solar,,PP,US,44.6,,,,,,2022,,,2042,35.02769,-118.13284,,,,4
-22848,Capital Hill Solar LLC 1,solar,,PP,US,1.5,,,,,,2022,,,2042,42.685295,-73.824937,,,,1
+22847,Edwards Sanborn S1 2,solar,,PP,US,44.6,,,,,,2022,,,2057,35.02769,-118.13284,,,,4
+22848,Capital Hill Solar LLC 1,solar,,PP,US,1.5,,,,,,2022,,,2057,42.685295,-73.824937,,,,1
 22849,WAL5080 1,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,32.847939,-97.18405,,,,1
 22850,WAL5080 2,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,32.847939,-97.18405,,,,2
 22851,WAL5080 3,OCGT,OCGT,PP,US,0.4,,,,,,2022,,,2057,32.847939,-97.18405,,,,3
-22852,Rock Island Road Solar Community Solar 1,solar,,PP,US,3.5,,,,,,2022,,,2042,44.369913,-75.456999,,,,1
-22853,Bullis Road Solar (CSG) 1,solar,,PP,US,4.5,,,,,,2022,,,2042,42.836293,-78.572791,,,,1
-22854,Pretzel CSG 1,solar,,PP,US,2,,,,,,2022,,,2042,42.307119,-89.598098,,,,1
-22855,West Plains Solar I 1,solar,,PP,US,8,,,,,,2022,,,2042,36.785338,-91.867401,,,,1
-22856,Waterloo Solar (IA) 1,solar,,PP,US,3,,,,,,2022,,,2042,42.54389,-92.35535,,,,1
-22857,Johnson County Hills Solar 1,solar,,PP,US,3,,,,,,2022,,,2042,41.57232,-91.54302,,,,1
-22858,Franklin County Solar 1,solar,,PP,US,7,,,,,,2022,,,2042,42.72084,-93.20609,,,,1
-22859,USS Foley Solar LLC 1,solar,,PP,US,1,,,,,,2022,,,2042,45.68047,-93.924797,,,,1
-22860,USS Prokosch Solar LLC  1,solar,,PP,US,1,,,,,,2022,,,2042,44.772867,-94.910519,,,,1
-22861,USS Rosebud Solar LLC 1,solar,,PP,US,1,,,,,,2022,,,2042,44.472694,-94.920894,,,,1
+22852,Rock Island Road Solar Community Solar 1,solar,,PP,US,3.5,,,,,,2022,,,2057,44.369913,-75.456999,,,,1
+22853,Bullis Road Solar (CSG) 1,solar,,PP,US,4.5,,,,,,2022,,,2057,42.836293,-78.572791,,,,1
+22854,Pretzel CSG 1,solar,,PP,US,2,,,,,,2022,,,2057,42.307119,-89.598098,,,,1
+22855,West Plains Solar I 1,solar,,PP,US,8,,,,,,2022,,,2057,36.785338,-91.867401,,,,1
+22856,Waterloo Solar (IA) 1,solar,,PP,US,3,,,,,,2022,,,2057,42.54389,-92.35535,,,,1
+22857,Johnson County Hills Solar 1,solar,,PP,US,3,,,,,,2022,,,2057,41.57232,-91.54302,,,,1
+22858,Franklin County Solar 1,solar,,PP,US,7,,,,,,2022,,,2057,42.72084,-93.20609,,,,1
+22859,USS Foley Solar LLC 1,solar,,PP,US,1,,,,,,2022,,,2057,45.68047,-93.924797,,,,1
+22860,USS Prokosch Solar LLC  1,solar,,PP,US,1,,,,,,2022,,,2057,44.772867,-94.910519,,,,1
+22861,USS Rosebud Solar LLC 1,solar,,PP,US,1,,,,,,2022,,,2057,44.472694,-94.920894,,,,1
 22862,"BigBeau Solar, LLC 1",battery,,Store,US,40,,,,,,2022,,,2042,34.907041,-118.344077,,,,1
-22863,"BigBeau Solar, LLC 2",solar,,PP,US,128,,,,,,2022,,,2042,34.907041,-118.344077,,,,2
-22864,MN CSG 2019-16 LLC 1,solar,,PP,US,1,,,,,,2022,,,2042,44.214681,-93.960063,,,,1
-22865,Bear Creek 2,solar,,PP,US,50,,,,,,2022,,,2042,43.198512,-90.232824,,,,1
-22866,North Rock 1,solar,,PP,US,50,,,,,,2022,,,2042,42.810873,-89.101535,,,,1
-22867,Wood County 1,solar,,PP,US,150,,,,,,2022,,,2042,44.27361,-89.8335,,,,1
-22868,ASD Wallum MA Solar LLC(CSG) 1,solar,,PP,US,5,,,,,,2022,,,2042,42.011623,-71.760489,,,,1
+22863,"BigBeau Solar, LLC 2",solar,,PP,US,128,,,,,,2022,,,2057,34.907041,-118.344077,,,,2
+22864,MN CSG 2019-16 LLC 1,solar,,PP,US,1,,,,,,2022,,,2057,44.214681,-93.960063,,,,1
+22865,Bear Creek 2,solar,,PP,US,50,,,,,,2022,,,2057,43.198512,-90.232824,,,,1
+22866,North Rock 1,solar,,PP,US,50,,,,,,2022,,,2057,42.810873,-89.101535,,,,1
+22867,Wood County 1,solar,,PP,US,150,,,,,,2022,,,2057,44.27361,-89.8335,,,,1
+22868,ASD Wallum MA Solar LLC(CSG) 1,solar,,PP,US,5,,,,,,2022,,,2057,42.011623,-71.760489,,,,1
 22869,ASD Wallum MA Solar LLC(CSG) 2,battery,,Store,US,3.8,,,,,,2022,,,2042,42.011623,-71.760489,,,,2
-22870,Sun Mountain Solar 1 1,solar,,PP,US,200,,,,,,2022,,,2042,38.180331,-104.518529,,,,1
-22871,Sawgrass Solar Energy Center 1,solar,,PP,US,74.5,,,,,,2022,,,2042,26.381386,-81.053721,,,,1
-22872,Ghost Orchid Solar Energy Center 1,solar,,PP,US,74.5,,,,,,2022,,,2042,26.417212,-81.03531,,,,1
-22873,Sundew 1,solar,,PP,US,74.5,,,,,,2022,,,2042,27.264113,-80.546851,,,,1
-22874,Immokalee 1,solar,,PP,US,74.5,,,,,,2022,,,2042,26.474576,-81.433471,,,,1
-22875,Elder Branch 1,solar,,PP,US,74.5,,,,,,2022,,,2042,27.5966,-82.25272,,,,1
-22876,Grove 1,solar,,PP,US,74.5,,,,,,2022,,,2042,27.580883,-80.652711,,,,1
+22870,Sun Mountain Solar 1 1,solar,,PP,US,200,,,,,,2022,,,2057,38.180331,-104.518529,,,,1
+22871,Sawgrass Solar Energy Center 1,solar,,PP,US,74.5,,,,,,2022,,,2057,26.381386,-81.053721,,,,1
+22872,Ghost Orchid Solar Energy Center 1,solar,,PP,US,74.5,,,,,,2022,,,2057,26.417212,-81.03531,,,,1
+22873,Sundew 1,solar,,PP,US,74.5,,,,,,2022,,,2057,27.264113,-80.546851,,,,1
+22874,Immokalee 1,solar,,PP,US,74.5,,,,,,2022,,,2057,26.474576,-81.433471,,,,1
+22875,Elder Branch 1,solar,,PP,US,74.5,,,,,,2022,,,2057,27.5966,-82.25272,,,,1
+22876,Grove 1,solar,,PP,US,74.5,,,,,,2022,,,2057,27.580883,-80.652711,,,,1
 22877,Blythe Mesa Solar II 1,battery,,Store,US,112,,,,,,2022,,,2042,33.640813,-114.680261,,,,1
-22878,Blythe Mesa Solar II 2,solar,,PP,US,223.6,,,,,,2022,,,2042,33.640813,-114.680261,,,,2
-22879,Walkerton 1,solar,,PP,US,1.1,,,,,,2022,,,2042,41.455468,-86.487356,,,,1
-22880,Linton 1,solar,,PP,US,5.4,,,,,,2022,,,2042,39.04355,-87.136191,,,,1
-22881,Buffalo NY GigaFactory 1,solar,,PP,US,2,,,,,,2022,,,2042,42.859297,-78.8418,,,,1
-22882,Fremont CA AutoFactory 1,solar,,PP,US,0.3,,,,,,2022,,,2042,37.49254,-121.94458,,,,1
-22883,Everson Garden 1,solar,,PP,US,1,,,,,,2022,,,2042,44.08963,-93.5531,,,,1
-22884,Bremen 1,solar,,PP,US,6.8,,,,,,2022,,,2042,41.46303,-86.163527,,,,1
-22885,IGS KSBD 1,solar,,PP,US,4.3,,,,,,2022,,,2042,34.10535,-117.23477,,,,1
-22886,Jicarilla Solar 2 1,solar,,PP,US,50,,,,,,2022,,,2042,36.141053,-107.171233,,,,1
-22887,River Road 1,solar,,PP,US,5,,,,,,2022,,,2042,44.74111,-69.762861,,,,1
-22888,NY8 - Regan Solar 1,solar,,PP,US,20,,,,,,2022,,,2042,42.95474,-74.313115,,,,1
-22889,NY8 - Puckett Solar 1,solar,,PP,US,20,,,,,,2022,,,2042,42.252664,-75.834078,,,,1
+22878,Blythe Mesa Solar II 2,solar,,PP,US,223.6,,,,,,2022,,,2057,33.640813,-114.680261,,,,2
+22879,Walkerton 1,solar,,PP,US,1.1,,,,,,2022,,,2057,41.455468,-86.487356,,,,1
+22880,Linton 1,solar,,PP,US,5.4,,,,,,2022,,,2057,39.04355,-87.136191,,,,1
+22881,Buffalo NY GigaFactory 1,solar,,PP,US,2,,,,,,2022,,,2057,42.859297,-78.8418,,,,1
+22882,Fremont CA AutoFactory 1,solar,,PP,US,0.3,,,,,,2022,,,2057,37.49254,-121.94458,,,,1
+22883,Everson Garden 1,solar,,PP,US,1,,,,,,2022,,,2057,44.08963,-93.5531,,,,1
+22884,Bremen 1,solar,,PP,US,6.8,,,,,,2022,,,2057,41.46303,-86.163527,,,,1
+22885,IGS KSBD 1,solar,,PP,US,4.3,,,,,,2022,,,2057,34.10535,-117.23477,,,,1
+22886,Jicarilla Solar 2 1,solar,,PP,US,50,,,,,,2022,,,2057,36.141053,-107.171233,,,,1
+22887,River Road 1,solar,,PP,US,5,,,,,,2022,,,2057,44.74111,-69.762861,,,,1
+22888,NY8 - Regan Solar 1,solar,,PP,US,20,,,,,,2022,,,2057,42.95474,-74.313115,,,,1
+22889,NY8 - Puckett Solar 1,solar,,PP,US,20,,,,,,2022,,,2057,42.252664,-75.834078,,,,1
 22890,Jayhawk Wind Energy Center 1,onwind,,PP,US,197.4,,,,,,2022,,,2049,37.704461,-95.029817,,,,1
 22891,University of the Pacific 1,battery,,Store,US,1,,,,,,2022,,,2042,37.980054,-121.312418,,,,1
-22892,University of the Pacific 2,solar,,PP,US,4.5,,,,,,2022,,,2042,37.980054,-121.312418,,,,2
-22893,"ER Bone Hill Solar, LLC 1",solar,,PP,US,1.2,,,,,,2022,,,2042,44.1257,-72.65681,,,,1
+22892,University of the Pacific 2,solar,,PP,US,4.5,,,,,,2022,,,2057,37.980054,-121.312418,,,,2
+22893,"ER Bone Hill Solar, LLC 1",solar,,PP,US,1.2,,,,,,2022,,,2057,44.1257,-72.65681,,,,1
 22894,Crimson 1,battery,,Store,US,200,,,,,,2022,,,2042,33.57345,-114.814541,,,,1
 22895,Crimson 2,battery,,Store,US,150,,,,,,2022,,,2042,33.57345,-114.814541,,,,2
-22896,UMass PV Lot 49 1,solar,,PP,US,0.8,,,,,,2022,,,2042,42.393012,-72.52023,,,,1
+22896,UMass PV Lot 49 1,solar,,PP,US,0.8,,,,,,2022,,,2057,42.393012,-72.52023,,,,1
 22897,UMass PV Lot 22 1,battery,,Store,US,2,,,,,,2022,,,2042,42.393012,-72.52023,,,,2
-22898,UMass PV Lot 22 2,solar,,PP,US,2.1,,,,,,2022,,,2042,42.393012,-72.52023,,,,3
+22898,UMass PV Lot 22 2,solar,,PP,US,2.1,,,,,,2022,,,2057,42.393012,-72.52023,,,,3
 22899,Lacy Creek Wind Energy Center 1,onwind,,PP,US,301.3,,,,,,2022,,,2049,31.729906,-101.29894,,,,1
-22900,Orioles Community Solar 1,solar,,PP,US,5.6,,,,,,2022,,,2042,42.426,-73.817,,,,1
-22901,"ER Center Road Solar, LLC 1",solar,,PP,US,2.1,,,,,,2022,,,2042,44.50819,-72.34633,,,,1
-22902,Hudson County Solar 1,solar,,PP,US,1.2,,,,,,2022,,,2042,40.72762,-74.10803,,,,1
-22903,"WW-DC Solar 1, LLC 1",solar,,PP,US,1.2,,,,,,2022,,,2042,38.82568,-77.00205,,,,1
-22904,CSP Los Angeles 1,solar,,PP,US,2.3,,,,,,2022,,,2042,34.694314,-118.227759,,,,1
-22905,West Village Solar - Array 1Community Solar 1,solar,,PP,US,1.2,,,,,,2022,,,2042,38.542791,-121.77752,,,,1
-22906,West Village Solar - Array 2 Community Solar 1,solar,,PP,US,1.3,,,,,,2022,,,2042,38.542747,-121.77659,,,,2
-22907,County Road 17 (CSG) 1,solar,,PP,US,3.3,,,,,,2022,,,2042,42.27842,-75.5415,,,,1
+22900,Orioles Community Solar 1,solar,,PP,US,5.6,,,,,,2022,,,2057,42.426,-73.817,,,,1
+22901,"ER Center Road Solar, LLC 1",solar,,PP,US,2.1,,,,,,2022,,,2057,44.50819,-72.34633,,,,1
+22902,Hudson County Solar 1,solar,,PP,US,1.2,,,,,,2022,,,2057,40.72762,-74.10803,,,,1
+22903,"WW-DC Solar 1, LLC 1",solar,,PP,US,1.2,,,,,,2022,,,2057,38.82568,-77.00205,,,,1
+22904,CSP Los Angeles 1,solar,,PP,US,2.3,,,,,,2022,,,2057,34.694314,-118.227759,,,,1
+22905,West Village Solar - Array 1Community Solar 1,solar,,PP,US,1.2,,,,,,2022,,,2057,38.542791,-121.77752,,,,1
+22906,West Village Solar - Array 2 Community Solar 1,solar,,PP,US,1.3,,,,,,2022,,,2057,38.542747,-121.77659,,,,2
+22907,County Road 17 (CSG) 1,solar,,PP,US,3.3,,,,,,2022,,,2057,42.27842,-75.5415,,,,1
 22908,Byrd Ranch Storage 1,battery,,Store,US,50,,,,,,2022,,,2042,29.056,-95.686,,,,1
-22909,Noble Solar 1,solar,,PP,US,275,,,,,,2022,,,2042,33.261505,-97.238057,,,,1
+22909,Noble Solar 1,solar,,PP,US,275,,,,,,2022,,,2057,33.261505,-97.238057,,,,1
 22910,Noble Solar 2,battery,,Store,US,125,,,,,,2022,,,2042,33.261505,-97.238057,,,,2
-22911,USS Peach Solar LLC 1,solar,,PP,US,1,,,,,,2022,,,2042,44.17107,-93.90887,,,,1
+22911,USS Peach Solar LLC 1,solar,,PP,US,1,,,,,,2022,,,2057,44.17107,-93.90887,,,,1
 22912,Bob Glanzer Generating Station 1,OCGT,OCGT,PP,US,11.5,,,,,,2022,,,2057,44.369507,-98.17223,,,,1
 22913,Bob Glanzer Generating Station 2,OCGT,OCGT,PP,US,11.5,,,,,,2022,,,2057,44.369507,-98.17223,,,,2
 22914,Bob Glanzer Generating Station 3,OCGT,OCGT,PP,US,11.5,,,,,,2022,,,2057,44.369507,-98.17223,,,,3
 22915,Bob Glanzer Generating Station 4,OCGT,OCGT,PP,US,11.5,,,,,,2022,,,2057,44.369507,-98.17223,,,,4
 22916,Bob Glanzer Generating Station 5,OCGT,OCGT,PP,US,11.5,,,,,,2022,,,2057,44.369507,-98.17223,,,,5
 22917,Bob Glanzer Generating Station 6,OCGT,OCGT,PP,US,11.5,,,,,,2022,,,2057,44.369507,-98.17223,,,,6
-22918,Sun Valley Solar Project 1,solar,,PP,US,250,,,,,,2022,,,2042,31.86976,-97.01498,,,,1
-22919,ENGIE Solidago Solar Project - Hybrid 1,solar,,PP,US,50,,,,,,2022,,,2042,39.395187,-75.7535,,,,1
+22918,Sun Valley Solar Project 1,solar,,PP,US,250,,,,,,2022,,,2057,31.86976,-97.01498,,,,1
+22919,ENGIE Solidago Solar Project - Hybrid 1,solar,,PP,US,50,,,,,,2022,,,2057,39.395187,-75.7535,,,,1
 22920,Limestone Wind Project 1,onwind,,PP,US,299.2,,,,,,2022,,,2049,31.85346,-96.624458,,,,1
-22921,Sunnybrook Solar Project - Hybrid 1,solar,,PP,US,51,,,,,,2022,,,2042,36.798717,-78.83961,,,,1
-22922,Caden Energix Wytheville LLC 1,solar,,PP,US,20,,,,,,2022,,,2042,36.964279,-81.049858,,,,1
-22923,Maplewood Solar 1,solar,,PP,US,120,,,,,,2022,,,2042,36.89,-79.32,,,,1
-22924,Fort Powhatan Solar 1,solar,,PP,US,150,,,,,,2022,,,2042,37.26,-77.08,,,,1
-22925,"8500 Balboa PV, LLC 1",solar,,PP,US,2.4,,,,,,2022,,,2042,34.22379,-118.49974,,,,1
-22926,"8500 Balboa PV, LLC 2",solar,,PP,US,0.8,,,,,,2022,,,2042,34.22379,-118.49974,,,,2
-22927,Shakes Solar 1,solar,,PP,US,200,,,,,,2022,,,2042,28.44208,-99.75582,,,,1
+22921,Sunnybrook Solar Project - Hybrid 1,solar,,PP,US,51,,,,,,2022,,,2057,36.798717,-78.83961,,,,1
+22922,Caden Energix Wytheville LLC 1,solar,,PP,US,20,,,,,,2022,,,2057,36.964279,-81.049858,,,,1
+22923,Maplewood Solar 1,solar,,PP,US,120,,,,,,2022,,,2057,36.89,-79.32,,,,1
+22924,Fort Powhatan Solar 1,solar,,PP,US,150,,,,,,2022,,,2057,37.26,-77.08,,,,1
+22925,"8500 Balboa PV, LLC 1",solar,,PP,US,2.4,,,,,,2022,,,2057,34.22379,-118.49974,,,,1
+22926,"8500 Balboa PV, LLC 2",solar,,PP,US,0.8,,,,,,2022,,,2057,34.22379,-118.49974,,,,2
+22927,Shakes Solar 1,solar,,PP,US,200,,,,,,2022,,,2057,28.44208,-99.75582,,,,1
 22928,Appaloosa Run Wind 1,onwind,,PP,US,171.8,,,,,,2022,,,2049,31.157269,-101.831603,,,,1
-22929,MD - CS - Potomac Edison Co - GA25 TPE (Community Solar) 1,solar,,PP,US,2,,,,,,2022,,,2042,39.608072,-79.32824,,,,1
-22930,MD - CS - BGE - PR24 TPE 1,solar,,PP,US,2,,,,,,2022,,,2042,38.927431,-76.699164,,,,1
-22931,Macbeth Solar 1,solar,,PP,US,20,,,,,,2022,,,2042,43.437,-86.353,,,,1
-22932,Lyons Road 1,solar,,PP,US,20,,,,,,2022,,,2042,42.965793,-84.142858,,,,1
-22933,"Mulligan Solar, LLC 1",solar,,PP,US,70,,,,,,2022,,,2042,40.09393,-89.4204,,,,1
+22929,MD - CS - Potomac Edison Co - GA25 TPE (Community Solar) 1,solar,,PP,US,2,,,,,,2022,,,2057,39.608072,-79.32824,,,,1
+22930,MD - CS - BGE - PR24 TPE 1,solar,,PP,US,2,,,,,,2022,,,2057,38.927431,-76.699164,,,,1
+22931,Macbeth Solar 1,solar,,PP,US,20,,,,,,2022,,,2057,43.437,-86.353,,,,1
+22932,Lyons Road 1,solar,,PP,US,20,,,,,,2022,,,2057,42.965793,-84.142858,,,,1
+22933,"Mulligan Solar, LLC 1",solar,,PP,US,70,,,,,,2022,,,2057,40.09393,-89.4204,,,,1
 22934,Ford County Wind Farm LLC 1,onwind,,PP,US,121.3,,,,,,2022,,,2049,40.556285,-88.349491,,,,1
-22935,OER Patuxent CSG 1,solar,,PP,US,2.8,,,,,,2022,,,2042,38.838642,-76.683089,,,,1
+22935,OER Patuxent CSG 1,solar,,PP,US,2.8,,,,,,2022,,,2057,38.838642,-76.683089,,,,1
 22936,Mark One Power Station 1,OCGT,OCGT,PP,US,60.5,,,,,,2022,,,2057,29.227109,-95.430756,,,,1
 22937,Mark One Power Station 2,OCGT,OCGT,PP,US,60.5,,,,,,2022,,,2057,29.227109,-95.430756,,,,2
 22938,Mark One Power Station 3,OCGT,OCGT,PP,US,60.5,,,,,,2022,,,2057,29.227109,-95.430756,,,,3
 22939,Mark One Power Station 4,OCGT,OCGT,PP,US,60.5,,,,,,2022,,,2057,29.227109,-95.430756,,,,4
 22940,Mark One Power Station 5,OCGT,OCGT,PP,US,60.5,,,,,,2022,,,2057,29.227109,-95.430756,,,,5
 22941,Mark One Power Station 6,OCGT,OCGT,PP,US,60.5,,,,,,2022,,,2057,29.227109,-95.430756,,,,6
-22942,OYA Robinson Road 1,solar,,PP,US,5,,,,,,2022,,,2042,44.26323,-75.99105,,,,1
+22942,OYA Robinson Road 1,solar,,PP,US,5,,,,,,2022,,,2057,44.26323,-75.99105,,,,1
 22943,Solomon Generating Facility 1,OCGT,,PP,US,14.9,,,,,,2022,,,2057,37.030051,-113.563394,,,,1
-22944,Allie L.L.C. 1,solar,,PP,US,1,,,,,,2022,,,2042,44.78879,-95.201537,,,,1
+22944,Allie L.L.C. 1,solar,,PP,US,1,,,,,,2022,,,2057,44.78879,-95.201537,,,,1
 22945,Lincoln WWTF Hybrid 1,battery,,Store,US,1,,,,,,2022,,,2042,38.859,-121.346,,,,1
-22946,Airport Road Solar (CSG) 1,solar,,PP,US,3.4,,,,,,2022,,,2042,41.42827,-74.39665,,,,1
-22947,Holland Solar Farm 1,solar,,PP,US,6.7,,,,,,2022,,,2042,40.619,-75.155,,,,1
+22946,Airport Road Solar (CSG) 1,solar,,PP,US,3.4,,,,,,2022,,,2057,41.42827,-74.39665,,,,1
+22947,Holland Solar Farm 1,solar,,PP,US,6.7,,,,,,2022,,,2057,40.619,-75.155,,,,1
 22948,"Ledyard Windpower, LLC 1",onwind,,PP,US,207,,,,,,2022,,,2049,43.430082,-94.106954,,,,1
-22949,Beloit Solar LLC 1,solar,,PP,US,2,,,,,,2022,,,2042,39.450445,-98.104751,,,,1
-22950,Neal Energy Center Solar 1,solar,,PP,US,4,,,,,,2022,,,2042,42.33304,-96.34822,,,,1
+22949,Beloit Solar LLC 1,solar,,PP,US,2,,,,,,2022,,,2057,39.450445,-98.104751,,,,1
+22950,Neal Energy Center Solar 1,solar,,PP,US,4,,,,,,2022,,,2057,42.33304,-96.34822,,,,1
 22951,Purdue CHP 1,OCGT,OCGT,PP,US,13.3,,,,,,2022,,,2057,40.417023,-86.915334,,,,1
-22952,OYA Wayside Drive 1,solar,,PP,US,5,,,,,,2022,,,2042,44.017,-75.922,,,,1
-22953,OYA Pulaski 1,solar,,PP,US,3.5,,,,,,2022,,,2042,43.583,-76.18,,,,1
-22954,OYA Main Street 1,solar,,PP,US,5,,,,,,2022,,,2042,42.875,-77.877,,,,1
+22952,OYA Wayside Drive 1,solar,,PP,US,5,,,,,,2022,,,2057,44.017,-75.922,,,,1
+22953,OYA Pulaski 1,solar,,PP,US,3.5,,,,,,2022,,,2057,43.583,-76.18,,,,1
+22954,OYA Main Street 1,solar,,PP,US,5,,,,,,2022,,,2057,42.875,-77.877,,,,1
 22955,USS Itasca Clean Energy Solar LLC 1,battery,,Store,US,1,,,,,,2022,,,2042,47.21051,-93.51823,,,,1
-22956,USS Itasca Clean Energy Solar LLC 2,solar,,PP,US,1,,,,,,2022,,,2042,47.21051,-93.51823,,,,2
-22957,USS Verbena Solar LLC 1,solar,,PP,US,1,,,,,,2022,,,2042,44.725917,-94.494232,,,,1
-22958,CA-Ventura Co CCD-Oxnard College Canopy 1,solar,,PP,US,1.5,,,,,,2022,,,2042,34.165905,-119.156765,,,,1
-22959,NY - PANYNJ - LaGuardia - Rooftop 1,solar,,PP,US,1,,,,,,2022,,,2042,40.772982,-73.874722,,,,1
-22960,OYA Church Road 1,solar,,PP,US,5,,,,,,2022,,,2042,43.19133,-76.38954,,,,1
+22956,USS Itasca Clean Energy Solar LLC 2,solar,,PP,US,1,,,,,,2022,,,2057,47.21051,-93.51823,,,,2
+22957,USS Verbena Solar LLC 1,solar,,PP,US,1,,,,,,2022,,,2057,44.725917,-94.494232,,,,1
+22958,CA-Ventura Co CCD-Oxnard College Canopy 1,solar,,PP,US,1.5,,,,,,2022,,,2057,34.165905,-119.156765,,,,1
+22959,NY - PANYNJ - LaGuardia - Rooftop 1,solar,,PP,US,1,,,,,,2022,,,2057,40.772982,-73.874722,,,,1
+22960,OYA Church Road 1,solar,,PP,US,5,,,,,,2022,,,2057,43.19133,-76.38954,,,,1
 22961,Sealed Air Madera Solar Project 1,battery,,Store,US,0.8,,,,,,2022,,,2042,36.945582,-120.056016,,,,1
-22962,Sealed Air Madera Solar Project 2,solar,,PP,US,3,,,,,,2022,,,2042,36.945582,-120.056016,,,,2
-22963,Cummins Whitakers PV Arrays 1,solar,,PP,US,3.3,,,,,,2022,,,2042,36.089369,-77.726806,,,,1
-22964,Graniterock Quarry 1,solar,,PP,US,4.4,,,,,,2022,,,2042,36.878164,-121.6028,,,,1
+22962,Sealed Air Madera Solar Project 2,solar,,PP,US,3,,,,,,2022,,,2057,36.945582,-120.056016,,,,2
+22963,Cummins Whitakers PV Arrays 1,solar,,PP,US,3.3,,,,,,2022,,,2057,36.089369,-77.726806,,,,1
+22964,Graniterock Quarry 1,solar,,PP,US,4.4,,,,,,2022,,,2057,36.878164,-121.6028,,,,1
 22965,Herrema Dairy 1,OCGT,OCGT,PP,US,1.5,,,,,,2022,,,2057,41.086356,-87.256801,,,,1
-22966,Garden 2 Solar Park 1,solar,,PP,US,1.4,,,,,,2022,,,2042,45.797967,-86.534425,,,,1
+22966,Garden 2 Solar Park 1,solar,,PP,US,1.4,,,,,,2022,,,2057,45.797967,-86.534425,,,,1
 22967,Danville BESS 1 1,battery,,Store,US,10.5,,,,,,2022,,,2042,36.578864,-79.384088,,,,1
-22968,Mendota Rich Dev CSG 1,solar,,PP,US,2,,,,,,2022,,,2042,41.541339,-89.14808,,,,1
-22969,Sierra Pacific Chinese Camp 1,solar,,PP,US,3.6,,,,,,2022,,,2042,37.883393,-120.454433,,,,1
-22970,Dodge Renewables 1 1,solar,,PP,US,1,,,,,,2022,,,2042,44.01862,-92.86606,,,,1
-22971,Dodge Renewables 2 1,solar,,PP,US,1,,,,,,2022,,,2042,44.02037,-92.86973,,,,1
+22968,Mendota Rich Dev CSG 1,solar,,PP,US,2,,,,,,2022,,,2057,41.541339,-89.14808,,,,1
+22969,Sierra Pacific Chinese Camp 1,solar,,PP,US,3.6,,,,,,2022,,,2057,37.883393,-120.454433,,,,1
+22970,Dodge Renewables 1 1,solar,,PP,US,1,,,,,,2022,,,2057,44.01862,-92.86606,,,,1
+22971,Dodge Renewables 2 1,solar,,PP,US,1,,,,,,2022,,,2057,44.02037,-92.86973,,,,1
 22972,Abel Road Bioenergy 1,waste,,PP,US,4,,,,,,2022,,,2022,39.145608,-122.118591,,,,1
-22973,"Longbow Solar, LLC 1",solar,,PP,US,78.1,,,,,,2022,,,2042,29.289809,-95.298609,,,,1
-22974,CA - Fresno County - Juvenile Hall 1,solar,,PP,US,2.8,,,,,,2022,,,2042,36.661113,-119.725975,,,,1
+22973,"Longbow Solar, LLC 1",solar,,PP,US,78.1,,,,,,2022,,,2057,29.289809,-95.298609,,,,1
+22974,CA - Fresno County - Juvenile Hall 1,solar,,PP,US,2.8,,,,,,2022,,,2057,36.661113,-119.725975,,,,1
 22975,Portage Industrial Battery 1,battery,,Store,US,5,,,,,,2022,,,2042,43.552111,-89.487731,,,,1
-22976,Baldwin 1,solar,,PP,US,5,,,,,,2022,,,2042,43.79322,-70.75685,,,,1
-22977,Augusta 1,solar,,PP,US,2.5,,,,,,2022,,,2042,44.36124,-69.79636,,,,1
-22978,Monmouth 1,solar,,PP,US,5,,,,,,2022,,,2042,44.192188,-70.021685,,,,1
-22979,Robin NJ 1,solar,,PP,US,2.2,,,,,,2022,,,2042,40.19247,-74.56597,,,,1
-22980,Calibrant Bakersfield LLC 1,solar,,PP,US,1.3,,,,,,2022,,,2042,35.442085,-119.093214,,,,1
+22976,Baldwin 1,solar,,PP,US,5,,,,,,2022,,,2057,43.79322,-70.75685,,,,1
+22977,Augusta 1,solar,,PP,US,2.5,,,,,,2022,,,2057,44.36124,-69.79636,,,,1
+22978,Monmouth 1,solar,,PP,US,5,,,,,,2022,,,2057,44.192188,-70.021685,,,,1
+22979,Robin NJ 1,solar,,PP,US,2.2,,,,,,2022,,,2057,40.19247,-74.56597,,,,1
+22980,Calibrant Bakersfield LLC 1,solar,,PP,US,1.3,,,,,,2022,,,2057,35.442085,-119.093214,,,,1
 22981,West Valley Mission CCD Solar Project 1,battery,,Store,US,0.9,,,,,,2022,,,2042,37.264377,-122.006021,,,,1
-22982,West Valley Mission CCD Solar Project 2,solar,,PP,US,2.7,,,,,,2022,,,2042,37.264377,-122.006021,,,,1
-22983,Verizon Hidden Ridge Solar Project 1,solar,,PP,US,1,,,,,,2022,,,2042,32.87662,-96.95372,,,,1
-22984,Verizon Hidden Ridge Solar Project 2,solar,,PP,US,1.1,,,,,,2022,,,2042,32.87662,-96.95372,,,,2
-22985,Verizon Hidden Ridge Solar Project 3,solar,,PP,US,0.8,,,,,,2022,,,2042,32.87662,-96.95372,,,,3
+22982,West Valley Mission CCD Solar Project 2,solar,,PP,US,2.7,,,,,,2022,,,2057,37.264377,-122.006021,,,,1
+22983,Verizon Hidden Ridge Solar Project 1,solar,,PP,US,1,,,,,,2022,,,2057,32.87662,-96.95372,,,,1
+22984,Verizon Hidden Ridge Solar Project 2,solar,,PP,US,1.1,,,,,,2022,,,2057,32.87662,-96.95372,,,,2
+22985,Verizon Hidden Ridge Solar Project 3,solar,,PP,US,0.8,,,,,,2022,,,2057,32.87662,-96.95372,,,,3
 22986,Clearwater Wind I 1,onwind,,PP,US,365.5,,,,,,2022,,,2049,46.81771,-106.378853,,,,1
-22987,Hormel CSG Solar 1,solar,,PP,US,1,,,,,,2022,,,2042,44.953,-95.697,,,,1
-22988,MO32 (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2042,39.119391,-76.959758,,,,1
-22989,MO33 CSG 1,solar,,PP,US,2,,,,,,2022,,,2042,39.187812,-77.119864,,,,1
+22987,Hormel CSG Solar 1,solar,,PP,US,1,,,,,,2022,,,2057,44.953,-95.697,,,,1
+22988,MO32 (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2057,39.119391,-76.959758,,,,1
+22989,MO33 CSG 1,solar,,PP,US,2,,,,,,2022,,,2057,39.187812,-77.119864,,,,1
 22990,Orange Coast College PH2 Solar Project 1,battery,,Store,US,2.1,,,,,,2022,,,2042,33.672565,-117.91246,,,,1
-22991,Orange Coast College PH2 Solar Project 2,solar,,PP,US,3.1,,,,,,2022,,,2042,33.672565,-117.91246,,,,2
-22992,Gunnison Solar 1,solar,,PP,US,1.5,,,,,,2022,,,2042,39.16743,-111.80102,,,,1
-22993,ER Sand Hill 1,solar,,PP,US,2.2,,,,,,2022,,,2042,43.60689,-73.18995,,,,1
-22994,Union Springs 40 1,solar,,PP,US,5,,,,,,2022,,,2042,42.85,-76.65,,,,1
-22995,Union Springs 963 1,solar,,PP,US,5,,,,,,2022,,,2042,42.85,-76.65,,,,1
-22996,North Eagle Village Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,43.05,-75.95,,,,1
-22997,Green Lakes Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,43.05,-75.95,,,,1
-22998,Judd Road Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,43.15,-75.35,,,,1
-22999,"Pisgah Ridge Solar, LLC 1",solar,,PP,US,250,,,,,,2022,,,2042,31.896737,-96.467327,,,,1
-23000,MN CSG 2019-38 DE LLC 1,solar,,PP,US,1,,,,,,2022,,,2042,44.316403,-93.894242,,,,1
-23001,SR Greenville I 1,solar,,PP,US,4.8,,,,,,2022,,,2042,36.294811,-82.698881,,,,1
-23002,SR Greenville II 1,solar,,PP,US,4.8,,,,,,2022,,,2042,36.1905,-82.740047,,,,2
-23003,SR Bolivar 1,solar,,PP,US,3.3,,,,,,2022,,,2042,35.256656,-89.020275,,,,1
-23004,SR Paris 1,solar,,PP,US,6.8,,,,,,2022,,,2042,36.445894,-88.327688,,,,1
-23005,SR Jackson II 1,solar,,PP,US,1,,,,,,2022,,,2042,35.607757,-88.917046,,,,1
-23006,Nebula Solar 1,solar,,PP,US,135,,,,,,2022,,,2042,26.090103,-97.798453,,,,1
-23007,Vancourt Solar Interconnections 1,solar,,PP,US,45,,,,,,2022,,,2042,26.090103,-97.798453,,,,1
-23008,Southington Solar One 1,solar,,PP,US,4.7,,,,,,2022,,,2042,41.89,-72.518,,,,1
+22991,Orange Coast College PH2 Solar Project 2,solar,,PP,US,3.1,,,,,,2022,,,2057,33.672565,-117.91246,,,,2
+22992,Gunnison Solar 1,solar,,PP,US,1.5,,,,,,2022,,,2057,39.16743,-111.80102,,,,1
+22993,ER Sand Hill 1,solar,,PP,US,2.2,,,,,,2022,,,2057,43.60689,-73.18995,,,,1
+22994,Union Springs 40 1,solar,,PP,US,5,,,,,,2022,,,2057,42.85,-76.65,,,,1
+22995,Union Springs 963 1,solar,,PP,US,5,,,,,,2022,,,2057,42.85,-76.65,,,,1
+22996,North Eagle Village Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,43.05,-75.95,,,,1
+22997,Green Lakes Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,43.05,-75.95,,,,1
+22998,Judd Road Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,43.15,-75.35,,,,1
+22999,"Pisgah Ridge Solar, LLC 1",solar,,PP,US,250,,,,,,2022,,,2057,31.896737,-96.467327,,,,1
+23000,MN CSG 2019-38 DE LLC 1,solar,,PP,US,1,,,,,,2022,,,2057,44.316403,-93.894242,,,,1
+23001,SR Greenville I 1,solar,,PP,US,4.8,,,,,,2022,,,2057,36.294811,-82.698881,,,,1
+23002,SR Greenville II 1,solar,,PP,US,4.8,,,,,,2022,,,2057,36.1905,-82.740047,,,,2
+23003,SR Bolivar 1,solar,,PP,US,3.3,,,,,,2022,,,2057,35.256656,-89.020275,,,,1
+23004,SR Paris 1,solar,,PP,US,6.8,,,,,,2022,,,2057,36.445894,-88.327688,,,,1
+23005,SR Jackson II 1,solar,,PP,US,1,,,,,,2022,,,2057,35.607757,-88.917046,,,,1
+23006,Nebula Solar 1,solar,,PP,US,135,,,,,,2022,,,2057,26.090103,-97.798453,,,,1
+23007,Vancourt Solar Interconnections 1,solar,,PP,US,45,,,,,,2022,,,2057,26.090103,-97.798453,,,,1
+23008,Southington Solar One 1,solar,,PP,US,4.7,,,,,,2022,,,2057,41.89,-72.518,,,,1
 23009,Faunce Corner Community Solar 1,battery,,Store,US,1,,,,,,2022,,,2042,41.672831,-70.989503,,,,1
-23010,Faunce Corner Community Solar 2,solar,,PP,US,1,,,,,,2022,,,2042,41.672831,-70.989503,,,,2
+23010,Faunce Corner Community Solar 2,solar,,PP,US,1,,,,,,2022,,,2057,41.672831,-70.989503,,,,2
 23011,Ventura 1,battery,,Store,US,1,,,,,,2022,,,2042,41.668886,-70.991383,,,,1
-23012,Ventura 2,solar,,PP,US,1,,,,,,2022,,,2042,41.668886,-70.991383,,,,2
-23013,Cattail (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2042,41.822595,-90.131166,,,,1
-23014,Edwards Sanborn E1B 1,solar,,PP,US,154.4,,,,,,2022,,,2042,34.964033,-118.094144,,,,1
-23015,Edwards Sanborn E4 1,solar,,PP,US,148.9,,,,,,2022,,,2042,34.943575,-118.087989,,,,2
-23016,Edwards Sanborn E5 1,solar,,PP,US,68,,,,,,2022,,,2042,34.965275,-118.0773,,,,3
-23017,Edwards Sanborn S4 1,solar,,PP,US,41.2,,,,,,2022,,,2042,35.012467,-118.119264,,,,4
-23018,Calverton Solar Energy Center 1,solar,,PP,US,22.9,,,,,,2022,,,2042,40.91367,-72.750359,,,,1
-23019,City of Sheboygan Solar 1,solar,,PP,US,0.9,,,,,,2022,,,2042,43.709143,-87.755384,,,,1
-23020,Kohler Solar 1,solar,,PP,US,2.3,,,,,,2022,,,2042,43.747,-87.765727,,,,1
-23021,Laurel Oaks Solar 1,solar,,PP,US,61.2,,,,,,2022,,,2042,27.926882,-82.067668,,,,1
-23022,Riverside Solar 1,solar,,PP,US,55.2,,,,,,2022,,,2042,27.676065,-82.456163,,,,1
+23012,Ventura 2,solar,,PP,US,1,,,,,,2022,,,2057,41.668886,-70.991383,,,,2
+23013,Cattail (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2057,41.822595,-90.131166,,,,1
+23014,Edwards Sanborn E1B 1,solar,,PP,US,154.4,,,,,,2022,,,2057,34.964033,-118.094144,,,,1
+23015,Edwards Sanborn E4 1,solar,,PP,US,148.9,,,,,,2022,,,2057,34.943575,-118.087989,,,,2
+23016,Edwards Sanborn E5 1,solar,,PP,US,68,,,,,,2022,,,2057,34.965275,-118.0773,,,,3
+23017,Edwards Sanborn S4 1,solar,,PP,US,41.2,,,,,,2022,,,2057,35.012467,-118.119264,,,,4
+23018,Calverton Solar Energy Center 1,solar,,PP,US,22.9,,,,,,2022,,,2057,40.91367,-72.750359,,,,1
+23019,City of Sheboygan Solar 1,solar,,PP,US,0.9,,,,,,2022,,,2057,43.709143,-87.755384,,,,1
+23020,Kohler Solar 1,solar,,PP,US,2.3,,,,,,2022,,,2057,43.747,-87.765727,,,,1
+23021,Laurel Oaks Solar 1,solar,,PP,US,61.2,,,,,,2022,,,2057,27.926882,-82.067668,,,,1
+23022,Riverside Solar 1,solar,,PP,US,55.2,,,,,,2022,,,2057,27.676065,-82.456163,,,,1
 23023,TX11 Republic Road Storage 1,battery,,Store,US,50,,,,,,2022,,,2042,30.881424,-96.62542,,,,1
 23024,TX12 Silicon Hill Storage 1,battery,,Store,US,100,,,,,,2022,,,2042,30.41217,-97.57405,,,,1
 23025,TX13 Endurance Park Storage 1,battery,,Store,US,50,,,,,,2022,,,2042,32.85583,-100.991681,,,,1
 23026,TX23 Roughneck Storage 1,battery,,Store,US,50,,,,,,2022,,,2042,29.15923,-95.6626,,,,1
 23027,Rock Aetna Power Partners 1,onwind,,PP,US,20,,,,,,2022,,,2049,44.022721,-96.052322,,,,1
 23028,Kossuth County Wind 1,onwind,,PP,US,70,,,,,,2022,,,2049,42.986667,-94.133611,,,,1
-23029,Montgomery County Community Solar Center 1,solar,,PP,US,5.7,,,,,,2022,,,2042,38.890697,-91.423219,,,,1
-23030,Statesboro Solar LLC 1,solar,,PP,US,3,,,,,,2022,,,2042,32.468039,-81.803722,,,,1
-23031,BE Solar LLC 1,solar,,PP,US,3,,,,,,2022,,,2042,30.91,-84.548,,,,1
-23032,Rockmart 1,solar,,PP,US,2.6,,,,,,2022,,,2042,34.014833,-85.022235,,,,1
+23029,Montgomery County Community Solar Center 1,solar,,PP,US,5.7,,,,,,2022,,,2057,38.890697,-91.423219,,,,1
+23030,Statesboro Solar LLC 1,solar,,PP,US,3,,,,,,2022,,,2057,32.468039,-81.803722,,,,1
+23031,BE Solar LLC 1,solar,,PP,US,3,,,,,,2022,,,2057,30.91,-84.548,,,,1
+23032,Rockmart 1,solar,,PP,US,2.6,,,,,,2022,,,2057,34.014833,-85.022235,,,,1
 23033,Schumann Wind Farm 1,onwind,,PP,US,8,,,,,,2022,,,2049,45.90676,-118.4973,,,,1
-23034,Carnes Creek Solar (CSG) 1,solar,,PP,US,2.5,,,,,,2022,,,2042,45.075205,-122.92771,,,,1
-23035,Cosper Creek Solar (CSG) 1,solar,,PP,US,2.5,,,,,,2022,,,2042,45.058,-123.499,,,,1
-23036,Fruitland Creek Solar (CSG) 1,solar,,PP,US,1.8,,,,,,2022,,,2042,44.93013,-122.9375,,,,1
-23037,Kaiser Creek Solar (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2042,45.143,-122.609,,,,1
-23038,Sandy River Solar (CSG) 1,solar,,PP,US,1.9,,,,,,2022,,,2042,45.431055,-122.29516,,,,1
-23039,Sesqui-C Solar (CSG) 1,solar,,PP,US,2.5,,,,,,2022,,,2042,45.32543,-123.1769,,,,1
+23034,Carnes Creek Solar (CSG) 1,solar,,PP,US,2.5,,,,,,2022,,,2057,45.075205,-122.92771,,,,1
+23035,Cosper Creek Solar (CSG) 1,solar,,PP,US,2.5,,,,,,2022,,,2057,45.058,-123.499,,,,1
+23036,Fruitland Creek Solar (CSG) 1,solar,,PP,US,1.8,,,,,,2022,,,2057,44.93013,-122.9375,,,,1
+23037,Kaiser Creek Solar (CSG) 1,solar,,PP,US,2,,,,,,2022,,,2057,45.143,-122.609,,,,1
+23038,Sandy River Solar (CSG) 1,solar,,PP,US,1.9,,,,,,2022,,,2057,45.431055,-122.29516,,,,1
+23039,Sesqui-C Solar (CSG) 1,solar,,PP,US,2.5,,,,,,2022,,,2057,45.32543,-123.1769,,,,1
 23040,Buffalo Ridge Wind 1,onwind,,PP,US,106,,,,,,2022,,,2049,44.423056,-96.297222,,,,1
 23041,Young Wind 1,onwind,,PP,US,500,,,,,,2022,,,2049,33.119213,-98.852577,,,,1
 23042,Walleye Wind 1,onwind,,PP,US,110,,,,,,2022,,,2049,43.638056,-96.390556,,,,1
-23043,Dover Dairy 1,solar,,PP,US,1.1,,,,,,2022,,,2042,36.415526,-119.553653,,,,1
-23044,Big Bend Agrivoltaics 1,solar,,PP,US,1,,,,,,2022,,,2042,27.782731,-82.4008,,,,1
-23045,Big Bend Floating Solar I 1,solar,,PP,US,1,,,,,,2022,,,2042,27.78822,-82.39541,,,,1
+23043,Dover Dairy 1,solar,,PP,US,1.1,,,,,,2022,,,2057,36.415526,-119.553653,,,,1
+23044,Big Bend Agrivoltaics 1,solar,,PP,US,1,,,,,,2022,,,2057,27.782731,-82.4008,,,,1
+23045,Big Bend Floating Solar I 1,solar,,PP,US,1,,,,,,2022,,,2057,27.78822,-82.39541,,,,1
 23046,Star Peak Geothermal Plant 1,geothermal,,PP,US,3.5,,,,,,2022,,,2022,40.532133,-118.272015,,,,1
 23047,Star Peak Geothermal Plant 2,geothermal,,PP,US,5.1,,,,,,2022,,,2022,40.532133,-118.272015,,,,2
 23048,Star Peak Geothermal Plant 3,geothermal,,PP,US,5.1,,,,,,2022,,,2022,40.532133,-118.272015,,,,3
 23049,Star Peak Geothermal Plant 4,geothermal,,PP,US,5.2,,,,,,2022,,,2022,40.532133,-118.272015,,,,4
 23050,Star Peak Geothermal Plant 5,geothermal,,PP,US,3,,,,,,2022,,,2022,40.532133,-118.272015,,,,5
-23051,"Jackpot Solar, LLC 1",solar,,PP,US,120,,,,,,2022,,,2042,42.189,-114.6218,,,,1
-23052,"Hickson Solar, LLC 1",solar,,PP,US,2.8,,,,,,2022,,,2042,34.69382,-79.82006,,,,1
-23053,"Ogburn Solar, LLC 1",solar,,PP,US,2,,,,,,2022,,,2042,34.66565,-80.39065,,,,1
-23054,"Bishopville Solar II, LLC 1",solar,,PP,US,10,,,,,,2022,,,2042,34.2081,-80.22832,,,,1
-23055,Burlington Solar 1 1,solar,,PP,US,3.5,,,,,,2022,,,2042,41.72795,-72.93262,,,,1
-23056,Blue Hen Solar 1,solar,,PP,US,1.5,,,,,,2022,,,2042,39.18568,-75.68538,,,,1
-23057,"20701 Plummer PV, LLC 1",solar,,PP,US,1.5,,,,,,2022,,,2042,34.243444,-118.58517,,,,1
-23058,Corvias - Fort Riley II 1,solar,,PP,US,1.3,,,,,,2022,,,2042,39.08557,-96.81503,,,,1
+23051,"Jackpot Solar, LLC 1",solar,,PP,US,120,,,,,,2022,,,2057,42.189,-114.6218,,,,1
+23052,"Hickson Solar, LLC 1",solar,,PP,US,2.8,,,,,,2022,,,2057,34.69382,-79.82006,,,,1
+23053,"Ogburn Solar, LLC 1",solar,,PP,US,2,,,,,,2022,,,2057,34.66565,-80.39065,,,,1
+23054,"Bishopville Solar II, LLC 1",solar,,PP,US,10,,,,,,2022,,,2057,34.2081,-80.22832,,,,1
+23055,Burlington Solar 1 1,solar,,PP,US,3.5,,,,,,2022,,,2057,41.72795,-72.93262,,,,1
+23056,Blue Hen Solar 1,solar,,PP,US,1.5,,,,,,2022,,,2057,39.18568,-75.68538,,,,1
+23057,"20701 Plummer PV, LLC 1",solar,,PP,US,1.5,,,,,,2022,,,2057,34.243444,-118.58517,,,,1
+23058,Corvias - Fort Riley II 1,solar,,PP,US,1.3,,,,,,2022,,,2057,39.08557,-96.81503,,,,1
 23059,Caterina 1,battery,,Store,US,9.9,,,,,,2022,,,2042,28.34705,-99.673703,,,,1
 23060,Cedarville (TX) 1,battery,,Store,US,9.9,,,,,,2022,,,2042,31.514106,-103.452361,,,,1
 23061,Coyote Springs (TX) 1,battery,,Store,US,9.9,,,,,,2022,,,2042,31.39471,-103.630336,,,,1
 23062,Faulkner 1,battery,,Store,US,9.9,,,,,,2022,,,2042,31.262381,-103.794852,,,,1
 23063,NY - Mines Press 1,battery,,Store,US,1,,,,,,2022,,,2042,41.27803,-73.86612,,,,1
-23064,"Limelight Solar I, LLC 1",solar,,PP,US,2,,,,,,2022,,,2042,34.94861,-81.987777,,,,1
-23065,"233 Randolph 74 Solar I, LLC 1",solar,,PP,US,2,,,,,,2022,,,2042,35.311944,-81.590555,,,,1
+23064,"Limelight Solar I, LLC 1",solar,,PP,US,2,,,,,,2022,,,2057,34.94861,-81.987777,,,,1
+23065,"233 Randolph 74 Solar I, LLC 1",solar,,PP,US,2,,,,,,2022,,,2057,35.311944,-81.590555,,,,1
 23066,Lonestar 1,battery,,Store,US,9.9,,,,,,2022,,,2042,31.594864,-103.249847,,,,1
 23067,Rattlesnake (TX) 1,battery,,Store,US,9.9,,,,,,2022,,,2042,31.568978,-103.226631,,,,1
 23068,Saddleback 1,battery,,Store,US,9.9,,,,,,2022,,,2042,31.332883,-103.498425,,,,1
 23069,Sunlight Storage 1,battery,,Store,US,230,,,,,,2022,,,2042,33.803,-115.402,,,,1
-23070,Dynamic Corinth (CSG) 1,solar,,PP,US,5,,,,,,2022,,,2042,45.011548,-69.0267,,,,1
-23071,Dynamic Madison 1,solar,,PP,US,5,,,,,,2022,,,2042,44.791662,-69.7374,,,,1
+23070,Dynamic Corinth (CSG) 1,solar,,PP,US,5,,,,,,2022,,,2057,45.011548,-69.0267,,,,1
+23071,Dynamic Madison 1,solar,,PP,US,5,,,,,,2022,,,2057,44.791662,-69.7374,,,,1
 23072,Gaylord Rockies CHP 1,OCGT,OCGT,PP,US,2,,,,,,2022,,,2057,39.82,-104.75,,,,1
 23073,Gaylord Rockies CHP 2,OCGT,OCGT,PP,US,2,,,,,,2022,,,2057,39.82,-104.75,,,,1
-23074,Grand Casino Hinckley Solar 1,solar,,PP,US,3,,,,,,2022,,,2042,46.006605,-92.907732,,,,1
+23074,Grand Casino Hinckley Solar 1,solar,,PP,US,3,,,,,,2022,,,2057,46.006605,-92.907732,,,,1
 23075,Brookville Smart Bus Depot Microgrid 1,battery,,Store,US,1.5,,,,,,2022,,,2042,38.99903,-77.058,,,,1
-23076,Brookville Smart Bus Depot Microgrid 2,solar,,PP,US,1.7,,,,,,2022,,,2042,38.99903,-77.058,,,,2
-23077,Hecate Energy Upshur Rural LLC 1,solar,,PP,US,3,,,,,,2022,,,2042,32.843248,-94.731924,,,,1
-23078,Kearsarge West Shore Solar LLC 1,solar,,PP,US,5,,,,,,2022,,,2042,41.6202,-71.26842,,,,1
-23079,"Java Solar, LLC 1",solar,,PP,US,13.5,,,,,,2022,,,2042,36.233522,-119.81634,,,,1
-23080,Hodag Solar 1,solar,,PP,US,7.5,,,,,,2022,,,2042,45.61246,-89.44366,,,,1
-23081,Kankakee 2 1,solar,,PP,US,1.5,,,,,,2022,,,2042,41.176011,-87.879523,,,,1
-23082,Raptor Ridge 1,solar,,PP,US,12.5,,,,,,2022,,,2042,32.146944,-110.878056,,,,1
-23083,Timmerman (CSG) 1,solar,,PP,US,1,,,,,,2022,,,2042,44.234621,-95.881345,,,,1
+23076,Brookville Smart Bus Depot Microgrid 2,solar,,PP,US,1.7,,,,,,2022,,,2057,38.99903,-77.058,,,,2
+23077,Hecate Energy Upshur Rural LLC 1,solar,,PP,US,3,,,,,,2022,,,2057,32.843248,-94.731924,,,,1
+23078,Kearsarge West Shore Solar LLC 1,solar,,PP,US,5,,,,,,2022,,,2057,41.6202,-71.26842,,,,1
+23079,"Java Solar, LLC 1",solar,,PP,US,13.5,,,,,,2022,,,2057,36.233522,-119.81634,,,,1
+23080,Hodag Solar 1,solar,,PP,US,7.5,,,,,,2022,,,2057,45.61246,-89.44366,,,,1
+23081,Kankakee 2 1,solar,,PP,US,1.5,,,,,,2022,,,2057,41.176011,-87.879523,,,,1
+23082,Raptor Ridge 1,solar,,PP,US,12.5,,,,,,2022,,,2057,32.146944,-110.878056,,,,1
+23083,Timmerman (CSG) 1,solar,,PP,US,1,,,,,,2022,,,2057,44.234621,-95.881345,,,,1
 23084,Dania Beach 7 1,CCGT,CCGT,PP,US,492.2,,,,,,2022,,,2057,26.0686,-80.1984,,,,1
 23085,Dania Beach 7 2,CCGT,CCGT,PP,US,492.2,,,,,,2022,,,2057,26.0686,-80.1984,,,,2
 23086,Dania Beach 7 3,CCGT,CCGT,PP,US,463.3,,,,,,2022,,,2057,26.0686,-80.1984,,,,3
-23087,KDC Solar TC Little Patuxent WWTP LLC 1,solar,,PP,US,2,,,,,,2022,,,2042,39.299137,-76.959953,,,,1
-23088,KDC Solar TC George Howard LLC 1,solar,,PP,US,2,,,,,,2022,,,2042,39.300067,-76.957131,,,,2
-23089,KDC Solar TC Blandair Park LLC 1,solar,,PP,US,2,,,,,,2022,,,2042,39.300615,-76.960961,,,,3
-23090,Harmony Solar 2,solar,,PP,US,4.9,,,,,,2022,,,2042,44.98,-69.54635,,,,1
+23087,KDC Solar TC Little Patuxent WWTP LLC 1,solar,,PP,US,2,,,,,,2022,,,2057,39.299137,-76.959953,,,,1
+23088,KDC Solar TC George Howard LLC 1,solar,,PP,US,2,,,,,,2022,,,2057,39.300067,-76.957131,,,,2
+23089,KDC Solar TC Blandair Park LLC 1,solar,,PP,US,2,,,,,,2022,,,2057,39.300615,-76.960961,,,,3
+23090,Harmony Solar 2,solar,,PP,US,4.9,,,,,,2022,,,2057,44.98,-69.54635,,,,1
 23091,Flower Valley II 1,battery,,Store,US,101,,,,,,2022,,,2042,31.197285,-103.361771,,,,1
 23092,Swoose II 1,battery,,Store,US,101,,,,,,2022,,,2042,31.45115,-103.361771,,,,1
 23093,Crossett Power Management LLC 1,battery,,Store,US,203,,,,,,2022,,,2042,31.191687,-102.317227,,,,1
-23094,Skalbeck Solar 1,solar,,PP,US,1,,,,,,2022,,,2042,44.787094,-95.368805,,,,1
+23094,Skalbeck Solar 1,solar,,PP,US,1,,,,,,2022,,,2057,44.787094,-95.368805,,,,1
 23095,Norton Powerhouse 2 1,OCGT,OCGT,PP,US,4.6,,,,,,2022,,,2057,42.299,-71.804,,,,1
-23096,DRPA Woodcrest Station Solar Project 1,solar,,PP,US,4.4,,,,,,2022,,,2042,39.907271,-75.046925,,,,1
-23097,DRPA Ashland Station Solar Project 1,solar,,PP,US,2.7,,,,,,2022,,,2042,39.85853,-75.010346,,,,2
-23098,Amazon MDW7 Solar Project 1,solar,,PP,US,1.9,,,,,,2022,,,2042,41.424123,-87.772832,,,,1
-23099,Brazoria County Solar Project (Danciger) 1,solar,,PP,US,200,,,,,,2022,,,2042,29.1779,-95.7612,,,,1
-23100,"Middleton Biogas Solar, LLC 1",solar,,PP,US,1.9,,,,,,2022,,,2042,43.1233,-89.5466,,,,1
+23096,DRPA Woodcrest Station Solar Project 1,solar,,PP,US,4.4,,,,,,2022,,,2057,39.907271,-75.046925,,,,1
+23097,DRPA Ashland Station Solar Project 1,solar,,PP,US,2.7,,,,,,2022,,,2057,39.85853,-75.010346,,,,2
+23098,Amazon MDW7 Solar Project 1,solar,,PP,US,1.9,,,,,,2022,,,2057,41.424123,-87.772832,,,,1
+23099,Brazoria County Solar Project (Danciger) 1,solar,,PP,US,200,,,,,,2022,,,2057,29.1779,-95.7612,,,,1
+23100,"Middleton Biogas Solar, LLC 1",solar,,PP,US,1.9,,,,,,2022,,,2057,43.1233,-89.5466,,,,1
 23101,"Middleton Biogas Solar, LLC 2",battery,,Store,US,0.3,,,,,,2022,,,2042,43.1233,-89.5466,,,,1
-23102,Salvation Army Solar 1,solar,,PP,US,1.1,,,,,,2022,,,2042,39.95526,-75.10218,,,,1
+23102,Salvation Army Solar 1,solar,,PP,US,1.1,,,,,,2022,,,2057,39.95526,-75.10218,,,,1
 23103,Lancaster Area Battery 1,battery,,Store,US,127,,,,,,2022,,,2042,34.6864,-118.3045,,,,1
-23104,Angelica Solar Site 1 1,solar,,PP,US,5,,,,,,2022,,,2042,42.30639,-78.070392,,,,1
-23105,Angelica Solar Site 2 1,solar,,PP,US,5,,,,,,2022,,,2042,42.304408,-78.076676,,,,2
-23106,Angelica Solar Site 3 1,solar,,PP,US,5,,,,,,2022,,,2042,42.301546,-78.074922,,,,3
-23107,Angelica Solar Site 4 1,solar,,PP,US,5,,,,,,2022,,,2042,42.303015,-78.070922,,,,4
-23108,West Valley Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,42.449,-78.652,,,,1
-23109,West Valley Solar 2,solar,,PP,US,5,,,,,,2022,,,2042,42.449,-78.652,,,,2
-23110,Maple City 1,solar,,PP,US,1.5,,,,,,2022,,,2042,43.279547,-92.791272,,,,1
+23104,Angelica Solar Site 1 1,solar,,PP,US,5,,,,,,2022,,,2057,42.30639,-78.070392,,,,1
+23105,Angelica Solar Site 2 1,solar,,PP,US,5,,,,,,2022,,,2057,42.304408,-78.076676,,,,2
+23106,Angelica Solar Site 3 1,solar,,PP,US,5,,,,,,2022,,,2057,42.301546,-78.074922,,,,3
+23107,Angelica Solar Site 4 1,solar,,PP,US,5,,,,,,2022,,,2057,42.303015,-78.070922,,,,4
+23108,West Valley Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,42.449,-78.652,,,,1
+23109,West Valley Solar 2,solar,,PP,US,5,,,,,,2022,,,2057,42.449,-78.652,,,,2
+23110,Maple City 1,solar,,PP,US,1.5,,,,,,2022,,,2057,43.279547,-92.791272,,,,1
 23111,Electric Avenue Lunenburg Solar 1 2,battery,,Store,US,1,,,,,,2022,,,2042,42.58617,-71.75287,,,,1
-23112,OE IL Solar 3 1,solar,,PP,US,2,,,,,,2022,,,2042,42.02005,-89.36263,,,,1
-23113,French Road Solar II 1,solar,,PP,US,2,,,,,,2022,,,2042,42.06052,-88.5451,,,,1
-23114,Milo CSG 1,solar,,PP,US,4.5,,,,,,2022,,,2042,45.24368,-69.01552,,,,1
-23115,Livermore Falls CSG 1,solar,,PP,US,3.3,,,,,,2022,,,2042,44.48002,-70.16987,,,,1
-23116,Putah Creek Solar Farm North 1,solar,,PP,US,3,,,,,,2022,,,2042,38.524531,-121.99531,,,,1
-23117,"Cortez Solar 1, LLC 1",solar,,PP,US,2.2,,,,,,2022,,,2042,37.361706,-108.524683,,,,1
-23118,Water Street Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,44.2424,-69.7543,,,,1
-23119,"West Line Solar, LLC 1",solar,,PP,US,100,,,,,,2022,,,2042,32.7559,-111.5548,,,,1
-23120,PNA Rossford Solar Array 1,solar,,PP,US,1.4,,,,,,2022,,,2042,41.614879,-83.557244,,,,1
-23121,"South 49th 013445 SCS Norfolk, LLC 1",solar,,PP,US,8.5,,,,,,2022,,,2042,42.0312,-97.48271,,,,1
+23112,OE IL Solar 3 1,solar,,PP,US,2,,,,,,2022,,,2057,42.02005,-89.36263,,,,1
+23113,French Road Solar II 1,solar,,PP,US,2,,,,,,2022,,,2057,42.06052,-88.5451,,,,1
+23114,Milo CSG 1,solar,,PP,US,4.5,,,,,,2022,,,2057,45.24368,-69.01552,,,,1
+23115,Livermore Falls CSG 1,solar,,PP,US,3.3,,,,,,2022,,,2057,44.48002,-70.16987,,,,1
+23116,Putah Creek Solar Farm North 1,solar,,PP,US,3,,,,,,2022,,,2057,38.524531,-121.99531,,,,1
+23117,"Cortez Solar 1, LLC 1",solar,,PP,US,2.2,,,,,,2022,,,2057,37.361706,-108.524683,,,,1
+23118,Water Street Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,44.2424,-69.7543,,,,1
+23119,"West Line Solar, LLC 1",solar,,PP,US,100,,,,,,2022,,,2057,32.7559,-111.5548,,,,1
+23120,PNA Rossford Solar Array 1,solar,,PP,US,1.4,,,,,,2022,,,2057,41.614879,-83.557244,,,,1
+23121,"South 49th 013445 SCS Norfolk, LLC 1",solar,,PP,US,8.5,,,,,,2022,,,2057,42.0312,-97.48271,,,,1
 23122,"South 49th 013445 SCS Norfolk, LLC 2",battery,,Store,US,2.1,,,,,,2022,,,2042,42.0312,-97.48271,,,,2
 23123,Huxley Solar 1,battery,,Store,US,5,,,,,,2022,,,2042,42.197564,-72.48015,,,,1
-23124,Huxley Solar 2,solar,,PP,US,5,,,,,,2022,,,2042,42.197564,-72.48015,,,,2
+23124,Huxley Solar 2,solar,,PP,US,5,,,,,,2022,,,2057,42.197564,-72.48015,,,,2
 23125,"Beacon Solar, LLC 1",battery,,Store,US,5,,,,,,2022,,,2042,42.284,-72.677,,,,1
-23126,"Beacon Solar, LLC 2",solar,,PP,US,5,,,,,,2022,,,2042,42.284,-72.677,,,,2
+23126,"Beacon Solar, LLC 2",solar,,PP,US,5,,,,,,2022,,,2057,42.284,-72.677,,,,2
 23127,Town of Amherst Solar 1,battery,,Store,US,2.5,,,,,,2022,,,2042,42.356,-72.479,,,,1
-23128,Town of Amherst Solar 2,solar,,PP,US,2.5,,,,,,2022,,,2042,42.356,-72.479,,,,2
+23128,Town of Amherst Solar 2,solar,,PP,US,2.5,,,,,,2022,,,2057,42.356,-72.479,,,,2
 23129,"SPPW1, LLC 1",onwind,,PP,US,2.8,,,,,,2022,,,2049,40.313772,-98.960279,,,,1
 23130,"SPPW1, LLC 2",onwind,,PP,US,2.8,,,,,,2022,,,2049,40.313772,-98.960279,,,,2
-23131,Niagara Bottling - Bloomfield 1,solar,,PP,US,2.8,,,,,,2022,,,2042,41.860396,-72.722889,,,,1
-23132,Bantam Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,43.070426,-74.730767,,,,1
-23133,Cafferty Hill Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,42.081843,-76.112885,,,,1
-23134,Lockenhurst Pond Solar 1,solar,,PP,US,2,,,,,,2022,,,2042,41.33695,-74.55504,,,,1
-23135,Svenski Solar (Hybrid) 1,solar,,PP,US,2,,,,,,2022,,,2042,41.535043,-74.322869,,,,1
+23131,Niagara Bottling - Bloomfield 1,solar,,PP,US,2.8,,,,,,2022,,,2057,41.860396,-72.722889,,,,1
+23132,Bantam Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,43.070426,-74.730767,,,,1
+23133,Cafferty Hill Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,42.081843,-76.112885,,,,1
+23134,Lockenhurst Pond Solar 1,solar,,PP,US,2,,,,,,2022,,,2057,41.33695,-74.55504,,,,1
+23135,Svenski Solar (Hybrid) 1,solar,,PP,US,2,,,,,,2022,,,2057,41.535043,-74.322869,,,,1
 23136,Svenski Solar (Hybrid) 2,battery,,Store,US,2,,,,,,2022,,,2042,41.535043,-74.322869,,,,2
-23137,Lake Elsinore Canopies - Lakeside HS 1,solar,,PP,US,1,,,,,,2022,,,2042,33.668,-117.383,,,,1
-23138,Lewiston Junction Road Solar 1,solar,,PP,US,4.9,,,,,,2022,,,2042,44.050556,-70.307056,,,,1
-23139,Webb Road Solar 1,solar,,PP,US,4.6,,,,,,2022,,,2042,44.528235,-69.69731,,,,1
-23140,Merrill Road Solar 1,solar,,PP,US,4.6,,,,,,2022,,,2042,44.15792,-70.197138,,,,1
-23141,Lisbon Street Solar 1,solar,,PP,US,2,,,,,,2022,,,2042,44.061033,-70.153695,,,,1
-23142,"Ash Mesa Solar, LLC 1",solar,,PP,US,7.8,,,,,,2022,,,2042,38.663372,-107.996652,,,,1
-23143,Butterfield Solar Farm 1,solar,,PP,US,5,,,,,,2022,,,2042,33.96895,-96.434611,,,,1
+23137,Lake Elsinore Canopies - Lakeside HS 1,solar,,PP,US,1,,,,,,2022,,,2057,33.668,-117.383,,,,1
+23138,Lewiston Junction Road Solar 1,solar,,PP,US,4.9,,,,,,2022,,,2057,44.050556,-70.307056,,,,1
+23139,Webb Road Solar 1,solar,,PP,US,4.6,,,,,,2022,,,2057,44.528235,-69.69731,,,,1
+23140,Merrill Road Solar 1,solar,,PP,US,4.6,,,,,,2022,,,2057,44.15792,-70.197138,,,,1
+23141,Lisbon Street Solar 1,solar,,PP,US,2,,,,,,2022,,,2057,44.061033,-70.153695,,,,1
+23142,"Ash Mesa Solar, LLC 1",solar,,PP,US,7.8,,,,,,2022,,,2057,38.663372,-107.996652,,,,1
+23143,Butterfield Solar Farm 1,solar,,PP,US,5,,,,,,2022,,,2057,33.96895,-96.434611,,,,1
 23144,Silver Maple 1,onwind,,PP,US,20,,,,,,2022,,,2049,44.7821,-68.5201,,,,1
-23145,Cutlass Solar 1 LLC 1,solar,,PP,US,110.9,,,,,,2022,,,2042,29.409669,-95.73405,,,,1
+23145,Cutlass Solar 1 LLC 1,solar,,PP,US,110.9,,,,,,2022,,,2057,29.409669,-95.73405,,,,1
 23146,"King Creek Wind Farm 1, LLC 1",onwind,,PP,US,184,,,,,,2022,,,2049,33.268,-99.468,,,,1
 23147,"King Creek Wind Farm 2, LLC 1",onwind,,PP,US,209,,,,,,2022,,,2049,33.182551,-99.389904,,,,1
-23148,Wonderful Firebaugh 1,solar,,PP,US,5.4,,,,,,2022,,,2042,36.835981,-120.3205,,,,1
-23149,Wonderful Kings 1,solar,,PP,US,3.5,,,,,,2022,,,2042,35.769028,-119.868469,,,,1
-23150,Brainerd Airport 1,solar,,PP,US,5.8,,,,,,2022,,,2042,46.39096,-94.14054,,,,1
-23151,Edison Farm 1,solar,,PP,US,2,,,,,,2022,,,2042,36.51703,-79.709226,,,,1
-23152,Overhill Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,34.98247,-78.319062,,,,1
-23153,Polk Farm 1,solar,,PP,US,5,,,,,,2022,,,2042,34.922572,-79.654447,,,,1
-23154,Selwyn Farm 1,solar,,PP,US,5,,,,,,2022,,,2042,34.974485,-79.991608,,,,1
-23155,Shieldwall Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,36.455422,-77.885106,,,,1
-23156,Summit Solar 1,solar,,PP,US,3,,,,,,2022,,,2042,35.22732,-78.03749,,,,1
-23157,"SCS Penfield One 010750 Penfield, LLC 1",solar,,PP,US,5,,,,,,2022,,,2042,43.134,-77.38,,,,1
-23158,"SCS Harpswell 012903 Brunswick, LLC 1",solar,,PP,US,4.9,,,,,,2022,,,2042,43.897,-69.947,,,,1
-23159,Westside Solar 1,solar,,PP,US,3.5,,,,,,2022,,,2042,44.053575,-92.548489,,,,1
-23160,Westside Solar 2,solar,,PP,US,6.5,,,,,,2022,,,2042,44.053575,-92.548489,,,,1
-23161,"Emerald Marshfields, LLC 1",solar,,PP,US,1.9,,,,,,2022,,,2042,42.099331,-70.714586,,,,1
-23162,"Emerald Kemble, LLC 1",solar,,PP,US,1.2,,,,,,2022,,,2042,40.768436,-74.498739,,,,1
-23163,"Emerald Kemble, LLC 2",solar,,PP,US,1.2,,,,,,2022,,,2042,40.768436,-74.498739,,,,2
+23148,Wonderful Firebaugh 1,solar,,PP,US,5.4,,,,,,2022,,,2057,36.835981,-120.3205,,,,1
+23149,Wonderful Kings 1,solar,,PP,US,3.5,,,,,,2022,,,2057,35.769028,-119.868469,,,,1
+23150,Brainerd Airport 1,solar,,PP,US,5.8,,,,,,2022,,,2057,46.39096,-94.14054,,,,1
+23151,Edison Farm 1,solar,,PP,US,2,,,,,,2022,,,2057,36.51703,-79.709226,,,,1
+23152,Overhill Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,34.98247,-78.319062,,,,1
+23153,Polk Farm 1,solar,,PP,US,5,,,,,,2022,,,2057,34.922572,-79.654447,,,,1
+23154,Selwyn Farm 1,solar,,PP,US,5,,,,,,2022,,,2057,34.974485,-79.991608,,,,1
+23155,Shieldwall Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,36.455422,-77.885106,,,,1
+23156,Summit Solar 1,solar,,PP,US,3,,,,,,2022,,,2057,35.22732,-78.03749,,,,1
+23157,"SCS Penfield One 010750 Penfield, LLC 1",solar,,PP,US,5,,,,,,2022,,,2057,43.134,-77.38,,,,1
+23158,"SCS Harpswell 012903 Brunswick, LLC 1",solar,,PP,US,4.9,,,,,,2022,,,2057,43.897,-69.947,,,,1
+23159,Westside Solar 1,solar,,PP,US,3.5,,,,,,2022,,,2057,44.053575,-92.548489,,,,1
+23160,Westside Solar 2,solar,,PP,US,6.5,,,,,,2022,,,2057,44.053575,-92.548489,,,,1
+23161,"Emerald Marshfields, LLC 1",solar,,PP,US,1.9,,,,,,2022,,,2057,42.099331,-70.714586,,,,1
+23162,"Emerald Kemble, LLC 1",solar,,PP,US,1.2,,,,,,2022,,,2057,40.768436,-74.498739,,,,1
+23163,"Emerald Kemble, LLC 2",solar,,PP,US,1.2,,,,,,2022,,,2057,40.768436,-74.498739,,,,2
 23164,Perkasie PA BTM 1,oil,,PP,US,2.2,,,,,,2022,,,2057,40.379054,-75.30352,,,,1
 23165,Perkasie PA BTM 2,oil,,PP,US,2.2,,,,,,2022,,,2057,40.379054,-75.30352,,,,1
-23166,LSE Musca Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,42.30895,-77.0403,,,,1
+23166,LSE Musca Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,42.30895,-77.0403,,,,1
 23167,Blakely (PA) RTO BTM 1,oil,,PP,US,2.7,,,,,,2022,,,2057,41.475957,-75.600602,,,,1
 23168,Blakely (PA) RTO BTM 2,oil,,PP,US,2.7,,,,,,2022,,,2057,41.475957,-75.600602,,,,2
 23169,Girard (PA) RTO BTM 1,oil,,PP,US,2.7,,,,,,2022,,,2057,42.003322,-80.320237,,,,1
@@ -23174,550 +23174,550 @@
 23172,Anheuser Busch - Fairfield 1,,,PP,US,2.6,,,,,,2022,,,2022,38.235224,-122.092666,,,,1
 23173,Apple Staten Island - Industrial Loop 1,,,PP,US,5,,,,,,2022,,,2022,40.552176,-74.232565,,,,1
 23174,Apple Staten Island - Winant Place 1,,,PP,US,5,,,,,,2022,,,2022,40.536563,-74.240941,,,,1
-23175,LSE Pavo Solar 1,solar,,PP,US,2.3,,,,,,2022,,,2042,42.157714,-75.045106,,,,1
-23176,MA Blackstone 1,solar,,PP,US,4.2,,,,,,2022,,,2042,42.026499,-71.528503,,,,1
+23175,LSE Pavo Solar 1,solar,,PP,US,2.3,,,,,,2022,,,2057,42.157714,-75.045106,,,,1
+23176,MA Blackstone 1,solar,,PP,US,4.2,,,,,,2022,,,2057,42.026499,-71.528503,,,,1
 23177,MA Blackstone 2,battery,,Store,US,3,,,,,,2022,,,2042,42.026499,-71.528503,,,,1
-23178,Moyer Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,36.419826,-79.907098,,,,1
-23179,Genesee - CCR Solar 1,solar,,PP,US,3.7,,,,,,2022,,,2042,43.31085,-77.78582,,,,1
+23178,Moyer Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,36.419826,-79.907098,,,,1
+23179,Genesee - CCR Solar 1,solar,,PP,US,3.7,,,,,,2022,,,2057,43.31085,-77.78582,,,,1
 23180,Cicero Energy Storage 1 LLC 1,battery,,Store,US,5,,,,,,2022,,,2042,43.147448,-76.086772,,,,1
-23181,Cicero Energy Storage 1 LLC 2,solar,,PP,US,5,,,,,,2022,,,2042,43.147448,-76.086772,,,,2
+23181,Cicero Energy Storage 1 LLC 2,solar,,PP,US,5,,,,,,2022,,,2057,43.147448,-76.086772,,,,2
 23182,Cicero Energy Storage 2 LLC 1,battery,,Store,US,5,,,,,,2022,,,2042,43.151269,-76.08879,,,,1
-23183,Cicero Energy Storage 2 LLC 2,solar,,PP,US,5,,,,,,2022,,,2042,43.151269,-76.08879,,,,2
-23184,CPG - Duke 5300A Holabird 1,solar,,PP,US,1.5,,,,,,2022,,,2042,39.270749,-76.550534,,,,1
-23185,CPG - Duke 5300B Holabird 1,solar,,PP,US,1.5,,,,,,2022,,,2042,39.270749,-76.551326,,,,1
-23186,CPG - Duke 5900 Holabird 1,solar,,PP,US,1.5,,,,,,2022,,,2042,39.273131,-76.545994,,,,2
-23187,CPG - Duke 6000 Holabird 1,solar,,PP,US,1.5,,,,,,2022,,,2042,39.273278,-76.544434,,,,3
-23188,North Kingstown Solar LLC 1,solar,,PP,US,1.9,,,,,,2022,,,2042,41.543781,-71.447334,,,,1
-23189,Phillips Route 82 Solar LLC 1,solar,,PP,US,5,,,,,,2022,,,2042,41.65,-73.75,,,,1
-23190,White Rock Road LLC 1,solar,,PP,US,6.5,,,,,,2022,,,2042,41.400949,-71.839504,,,,1
-23191,French King Solar LLC 1,solar,,PP,US,5,,,,,,2022,,,2042,42.5945,-72.4895,,,,1
-23192,DOCCS Greene 1,solar,,PP,US,5,,,,,,2022,,,2042,42.35,-73.85,,,,1
-23193,Beckwith Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,34.151927,-78.89158,,,,1
-23194,9150 Hermosa Solar GM 1,solar,,PP,US,1.3,,,,,,2022,,,2042,34.0878,-117.5872,,,,1
-23195,Beulah Solar 1,solar,,PP,US,74.9,,,,,,2022,,,2042,33.945207,-81.571162,,,,1
-23196,Saw Solar 1,solar,,PP,US,5,,,,,,2022,,,2042,35.556436,-80.651804,,,,1
-23197,Laskin Solar 1,solar,,PP,US,5.6,,,,,,2022,,,2042,47.52262,-92.178348,,,,1
-23198,Jean Duluth Solar 1,solar,,PP,US,1.6,,,,,,2022,,,2042,46.87377,-92.051994,,,,1
-23199,Brookdale CC BTM at Lincroft 1,solar,,PP,US,3.7,,,,,,2022,,,2042,40.326056,-74.130941,,,,1
-23200,Agriculture Capital - Legacy Packing 1,solar,,PP,US,1.6,,,,,,2022,,,2042,36.49466,-119.46698,,,,1
-23201,Bishop Ranch - BR 1-Y 1,solar,,PP,US,1.1,,,,,,2022,,,2042,37.76217,-121.9579,,,,1
+23183,Cicero Energy Storage 2 LLC 2,solar,,PP,US,5,,,,,,2022,,,2057,43.151269,-76.08879,,,,2
+23184,CPG - Duke 5300A Holabird 1,solar,,PP,US,1.5,,,,,,2022,,,2057,39.270749,-76.550534,,,,1
+23185,CPG - Duke 5300B Holabird 1,solar,,PP,US,1.5,,,,,,2022,,,2057,39.270749,-76.551326,,,,1
+23186,CPG - Duke 5900 Holabird 1,solar,,PP,US,1.5,,,,,,2022,,,2057,39.273131,-76.545994,,,,2
+23187,CPG - Duke 6000 Holabird 1,solar,,PP,US,1.5,,,,,,2022,,,2057,39.273278,-76.544434,,,,3
+23188,North Kingstown Solar LLC 1,solar,,PP,US,1.9,,,,,,2022,,,2057,41.543781,-71.447334,,,,1
+23189,Phillips Route 82 Solar LLC 1,solar,,PP,US,5,,,,,,2022,,,2057,41.65,-73.75,,,,1
+23190,White Rock Road LLC 1,solar,,PP,US,6.5,,,,,,2022,,,2057,41.400949,-71.839504,,,,1
+23191,French King Solar LLC 1,solar,,PP,US,5,,,,,,2022,,,2057,42.5945,-72.4895,,,,1
+23192,DOCCS Greene 1,solar,,PP,US,5,,,,,,2022,,,2057,42.35,-73.85,,,,1
+23193,Beckwith Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,34.151927,-78.89158,,,,1
+23194,9150 Hermosa Solar GM 1,solar,,PP,US,1.3,,,,,,2022,,,2057,34.0878,-117.5872,,,,1
+23195,Beulah Solar 1,solar,,PP,US,74.9,,,,,,2022,,,2057,33.945207,-81.571162,,,,1
+23196,Saw Solar 1,solar,,PP,US,5,,,,,,2022,,,2057,35.556436,-80.651804,,,,1
+23197,Laskin Solar 1,solar,,PP,US,5.6,,,,,,2022,,,2057,47.52262,-92.178348,,,,1
+23198,Jean Duluth Solar 1,solar,,PP,US,1.6,,,,,,2022,,,2057,46.87377,-92.051994,,,,1
+23199,Brookdale CC BTM at Lincroft 1,solar,,PP,US,3.7,,,,,,2022,,,2057,40.326056,-74.130941,,,,1
+23200,Agriculture Capital - Legacy Packing 1,solar,,PP,US,1.6,,,,,,2022,,,2057,36.49466,-119.46698,,,,1
+23201,Bishop Ranch - BR 1-Y 1,solar,,PP,US,1.1,,,,,,2022,,,2057,37.76217,-121.9579,,,,1
 23202,Bishop Ranch - BR 1-Y 2,battery,,Store,US,0.7,,,,,,2022,,,2042,37.76217,-121.9579,,,,2
-23203,Dynamic Energy NJ - Ferrero 1,solar,,PP,US,1.5,,,,,,2022,,,2042,40.550482,-74.54496,,,,1
-23204,Carthage A 1,solar,,PP,US,5,,,,,,2022,,,2042,43.997512,-75.662935,,,,1
-23205,Carthage B 1,solar,,PP,US,3.3,,,,,,2022,,,2042,43.990287,-75.661256,,,,1
-23206,Lightstar Renewables - Project 1004 1,solar,,PP,US,3.5,,,,,,2022,,,2042,42.09927,-73.95526,,,,1
-23207,Jogee Road Solar 1,solar,,PP,US,2,,,,,,2022,,,2042,41.399969,-74.502206,,,,1
-23208,Hammonton-High School Solar 1,solar,,PP,US,1.2,,,,,,2022,,,2042,39.657218,-74.808955,,,,1
-23209,Barefoot Solar 1,solar,,PP,US,4.3,,,,,,2022,,,2042,44.595751,-69.605026,,,,1
-10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2043,67.0598,-159.7062,,,,1
-10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2043,67.0598,-159.7062,,,,2
-10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2043,67.0598,-159.7062,,,,3
-10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2043,67.0598,-159.7062,,,,4
-10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2043,67.0598,-159.7062,,,,5
-10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2043,67.0598,-159.7062,,,,6
-10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2043,67.0598,-159.7062,,,,7
-10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2043,67.0598,-159.7062,,,,8
-10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2043,67.0598,-159.7062,,,,9
-40230,Deseret Generation & Tran Coop,solar,,PP,US,12.5,,,,,,2023,,,2043,40.1248,-109.5186,,,,1
-61950,Terra-Gen Operating Co-Solar,solar,,PP,US,100.4,,,,,,2023,,,2043,34.8414,-116.1785,,,,1
-18031,Steamboat Development Corp,solar,,PP,US,5.5,,,,,,2023,,,2043,40.6655,-119.6643,,,,1
-18031,Steamboat Development Corp,solar,,PP,US,5.5,,,,,,2023,,,2043,40.6655,-119.6643,,,,2
-34691,Ormat Nevada Inc,solar,,PP,US,8,,,,,,2023,,,2043,39.5809,-118.3358,,,,1
-64994,SolRiver Capital LLC,solar,,PP,US,4.9,,,,,,2023,,,2043,34.8409,-79.4804,,,,1
-64994,SolRiver Capital LLC,solar,,PP,US,8.9,,,,,,2023,,,2043,34.602,-79.6786,,,,2
-60472,Tungsten Mountain,solar,,PP,US,5,,,,,,2023,,,2043,39.5809,-118.3358,,,,1
-64281,"Thigpen Solar, LLC",solar,,PP,US,5,,,,,,2023,,,2043,34.6402,-79.1039,,,,1
-61069,RE Gaskell West LLC,solar,,PP,US,45,,,,,,2023,,,2043,35.3426,-118.7301,,,,1
-61069,RE Gaskell West LLC,solar,,PP,US,20,,,,,,2023,,,2043,35.3426,-118.7301,,,,2
-61069,RE Gaskell West LLC,solar,,PP,US,20,,,,,,2023,,,2043,35.3426,-118.7301,,,,3
-61069,RE Gaskell West LLC,solar,,PP,US,20,,,,,,2023,,,2043,35.3426,-118.7301,,,,4
-18454,Tampa Electric Co,solar,,PP,US,60,,,,,,2023,,,2043,27.9489,-81.6976,,,,1
-61477,325MK 8me LLC,solar,,PP,US,300,,,,,,2023,,,2043,36.2152,-115.0135,,,,1
-61768,Arrow Canyon Solar LLC,solar,,PP,US,200,,,,,,2023,,,2043,36.2152,-115.0135,,,,1
-61863,Washington Solar (SC),solar,,PP,US,2,,,,,,2023,,,2043,34.0801,-79.3625,,,,1
-62048,Westlands Almond LLC,solar,,PP,US,19.9,,,,,,2023,,,2043,36.0752,-119.8155,,,,1
-5248,Dominion Energy Inc.,solar,,PP,US,80,,,,,,2023,,,2043,36.7669,-78.9366,,,,1
-61944,MN8 Energy LLC,solar,,PP,US,10,,,,,,2023,,,2043,41.4697,-71.6226,,,,1
-61944,MN8 Energy LLC,solar,,PP,US,10,,,,,,2023,,,2043,41.4697,-71.6226,,,,2
-61944,MN8 Energy LLC,solar,,PP,US,10,,,,,,2023,,,2043,41.4697,-71.6226,,,,3
-61944,MN8 Energy LLC,solar,,PP,US,10,,,,,,2023,,,2043,41.4697,-71.6226,,,,4
-56990,NJR Clean Energy Ventures Corporation,solar,,PP,US,2.6,,,,,,2023,,,2043,39.8777,-74.6681,,,,1
-55983,Luminant Generation Company LLC,solar,,PP,US,108,,,,,,2023,,,2043,30.781,-102.7235,,,,1
-63118,224WB 8me LLC,solar,,PP,US,110,,,,,,2023,,,2043,31.3266,-99.864,,,,1
-15399,Avangrid Renewables LLC,solar,,PP,US,162,,,,,,2023,,,2043,45.3783,-120.2108,,,,1
-63275,"Samoset Solar, LLC",solar,,PP,US,2,,,,,,2023,,,2043,44.141,-69.1687,,,,1
-63427,"Neptune Energy Center, LLC",solar,,PP,US,325,,,,,,2023,,,2043,38.1735,-104.5127,,,,1
-62842,"Lightsource Renewable Energy Asset Management, LLC",solar,,PP,US,100,,,,,,2023,,,2043,32.2203,-86.2076,,,,1
-62842,"Lightsource Renewable Energy Asset Management, LLC",solar,,PP,US,95,,,,,,2023,,,2043,35.2563,-91.7456,,,,2
-63454,"Thunder Wolf Energy Center, LLC",solar,,PP,US,248,,,,,,2023,,,2043,38.1735,-104.5127,,,,1
-61298,Pine Gate Renewables,solar,,PP,US,23.4,,,,,,2023,,,2043,35.9673,-77.9864,,,,1
-61222,174 Power Global Corp.,solar,,PP,US,80,,,,,,2023,,,2043,32.3484,-96.7947,,,,1
-63494,"Allora Solar, LLC",solar,,PP,US,75,,,,,,2023,,,2043,33.9023,-81.272,,,,1
-63502,"Partin Solar, LLC",solar,,PP,US,50,,,,,,2023,,,2043,36.4146,-80.688,,,,1
-57416,"Acciona Energy USA Global, LLC",solar,,PP,US,100,,,,,,2023,,,2043,42.3518,-89.6623,,,,1
-63523,"DePue Holdings, LLC",solar,,PP,US,20,,,,,,2023,,,2043,41.4041,-89.5286,,,,1
-63525,"Westlands Solar Blue (OZ) Owner, LLC",solar,,PP,US,250,,,,,,2023,,,2043,36.0752,-119.8155,,,,1
-63526,"Chestnut Westside, LLC",solar,,PP,US,150.6,,,,,,2023,,,2043,36.0752,-119.8155,,,,1
-58970,"Ecoplexus, Inc",solar,,PP,US,3,,,,,,2023,,,2043,35.3426,-118.7301,,,,1
-61012,AES Distributed Energy,solar,,PP,US,30,,,,,,2023,,,2043,19.5984,-155.5183,,,,1
-5248,Dominion Energy Inc.,solar,,PP,US,60,,,,,,2023,,,2043,36.6804,-78.3627,,,,1
-57416,"Acciona Energy USA Global, LLC",solar,,PP,US,240,,,,,,2023,,,2043,29.5275,-95.7709,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,80,,,,,,2023,,,2043,45.9373,-108.2744,,,,1
-60146,Ameresco Federal Solutions,solar,,PP,US,1,,,,,,2023,,,2043,35.0059,-79.7479,,,,1
-64569,West Texas Solar Project II LLC,solar,,PP,US,203.8,,,,,,2023,,,2043,30.781,-102.7235,,,,1
-5248,Dominion Energy Inc.,solar,,PP,US,20,,,,,,2023,,,2043,37.3289,-76.7789,,,,1
-5248,Dominion Energy Inc.,solar,,PP,US,42,,,,,,2023,,,2043,36.8213,-79.3971,,,,1
-63776,"JSD Flatwood PV-1, LLC",solar,,PP,US,2,,,,,,2023,,,2043,34.9309,-81.9908,,,,1
-63803,Apex Solar LLC,solar,,PP,US,80,,,,,,2023,,,2043,45.1327,-112.8988,,,,1
-56215,"RWE Renewables Americas, LLC",solar,,PP,US,150,,,,,,2023,,,2043,36.7582,-119.6493,,,,1
-65411,Duke Energy Renewables Services,solar,,PP,US,175,,,,,,2023,,,2043,38.8321,-104.5254,,,,1
-9234,Indiana Municipal Power Agency,solar,,PP,US,5.3,,,,,,2023,,,2043,39.8644,-85.0099,,,,1
-20847,Wisconsin Electric Power Co,solar,,PP,US,150,,,,,,2023,,,2043,43.0005,-90.1354,,,,1
-62856,"Forefront Power, LLC",solar,,PP,US,2.6,,,,,,2023,,,2043,37.9348,-121.2714,,,,1
-64086,OE_ALD,solar,,PP,US,80,,,,,,2023,,,2043,31.2485,-86.4513,,,,1
-64144,Arlington Energy Center II,solar,,PP,US,133,,,,,,2023,,,2043,33.7437,-115.9938,,,,1
-63359,"REA Investments, LLC",solar,,PP,US,1,,,,,,2023,,,2043,44.7268,-94.9471,,,,1
-63359,"REA Investments, LLC",solar,,PP,US,1,,,,,,2023,,,2043,45.5025,-92.9083,,,,1
-64135,Resurgence Solar,solar,,PP,US,90,,,,,,2023,,,2043,34.8414,-116.1785,,,,1
-64084,OE_TN1,solar,,PP,US,100,,,,,,2023,,,2043,36.3582,-89.1488,,,,1
-13683,North Carolina El Member Corp,solar,,PP,US,0.5,,,,,,2023,,,2043,34.9916,-78.3714,,,,1
-13683,North Carolina El Member Corp,solar,,PP,US,5,,,,,,2023,,,2043,35.485,-77.6758,,,,1
-13683,North Carolina El Member Corp,solar,,PP,US,2,,,,,,2023,,,2043,35.5306,-76.2517,,,,2
-13683,North Carolina El Member Corp,solar,,PP,US,0.5,,,,,,2023,,,2043,35.0059,-79.7479,,,,3
-13683,North Carolina El Member Corp,solar,,PP,US,0.5,,,,,,2023,,,2043,35.7903,-78.6503,,,,4
-62915,Madison Energy Holdings LLC,solar,,PP,US,1.4,,,,,,2023,,,2043,41.7972,-71.1145,,,,1
-61012,AES Distributed Energy,solar,,PP,US,20,,,,,,2023,,,2043,41.8951,-84.0664,,,,1
-64236,Kearsarge Upper Union LLC,solar,,PP,US,1,,,,,,2023,,,2043,42.1603,-71.2118,,,,1
-50123,"Leeward Asset Management, LLC",solar,,PP,US,196,,,,,,2023,,,2043,39.8942,-83.4004,,,,1
-50123,"Leeward Asset Management, LLC",solar,,PP,US,100,,,,,,2023,,,2043,36.405,-76.0079,,,,1
-64273,"Angel Fire Energy Facility, LLC",solar,,PP,US,7.5,,,,,,2023,,,2043,36.6061,-104.6468,,,,1
-62836,Navisun LLC,solar,,PP,US,1,,,,,,2023,,,2043,41.7972,-71.1145,,,,1
-64285,"BCD Project Holdings 1, LLC",solar,,PP,US,20,,,,,,2023,,,2043,41,-78.4742,,,,1
-64285,"BCD Project Holdings 1, LLC",solar,,PP,US,20,,,,,,2023,,,2043,41,-78.4742,,,,2
-6455,"Duke Energy Florida, LLC",solar,,PP,US,0.8,,,,,,2023,,,2043,27.9198,-82.7255,,,,1
-61514,"Agilitas Energy, Inc.",solar,,PP,US,5,,,,,,2023,,,2043,41.9511,-70.8115,,,,1
-64349,Yellowbud Solar LLC,solar,,PP,US,274,,,,,,2023,,,2043,39.3376,-83.057,,,,1
-64364,Daggett Solar Power 2 LLC,solar,,PP,US,182,,,,,,2023,,,2043,34.8414,-116.1785,,,,1
-64365,Daggett Solar Power 3 LLC,solar,,PP,US,300,,,,,,2023,,,2043,34.8414,-116.1785,,,,2
-64358,New Market Solar,solar,,PP,US,35,,,,,,2023,,,2043,39.1847,-83.601,,,,1
-64370,"IP Radian, LLC",solar,,PP,US,320,,,,,,2023,,,2043,31.7742,-98.9998,,,,1
-64399,Trona Solar III LLC,solar,,PP,US,2,,,,,,2023,,,2043,36.5111,-117.4107,,,,1
-64409,"Hecate Energy Ramsey, LLC",solar,,PP,US,500,,,,,,2023,,,2043,29.2779,-96.2221,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,80,,,,,,2023,,,2043,43.2394,-103.5275,,,,1
-20856,Wisconsin Power & Light Co,solar,,PP,US,50,,,,,,2023,,,2043,42.8675,-90.7062,,,,1
-20856,Wisconsin Power & Light Co,solar,,PP,US,100,,,,,,2023,,,2043,43.4163,-88.7075,,,,2
-20856,Wisconsin Power & Light Co,solar,,PP,US,50,,,,,,2023,,,2043,42.6712,-89.0716,,,,3
-20856,Wisconsin Power & Light Co,solar,,PP,US,65,,,,,,2023,,,2043,42.6712,-89.0716,,,,4
-20856,Wisconsin Power & Light Co,solar,,PP,US,99,,,,,,2023,,,2043,44.1131,-89.2429,,,,5
-20856,Wisconsin Power & Light Co,solar,,PP,US,50,,,,,,2023,,,2043,43.4163,-88.7075,,,,6
-20856,Wisconsin Power & Light Co,solar,,PP,US,150,,,,,,2023,,,2043,43.7212,-87.9454,,,,7
-20856,Wisconsin Power & Light Co,solar,,PP,US,75,,,,,,2023,,,2043,43.0208,-88.7759,,,,8
-64446,ASD Cotuit MA Solar LLC,solar,,PP,US,3.1,,,,,,2023,,,2043,41.7244,-70.2903,,,,1
-55729,Duke Energy Kentucky Inc,solar,,PP,US,2,,,,,,2023,,,2043,38.9699,-84.7278,,,,1
-62842,"Lightsource Renewable Energy Asset Management, LLC",solar,,PP,US,152.5,,,,,,2023,,,2043,39.9311,-85.3964,,,,1
-64455,"Bernard Creek Solar, LLC",solar,,PP,US,230,,,,,,2023,,,2043,29.2779,-96.2221,,,,1
-64474,Waiawa Solar Power LLC,solar,,PP,US,36,,,,,,2023,,,2043,21.4899,-158.0739,,,,1
-14232,Otter Tail Power Co,solar,,PP,US,49.9,,,,,,2023,,,2043,46.4088,-95.708,,,,1
-57313,Tesla Inc.,solar,,PP,US,1.9,,,,,,2023,,,2043,30.3344,-97.782,,,,1
-57313,Tesla Inc.,solar,,PP,US,6.4,,,,,,2023,,,2043,35.3426,-118.7301,,,,1
-65752,"DG Empire Shine, LLC",solar,,PP,US,5,,,,,,2023,,,2043,42.595,-76.0703,,,,1
-64493,Jicarilla Solar 2 LLC,solar,,PP,US,50,,,,,,2023,,,2043,36.5096,-106.6931,,,,1
-64504,"Phobos Solar, LLC",solar,,PP,US,78.8,,,,,,2023,,,2043,35.9673,-77.9864,,,,1
-64505,"Cabin Creek Solar, LLC",solar,,PP,US,70.2,,,,,,2023,,,2043,35.3325,-79.9055,,,,1
-61944,MN8 Energy LLC,solar,,PP,US,20,,,,,,2023,,,2043,42.9023,-74.4397,,,,1
-61944,MN8 Energy LLC,solar,,PP,US,20,,,,,,2023,,,2043,42.595,-76.0703,,,,1
-64520,"Energix Aditya, LLC",solar,,PP,US,11.5,,,,,,2023,,,2043,37.9786,-77.963,,,,1
-64531,ASA Volney NY Solar I LLC,solar,,PP,US,5,,,,,,2023,,,2043,43.4269,-76.1413,,,,1
-64528,Lily Garden LLC,solar,,PP,US,1,,,,,,2023,,,2043,44.0221,-93.5873,,,,1
-64516,"Azimuth 180 Solar Electric, LLC",solar,,PP,US,2.4,,,,,,2023,,,2043,43.4269,-76.1413,,,,1
-6455,"Duke Energy Florida, LLC",solar,,PP,US,74.9,,,,,,2023,,,2043,30.1956,-82.9915,,,,1
-6455,"Duke Energy Florida, LLC",solar,,PP,US,74.9,,,,,,2023,,,2043,30.2652,-85.6203,,,,2
-6455,"Duke Energy Florida, LLC",solar,,PP,US,74.9,,,,,,2023,,,2043,29.6747,-82.3577,,,,3
-6455,"Duke Energy Florida, LLC",solar,,PP,US,74.9,,,,,,2023,,,2043,29.3184,-82.7434,,,,4
-64545,Vesper Energy Development LLC,solar,,PP,US,20,,,,,,2023,,,2043,40.6823,-80.3493,,,,1
-64545,Vesper Energy Development LLC,solar,,PP,US,80,,,,,,2023,,,2043,39.0476,-84.1517,,,,1
-64542,"Caden Energix Endless Caverns, LLC",solar,,PP,US,31.4,,,,,,2023,,,2043,38.512,-78.8757,,,,1
-56769,Consolidated Edison Development Inc.,solar,,PP,US,20,,,,,,2023,,,2043,36.7669,-78.9366,,,,1
-64549,Phare Garden LLC,solar,,PP,US,0.9,,,,,,2023,,,2043,44.7268,-94.9471,,,,1
-64548,"Apple Grove Solar, LLC",solar,,PP,US,18.6,,,,,,2023,,,2043,37.9786,-77.963,,,,1
-64547,"Waverly Solar, LLC",solar,,PP,US,118,,,,,,2023,,,2043,36.9218,-77.2618,,,,1
-64559,"Hunter Solar, LLC",solar,,PP,US,75,,,,,,2023,,,2043,39.6498,-104.3393,,,,1
-10000,Evergy Metro,solar,,PP,US,10,,,,,,2023,,,2043,39.0085,-94.3461,,,,1
-64607,Salt City Solar LLC,solar,,PP,US,49.9,,,,,,2023,,,2043,39.3376,-83.057,,,,1
-64610,"Powells Creek Farm Solar, LLC",solar,,PP,US,70,,,,,,2023,,,2043,36.7669,-78.9366,,,,1
-50123,"Leeward Asset Management, LLC",solar,,PP,US,200,,,,,,2023,,,2043,28.8678,-99.1082,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,5,,,,,,2023,,,2043,42.7639,-78.7323,,,,1
-9234,Indiana Municipal Power Agency,solar,,PP,US,1.8,,,,,,2023,,,2043,40.5158,-85.6547,,,,1
-64669,"CPV Maple Hill Solar, LLC",solar,,PP,US,100,,,,,,2023,,,2043,40.4951,-78.7134,,,,1
-56990,NJR Clean Energy Ventures Corporation,solar,,PP,US,5,,,,,,2023,,,2043,41.4022,-74.3056,,,,1
-65164,CleanCapital Holdings,solar,,PP,US,5,,,,,,2023,,,2043,43.8466,-70.3996,,,,1
-56990,NJR Clean Energy Ventures Corporation,solar,,PP,US,19.8,,,,,,2023,,,2043,40.862,-74.5445,,,,1
-64625,"MA CS Uxbridge, LLC",solar,,PP,US,4,,,,,,2023,,,2043,42.3514,-71.9077,,,,1
-62856,"Forefront Power, LLC",solar,,PP,US,2.6,,,,,,2023,,,2043,34.4561,-119.0836,,,,1
-56990,NJR Clean Energy Ventures Corporation,solar,,PP,US,3,,,,,,2023,,,2043,41.8721,-71.58,,,,1
-64730,"Flint Hills Resources Pine Bend, LLC",solar,,PP,US,45,,,,,,2023,,,2043,44.6719,-93.0654,,,,1
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,30.6436,-86.1697,,,,1
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,30.406,-85.1972,,,,1
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,30.669,-87.363,,,,1
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,30.406,-85.1972,,,,1
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,30.406,-85.1972,,,,2
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,30.5795,-84.6137,,,,1
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,29.9831,-81.8579,,,,1
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,30.7954,-85.2155,,,,1
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,30.7004,-87.0219,,,,1
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,27.3864,-80.8886,,,,1
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,44.7268,-94.9471,,,,1
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,44.7268,-94.9471,,,,2
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,44.7268,-94.9471,,,,3
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,44.4097,-92.7229,,,,1
-64788,"Big Cypress Solar, LLC",solar,,PP,US,180,,,,,,2023,,,2043,35.2057,-90.3078,,,,1
-64838,"Bear Grove Solar, LLC",solar,,PP,US,1,,,,,,2023,,,2043,44.0038,-92.4018,,,,1
-64844,"Bell Ridge Solar, LLC",solar,,PP,US,74.5,,,,,,2023,,,2043,29.7258,-82.8004,,,,1
-62856,"Forefront Power, LLC",solar,,PP,US,2.2,,,,,,2023,,,2043,35.3871,-120.4044,,,,1
-62856,"Forefront Power, LLC",solar,,PP,US,3.3,,,,,,2023,,,2043,36.2171,-121.2388,,,,1
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,30.2652,-85.6203,,,,1
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,30.6106,-85.6653,,,,1
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,29.6087,-81.7443,,,,1
-62856,"Forefront Power, LLC",solar,,PP,US,1.2,,,,,,2023,,,2043,37.218,-119.7627,,,,1
-64915,"SR McKellar, LLC",solar,,PP,US,70,,,,,,2023,,,2043,35.6081,-88.8385,,,,1
-64916,"SR Bell Buckle, LLC",solar,,PP,US,35,,,,,,2023,,,2043,35.5138,-86.4589,,,,1
-64931,"Texas Solar Nova 1, LLC",solar,,PP,US,252,,,,,,2023,,,2043,33.1813,-100.7776,,,,1
-18454,Tampa Electric Co,solar,,PP,US,70,,,,,,2023,,,2043,28.3092,-82.392,,,,1
-12686,Mississippi Power Co,solar,,PP,US,1.5,,,,,,2023,,,2043,32.7535,-89.524,,,,1
-64969,Meadow Lake Solar Park,solar,,PP,US,200,,,,,,2023,,,2043,40.7498,-86.8655,,,,1
-56990,NJR Clean Energy Ventures Corporation,solar,,PP,US,6.3,,,,,,2023,,,2043,40.788,-74.2481,,,,1
-62627,Cardinal Renewables,solar,,PP,US,1.8,,,,,,2023,,,2043,32.0399,-84.197,,,,1
-64971,IP Oberon LLC,solar,,PP,US,250,,,,,,2023,,,2043,33.7437,-115.9938,,,,1
-64972,"IP Oberon II, LLC",solar,,PP,US,250,,,,,,2023,,,2043,33.7437,-115.9938,,,,2
-65009,"Ahern Community Solar I, LLC",solar,,PP,US,2,,,,,,2023,,,2043,41.2851,-88.4185,,,,1
-65038,"Magdaline Solar, LLC",solar,,PP,US,2,,,,,,2023,,,2043,34.1633,-80.2545,,,,1
-65055,"Concho Valley Solar, LLC",solar,,PP,US,172.8,,,,,,2023,,,2043,31.4044,-100.4621,,,,1
-65058,SV CSG Baileyville 1 LLC,solar,,PP,US,2,,,,,,2023,,,2043,42.3518,-89.6623,,,,1
-65049,Elba Solar LLC,solar,,PP,US,2,,,,,,2023,,,2043,40.9318,-90.2132,,,,1
-65050,SV CSG South Dekalb 1 LLC,solar,,PP,US,2,,,,,,2023,,,2043,41.8935,-88.7703,,,,1
-65051,SV CSG South Dekalb 2 LLC,solar,,PP,US,2,,,,,,2023,,,2043,41.8935,-88.7703,,,,2
-65057,SV CSG Barrass Farms II LLC,solar,,PP,US,2,,,,,,2023,,,2043,37.7303,-88.9299,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,4.5,,,,,,2023,,,2043,39.762,-104.8758,,,,1
-63466,Conductive Power,solar,,PP,US,50,,,,,,2023,,,2043,33.0343,-116.735,,,,1
-61944,MN8 Energy LLC,solar,,PP,US,20,,,,,,2023,,,2043,42.7111,-73.5097,,,,1
-61944,MN8 Energy LLC,solar,,PP,US,20,,,,,,2023,,,2043,43.1074,-73.8639,,,,1
-65077,SV CSG Baileyville 2 LLC,solar,,PP,US,2,,,,,,2023,,,2043,42.3518,-89.6623,,,,1
-65120,Kearsarge Smithfield LLC,solar,,PP,US,8,,,,,,2023,,,2043,41.8721,-71.58,,,,1
-65122,Kearsarge Beverly LLC,solar,,PP,US,2,,,,,,2023,,,2043,42.6732,-70.9524,,,,1
-65086,"Landrace Holdings, LLC",solar,,PP,US,55,,,,,,2023,,,2043,33.9216,-78.9969,,,,1
-64801,"Storey Energy Center, LLC",solar,,PP,US,122,,,,,,2023,,,2043,32.9044,-111.3448,,,,1
-61944,MN8 Energy LLC,solar,,PP,US,1.1,,,,,,2023,,,2043,38.9047,-77.0163,,,,1
-56769,Consolidated Edison Development Inc.,solar,,PP,US,60,,,,,,2023,,,2043,33.349,-112.4915,,,,1
-65154,Phelan Solar LLC,solar,,PP,US,3,,,,,,2023,,,2043,34.8414,-116.1785,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,3.8,,,,,,2023,,,2043,41.126,-81.5322,,,,1
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,45.444,-93.7748,,,,1
-65161,South Garden LLC,solar,,PP,US,1,,,,,,2023,,,2043,44.8236,-94.2724,,,,1
-65173,United States Solar Corporation,solar,,PP,US,2,,,,,,2023,,,2043,38.1735,-104.5127,,,,1
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,44.8207,-93.8026,,,,1
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,44.7162,-95.8684,,,,1
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,44.7268,-94.9471,,,,1
-63640,"Safari Energy, LLC",solar,,PP,US,3,,,,,,2023,,,2043,34.0018,-85.1881,,,,1
-63640,"Safari Energy, LLC",solar,,PP,US,3,,,,,,2023,,,2043,32.0458,-82.0581,,,,1
-61012,AES Distributed Energy,solar,,PP,US,70,,,,,,2023,,,2043,39.9254,-78.1127,,,,1
-65172,Titlow Garden LLC,solar,,PP,US,1,,,,,,2023,,,2043,44.5795,-94.2321,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,4.2,,,,,,2023,,,2043,39.8942,-83.4004,,,,1
-65190,Cannon River LLC,solar,,PP,US,1,,,,,,2023,,,2043,44.0221,-95.7633,,,,1
-65188,Ballantyne LLC,solar,,PP,US,1,,,,,,2023,,,2043,45.0223,-95.5667,,,,1
-65196,"Lyons Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2043,40.4163,-75.926,,,,1
-65210,"Bird Dog Solar, LLC",solar,,PP,US,40,,,,,,2023,,,2043,33.0611,-82.0007,,,,1
-65212,"Hobnail Solar, LLC",solar,,PP,US,70,,,,,,2023,,,2043,33.0611,-82.0007,,,,2
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,44.3499,-94.2475,,,,1
-62915,Madison Energy Holdings LLC,solar,,PP,US,1,,,,,,2023,,,2043,45.5025,-92.9083,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,2.6,,,,,,2023,,,2043,34.8414,-116.1785,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,2.5,,,,,,2023,,,2043,34.8414,-116.1785,,,,2
-65204,"Niagara Depot Solar, LLC",solar,,PP,US,3.5,,,,,,2023,,,2043,43.2001,-78.7452,,,,1
-65207,"Arctaris Saddleback Solar, LLC",solar,,PP,US,4.9,,,,,,2023,,,2043,44.974,-70.444,,,,1
-65227,"Cathcart Solar, LLC",solar,,PP,US,5,,,,,,2023,,,2043,34.2657,-78.655,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,3.1,,,,,,2023,,,2043,41.3617,-83.623,,,,1
-65250,"Rafterville Solar, LLC",solar,,PP,US,1,,,,,,2023,,,2043,45.1524,-95.0047,,,,1
-56990,NJR Clean Energy Ventures Corporation,solar,,PP,US,4,,,,,,2023,,,2043,40.5635,-74.6163,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,1.5,,,,,,2023,,,2043,42.7639,-78.7323,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,1.4,,,,,,2023,,,2043,40.963,-77.0622,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,1,,,,,,2023,,,2043,36.2152,-115.0135,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,1,,,,,,2023,,,2043,36.2152,-115.0135,,,,2
-65269,"Blue Elk IV Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2043,41.8951,-84.0664,,,,1
-65272,"Blue Elk III Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2043,42.5971,-84.3735,,,,1
-65273,"Blue Elk VII Solar, LLC",solar,,PP,US,12.5,,,,,,2023,,,2043,43.0217,-83.7067,,,,1
-65274,"Midcontinent Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2043,42.9537,-84.1467,,,,1
-65275,"Greenstone Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2043,41.9161,-85.059,,,,1
-65276,"Newport Solar, LLC",solar,,PP,US,180,,,,,,2023,,,2043,35.5992,-91.2145,,,,1
-65277,Leyline Renewable Capital,solar,,PP,US,5,,,,,,2023,,,2043,37.336,-77.9761,,,,1
-65277,Leyline Renewable Capital,solar,,PP,US,5,,,,,,2023,,,2043,37.336,-77.9761,,,,2
-65277,Leyline Renewable Capital,solar,,PP,US,5,,,,,,2023,,,2043,37.5502,-77.9152,,,,3
-18454,Tampa Electric Co,solar,,PP,US,74.5,,,,,,2023,,,2043,27.9489,-81.6976,,,,1
-18454,Tampa Electric Co,solar,,PP,US,25,,,,,,2023,,,2043,27.9292,-82.3088,,,,1
-64904,AES Clean Energy,solar,,PP,US,4,,,,,,2023,,,2043,46.6589,-68.5989,,,,1
-64904,AES Clean Energy,solar,,PP,US,5,,,,,,2023,,,2043,46.6589,-68.5989,,,,2
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,2,,,,,,2023,,,2043,37.3386,-108.5966,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,2,,,,,,2023,,,2043,38.357,-113.2355,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,2,,,,,,2023,,,2043,39.2507,-76.9312,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,2,,,,,,2023,,,2043,39.2507,-76.9312,,,,1
-65265,Repsol Renewables NA,solar,,PP,US,50,,,,,,2023,,,2043,36.5096,-106.6931,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,3,,,,,,2023,,,2043,44.974,-70.444,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,5,,,,,,2023,,,2043,44.0309,-73.1408,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,5,,,,,,2023,,,2043,37.3386,-108.5966,,,,1
-65307,"SR Snipesville III, LLC",solar,,PP,US,107,,,,,,2023,,,2043,31.8056,-82.6368,,,,1
-65306,"SR DeSoto II, LLC",solar,,PP,US,65,,,,,,2023,,,2043,31.7795,-84.1411,,,,1
-64904,AES Clean Energy,solar,,PP,US,4.5,,,,,,2023,,,2043,44.4091,-69.7673,,,,1
-64904,AES Clean Energy,solar,,PP,US,200,,,,,,2023,,,2043,32.4178,-91.7635,,,,1
-63466,Conductive Power,solar,,PP,US,27.5,,,,,,2023,,,2043,38.5073,-76.9922,,,,1
-61194,Generate Capital,solar,,PP,US,5,,,,,,2023,,,2043,42.2486,-78.6788,,,,1
-65364,Blue Harvest Solar Park LLC,solar,,PP,US,49.9,,,,,,2023,,,2043,41.0221,-84.1317,,,,1
-65365,Timber Road Solar Park,solar,,PP,US,49.9,,,,,,2023,,,2043,41.1166,-84.5802,,,,1
-66159,"Whaling Solar, LLC",solar,,PP,US,3.2,,,,,,2023,,,2043,43.2418,-75.4358,,,,1
-65395,Ameresco HCE Solar LLC,solar,,PP,US,4.5,,,,,,2023,,,2043,39.5993,-107.904,,,,1
-61944,MN8 Energy LLC,solar,,PP,US,5,,,,,,2023,,,2043,42.2281,-79.3663,,,,1
-61944,MN8 Energy LLC,solar,,PP,US,3.5,,,,,,2023,,,2043,43.0058,-76.1946,,,,1
-61944,MN8 Energy LLC,solar,,PP,US,2.2,,,,,,2023,,,2043,43.4269,-76.1413,,,,1
-65399,"NMRD Data Center III, LLC",solar,,PP,US,50,,,,,,2023,,,2043,35.6886,-106.8659,,,,1
-62915,Madison Energy Holdings LLC,solar,,PP,US,3.4,,,,,,2023,,,2043,42.3514,-71.9077,,,,1
-61944,MN8 Energy LLC,solar,,PP,US,5,,,,,,2023,,,2043,43.4269,-76.1413,,,,1
-65412,BPL Files Solar LLC,solar,,PP,US,157.5,,,,,,2023,,,2043,31.9907,-97.1324,,,,1
-64994,SolRiver Capital LLC,solar,,PP,US,3,,,,,,2023,,,2043,32.3968,-81.7432,,,,1
-64994,SolRiver Capital LLC,solar,,PP,US,3,,,,,,2023,,,2043,32.3968,-81.7432,,,,2
-64994,SolRiver Capital LLC,solar,,PP,US,3,,,,,,2023,,,2043,33.3596,-82.0736,,,,1
-64994,SolRiver Capital LLC,solar,,PP,US,3,,,,,,2023,,,2043,32.8813,-84.2994,,,,1
-65453,"Yellow Pine Solar, LLC",solar,,PP,US,125,,,,,,2023,,,2043,36.2152,-115.0135,,,,1
-65438,"Virginia Line Solar, LLC",solar,,PP,US,35,,,,,,2023,,,2043,36.3965,-78.1067,,,,1
-65446,"Ruler Solar Partners, LLC",solar,,PP,US,4.9,,,,,,2023,,,2043,44.4964,-75.0691,,,,1
-65447,"Royal Solar Partners, LLC",solar,,PP,US,5,,,,,,2023,,,2043,44.4964,-75.0691,,,,2
-9234,Indiana Municipal Power Agency,solar,,PP,US,1.4,,,,,,2023,,,2043,39.9311,-85.3964,,,,1
-9234,Indiana Municipal Power Agency,solar,,PP,US,4.4,,,,,,2023,,,2043,39.8644,-85.0099,,,,1
-62836,Navisun LLC,solar,,PP,US,4.5,,,,,,2023,,,2043,44.4091,-69.7673,,,,1
-65468,NY USLE Oswego SR104 LLC,solar,,PP,US,5,,,,,,2023,,,2043,43.4269,-76.1413,,,,1
-65469,NY USLE Rome Rome-Oriskany LLC,solar,,PP,US,5,,,,,,2023,,,2043,43.2418,-75.4358,,,,1
-65458,"Cereal City Solar, LLC",solar,,PP,US,100,,,,,,2023,,,2043,42.2465,-85.0056,,,,1
-65474,"Signal Street Operating, LLC",solar,,PP,US,1.8,,,,,,2023,,,2043,34.3219,-118.2247,,,,1
-65480,VC Renewables,solar,,PP,US,4.1,,,,,,2023,,,2043,46.6589,-68.5989,,,,1
-65480,VC Renewables,solar,,PP,US,4.1,,,,,,2023,,,2043,46.6589,-68.5989,,,,2
-65488,"NTUA Generation - Utah, LLC",solar,,PP,US,72,,,,,,2023,,,2043,37.626,-109.8046,,,,1
-65487,"Chaves County Solar II, LLC",solar,,PP,US,30,,,,,,2023,,,2043,33.3633,-104.4669,,,,1
-65486,"Buena Vista Energy Center, LLC",solar,,PP,US,120,,,,,,2023,,,2043,32.6132,-105.7414,,,,1
-65451,Grizzly Ridge Solar LLC,solar,,PP,US,100,,,,,,2023,,,2043,31.7048,-98.1107,,,,1
-65491,Hayhurst New Mexico Solar,solar,,PP,US,20,,,,,,2023,,,2043,32.4714,-104.3044,,,,1
-9234,Indiana Municipal Power Agency,solar,,PP,US,1.4,,,,,,2023,,,2043,39.9311,-85.3964,,,,1
-9234,Indiana Municipal Power Agency,solar,,PP,US,9.9,,,,,,2023,,,2043,38.7024,-87.072,,,,1
-61298,Pine Gate Renewables,solar,,PP,US,40,,,,,,2023,,,2043,34.1168,-82.8401,,,,1
-65501,Dane County Solar LLC,solar,,PP,US,17.3,,,,,,2023,,,2043,43.0673,-89.4181,,,,1
-65502,"Five Wells Solar Center, LLC",solar,,PP,US,355.4,,,,,,2023,,,2043,31.0373,-97.4788,,,,1
-65519,"ELP Livingston Solar, LLC",solar,,PP,US,5,,,,,,2023,,,2043,42.2501,-73.6318,,,,1
-65518,"ELP Claverack Solar, LLC",solar,,PP,US,5,,,,,,2023,,,2043,42.2501,-73.6318,,,,1
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,44.3543,-93.2967,,,,1
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,44.7268,-94.9471,,,,1
-65517,"Paris Farm Solar, LLC",solar,,PP,US,240,,,,,,2023,,,2043,33.6673,-95.5712,,,,1
-65539,Pivot Energy,solar,,PP,US,1,,,,,,2023,,,2043,45.5521,-94.6131,,,,1
-65539,Pivot Energy,solar,,PP,US,1,,,,,,2023,,,2043,44.0223,-93.2261,,,,1
-61194,Generate Capital,solar,,PP,US,2,,,,,,2023,,,2043,41.4022,-74.3056,,,,1
-61194,Generate Capital,solar,,PP,US,5,,,,,,2023,,,2043,43.2418,-75.4358,,,,1
-65503,"Solar DG NY Sunnyside 1, LLC",solar,,PP,US,5,,,,,,2023,,,2043,42.8181,-74.0586,,,,1
-65582,"7th Road Solar 1, LLC (Briscoe 1A)",solar,,PP,US,2,,,,,,2023,,,2043,41.344,-88.8859,,,,1
-65583,"7th Road Solar 2, LLC (Briscoe 2A)",solar,,PP,US,2,,,,,,2023,,,2043,41.344,-88.8859,,,,2
-65570,Amherst Community Solar LLC,solar,,PP,US,5,,,,,,2023,,,2043,42.7639,-78.7323,,,,1
-65534,Bright Canyon Energy,solar,,PP,US,10,,,,,,2023,,,2043,33.7031,-117.7609,,,,1
-65534,Bright Canyon Energy,solar,,PP,US,10,,,,,,2023,,,2043,33.7031,-117.7609,,,,2
-65589,Bulldog Solar LLC,solar,,PP,US,80,,,,,,2023,,,2043,33.4089,-82.6768,,,,1
-65595,"Wolverine Solar, LLC",solar,,PP,US,1,,,,,,2023,,,2043,45.0223,-95.5667,,,,1
-65526,"Black Mesa Solar, LLC",solar,,PP,US,40,,,,,,2023,,,2043,43.354,-115.4693,,,,1
-65621,Crane Garden LLC,solar,,PP,US,0.9,,,,,,2023,,,2043,44.8236,-94.2724,,,,1
-65619,Pepin Garden LLC,solar,,PP,US,0.9,,,,,,2023,,,2043,44.2843,-92.2303,,,,1
-65617,Sturgeon Garden LLC,solar,,PP,US,0.9,,,,,,2023,,,2043,44.4097,-92.7229,,,,1
-65616,Winona Garden LLC,solar,,PP,US,0.9,,,,,,2023,,,2043,43.9869,-91.7792,,,,1
-65638,"Arthur Solar 2, LLC",solar,,PP,US,5,,,,,,2023,,,2043,34.2657,-78.655,,,,1
-65647,Resurgence Solar II,solar,,PP,US,48,,,,,,2023,,,2043,34.8414,-116.1785,,,,1
-65652,"Sonoran Solar Energy, LLC",solar,,PP,US,490,,,,,,2023,,,2043,33.349,-112.4915,,,,1
-65657,Adams Solar LLC (PA),solar,,PP,US,80,,,,,,2023,,,2043,39.8715,-77.2179,,,,1
-65658,Caden Energix Axton LLC,solar,,PP,US,66,,,,,,2023,,,2043,36.6828,-79.874,,,,1
-64904,AES Clean Energy,solar,,PP,US,200,,,,,,2023,,,2043,32.7695,-113.9056,,,,1
-65653,Dunns Bridge Solar Center LLC,solar,,PP,US,265,,,,,,2023,,,2043,41.023,-87.1161,,,,1
-65668,"ELP Kipp Solar, LLC",solar,,PP,US,3.5,,,,,,2023,,,2043,42.2501,-73.6318,,,,1
-65662,KDC Solar CV Ascend One LLC,solar,,PP,US,2,,,,,,2023,,,2043,39.2507,-76.9312,,,,1
-65663,KDC Solar CV Cedar Lane Park LLC,solar,,PP,US,2,,,,,,2023,,,2043,39.2507,-76.9312,,,,2
-65664,KDC Solar CV Central MD Regional Transit LLC,solar,,PP,US,2,,,,,,2023,,,2043,39.2507,-76.9312,,,,3
-65665,KDC Solar CV Animal Control LLC,solar,,PP,US,2,,,,,,2023,,,2043,39.2507,-76.9312,,,,4
-65666,KDC Solar CV O'Donnell Property LLC,solar,,PP,US,2,,,,,,2023,,,2043,39.2507,-76.9312,,,,5
-60531,Standard Solar,solar,,PP,US,1,,,,,,2023,,,2043,35.3426,-118.7301,,,,1
-12647,"ALLETE, Inc.",solar,,PP,US,15.2,,,,,,2023,,,2043,46.9496,-94.3254,,,,1
-61950,Terra-Gen Operating Co-Solar,solar,,PP,US,84.4,,,,,,2023,,,2043,34.8414,-116.1785,,,,1
-65718,"AFTW Holdings, LLC",solar,,PP,US,4.5,,,,,,2023,,,2043,35.3426,-118.7301,,,,1
-65719,"Crystal Farms Local Solar, LLC",solar,,PP,US,3.5,,,,,,2023,,,2043,36.7582,-119.6493,,,,1
-65730,"Eastover Solar, LLC",solar,,PP,US,73.6,,,,,,2023,,,2043,34.0218,-80.9031,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,1.8,,,,,,2023,,,2043,43.9598,-69.8546,,,,1
-61944,MN8 Energy LLC,solar,,PP,US,4,,,,,,2023,,,2043,39.8856,-74.2814,,,,1
-65752,"DG Empire Shine, LLC",solar,,PP,US,3,,,,,,2023,,,2043,43.0058,-76.1946,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,1.5,,,,,,2023,,,2043,43.9246,-90.1138,,,,1
-62161,"Cubico USA, LLC",solar,,PP,US,100,,,,,,2023,,,2043,33.4485,-89.9202,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,3,,,,,,2023,,,2043,43.9246,-90.1138,,,,1
-64904,AES Clean Energy,solar,,PP,US,56,,,,,,2023,,,2043,34.3219,-118.2247,,,,1
-64872,"Distributed Solar Development, LLC",solar,,PP,US,1.5,,,,,,2023,,,2043,40.862,-74.5445,,,,1
-64872,"Distributed Solar Development, LLC",solar,,PP,US,1.7,,,,,,2023,,,2043,40.862,-74.5445,,,,1
-65766,"Solar DG NJ BEMS East, LLC",solar,,PP,US,4,,,,,,2023,,,2043,39.8777,-74.6681,,,,1
-65767,"Solar DG NJ BEMS West, LLC",solar,,PP,US,4,,,,,,2023,,,2043,39.8777,-74.6681,,,,2
-65773,Renew Solar VMC LLC,solar,,PP,US,1.4,,,,,,2023,,,2043,35.3426,-118.7301,,,,1
-65779,"SEPV Cuyama, LLC",solar,,PP,US,1.6,,,,,,2023,,,2043,34.6729,-120.0169,,,,1
-65771,NY USLE Glenville Freemans Bridge LLC,solar,,PP,US,4.3,,,,,,2023,,,2043,42.8181,-74.0586,,,,1
-65772,"River Ferry Solar 1, LLC",solar,,PP,US,165.3,,,,,,2023,,,2043,39.3336,-87.7877,,,,1
-65786,"SR DeSoto III, LLC",solar,,PP,US,60,,,,,,2023,,,2043,31.7795,-84.1411,,,,1
-61677,Sol Systems,solar,,PP,US,30,,,,,,2023,,,2043,39.7156,-90.2015,,,,1
-65785,"Luminace Sunbeam Development Holdings, LLC",solar,,PP,US,3.2,,,,,,2023,,,2043,45.5139,-69.9589,,,,1
-64872,"Distributed Solar Development, LLC",solar,,PP,US,3.7,,,,,,2023,,,2043,43.0058,-76.1946,,,,1
-65777,Urban Grid Solar,solar,,PP,US,64.7,,,,,,2023,,,2043,36.7669,-78.9366,,,,1
-56990,NJR Clean Energy Ventures Corporation,solar,,PP,US,2,,,,,,2023,,,2043,40.4392,-74.4117,,,,1
-65791,"Robin Hollow Solar, LLC",solar,,PP,US,40.7,,,,,,2023,,,2043,41.6722,-71.5932,,,,1
-58135,Ecos Energy LLC,solar,,PP,US,2.2,,,,,,2023,,,2043,43.5801,-73.0363,,,,1
-65785,"Luminace Sunbeam Development Holdings, LLC",solar,,PP,US,1,,,,,,2023,,,2043,45.5139,-69.9589,,,,1
-65785,"Luminace Sunbeam Development Holdings, LLC",solar,,PP,US,5,,,,,,2023,,,2043,44.4091,-69.7673,,,,1
-65785,"Luminace Sunbeam Development Holdings, LLC",solar,,PP,US,1,,,,,,2023,,,2043,45.5139,-69.9589,,,,1
-65785,"Luminace Sunbeam Development Holdings, LLC",solar,,PP,US,5,,,,,,2023,,,2043,44.0665,-69.5434,,,,1
-22500,"Evergy Kansas Central, Inc",solar,,PP,US,1,,,,,,2023,,,2043,39.0415,-95.7565,,,,1
-22500,"Evergy Kansas Central, Inc",solar,,PP,US,1.6,,,,,,2023,,,2043,39.0415,-95.7565,,,,1
-22500,"Evergy Kansas Central, Inc",solar,,PP,US,1.3,,,,,,2023,,,2043,38.8847,-95.2926,,,,1
-65811,Solops 371 Hoes LLC,solar,,PP,US,1,,,,,,2023,,,2043,40.4392,-74.4117,,,,1
-65811,Solops 371 Hoes LLC,solar,,PP,US,0.3,,,,,,2023,,,2043,40.4392,-74.4117,,,,2
-65303,"SR McNeal, LLC",solar,,PP,US,20,,,,,,2023,,,2043,31.8796,-109.7512,,,,1
-62915,Madison Energy Holdings LLC,solar,,PP,US,1.9,,,,,,2023,,,2043,32.0145,-81.4436,,,,1
-65853,Skysol Holdco LLC,solar,,PP,US,55,,,,,,2023,,,2043,42.6864,-121.6501,,,,1
-65854,BE-Pine1 LLC,solar,,PP,US,17.1,,,,,,2023,,,2043,40.6823,-80.3493,,,,1
-65855,BE-Pine2 LLC,solar,,PP,US,17.1,,,,,,2023,,,2043,40.6823,-80.3493,,,,2
-65858,East Victory Way Solar LLC,solar,,PP,US,4,,,,,,2023,,,2043,40.6184,-108.2074,,,,1
-65865,"Umbriel Solar, LLC",solar,,PP,US,150,,,,,,2023,,,2043,30.7927,-94.83,,,,1
-65864,"Maine DG Solar Pittsfield, LLC",solar,,PP,US,4.9,,,,,,2023,,,2043,45.5139,-69.9589,,,,1
-65677,Dimension Energy LLC,solar,,PP,US,3,,,,,,2023,,,2043,40.5635,-74.6163,,,,1
-65677,Dimension Energy LLC,solar,,PP,US,3.8,,,,,,2023,,,2043,40.5635,-74.6163,,,,2
-65677,Dimension Energy LLC,solar,,PP,US,1.2,,,,,,2023,,,2043,40.9597,-74.0742,,,,1
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,44.0346,-94.067,,,,1
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,44.0346,-94.067,,,,2
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,45.0223,-95.5667,,,,1
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,44.7268,-94.9471,,,,1
-65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2043,44.7268,-94.9471,,,,2
-65872,MN CSG 2019-24 LLC,solar,,PP,US,0.9,,,,,,2023,,,2043,45.0388,-92.8838,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,2,,,,,,2023,,,2043,45.4614,-92.4414,,,,1
-60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,1.5,,,,,,2023,,,2043,43.5939,-90.8344,,,,1
-65894,"Hubble Solar, LLC",solar,,PP,US,2,,,,,,2023,,,2043,34.2657,-78.655,,,,1
-65891,Hemings Solar Partners LLC,solar,,PP,US,5,,,,,,2023,,,2043,37.5294,-77.4756,,,,1
-65913,"Scooby Solar, LLC",solar,,PP,US,2.5,,,,,,2023,,,2043,35.3426,-118.7301,,,,1
-65912,"Sunny Cow Solar, LLC",solar,,PP,US,2,,,,,,2023,,,2043,35.3426,-118.7301,,,,2
-65914,"Elawan Dileo Solar, LLC",solar,,PP,US,71.4,,,,,,2023,,,2043,31.9907,-97.1324,,,,1
-65915,"Elawan Pitts Dudik Solar, LLC",solar,,PP,US,49.6,,,,,,2023,,,2043,31.9907,-97.1324,,,,1
-64994,SolRiver Capital LLC,solar,,PP,US,7,,,,,,2023,,,2043,39.7695,-86.51,,,,1
-60531,Standard Solar,solar,,PP,US,5,,,,,,2023,,,2043,45.5139,-69.9589,,,,1
-65949,Bravo REC Management LLC,solar,,PP,US,1.2,,,,,,2023,,,2043,36.2202,-118.8005,,,,1
-65980,"BESSP1, LLC.",solar,,PP,US,4.4,,,,,,2023,,,2043,33.6102,-101.8205,,,,1
-65993,"SR Clarksville, LLC",solar,,PP,US,2,,,,,,2023,,,2043,36.4969,-87.3828,,,,1
-65994,"SR Clarksville II, LLC",solar,,PP,US,4.8,,,,,,2023,,,2043,36.4969,-87.3828,,,,2
-65995,"SR Byhalia, LLC",solar,,PP,US,4.8,,,,,,2023,,,2043,34.7623,-89.5031,,,,1
-65996,"SR Franklin, LLC",solar,,PP,US,2.5,,,,,,2023,,,2043,36.742,-86.5823,,,,1
-65880,"Byrne Solar, LLC",solar,,PP,US,5,,,,,,2023,,,2043,43.0322,-85.5493,,,,1
-65881,"Lightfoot Solar, LLC",solar,,PP,US,10,,,,,,2023,,,2043,44.6818,-84.1298,,,,1
-65882,"Shipsterns Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2043,42.2465,-85.0056,,,,1
-65883,"Willford Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2043,43.9907,-84.3883,,,,1
-65999,"NextGrid Bitterbush, LLC",solar,,PP,US,4.6,,,,,,2023,,,2043,45.4006,-68.6495,,,,1
-66000,"NextGrid Corkwood, LLC",solar,,PP,US,4.6,,,,,,2023,,,2043,45.4006,-68.6495,,,,2
-66005,"Rhode Island Solar Renewable Energy IV, LLC",solar,,PP,US,8.4,,,,,,2023,,,2043,41.5568,-71.2363,,,,1
-66005,"Rhode Island Solar Renewable Energy IV, LLC",solar,,PP,US,3.4,,,,,,2023,,,2043,41.5568,-71.2363,,,,2
-60268,"Hartz Solar, LLC",solar,,PP,US,3,,,,,,2023,,,2043,40.6601,-74.31,,,,1
-64904,AES Clean Energy,solar,,PP,US,150,,,,,,2023,,,2043,39.9274,-77.7213,,,,1
-66043,Oak Solar LLC,solar,,PP,US,120,,,,,,2023,,,2043,36.4178,-77.3969,,,,1
-66055,Colice Hall Solar LLC,solar,,PP,US,17,,,,,,2023,,,2043,36.3591,-76.982,,,,1
-66056,Mohave Energy,solar,,PP,US,17.6,,,,,,2023,,,2043,35.7041,-113.7579,,,,1
-62856,"Forefront Power, LLC",solar,,PP,US,2.4,,,,,,2023,,,2043,37.0562,-122.0018,,,,1
-66037,"SR White Pine, LLC",solar,,PP,US,2,,,,,,2023,,,2043,36.051,-83.4463,,,,1
-66074,"Overlook Solar Partners, LLC",solar,,PP,US,5,,,,,,2023,,,2043,44.0665,-69.5434,,,,1
-733,Appalachian Power Co,solar,,PP,US,4.9,,,,,,2023,,,2043,37.6048,-79.1452,,,,1
-65752,"DG Empire Shine, LLC",solar,,PP,US,3,,,,,,2023,,,2043,43.2521,-78.2312,,,,1
-66106,Broadway CDG Solar LLC,solar,,PP,US,5,,,,,,2023,,,2043,42.7639,-78.7323,,,,1
-61677,Sol Systems,solar,,PP,US,5,,,,,,2023,,,2043,37.8419,-78.2773,,,,1
-66117,"Autoliv ASP, Inc.",solar,,PP,US,3.1,,,,,,2023,,,2043,41.521,-113.0821,,,,1
-57170,"EDF Renewable Asset Holdings, Inc.",solar,,PP,US,577,,,,,,2023,,,2043,39.8942,-83.4004,,,,1
-65043,Madison Energy Investments LLC,solar,,PP,US,3,,,,,,2023,,,2043,30.8338,-83.2677,,,,1
-65043,Madison Energy Investments LLC,solar,,PP,US,0.5,,,,,,2023,,,2043,42.3707,-73.2063,,,,1
-65043,Madison Energy Investments LLC,solar,,PP,US,4.1,,,,,,2023,,,2043,42.1603,-71.2118,,,,1
-65043,Madison Energy Investments LLC,solar,,PP,US,1,,,,,,2023,,,2043,39.8856,-74.2814,,,,1
-65043,Madison Energy Investments LLC,solar,,PP,US,3,,,,,,2023,,,2043,31.4574,-83.5266,,,,1
-65043,Madison Energy Investments LLC,solar,,PP,US,1.9,,,,,,2023,,,2043,31.4574,-83.5266,,,,2
-64872,"Distributed Solar Development, LLC",solar,,PP,US,3.5,,,,,,2023,,,2043,43.2418,-75.4358,,,,1
-64872,"Distributed Solar Development, LLC",solar,,PP,US,1.4,,,,,,2023,,,2043,39.2046,-78.2626,,,,1
-59380,"Enel Green Power NA, Inc.",solar,,PP,US,150.5,,,,,,2023,,,2043,32.7436,-101.4317,,,,1
-66132,"MEVS DOT, LLC",solar,,PP,US,1.7,,,,,,2023,,,2043,44.4091,-69.7673,,,,1
-66132,"MEVS DOT, LLC",solar,,PP,US,0.5,,,,,,2023,,,2043,44.4091,-69.7673,,,,2
-66154,"Bowser Road Solar Project 2021, LLC",solar,,PP,US,1.5,,,,,,2023,,,2043,40.4392,-74.4117,,,,1
-66155,"ESNY-RT-ELMSFORD, LLC",solar,,PP,US,1.8,,,,,,2023,,,2043,41.1626,-73.7561,,,,1
-66155,"ESNY-RT-ELMSFORD, LLC",solar,,PP,US,0.3,,,,,,2023,,,2043,41.1626,-73.7561,,,,1
-66156,"Dudley Road Solar Project 2021, LLC",solar,,PP,US,1.2,,,,,,2023,,,2043,40.4392,-74.4117,,,,1
-66158,Locust Solar LLC,solar,,PP,US,5,,,,,,2023,,,2043,41.1626,-73.7561,,,,1
-66161,"FFP MD Freeland Project1, LLC",solar,,PP,US,2,,,,,,2023,,,2043,39.4629,-76.6395,,,,1
-61227,Nautilus Solar Solutions,solar,,PP,US,1.5,,,,,,2023,,,2043,44.4091,-69.7673,,,,1
-61227,Nautilus Solar Solutions,solar,,PP,US,1,,,,,,2023,,,2043,45.586,-95.4445,,,,1
-61227,Nautilus Solar Solutions,solar,,PP,US,5,,,,,,2023,,,2043,43.8466,-70.3996,,,,1
-66182,"Green Mile Solar, LLC",solar,,PP,US,5,,,,,,2023,,,2043,43.9598,-69.8546,,,,1
-66183,"Tower Solar Partners, LLC",solar,,PP,US,5,,,,,,2023,,,2043,45.5139,-69.9589,,,,1
-64904,AES Clean Energy,solar,,PP,US,4.9,,,,,,2023,,,2043,44.6647,-68.3584,,,,1
-62836,Navisun LLC,solar,,PP,US,5,,,,,,2023,,,2043,43.8466,-70.3996,,,,1
-62836,Navisun LLC,solar,,PP,US,1.8,,,,,,2023,,,2043,41.8721,-71.58,,,,1
-61227,Nautilus Solar Solutions,solar,,PP,US,4.9,,,,,,2023,,,2043,44.4999,-70.7566,,,,1
-61227,Nautilus Solar Solutions,solar,,PP,US,2,,,,,,2023,,,2043,39.5712,-75.9407,,,,1
-66154,"Bowser Road Solar Project 2021, LLC",solar,,PP,US,1.3,,,,,,2023,,,2043,40.4392,-74.4117,,,,1
-61227,Nautilus Solar Solutions,solar,,PP,US,2,,,,,,2023,,,2043,39.6036,-77.814,,,,1
-64489,"CS Wind America, Inc.",solar,,PP,US,12.3,,,,,,2023,,,2043,38.1735,-104.5127,,,,1
-65949,Bravo REC Management LLC,solar,,PP,US,4,,,,,,2023,,,2043,36.2202,-118.8005,,,,1
-61227,Nautilus Solar Solutions,solar,,PP,US,4.9,,,,,,2023,,,2043,44.1658,-70.2065,,,,1
-65043,Madison Energy Investments LLC,solar,,PP,US,1,,,,,,2023,,,2043,39.1363,-77.2042,,,,1
-65043,Madison Energy Investments LLC,solar,,PP,US,1.3,,,,,,2023,,,2043,40.8424,-83.3044,,,,1
-65043,Madison Energy Investments LLC,solar,,PP,US,1,,,,,,2023,,,2043,40.26,-74.2216,,,,1
-65043,Madison Energy Investments LLC,solar,,PP,US,1,,,,,,2023,,,2043,40.2834,-74.7018,,,,1
-65043,Madison Energy Investments LLC,solar,,PP,US,4.9,,,,,,2023,,,2043,44.974,-70.444,,,,1
-65043,Madison Energy Investments LLC,solar,,PP,US,3,,,,,,2023,,,2043,36.9752,-82.6212,,,,1
-65043,Madison Energy Investments LLC,solar,,PP,US,0.5,,,,,,2023,,,2043,42.1603,-71.2118,,,,1
-62719,Green Street Power Partners,solar,,PP,US,5,,,,,,2023,,,2043,40.7247,-103.1101,,,,1
-62719,Green Street Power Partners,solar,,PP,US,4,,,,,,2023,,,2043,40.5548,-104.3925,,,,1
-62719,Green Street Power Partners,solar,,PP,US,5,,,,,,2023,,,2043,40.5548,-104.3925,,,,2
-62719,Green Street Power Partners,solar,,PP,US,5,,,,,,2023,,,2043,43.2418,-75.4358,,,,1
-62719,Green Street Power Partners,solar,,PP,US,1.1,,,,,,2023,,,2043,41.7972,-71.1145,,,,1
-62719,Green Street Power Partners,solar,,PP,US,4.7,,,,,,2023,,,2043,42.9175,-76.5545,,,,1
-62719,Green Street Power Partners,solar,,PP,US,4.8,,,,,,2023,,,2043,44.4964,-75.0691,,,,1
-62719,Green Street Power Partners,solar,,PP,US,5,,,,,,2023,,,2043,44.4964,-75.0691,,,,2
-62719,Green Street Power Partners,solar,,PP,US,3.5,,,,,,2023,,,2043,43.1074,-73.8639,,,,1
-62719,Green Street Power Partners,solar,,PP,US,3.5,,,,,,2023,,,2043,43.1074,-73.8639,,,,2
-62923,Solar Planet Power,solar,,PP,US,2.5,,,,,,2023,,,2043,42.2281,-79.3663,,,,1
-66222,"Lower Road II, LLC",solar,,PP,US,2,,,,,,2023,,,2043,41.4022,-74.3056,,,,1
-66223,"Lower Road III, LLC",solar,,PP,US,2,,,,,,2023,,,2043,41.4022,-74.3056,,,,2
-62719,Green Street Power Partners,solar,,PP,US,2.1,,,,,,2023,,,2043,28.7615,-81.7113,,,,1
-62719,Green Street Power Partners,solar,,PP,US,1.9,,,,,,2023,,,2043,28.7615,-81.7113,,,,2
-66109,"Entegrity Solar ACC, LLC",solar,,PP,US,2,,,,,,2023,,,2043,35.2563,-91.7456,,,,1
-62856,"Forefront Power, LLC",solar,,PP,US,2.6,,,,,,2023,,,2043,33.0343,-116.735,,,,1
-65949,Bravo REC Management LLC,solar,,PP,US,2.9,,,,,,2023,,,2043,36.0752,-119.8155,,,,1
-66238,BluePath Solar Sacramento I LLC,solar,,PP,US,1.3,,,,,,2023,,,2043,38.4493,-121.3443,,,,1
-66240,"Nabholz Solar FPS Ozarks, LLC",solar,,PP,US,1,,,,,,2023,,,2043,35.9791,-94.2156,,,,1
-66241,"Nabholz Solar FPS, LLC",solar,,PP,US,4,,,,,,2023,,,2043,35.2149,-93.7166,,,,1
-66242,"Entegrity Solar LRWRA, LLC",solar,,PP,US,4,,,,,,2023,,,2043,35.2149,-93.7166,,,,2
-66246,"Entegrity Solar Southside SD, LLC",solar,,PP,US,1,,,,,,2023,,,2043,34.77,-92.312,,,,1
-66248,"Entegrity Solar UA AG, LLC",solar,,PP,US,2.8,,,,,,2023,,,2043,34.0889,-93.9936,,,,1
-66249,"Entegrity Solar WRMC, LLC",solar,,PP,US,2.9,,,,,,2023,,,2043,35.5992,-91.2145,,,,1
-66264,AETS OpCo Holdings LLC,solar,,PP,US,4.4,,,,,,2023,,,2043,43.2418,-75.4358,,,,1
-66276,"Solar DG NY Sunnyside 2, LLC",solar,,PP,US,5,,,,,,2023,,,2043,42.8181,-74.0586,,,,1
-66257,LSE Ophiuchus LLC,solar,,PP,US,2,,,,,,2023,,,2043,41.7244,-70.2903,,,,1
-66286,Adams PV Plant (WI),solar,,PP,US,8.3,,,,,,2023,,,2043,43.9695,-89.7704,,,,1
-66291,Portage Solar Plant,solar,,PP,US,11.8,,,,,,2023,,,2043,43.4666,-89.3337,,,,1
-66293,"NSF Torrey Site 3, LLC",solar,,PP,US,5,,,,,,2023,,,2043,42.6335,-77.1055,,,,1
-66294,"NSF Torrey Site 2, LLC",solar,,PP,US,5,,,,,,2023,,,2043,42.6335,-77.1055,,,,2
-66295,"NSF Torrey Site 1, LLC",solar,,PP,US,4.6,,,,,,2023,,,2043,42.6335,-77.1055,,,,3
-61194,Generate Capital,solar,,PP,US,2.3,,,,,,2023,,,2043,43.1566,-77.0294,,,,1
-61194,Generate Capital,solar,,PP,US,2,,,,,,2023,,,2043,41.4022,-74.3056,,,,1
-61194,Generate Capital,solar,,PP,US,5,,,,,,2023,,,2043,43.1464,-77.6961,,,,1
-61194,Generate Capital,solar,,PP,US,4.6,,,,,,2023,,,2043,42.2281,-79.3663,,,,1
-20847,Wisconsin Electric Power Co,solar,,PP,US,7.5,,,,,,2023,,,2043,44.7892,-88.7654,,,,1
-20847,Wisconsin Electric Power Co,solar,,PP,US,7.5,,,,,,2023,,,2043,42.5769,-88.0424,,,,1
-20847,Wisconsin Electric Power Co,solar,,PP,US,7.5,,,,,,2023,,,2043,42.6685,-88.5419,,,,1
-66362,"All World Machinery Supply, Inc.",solar,,PP,US,1.5,,,,,,2023,,,2043,42.3363,-89.1609,,,,1
-60520,SoCore Energy LLC,solar,,PP,US,1,,,,,,2023,,,2043,40.788,-74.2481,,,,1
-60520,SoCore Energy LLC,solar,,PP,US,1,,,,,,2023,,,2043,40.788,-74.2481,,,,2
-60520,SoCore Energy LLC,solar,,PP,US,1,,,,,,2023,,,2043,40.788,-74.2481,,,,3
-60520,SoCore Energy LLC,solar,,PP,US,1,,,,,,2023,,,2043,40.788,-74.2481,,,,4
-62923,Solar Planet Power,solar,,PP,US,5,,,,,,2023,,,2043,42.8528,-77.2998,,,,1
+23203,Dynamic Energy NJ - Ferrero 1,solar,,PP,US,1.5,,,,,,2022,,,2057,40.550482,-74.54496,,,,1
+23204,Carthage A 1,solar,,PP,US,5,,,,,,2022,,,2057,43.997512,-75.662935,,,,1
+23205,Carthage B 1,solar,,PP,US,3.3,,,,,,2022,,,2057,43.990287,-75.661256,,,,1
+23206,Lightstar Renewables - Project 1004 1,solar,,PP,US,3.5,,,,,,2022,,,2057,42.09927,-73.95526,,,,1
+23207,Jogee Road Solar 1,solar,,PP,US,2,,,,,,2022,,,2057,41.399969,-74.502206,,,,1
+23208,Hammonton-High School Solar 1,solar,,PP,US,1.2,,,,,,2022,,,2057,39.657218,-74.808955,,,,1
+23209,Barefoot Solar 1,solar,,PP,US,4.3,,,,,,2022,,,2057,44.595751,-69.605026,,,,1
+10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2058,67.0598,-159.7062,,,,1
+10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2058,67.0598,-159.7062,,,,2
+10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2058,67.0598,-159.7062,,,,3
+10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2058,67.0598,-159.7062,,,,4
+10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2058,67.0598,-159.7062,,,,5
+10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2058,67.0598,-159.7062,,,,6
+10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2058,67.0598,-159.7062,,,,7
+10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2058,67.0598,-159.7062,,,,8
+10451,Kotzebue Electric Assn Inc,solar,,PP,US,0.1,,,,,,2023,,,2058,67.0598,-159.7062,,,,9
+40230,Deseret Generation & Tran Coop,solar,,PP,US,12.5,,,,,,2023,,,2058,40.1248,-109.5186,,,,1
+61950,Terra-Gen Operating Co-Solar,solar,,PP,US,100.4,,,,,,2023,,,2058,34.8414,-116.1785,,,,1
+18031,Steamboat Development Corp,solar,,PP,US,5.5,,,,,,2023,,,2058,40.6655,-119.6643,,,,1
+18031,Steamboat Development Corp,solar,,PP,US,5.5,,,,,,2023,,,2058,40.6655,-119.6643,,,,2
+34691,Ormat Nevada Inc,solar,,PP,US,8,,,,,,2023,,,2058,39.5809,-118.3358,,,,1
+64994,SolRiver Capital LLC,solar,,PP,US,4.9,,,,,,2023,,,2058,34.8409,-79.4804,,,,1
+64994,SolRiver Capital LLC,solar,,PP,US,8.9,,,,,,2023,,,2058,34.602,-79.6786,,,,2
+60472,Tungsten Mountain,solar,,PP,US,5,,,,,,2023,,,2058,39.5809,-118.3358,,,,1
+64281,"Thigpen Solar, LLC",solar,,PP,US,5,,,,,,2023,,,2058,34.6402,-79.1039,,,,1
+61069,RE Gaskell West LLC,solar,,PP,US,45,,,,,,2023,,,2058,35.3426,-118.7301,,,,1
+61069,RE Gaskell West LLC,solar,,PP,US,20,,,,,,2023,,,2058,35.3426,-118.7301,,,,2
+61069,RE Gaskell West LLC,solar,,PP,US,20,,,,,,2023,,,2058,35.3426,-118.7301,,,,3
+61069,RE Gaskell West LLC,solar,,PP,US,20,,,,,,2023,,,2058,35.3426,-118.7301,,,,4
+18454,Tampa Electric Co,solar,,PP,US,60,,,,,,2023,,,2058,27.9489,-81.6976,,,,1
+61477,325MK 8me LLC,solar,,PP,US,300,,,,,,2023,,,2058,36.2152,-115.0135,,,,1
+61768,Arrow Canyon Solar LLC,solar,,PP,US,200,,,,,,2023,,,2058,36.2152,-115.0135,,,,1
+61863,Washington Solar (SC),solar,,PP,US,2,,,,,,2023,,,2058,34.0801,-79.3625,,,,1
+62048,Westlands Almond LLC,solar,,PP,US,19.9,,,,,,2023,,,2058,36.0752,-119.8155,,,,1
+5248,Dominion Energy Inc.,solar,,PP,US,80,,,,,,2023,,,2058,36.7669,-78.9366,,,,1
+61944,MN8 Energy LLC,solar,,PP,US,10,,,,,,2023,,,2058,41.4697,-71.6226,,,,1
+61944,MN8 Energy LLC,solar,,PP,US,10,,,,,,2023,,,2058,41.4697,-71.6226,,,,2
+61944,MN8 Energy LLC,solar,,PP,US,10,,,,,,2023,,,2058,41.4697,-71.6226,,,,3
+61944,MN8 Energy LLC,solar,,PP,US,10,,,,,,2023,,,2058,41.4697,-71.6226,,,,4
+56990,NJR Clean Energy Ventures Corporation,solar,,PP,US,2.6,,,,,,2023,,,2058,39.8777,-74.6681,,,,1
+55983,Luminant Generation Company LLC,solar,,PP,US,108,,,,,,2023,,,2058,30.781,-102.7235,,,,1
+63118,224WB 8me LLC,solar,,PP,US,110,,,,,,2023,,,2058,31.3266,-99.864,,,,1
+15399,Avangrid Renewables LLC,solar,,PP,US,162,,,,,,2023,,,2058,45.3783,-120.2108,,,,1
+63275,"Samoset Solar, LLC",solar,,PP,US,2,,,,,,2023,,,2058,44.141,-69.1687,,,,1
+63427,"Neptune Energy Center, LLC",solar,,PP,US,325,,,,,,2023,,,2058,38.1735,-104.5127,,,,1
+62842,"Lightsource Renewable Energy Asset Management, LLC",solar,,PP,US,100,,,,,,2023,,,2058,32.2203,-86.2076,,,,1
+62842,"Lightsource Renewable Energy Asset Management, LLC",solar,,PP,US,95,,,,,,2023,,,2058,35.2563,-91.7456,,,,2
+63454,"Thunder Wolf Energy Center, LLC",solar,,PP,US,248,,,,,,2023,,,2058,38.1735,-104.5127,,,,1
+61298,Pine Gate Renewables,solar,,PP,US,23.4,,,,,,2023,,,2058,35.9673,-77.9864,,,,1
+61222,174 Power Global Corp.,solar,,PP,US,80,,,,,,2023,,,2058,32.3484,-96.7947,,,,1
+63494,"Allora Solar, LLC",solar,,PP,US,75,,,,,,2023,,,2058,33.9023,-81.272,,,,1
+63502,"Partin Solar, LLC",solar,,PP,US,50,,,,,,2023,,,2058,36.4146,-80.688,,,,1
+57416,"Acciona Energy USA Global, LLC",solar,,PP,US,100,,,,,,2023,,,2058,42.3518,-89.6623,,,,1
+63523,"DePue Holdings, LLC",solar,,PP,US,20,,,,,,2023,,,2058,41.4041,-89.5286,,,,1
+63525,"Westlands Solar Blue (OZ) Owner, LLC",solar,,PP,US,250,,,,,,2023,,,2058,36.0752,-119.8155,,,,1
+63526,"Chestnut Westside, LLC",solar,,PP,US,150.6,,,,,,2023,,,2058,36.0752,-119.8155,,,,1
+58970,"Ecoplexus, Inc",solar,,PP,US,3,,,,,,2023,,,2058,35.3426,-118.7301,,,,1
+61012,AES Distributed Energy,solar,,PP,US,30,,,,,,2023,,,2058,19.5984,-155.5183,,,,1
+5248,Dominion Energy Inc.,solar,,PP,US,60,,,,,,2023,,,2058,36.6804,-78.3627,,,,1
+57416,"Acciona Energy USA Global, LLC",solar,,PP,US,240,,,,,,2023,,,2058,29.5275,-95.7709,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,80,,,,,,2023,,,2058,45.9373,-108.2744,,,,1
+60146,Ameresco Federal Solutions,solar,,PP,US,1,,,,,,2023,,,2058,35.0059,-79.7479,,,,1
+64569,West Texas Solar Project II LLC,solar,,PP,US,203.8,,,,,,2023,,,2058,30.781,-102.7235,,,,1
+5248,Dominion Energy Inc.,solar,,PP,US,20,,,,,,2023,,,2058,37.3289,-76.7789,,,,1
+5248,Dominion Energy Inc.,solar,,PP,US,42,,,,,,2023,,,2058,36.8213,-79.3971,,,,1
+63776,"JSD Flatwood PV-1, LLC",solar,,PP,US,2,,,,,,2023,,,2058,34.9309,-81.9908,,,,1
+63803,Apex Solar LLC,solar,,PP,US,80,,,,,,2023,,,2058,45.1327,-112.8988,,,,1
+56215,"RWE Renewables Americas, LLC",solar,,PP,US,150,,,,,,2023,,,2058,36.7582,-119.6493,,,,1
+65411,Duke Energy Renewables Services,solar,,PP,US,175,,,,,,2023,,,2058,38.8321,-104.5254,,,,1
+9234,Indiana Municipal Power Agency,solar,,PP,US,5.3,,,,,,2023,,,2058,39.8644,-85.0099,,,,1
+20847,Wisconsin Electric Power Co,solar,,PP,US,150,,,,,,2023,,,2058,43.0005,-90.1354,,,,1
+62856,"Forefront Power, LLC",solar,,PP,US,2.6,,,,,,2023,,,2058,37.9348,-121.2714,,,,1
+64086,OE_ALD,solar,,PP,US,80,,,,,,2023,,,2058,31.2485,-86.4513,,,,1
+64144,Arlington Energy Center II,solar,,PP,US,133,,,,,,2023,,,2058,33.7437,-115.9938,,,,1
+63359,"REA Investments, LLC",solar,,PP,US,1,,,,,,2023,,,2058,44.7268,-94.9471,,,,1
+63359,"REA Investments, LLC",solar,,PP,US,1,,,,,,2023,,,2058,45.5025,-92.9083,,,,1
+64135,Resurgence Solar,solar,,PP,US,90,,,,,,2023,,,2058,34.8414,-116.1785,,,,1
+64084,OE_TN1,solar,,PP,US,100,,,,,,2023,,,2058,36.3582,-89.1488,,,,1
+13683,North Carolina El Member Corp,solar,,PP,US,0.5,,,,,,2023,,,2058,34.9916,-78.3714,,,,1
+13683,North Carolina El Member Corp,solar,,PP,US,5,,,,,,2023,,,2058,35.485,-77.6758,,,,1
+13683,North Carolina El Member Corp,solar,,PP,US,2,,,,,,2023,,,2058,35.5306,-76.2517,,,,2
+13683,North Carolina El Member Corp,solar,,PP,US,0.5,,,,,,2023,,,2058,35.0059,-79.7479,,,,3
+13683,North Carolina El Member Corp,solar,,PP,US,0.5,,,,,,2023,,,2058,35.7903,-78.6503,,,,4
+62915,Madison Energy Holdings LLC,solar,,PP,US,1.4,,,,,,2023,,,2058,41.7972,-71.1145,,,,1
+61012,AES Distributed Energy,solar,,PP,US,20,,,,,,2023,,,2058,41.8951,-84.0664,,,,1
+64236,Kearsarge Upper Union LLC,solar,,PP,US,1,,,,,,2023,,,2058,42.1603,-71.2118,,,,1
+50123,"Leeward Asset Management, LLC",solar,,PP,US,196,,,,,,2023,,,2058,39.8942,-83.4004,,,,1
+50123,"Leeward Asset Management, LLC",solar,,PP,US,100,,,,,,2023,,,2058,36.405,-76.0079,,,,1
+64273,"Angel Fire Energy Facility, LLC",solar,,PP,US,7.5,,,,,,2023,,,2058,36.6061,-104.6468,,,,1
+62836,Navisun LLC,solar,,PP,US,1,,,,,,2023,,,2058,41.7972,-71.1145,,,,1
+64285,"BCD Project Holdings 1, LLC",solar,,PP,US,20,,,,,,2023,,,2058,41,-78.4742,,,,1
+64285,"BCD Project Holdings 1, LLC",solar,,PP,US,20,,,,,,2023,,,2058,41,-78.4742,,,,2
+6455,"Duke Energy Florida, LLC",solar,,PP,US,0.8,,,,,,2023,,,2058,27.9198,-82.7255,,,,1
+61514,"Agilitas Energy, Inc.",solar,,PP,US,5,,,,,,2023,,,2058,41.9511,-70.8115,,,,1
+64349,Yellowbud Solar LLC,solar,,PP,US,274,,,,,,2023,,,2058,39.3376,-83.057,,,,1
+64364,Daggett Solar Power 2 LLC,solar,,PP,US,182,,,,,,2023,,,2058,34.8414,-116.1785,,,,1
+64365,Daggett Solar Power 3 LLC,solar,,PP,US,300,,,,,,2023,,,2058,34.8414,-116.1785,,,,2
+64358,New Market Solar,solar,,PP,US,35,,,,,,2023,,,2058,39.1847,-83.601,,,,1
+64370,"IP Radian, LLC",solar,,PP,US,320,,,,,,2023,,,2058,31.7742,-98.9998,,,,1
+64399,Trona Solar III LLC,solar,,PP,US,2,,,,,,2023,,,2058,36.5111,-117.4107,,,,1
+64409,"Hecate Energy Ramsey, LLC",solar,,PP,US,500,,,,,,2023,,,2058,29.2779,-96.2221,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,80,,,,,,2023,,,2058,43.2394,-103.5275,,,,1
+20856,Wisconsin Power & Light Co,solar,,PP,US,50,,,,,,2023,,,2058,42.8675,-90.7062,,,,1
+20856,Wisconsin Power & Light Co,solar,,PP,US,100,,,,,,2023,,,2058,43.4163,-88.7075,,,,2
+20856,Wisconsin Power & Light Co,solar,,PP,US,50,,,,,,2023,,,2058,42.6712,-89.0716,,,,3
+20856,Wisconsin Power & Light Co,solar,,PP,US,65,,,,,,2023,,,2058,42.6712,-89.0716,,,,4
+20856,Wisconsin Power & Light Co,solar,,PP,US,99,,,,,,2023,,,2058,44.1131,-89.2429,,,,5
+20856,Wisconsin Power & Light Co,solar,,PP,US,50,,,,,,2023,,,2058,43.4163,-88.7075,,,,6
+20856,Wisconsin Power & Light Co,solar,,PP,US,150,,,,,,2023,,,2058,43.7212,-87.9454,,,,7
+20856,Wisconsin Power & Light Co,solar,,PP,US,75,,,,,,2023,,,2058,43.0208,-88.7759,,,,8
+64446,ASD Cotuit MA Solar LLC,solar,,PP,US,3.1,,,,,,2023,,,2058,41.7244,-70.2903,,,,1
+55729,Duke Energy Kentucky Inc,solar,,PP,US,2,,,,,,2023,,,2058,38.9699,-84.7278,,,,1
+62842,"Lightsource Renewable Energy Asset Management, LLC",solar,,PP,US,152.5,,,,,,2023,,,2058,39.9311,-85.3964,,,,1
+64455,"Bernard Creek Solar, LLC",solar,,PP,US,230,,,,,,2023,,,2058,29.2779,-96.2221,,,,1
+64474,Waiawa Solar Power LLC,solar,,PP,US,36,,,,,,2023,,,2058,21.4899,-158.0739,,,,1
+14232,Otter Tail Power Co,solar,,PP,US,49.9,,,,,,2023,,,2058,46.4088,-95.708,,,,1
+57313,Tesla Inc.,solar,,PP,US,1.9,,,,,,2023,,,2058,30.3344,-97.782,,,,1
+57313,Tesla Inc.,solar,,PP,US,6.4,,,,,,2023,,,2058,35.3426,-118.7301,,,,1
+65752,"DG Empire Shine, LLC",solar,,PP,US,5,,,,,,2023,,,2058,42.595,-76.0703,,,,1
+64493,Jicarilla Solar 2 LLC,solar,,PP,US,50,,,,,,2023,,,2058,36.5096,-106.6931,,,,1
+64504,"Phobos Solar, LLC",solar,,PP,US,78.8,,,,,,2023,,,2058,35.9673,-77.9864,,,,1
+64505,"Cabin Creek Solar, LLC",solar,,PP,US,70.2,,,,,,2023,,,2058,35.3325,-79.9055,,,,1
+61944,MN8 Energy LLC,solar,,PP,US,20,,,,,,2023,,,2058,42.9023,-74.4397,,,,1
+61944,MN8 Energy LLC,solar,,PP,US,20,,,,,,2023,,,2058,42.595,-76.0703,,,,1
+64520,"Energix Aditya, LLC",solar,,PP,US,11.5,,,,,,2023,,,2058,37.9786,-77.963,,,,1
+64531,ASA Volney NY Solar I LLC,solar,,PP,US,5,,,,,,2023,,,2058,43.4269,-76.1413,,,,1
+64528,Lily Garden LLC,solar,,PP,US,1,,,,,,2023,,,2058,44.0221,-93.5873,,,,1
+64516,"Azimuth 180 Solar Electric, LLC",solar,,PP,US,2.4,,,,,,2023,,,2058,43.4269,-76.1413,,,,1
+6455,"Duke Energy Florida, LLC",solar,,PP,US,74.9,,,,,,2023,,,2058,30.1956,-82.9915,,,,1
+6455,"Duke Energy Florida, LLC",solar,,PP,US,74.9,,,,,,2023,,,2058,30.2652,-85.6203,,,,2
+6455,"Duke Energy Florida, LLC",solar,,PP,US,74.9,,,,,,2023,,,2058,29.6747,-82.3577,,,,3
+6455,"Duke Energy Florida, LLC",solar,,PP,US,74.9,,,,,,2023,,,2058,29.3184,-82.7434,,,,4
+64545,Vesper Energy Development LLC,solar,,PP,US,20,,,,,,2023,,,2058,40.6823,-80.3493,,,,1
+64545,Vesper Energy Development LLC,solar,,PP,US,80,,,,,,2023,,,2058,39.0476,-84.1517,,,,1
+64542,"Caden Energix Endless Caverns, LLC",solar,,PP,US,31.4,,,,,,2023,,,2058,38.512,-78.8757,,,,1
+56769,Consolidated Edison Development Inc.,solar,,PP,US,20,,,,,,2023,,,2058,36.7669,-78.9366,,,,1
+64549,Phare Garden LLC,solar,,PP,US,0.9,,,,,,2023,,,2058,44.7268,-94.9471,,,,1
+64548,"Apple Grove Solar, LLC",solar,,PP,US,18.6,,,,,,2023,,,2058,37.9786,-77.963,,,,1
+64547,"Waverly Solar, LLC",solar,,PP,US,118,,,,,,2023,,,2058,36.9218,-77.2618,,,,1
+64559,"Hunter Solar, LLC",solar,,PP,US,75,,,,,,2023,,,2058,39.6498,-104.3393,,,,1
+10000,Evergy Metro,solar,,PP,US,10,,,,,,2023,,,2058,39.0085,-94.3461,,,,1
+64607,Salt City Solar LLC,solar,,PP,US,49.9,,,,,,2023,,,2058,39.3376,-83.057,,,,1
+64610,"Powells Creek Farm Solar, LLC",solar,,PP,US,70,,,,,,2023,,,2058,36.7669,-78.9366,,,,1
+50123,"Leeward Asset Management, LLC",solar,,PP,US,200,,,,,,2023,,,2058,28.8678,-99.1082,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,5,,,,,,2023,,,2058,42.7639,-78.7323,,,,1
+9234,Indiana Municipal Power Agency,solar,,PP,US,1.8,,,,,,2023,,,2058,40.5158,-85.6547,,,,1
+64669,"CPV Maple Hill Solar, LLC",solar,,PP,US,100,,,,,,2023,,,2058,40.4951,-78.7134,,,,1
+56990,NJR Clean Energy Ventures Corporation,solar,,PP,US,5,,,,,,2023,,,2058,41.4022,-74.3056,,,,1
+65164,CleanCapital Holdings,solar,,PP,US,5,,,,,,2023,,,2058,43.8466,-70.3996,,,,1
+56990,NJR Clean Energy Ventures Corporation,solar,,PP,US,19.8,,,,,,2023,,,2058,40.862,-74.5445,,,,1
+64625,"MA CS Uxbridge, LLC",solar,,PP,US,4,,,,,,2023,,,2058,42.3514,-71.9077,,,,1
+62856,"Forefront Power, LLC",solar,,PP,US,2.6,,,,,,2023,,,2058,34.4561,-119.0836,,,,1
+56990,NJR Clean Energy Ventures Corporation,solar,,PP,US,3,,,,,,2023,,,2058,41.8721,-71.58,,,,1
+64730,"Flint Hills Resources Pine Bend, LLC",solar,,PP,US,45,,,,,,2023,,,2058,44.6719,-93.0654,,,,1
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,30.6436,-86.1697,,,,1
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,30.406,-85.1972,,,,1
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,30.669,-87.363,,,,1
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,30.406,-85.1972,,,,1
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,30.406,-85.1972,,,,2
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,30.5795,-84.6137,,,,1
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,29.9831,-81.8579,,,,1
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,30.7954,-85.2155,,,,1
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,30.7004,-87.0219,,,,1
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,27.3864,-80.8886,,,,1
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,44.7268,-94.9471,,,,1
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,44.7268,-94.9471,,,,2
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,44.7268,-94.9471,,,,3
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,44.4097,-92.7229,,,,1
+64788,"Big Cypress Solar, LLC",solar,,PP,US,180,,,,,,2023,,,2058,35.2057,-90.3078,,,,1
+64838,"Bear Grove Solar, LLC",solar,,PP,US,1,,,,,,2023,,,2058,44.0038,-92.4018,,,,1
+64844,"Bell Ridge Solar, LLC",solar,,PP,US,74.5,,,,,,2023,,,2058,29.7258,-82.8004,,,,1
+62856,"Forefront Power, LLC",solar,,PP,US,2.2,,,,,,2023,,,2058,35.3871,-120.4044,,,,1
+62856,"Forefront Power, LLC",solar,,PP,US,3.3,,,,,,2023,,,2058,36.2171,-121.2388,,,,1
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,30.2652,-85.6203,,,,1
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,30.6106,-85.6653,,,,1
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,29.6087,-81.7443,,,,1
+62856,"Forefront Power, LLC",solar,,PP,US,1.2,,,,,,2023,,,2058,37.218,-119.7627,,,,1
+64915,"SR McKellar, LLC",solar,,PP,US,70,,,,,,2023,,,2058,35.6081,-88.8385,,,,1
+64916,"SR Bell Buckle, LLC",solar,,PP,US,35,,,,,,2023,,,2058,35.5138,-86.4589,,,,1
+64931,"Texas Solar Nova 1, LLC",solar,,PP,US,252,,,,,,2023,,,2058,33.1813,-100.7776,,,,1
+18454,Tampa Electric Co,solar,,PP,US,70,,,,,,2023,,,2058,28.3092,-82.392,,,,1
+12686,Mississippi Power Co,solar,,PP,US,1.5,,,,,,2023,,,2058,32.7535,-89.524,,,,1
+64969,Meadow Lake Solar Park,solar,,PP,US,200,,,,,,2023,,,2058,40.7498,-86.8655,,,,1
+56990,NJR Clean Energy Ventures Corporation,solar,,PP,US,6.3,,,,,,2023,,,2058,40.788,-74.2481,,,,1
+62627,Cardinal Renewables,solar,,PP,US,1.8,,,,,,2023,,,2058,32.0399,-84.197,,,,1
+64971,IP Oberon LLC,solar,,PP,US,250,,,,,,2023,,,2058,33.7437,-115.9938,,,,1
+64972,"IP Oberon II, LLC",solar,,PP,US,250,,,,,,2023,,,2058,33.7437,-115.9938,,,,2
+65009,"Ahern Community Solar I, LLC",solar,,PP,US,2,,,,,,2023,,,2058,41.2851,-88.4185,,,,1
+65038,"Magdaline Solar, LLC",solar,,PP,US,2,,,,,,2023,,,2058,34.1633,-80.2545,,,,1
+65055,"Concho Valley Solar, LLC",solar,,PP,US,172.8,,,,,,2023,,,2058,31.4044,-100.4621,,,,1
+65058,SV CSG Baileyville 1 LLC,solar,,PP,US,2,,,,,,2023,,,2058,42.3518,-89.6623,,,,1
+65049,Elba Solar LLC,solar,,PP,US,2,,,,,,2023,,,2058,40.9318,-90.2132,,,,1
+65050,SV CSG South Dekalb 1 LLC,solar,,PP,US,2,,,,,,2023,,,2058,41.8935,-88.7703,,,,1
+65051,SV CSG South Dekalb 2 LLC,solar,,PP,US,2,,,,,,2023,,,2058,41.8935,-88.7703,,,,2
+65057,SV CSG Barrass Farms II LLC,solar,,PP,US,2,,,,,,2023,,,2058,37.7303,-88.9299,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,4.5,,,,,,2023,,,2058,39.762,-104.8758,,,,1
+63466,Conductive Power,solar,,PP,US,50,,,,,,2023,,,2058,33.0343,-116.735,,,,1
+61944,MN8 Energy LLC,solar,,PP,US,20,,,,,,2023,,,2058,42.7111,-73.5097,,,,1
+61944,MN8 Energy LLC,solar,,PP,US,20,,,,,,2023,,,2058,43.1074,-73.8639,,,,1
+65077,SV CSG Baileyville 2 LLC,solar,,PP,US,2,,,,,,2023,,,2058,42.3518,-89.6623,,,,1
+65120,Kearsarge Smithfield LLC,solar,,PP,US,8,,,,,,2023,,,2058,41.8721,-71.58,,,,1
+65122,Kearsarge Beverly LLC,solar,,PP,US,2,,,,,,2023,,,2058,42.6732,-70.9524,,,,1
+65086,"Landrace Holdings, LLC",solar,,PP,US,55,,,,,,2023,,,2058,33.9216,-78.9969,,,,1
+64801,"Storey Energy Center, LLC",solar,,PP,US,122,,,,,,2023,,,2058,32.9044,-111.3448,,,,1
+61944,MN8 Energy LLC,solar,,PP,US,1.1,,,,,,2023,,,2058,38.9047,-77.0163,,,,1
+56769,Consolidated Edison Development Inc.,solar,,PP,US,60,,,,,,2023,,,2058,33.349,-112.4915,,,,1
+65154,Phelan Solar LLC,solar,,PP,US,3,,,,,,2023,,,2058,34.8414,-116.1785,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,3.8,,,,,,2023,,,2058,41.126,-81.5322,,,,1
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,45.444,-93.7748,,,,1
+65161,South Garden LLC,solar,,PP,US,1,,,,,,2023,,,2058,44.8236,-94.2724,,,,1
+65173,United States Solar Corporation,solar,,PP,US,2,,,,,,2023,,,2058,38.1735,-104.5127,,,,1
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,44.8207,-93.8026,,,,1
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,44.7162,-95.8684,,,,1
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,44.7268,-94.9471,,,,1
+63640,"Safari Energy, LLC",solar,,PP,US,3,,,,,,2023,,,2058,34.0018,-85.1881,,,,1
+63640,"Safari Energy, LLC",solar,,PP,US,3,,,,,,2023,,,2058,32.0458,-82.0581,,,,1
+61012,AES Distributed Energy,solar,,PP,US,70,,,,,,2023,,,2058,39.9254,-78.1127,,,,1
+65172,Titlow Garden LLC,solar,,PP,US,1,,,,,,2023,,,2058,44.5795,-94.2321,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,4.2,,,,,,2023,,,2058,39.8942,-83.4004,,,,1
+65190,Cannon River LLC,solar,,PP,US,1,,,,,,2023,,,2058,44.0221,-95.7633,,,,1
+65188,Ballantyne LLC,solar,,PP,US,1,,,,,,2023,,,2058,45.0223,-95.5667,,,,1
+65196,"Lyons Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2058,40.4163,-75.926,,,,1
+65210,"Bird Dog Solar, LLC",solar,,PP,US,40,,,,,,2023,,,2058,33.0611,-82.0007,,,,1
+65212,"Hobnail Solar, LLC",solar,,PP,US,70,,,,,,2023,,,2058,33.0611,-82.0007,,,,2
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,44.3499,-94.2475,,,,1
+62915,Madison Energy Holdings LLC,solar,,PP,US,1,,,,,,2023,,,2058,45.5025,-92.9083,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,2.6,,,,,,2023,,,2058,34.8414,-116.1785,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,2.5,,,,,,2023,,,2058,34.8414,-116.1785,,,,2
+65204,"Niagara Depot Solar, LLC",solar,,PP,US,3.5,,,,,,2023,,,2058,43.2001,-78.7452,,,,1
+65207,"Arctaris Saddleback Solar, LLC",solar,,PP,US,4.9,,,,,,2023,,,2058,44.974,-70.444,,,,1
+65227,"Cathcart Solar, LLC",solar,,PP,US,5,,,,,,2023,,,2058,34.2657,-78.655,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,3.1,,,,,,2023,,,2058,41.3617,-83.623,,,,1
+65250,"Rafterville Solar, LLC",solar,,PP,US,1,,,,,,2023,,,2058,45.1524,-95.0047,,,,1
+56990,NJR Clean Energy Ventures Corporation,solar,,PP,US,4,,,,,,2023,,,2058,40.5635,-74.6163,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,1.5,,,,,,2023,,,2058,42.7639,-78.7323,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,1.4,,,,,,2023,,,2058,40.963,-77.0622,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,1,,,,,,2023,,,2058,36.2152,-115.0135,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,1,,,,,,2023,,,2058,36.2152,-115.0135,,,,2
+65269,"Blue Elk IV Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2058,41.8951,-84.0664,,,,1
+65272,"Blue Elk III Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2058,42.5971,-84.3735,,,,1
+65273,"Blue Elk VII Solar, LLC",solar,,PP,US,12.5,,,,,,2023,,,2058,43.0217,-83.7067,,,,1
+65274,"Midcontinent Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2058,42.9537,-84.1467,,,,1
+65275,"Greenstone Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2058,41.9161,-85.059,,,,1
+65276,"Newport Solar, LLC",solar,,PP,US,180,,,,,,2023,,,2058,35.5992,-91.2145,,,,1
+65277,Leyline Renewable Capital,solar,,PP,US,5,,,,,,2023,,,2058,37.336,-77.9761,,,,1
+65277,Leyline Renewable Capital,solar,,PP,US,5,,,,,,2023,,,2058,37.336,-77.9761,,,,2
+65277,Leyline Renewable Capital,solar,,PP,US,5,,,,,,2023,,,2058,37.5502,-77.9152,,,,3
+18454,Tampa Electric Co,solar,,PP,US,74.5,,,,,,2023,,,2058,27.9489,-81.6976,,,,1
+18454,Tampa Electric Co,solar,,PP,US,25,,,,,,2023,,,2058,27.9292,-82.3088,,,,1
+64904,AES Clean Energy,solar,,PP,US,4,,,,,,2023,,,2058,46.6589,-68.5989,,,,1
+64904,AES Clean Energy,solar,,PP,US,5,,,,,,2023,,,2058,46.6589,-68.5989,,,,2
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,2,,,,,,2023,,,2058,37.3386,-108.5966,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,2,,,,,,2023,,,2058,38.357,-113.2355,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,2,,,,,,2023,,,2058,39.2507,-76.9312,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,2,,,,,,2023,,,2058,39.2507,-76.9312,,,,1
+65265,Repsol Renewables NA,solar,,PP,US,50,,,,,,2023,,,2058,36.5096,-106.6931,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,3,,,,,,2023,,,2058,44.974,-70.444,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,5,,,,,,2023,,,2058,44.0309,-73.1408,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,5,,,,,,2023,,,2058,37.3386,-108.5966,,,,1
+65307,"SR Snipesville III, LLC",solar,,PP,US,107,,,,,,2023,,,2058,31.8056,-82.6368,,,,1
+65306,"SR DeSoto II, LLC",solar,,PP,US,65,,,,,,2023,,,2058,31.7795,-84.1411,,,,1
+64904,AES Clean Energy,solar,,PP,US,4.5,,,,,,2023,,,2058,44.4091,-69.7673,,,,1
+64904,AES Clean Energy,solar,,PP,US,200,,,,,,2023,,,2058,32.4178,-91.7635,,,,1
+63466,Conductive Power,solar,,PP,US,27.5,,,,,,2023,,,2058,38.5073,-76.9922,,,,1
+61194,Generate Capital,solar,,PP,US,5,,,,,,2023,,,2058,42.2486,-78.6788,,,,1
+65364,Blue Harvest Solar Park LLC,solar,,PP,US,49.9,,,,,,2023,,,2058,41.0221,-84.1317,,,,1
+65365,Timber Road Solar Park,solar,,PP,US,49.9,,,,,,2023,,,2058,41.1166,-84.5802,,,,1
+66159,"Whaling Solar, LLC",solar,,PP,US,3.2,,,,,,2023,,,2058,43.2418,-75.4358,,,,1
+65395,Ameresco HCE Solar LLC,solar,,PP,US,4.5,,,,,,2023,,,2058,39.5993,-107.904,,,,1
+61944,MN8 Energy LLC,solar,,PP,US,5,,,,,,2023,,,2058,42.2281,-79.3663,,,,1
+61944,MN8 Energy LLC,solar,,PP,US,3.5,,,,,,2023,,,2058,43.0058,-76.1946,,,,1
+61944,MN8 Energy LLC,solar,,PP,US,2.2,,,,,,2023,,,2058,43.4269,-76.1413,,,,1
+65399,"NMRD Data Center III, LLC",solar,,PP,US,50,,,,,,2023,,,2058,35.6886,-106.8659,,,,1
+62915,Madison Energy Holdings LLC,solar,,PP,US,3.4,,,,,,2023,,,2058,42.3514,-71.9077,,,,1
+61944,MN8 Energy LLC,solar,,PP,US,5,,,,,,2023,,,2058,43.4269,-76.1413,,,,1
+65412,BPL Files Solar LLC,solar,,PP,US,157.5,,,,,,2023,,,2058,31.9907,-97.1324,,,,1
+64994,SolRiver Capital LLC,solar,,PP,US,3,,,,,,2023,,,2058,32.3968,-81.7432,,,,1
+64994,SolRiver Capital LLC,solar,,PP,US,3,,,,,,2023,,,2058,32.3968,-81.7432,,,,2
+64994,SolRiver Capital LLC,solar,,PP,US,3,,,,,,2023,,,2058,33.3596,-82.0736,,,,1
+64994,SolRiver Capital LLC,solar,,PP,US,3,,,,,,2023,,,2058,32.8813,-84.2994,,,,1
+65453,"Yellow Pine Solar, LLC",solar,,PP,US,125,,,,,,2023,,,2058,36.2152,-115.0135,,,,1
+65438,"Virginia Line Solar, LLC",solar,,PP,US,35,,,,,,2023,,,2058,36.3965,-78.1067,,,,1
+65446,"Ruler Solar Partners, LLC",solar,,PP,US,4.9,,,,,,2023,,,2058,44.4964,-75.0691,,,,1
+65447,"Royal Solar Partners, LLC",solar,,PP,US,5,,,,,,2023,,,2058,44.4964,-75.0691,,,,2
+9234,Indiana Municipal Power Agency,solar,,PP,US,1.4,,,,,,2023,,,2058,39.9311,-85.3964,,,,1
+9234,Indiana Municipal Power Agency,solar,,PP,US,4.4,,,,,,2023,,,2058,39.8644,-85.0099,,,,1
+62836,Navisun LLC,solar,,PP,US,4.5,,,,,,2023,,,2058,44.4091,-69.7673,,,,1
+65468,NY USLE Oswego SR104 LLC,solar,,PP,US,5,,,,,,2023,,,2058,43.4269,-76.1413,,,,1
+65469,NY USLE Rome Rome-Oriskany LLC,solar,,PP,US,5,,,,,,2023,,,2058,43.2418,-75.4358,,,,1
+65458,"Cereal City Solar, LLC",solar,,PP,US,100,,,,,,2023,,,2058,42.2465,-85.0056,,,,1
+65474,"Signal Street Operating, LLC",solar,,PP,US,1.8,,,,,,2023,,,2058,34.3219,-118.2247,,,,1
+65480,VC Renewables,solar,,PP,US,4.1,,,,,,2023,,,2058,46.6589,-68.5989,,,,1
+65480,VC Renewables,solar,,PP,US,4.1,,,,,,2023,,,2058,46.6589,-68.5989,,,,2
+65488,"NTUA Generation - Utah, LLC",solar,,PP,US,72,,,,,,2023,,,2058,37.626,-109.8046,,,,1
+65487,"Chaves County Solar II, LLC",solar,,PP,US,30,,,,,,2023,,,2058,33.3633,-104.4669,,,,1
+65486,"Buena Vista Energy Center, LLC",solar,,PP,US,120,,,,,,2023,,,2058,32.6132,-105.7414,,,,1
+65451,Grizzly Ridge Solar LLC,solar,,PP,US,100,,,,,,2023,,,2058,31.7048,-98.1107,,,,1
+65491,Hayhurst New Mexico Solar,solar,,PP,US,20,,,,,,2023,,,2058,32.4714,-104.3044,,,,1
+9234,Indiana Municipal Power Agency,solar,,PP,US,1.4,,,,,,2023,,,2058,39.9311,-85.3964,,,,1
+9234,Indiana Municipal Power Agency,solar,,PP,US,9.9,,,,,,2023,,,2058,38.7024,-87.072,,,,1
+61298,Pine Gate Renewables,solar,,PP,US,40,,,,,,2023,,,2058,34.1168,-82.8401,,,,1
+65501,Dane County Solar LLC,solar,,PP,US,17.3,,,,,,2023,,,2058,43.0673,-89.4181,,,,1
+65502,"Five Wells Solar Center, LLC",solar,,PP,US,355.4,,,,,,2023,,,2058,31.0373,-97.4788,,,,1
+65519,"ELP Livingston Solar, LLC",solar,,PP,US,5,,,,,,2023,,,2058,42.2501,-73.6318,,,,1
+65518,"ELP Claverack Solar, LLC",solar,,PP,US,5,,,,,,2023,,,2058,42.2501,-73.6318,,,,1
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,44.3543,-93.2967,,,,1
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,44.7268,-94.9471,,,,1
+65517,"Paris Farm Solar, LLC",solar,,PP,US,240,,,,,,2023,,,2058,33.6673,-95.5712,,,,1
+65539,Pivot Energy,solar,,PP,US,1,,,,,,2023,,,2058,45.5521,-94.6131,,,,1
+65539,Pivot Energy,solar,,PP,US,1,,,,,,2023,,,2058,44.0223,-93.2261,,,,1
+61194,Generate Capital,solar,,PP,US,2,,,,,,2023,,,2058,41.4022,-74.3056,,,,1
+61194,Generate Capital,solar,,PP,US,5,,,,,,2023,,,2058,43.2418,-75.4358,,,,1
+65503,"Solar DG NY Sunnyside 1, LLC",solar,,PP,US,5,,,,,,2023,,,2058,42.8181,-74.0586,,,,1
+65582,"7th Road Solar 1, LLC (Briscoe 1A)",solar,,PP,US,2,,,,,,2023,,,2058,41.344,-88.8859,,,,1
+65583,"7th Road Solar 2, LLC (Briscoe 2A)",solar,,PP,US,2,,,,,,2023,,,2058,41.344,-88.8859,,,,2
+65570,Amherst Community Solar LLC,solar,,PP,US,5,,,,,,2023,,,2058,42.7639,-78.7323,,,,1
+65534,Bright Canyon Energy,solar,,PP,US,10,,,,,,2023,,,2058,33.7031,-117.7609,,,,1
+65534,Bright Canyon Energy,solar,,PP,US,10,,,,,,2023,,,2058,33.7031,-117.7609,,,,2
+65589,Bulldog Solar LLC,solar,,PP,US,80,,,,,,2023,,,2058,33.4089,-82.6768,,,,1
+65595,"Wolverine Solar, LLC",solar,,PP,US,1,,,,,,2023,,,2058,45.0223,-95.5667,,,,1
+65526,"Black Mesa Solar, LLC",solar,,PP,US,40,,,,,,2023,,,2058,43.354,-115.4693,,,,1
+65621,Crane Garden LLC,solar,,PP,US,0.9,,,,,,2023,,,2058,44.8236,-94.2724,,,,1
+65619,Pepin Garden LLC,solar,,PP,US,0.9,,,,,,2023,,,2058,44.2843,-92.2303,,,,1
+65617,Sturgeon Garden LLC,solar,,PP,US,0.9,,,,,,2023,,,2058,44.4097,-92.7229,,,,1
+65616,Winona Garden LLC,solar,,PP,US,0.9,,,,,,2023,,,2058,43.9869,-91.7792,,,,1
+65638,"Arthur Solar 2, LLC",solar,,PP,US,5,,,,,,2023,,,2058,34.2657,-78.655,,,,1
+65647,Resurgence Solar II,solar,,PP,US,48,,,,,,2023,,,2058,34.8414,-116.1785,,,,1
+65652,"Sonoran Solar Energy, LLC",solar,,PP,US,490,,,,,,2023,,,2058,33.349,-112.4915,,,,1
+65657,Adams Solar LLC (PA),solar,,PP,US,80,,,,,,2023,,,2058,39.8715,-77.2179,,,,1
+65658,Caden Energix Axton LLC,solar,,PP,US,66,,,,,,2023,,,2058,36.6828,-79.874,,,,1
+64904,AES Clean Energy,solar,,PP,US,200,,,,,,2023,,,2058,32.7695,-113.9056,,,,1
+65653,Dunns Bridge Solar Center LLC,solar,,PP,US,265,,,,,,2023,,,2058,41.023,-87.1161,,,,1
+65668,"ELP Kipp Solar, LLC",solar,,PP,US,3.5,,,,,,2023,,,2058,42.2501,-73.6318,,,,1
+65662,KDC Solar CV Ascend One LLC,solar,,PP,US,2,,,,,,2023,,,2058,39.2507,-76.9312,,,,1
+65663,KDC Solar CV Cedar Lane Park LLC,solar,,PP,US,2,,,,,,2023,,,2058,39.2507,-76.9312,,,,2
+65664,KDC Solar CV Central MD Regional Transit LLC,solar,,PP,US,2,,,,,,2023,,,2058,39.2507,-76.9312,,,,3
+65665,KDC Solar CV Animal Control LLC,solar,,PP,US,2,,,,,,2023,,,2058,39.2507,-76.9312,,,,4
+65666,KDC Solar CV O'Donnell Property LLC,solar,,PP,US,2,,,,,,2023,,,2058,39.2507,-76.9312,,,,5
+60531,Standard Solar,solar,,PP,US,1,,,,,,2023,,,2058,35.3426,-118.7301,,,,1
+12647,"ALLETE, Inc.",solar,,PP,US,15.2,,,,,,2023,,,2058,46.9496,-94.3254,,,,1
+61950,Terra-Gen Operating Co-Solar,solar,,PP,US,84.4,,,,,,2023,,,2058,34.8414,-116.1785,,,,1
+65718,"AFTW Holdings, LLC",solar,,PP,US,4.5,,,,,,2023,,,2058,35.3426,-118.7301,,,,1
+65719,"Crystal Farms Local Solar, LLC",solar,,PP,US,3.5,,,,,,2023,,,2058,36.7582,-119.6493,,,,1
+65730,"Eastover Solar, LLC",solar,,PP,US,73.6,,,,,,2023,,,2058,34.0218,-80.9031,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,1.8,,,,,,2023,,,2058,43.9598,-69.8546,,,,1
+61944,MN8 Energy LLC,solar,,PP,US,4,,,,,,2023,,,2058,39.8856,-74.2814,,,,1
+65752,"DG Empire Shine, LLC",solar,,PP,US,3,,,,,,2023,,,2058,43.0058,-76.1946,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,1.5,,,,,,2023,,,2058,43.9246,-90.1138,,,,1
+62161,"Cubico USA, LLC",solar,,PP,US,100,,,,,,2023,,,2058,33.4485,-89.9202,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,3,,,,,,2023,,,2058,43.9246,-90.1138,,,,1
+64904,AES Clean Energy,solar,,PP,US,56,,,,,,2023,,,2058,34.3219,-118.2247,,,,1
+64872,"Distributed Solar Development, LLC",solar,,PP,US,1.5,,,,,,2023,,,2058,40.862,-74.5445,,,,1
+64872,"Distributed Solar Development, LLC",solar,,PP,US,1.7,,,,,,2023,,,2058,40.862,-74.5445,,,,1
+65766,"Solar DG NJ BEMS East, LLC",solar,,PP,US,4,,,,,,2023,,,2058,39.8777,-74.6681,,,,1
+65767,"Solar DG NJ BEMS West, LLC",solar,,PP,US,4,,,,,,2023,,,2058,39.8777,-74.6681,,,,2
+65773,Renew Solar VMC LLC,solar,,PP,US,1.4,,,,,,2023,,,2058,35.3426,-118.7301,,,,1
+65779,"SEPV Cuyama, LLC",solar,,PP,US,1.6,,,,,,2023,,,2058,34.6729,-120.0169,,,,1
+65771,NY USLE Glenville Freemans Bridge LLC,solar,,PP,US,4.3,,,,,,2023,,,2058,42.8181,-74.0586,,,,1
+65772,"River Ferry Solar 1, LLC",solar,,PP,US,165.3,,,,,,2023,,,2058,39.3336,-87.7877,,,,1
+65786,"SR DeSoto III, LLC",solar,,PP,US,60,,,,,,2023,,,2058,31.7795,-84.1411,,,,1
+61677,Sol Systems,solar,,PP,US,30,,,,,,2023,,,2058,39.7156,-90.2015,,,,1
+65785,"Luminace Sunbeam Development Holdings, LLC",solar,,PP,US,3.2,,,,,,2023,,,2058,45.5139,-69.9589,,,,1
+64872,"Distributed Solar Development, LLC",solar,,PP,US,3.7,,,,,,2023,,,2058,43.0058,-76.1946,,,,1
+65777,Urban Grid Solar,solar,,PP,US,64.7,,,,,,2023,,,2058,36.7669,-78.9366,,,,1
+56990,NJR Clean Energy Ventures Corporation,solar,,PP,US,2,,,,,,2023,,,2058,40.4392,-74.4117,,,,1
+65791,"Robin Hollow Solar, LLC",solar,,PP,US,40.7,,,,,,2023,,,2058,41.6722,-71.5932,,,,1
+58135,Ecos Energy LLC,solar,,PP,US,2.2,,,,,,2023,,,2058,43.5801,-73.0363,,,,1
+65785,"Luminace Sunbeam Development Holdings, LLC",solar,,PP,US,1,,,,,,2023,,,2058,45.5139,-69.9589,,,,1
+65785,"Luminace Sunbeam Development Holdings, LLC",solar,,PP,US,5,,,,,,2023,,,2058,44.4091,-69.7673,,,,1
+65785,"Luminace Sunbeam Development Holdings, LLC",solar,,PP,US,1,,,,,,2023,,,2058,45.5139,-69.9589,,,,1
+65785,"Luminace Sunbeam Development Holdings, LLC",solar,,PP,US,5,,,,,,2023,,,2058,44.0665,-69.5434,,,,1
+22500,"Evergy Kansas Central, Inc",solar,,PP,US,1,,,,,,2023,,,2058,39.0415,-95.7565,,,,1
+22500,"Evergy Kansas Central, Inc",solar,,PP,US,1.6,,,,,,2023,,,2058,39.0415,-95.7565,,,,1
+22500,"Evergy Kansas Central, Inc",solar,,PP,US,1.3,,,,,,2023,,,2058,38.8847,-95.2926,,,,1
+65811,Solops 371 Hoes LLC,solar,,PP,US,1,,,,,,2023,,,2058,40.4392,-74.4117,,,,1
+65811,Solops 371 Hoes LLC,solar,,PP,US,0.3,,,,,,2023,,,2058,40.4392,-74.4117,,,,2
+65303,"SR McNeal, LLC",solar,,PP,US,20,,,,,,2023,,,2058,31.8796,-109.7512,,,,1
+62915,Madison Energy Holdings LLC,solar,,PP,US,1.9,,,,,,2023,,,2058,32.0145,-81.4436,,,,1
+65853,Skysol Holdco LLC,solar,,PP,US,55,,,,,,2023,,,2058,42.6864,-121.6501,,,,1
+65854,BE-Pine1 LLC,solar,,PP,US,17.1,,,,,,2023,,,2058,40.6823,-80.3493,,,,1
+65855,BE-Pine2 LLC,solar,,PP,US,17.1,,,,,,2023,,,2058,40.6823,-80.3493,,,,2
+65858,East Victory Way Solar LLC,solar,,PP,US,4,,,,,,2023,,,2058,40.6184,-108.2074,,,,1
+65865,"Umbriel Solar, LLC",solar,,PP,US,150,,,,,,2023,,,2058,30.7927,-94.83,,,,1
+65864,"Maine DG Solar Pittsfield, LLC",solar,,PP,US,4.9,,,,,,2023,,,2058,45.5139,-69.9589,,,,1
+65677,Dimension Energy LLC,solar,,PP,US,3,,,,,,2023,,,2058,40.5635,-74.6163,,,,1
+65677,Dimension Energy LLC,solar,,PP,US,3.8,,,,,,2023,,,2058,40.5635,-74.6163,,,,2
+65677,Dimension Energy LLC,solar,,PP,US,1.2,,,,,,2023,,,2058,40.9597,-74.0742,,,,1
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,44.0346,-94.067,,,,1
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,44.0346,-94.067,,,,2
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,45.0223,-95.5667,,,,1
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,44.7268,-94.9471,,,,1
+65173,United States Solar Corporation,solar,,PP,US,1,,,,,,2023,,,2058,44.7268,-94.9471,,,,2
+65872,MN CSG 2019-24 LLC,solar,,PP,US,0.9,,,,,,2023,,,2058,45.0388,-92.8838,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,2,,,,,,2023,,,2058,45.4614,-92.4414,,,,1
+60025,Greenbacker Renewable Energy Corporation,solar,,PP,US,1.5,,,,,,2023,,,2058,43.5939,-90.8344,,,,1
+65894,"Hubble Solar, LLC",solar,,PP,US,2,,,,,,2023,,,2058,34.2657,-78.655,,,,1
+65891,Hemings Solar Partners LLC,solar,,PP,US,5,,,,,,2023,,,2058,37.5294,-77.4756,,,,1
+65913,"Scooby Solar, LLC",solar,,PP,US,2.5,,,,,,2023,,,2058,35.3426,-118.7301,,,,1
+65912,"Sunny Cow Solar, LLC",solar,,PP,US,2,,,,,,2023,,,2058,35.3426,-118.7301,,,,2
+65914,"Elawan Dileo Solar, LLC",solar,,PP,US,71.4,,,,,,2023,,,2058,31.9907,-97.1324,,,,1
+65915,"Elawan Pitts Dudik Solar, LLC",solar,,PP,US,49.6,,,,,,2023,,,2058,31.9907,-97.1324,,,,1
+64994,SolRiver Capital LLC,solar,,PP,US,7,,,,,,2023,,,2058,39.7695,-86.51,,,,1
+60531,Standard Solar,solar,,PP,US,5,,,,,,2023,,,2058,45.5139,-69.9589,,,,1
+65949,Bravo REC Management LLC,solar,,PP,US,1.2,,,,,,2023,,,2058,36.2202,-118.8005,,,,1
+65980,"BESSP1, LLC.",solar,,PP,US,4.4,,,,,,2023,,,2058,33.6102,-101.8205,,,,1
+65993,"SR Clarksville, LLC",solar,,PP,US,2,,,,,,2023,,,2058,36.4969,-87.3828,,,,1
+65994,"SR Clarksville II, LLC",solar,,PP,US,4.8,,,,,,2023,,,2058,36.4969,-87.3828,,,,2
+65995,"SR Byhalia, LLC",solar,,PP,US,4.8,,,,,,2023,,,2058,34.7623,-89.5031,,,,1
+65996,"SR Franklin, LLC",solar,,PP,US,2.5,,,,,,2023,,,2058,36.742,-86.5823,,,,1
+65880,"Byrne Solar, LLC",solar,,PP,US,5,,,,,,2023,,,2058,43.0322,-85.5493,,,,1
+65881,"Lightfoot Solar, LLC",solar,,PP,US,10,,,,,,2023,,,2058,44.6818,-84.1298,,,,1
+65882,"Shipsterns Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2058,42.2465,-85.0056,,,,1
+65883,"Willford Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2058,43.9907,-84.3883,,,,1
+65999,"NextGrid Bitterbush, LLC",solar,,PP,US,4.6,,,,,,2023,,,2058,45.4006,-68.6495,,,,1
+66000,"NextGrid Corkwood, LLC",solar,,PP,US,4.6,,,,,,2023,,,2058,45.4006,-68.6495,,,,2
+66005,"Rhode Island Solar Renewable Energy IV, LLC",solar,,PP,US,8.4,,,,,,2023,,,2058,41.5568,-71.2363,,,,1
+66005,"Rhode Island Solar Renewable Energy IV, LLC",solar,,PP,US,3.4,,,,,,2023,,,2058,41.5568,-71.2363,,,,2
+60268,"Hartz Solar, LLC",solar,,PP,US,3,,,,,,2023,,,2058,40.6601,-74.31,,,,1
+64904,AES Clean Energy,solar,,PP,US,150,,,,,,2023,,,2058,39.9274,-77.7213,,,,1
+66043,Oak Solar LLC,solar,,PP,US,120,,,,,,2023,,,2058,36.4178,-77.3969,,,,1
+66055,Colice Hall Solar LLC,solar,,PP,US,17,,,,,,2023,,,2058,36.3591,-76.982,,,,1
+66056,Mohave Energy,solar,,PP,US,17.6,,,,,,2023,,,2058,35.7041,-113.7579,,,,1
+62856,"Forefront Power, LLC",solar,,PP,US,2.4,,,,,,2023,,,2058,37.0562,-122.0018,,,,1
+66037,"SR White Pine, LLC",solar,,PP,US,2,,,,,,2023,,,2058,36.051,-83.4463,,,,1
+66074,"Overlook Solar Partners, LLC",solar,,PP,US,5,,,,,,2023,,,2058,44.0665,-69.5434,,,,1
+733,Appalachian Power Co,solar,,PP,US,4.9,,,,,,2023,,,2058,37.6048,-79.1452,,,,1
+65752,"DG Empire Shine, LLC",solar,,PP,US,3,,,,,,2023,,,2058,43.2521,-78.2312,,,,1
+66106,Broadway CDG Solar LLC,solar,,PP,US,5,,,,,,2023,,,2058,42.7639,-78.7323,,,,1
+61677,Sol Systems,solar,,PP,US,5,,,,,,2023,,,2058,37.8419,-78.2773,,,,1
+66117,"Autoliv ASP, Inc.",solar,,PP,US,3.1,,,,,,2023,,,2058,41.521,-113.0821,,,,1
+57170,"EDF Renewable Asset Holdings, Inc.",solar,,PP,US,577,,,,,,2023,,,2058,39.8942,-83.4004,,,,1
+65043,Madison Energy Investments LLC,solar,,PP,US,3,,,,,,2023,,,2058,30.8338,-83.2677,,,,1
+65043,Madison Energy Investments LLC,solar,,PP,US,0.5,,,,,,2023,,,2058,42.3707,-73.2063,,,,1
+65043,Madison Energy Investments LLC,solar,,PP,US,4.1,,,,,,2023,,,2058,42.1603,-71.2118,,,,1
+65043,Madison Energy Investments LLC,solar,,PP,US,1,,,,,,2023,,,2058,39.8856,-74.2814,,,,1
+65043,Madison Energy Investments LLC,solar,,PP,US,3,,,,,,2023,,,2058,31.4574,-83.5266,,,,1
+65043,Madison Energy Investments LLC,solar,,PP,US,1.9,,,,,,2023,,,2058,31.4574,-83.5266,,,,2
+64872,"Distributed Solar Development, LLC",solar,,PP,US,3.5,,,,,,2023,,,2058,43.2418,-75.4358,,,,1
+64872,"Distributed Solar Development, LLC",solar,,PP,US,1.4,,,,,,2023,,,2058,39.2046,-78.2626,,,,1
+59380,"Enel Green Power NA, Inc.",solar,,PP,US,150.5,,,,,,2023,,,2058,32.7436,-101.4317,,,,1
+66132,"MEVS DOT, LLC",solar,,PP,US,1.7,,,,,,2023,,,2058,44.4091,-69.7673,,,,1
+66132,"MEVS DOT, LLC",solar,,PP,US,0.5,,,,,,2023,,,2058,44.4091,-69.7673,,,,2
+66154,"Bowser Road Solar Project 2021, LLC",solar,,PP,US,1.5,,,,,,2023,,,2058,40.4392,-74.4117,,,,1
+66155,"ESNY-RT-ELMSFORD, LLC",solar,,PP,US,1.8,,,,,,2023,,,2058,41.1626,-73.7561,,,,1
+66155,"ESNY-RT-ELMSFORD, LLC",solar,,PP,US,0.3,,,,,,2023,,,2058,41.1626,-73.7561,,,,1
+66156,"Dudley Road Solar Project 2021, LLC",solar,,PP,US,1.2,,,,,,2023,,,2058,40.4392,-74.4117,,,,1
+66158,Locust Solar LLC,solar,,PP,US,5,,,,,,2023,,,2058,41.1626,-73.7561,,,,1
+66161,"FFP MD Freeland Project1, LLC",solar,,PP,US,2,,,,,,2023,,,2058,39.4629,-76.6395,,,,1
+61227,Nautilus Solar Solutions,solar,,PP,US,1.5,,,,,,2023,,,2058,44.4091,-69.7673,,,,1
+61227,Nautilus Solar Solutions,solar,,PP,US,1,,,,,,2023,,,2058,45.586,-95.4445,,,,1
+61227,Nautilus Solar Solutions,solar,,PP,US,5,,,,,,2023,,,2058,43.8466,-70.3996,,,,1
+66182,"Green Mile Solar, LLC",solar,,PP,US,5,,,,,,2023,,,2058,43.9598,-69.8546,,,,1
+66183,"Tower Solar Partners, LLC",solar,,PP,US,5,,,,,,2023,,,2058,45.5139,-69.9589,,,,1
+64904,AES Clean Energy,solar,,PP,US,4.9,,,,,,2023,,,2058,44.6647,-68.3584,,,,1
+62836,Navisun LLC,solar,,PP,US,5,,,,,,2023,,,2058,43.8466,-70.3996,,,,1
+62836,Navisun LLC,solar,,PP,US,1.8,,,,,,2023,,,2058,41.8721,-71.58,,,,1
+61227,Nautilus Solar Solutions,solar,,PP,US,4.9,,,,,,2023,,,2058,44.4999,-70.7566,,,,1
+61227,Nautilus Solar Solutions,solar,,PP,US,2,,,,,,2023,,,2058,39.5712,-75.9407,,,,1
+66154,"Bowser Road Solar Project 2021, LLC",solar,,PP,US,1.3,,,,,,2023,,,2058,40.4392,-74.4117,,,,1
+61227,Nautilus Solar Solutions,solar,,PP,US,2,,,,,,2023,,,2058,39.6036,-77.814,,,,1
+64489,"CS Wind America, Inc.",solar,,PP,US,12.3,,,,,,2023,,,2058,38.1735,-104.5127,,,,1
+65949,Bravo REC Management LLC,solar,,PP,US,4,,,,,,2023,,,2058,36.2202,-118.8005,,,,1
+61227,Nautilus Solar Solutions,solar,,PP,US,4.9,,,,,,2023,,,2058,44.1658,-70.2065,,,,1
+65043,Madison Energy Investments LLC,solar,,PP,US,1,,,,,,2023,,,2058,39.1363,-77.2042,,,,1
+65043,Madison Energy Investments LLC,solar,,PP,US,1.3,,,,,,2023,,,2058,40.8424,-83.3044,,,,1
+65043,Madison Energy Investments LLC,solar,,PP,US,1,,,,,,2023,,,2058,40.26,-74.2216,,,,1
+65043,Madison Energy Investments LLC,solar,,PP,US,1,,,,,,2023,,,2058,40.2834,-74.7018,,,,1
+65043,Madison Energy Investments LLC,solar,,PP,US,4.9,,,,,,2023,,,2058,44.974,-70.444,,,,1
+65043,Madison Energy Investments LLC,solar,,PP,US,3,,,,,,2023,,,2058,36.9752,-82.6212,,,,1
+65043,Madison Energy Investments LLC,solar,,PP,US,0.5,,,,,,2023,,,2058,42.1603,-71.2118,,,,1
+62719,Green Street Power Partners,solar,,PP,US,5,,,,,,2023,,,2058,40.7247,-103.1101,,,,1
+62719,Green Street Power Partners,solar,,PP,US,4,,,,,,2023,,,2058,40.5548,-104.3925,,,,1
+62719,Green Street Power Partners,solar,,PP,US,5,,,,,,2023,,,2058,40.5548,-104.3925,,,,2
+62719,Green Street Power Partners,solar,,PP,US,5,,,,,,2023,,,2058,43.2418,-75.4358,,,,1
+62719,Green Street Power Partners,solar,,PP,US,1.1,,,,,,2023,,,2058,41.7972,-71.1145,,,,1
+62719,Green Street Power Partners,solar,,PP,US,4.7,,,,,,2023,,,2058,42.9175,-76.5545,,,,1
+62719,Green Street Power Partners,solar,,PP,US,4.8,,,,,,2023,,,2058,44.4964,-75.0691,,,,1
+62719,Green Street Power Partners,solar,,PP,US,5,,,,,,2023,,,2058,44.4964,-75.0691,,,,2
+62719,Green Street Power Partners,solar,,PP,US,3.5,,,,,,2023,,,2058,43.1074,-73.8639,,,,1
+62719,Green Street Power Partners,solar,,PP,US,3.5,,,,,,2023,,,2058,43.1074,-73.8639,,,,2
+62923,Solar Planet Power,solar,,PP,US,2.5,,,,,,2023,,,2058,42.2281,-79.3663,,,,1
+66222,"Lower Road II, LLC",solar,,PP,US,2,,,,,,2023,,,2058,41.4022,-74.3056,,,,1
+66223,"Lower Road III, LLC",solar,,PP,US,2,,,,,,2023,,,2058,41.4022,-74.3056,,,,2
+62719,Green Street Power Partners,solar,,PP,US,2.1,,,,,,2023,,,2058,28.7615,-81.7113,,,,1
+62719,Green Street Power Partners,solar,,PP,US,1.9,,,,,,2023,,,2058,28.7615,-81.7113,,,,2
+66109,"Entegrity Solar ACC, LLC",solar,,PP,US,2,,,,,,2023,,,2058,35.2563,-91.7456,,,,1
+62856,"Forefront Power, LLC",solar,,PP,US,2.6,,,,,,2023,,,2058,33.0343,-116.735,,,,1
+65949,Bravo REC Management LLC,solar,,PP,US,2.9,,,,,,2023,,,2058,36.0752,-119.8155,,,,1
+66238,BluePath Solar Sacramento I LLC,solar,,PP,US,1.3,,,,,,2023,,,2058,38.4493,-121.3443,,,,1
+66240,"Nabholz Solar FPS Ozarks, LLC",solar,,PP,US,1,,,,,,2023,,,2058,35.9791,-94.2156,,,,1
+66241,"Nabholz Solar FPS, LLC",solar,,PP,US,4,,,,,,2023,,,2058,35.2149,-93.7166,,,,1
+66242,"Entegrity Solar LRWRA, LLC",solar,,PP,US,4,,,,,,2023,,,2058,35.2149,-93.7166,,,,2
+66246,"Entegrity Solar Southside SD, LLC",solar,,PP,US,1,,,,,,2023,,,2058,34.77,-92.312,,,,1
+66248,"Entegrity Solar UA AG, LLC",solar,,PP,US,2.8,,,,,,2023,,,2058,34.0889,-93.9936,,,,1
+66249,"Entegrity Solar WRMC, LLC",solar,,PP,US,2.9,,,,,,2023,,,2058,35.5992,-91.2145,,,,1
+66264,AETS OpCo Holdings LLC,solar,,PP,US,4.4,,,,,,2023,,,2058,43.2418,-75.4358,,,,1
+66276,"Solar DG NY Sunnyside 2, LLC",solar,,PP,US,5,,,,,,2023,,,2058,42.8181,-74.0586,,,,1
+66257,LSE Ophiuchus LLC,solar,,PP,US,2,,,,,,2023,,,2058,41.7244,-70.2903,,,,1
+66286,Adams PV Plant (WI),solar,,PP,US,8.3,,,,,,2023,,,2058,43.9695,-89.7704,,,,1
+66291,Portage Solar Plant,solar,,PP,US,11.8,,,,,,2023,,,2058,43.4666,-89.3337,,,,1
+66293,"NSF Torrey Site 3, LLC",solar,,PP,US,5,,,,,,2023,,,2058,42.6335,-77.1055,,,,1
+66294,"NSF Torrey Site 2, LLC",solar,,PP,US,5,,,,,,2023,,,2058,42.6335,-77.1055,,,,2
+66295,"NSF Torrey Site 1, LLC",solar,,PP,US,4.6,,,,,,2023,,,2058,42.6335,-77.1055,,,,3
+61194,Generate Capital,solar,,PP,US,2.3,,,,,,2023,,,2058,43.1566,-77.0294,,,,1
+61194,Generate Capital,solar,,PP,US,2,,,,,,2023,,,2058,41.4022,-74.3056,,,,1
+61194,Generate Capital,solar,,PP,US,5,,,,,,2023,,,2058,43.1464,-77.6961,,,,1
+61194,Generate Capital,solar,,PP,US,4.6,,,,,,2023,,,2058,42.2281,-79.3663,,,,1
+20847,Wisconsin Electric Power Co,solar,,PP,US,7.5,,,,,,2023,,,2058,44.7892,-88.7654,,,,1
+20847,Wisconsin Electric Power Co,solar,,PP,US,7.5,,,,,,2023,,,2058,42.5769,-88.0424,,,,1
+20847,Wisconsin Electric Power Co,solar,,PP,US,7.5,,,,,,2023,,,2058,42.6685,-88.5419,,,,1
+66362,"All World Machinery Supply, Inc.",solar,,PP,US,1.5,,,,,,2023,,,2058,42.3363,-89.1609,,,,1
+60520,SoCore Energy LLC,solar,,PP,US,1,,,,,,2023,,,2058,40.788,-74.2481,,,,1
+60520,SoCore Energy LLC,solar,,PP,US,1,,,,,,2023,,,2058,40.788,-74.2481,,,,2
+60520,SoCore Energy LLC,solar,,PP,US,1,,,,,,2023,,,2058,40.788,-74.2481,,,,3
+60520,SoCore Energy LLC,solar,,PP,US,1,,,,,,2023,,,2058,40.788,-74.2481,,,,4
+62923,Solar Planet Power,solar,,PP,US,5,,,,,,2023,,,2058,42.8528,-77.2998,,,,1
 55963,AE Power Services LLC,onwind,,PP,US,88,,,,,,2023,,,2050,40.6063,-87.3109,,,,1
 56215,"RWE Renewables Americas, LLC",onwind,,PP,US,130,,,,,,2023,,,2050,42.2678,-77.3838,,,,1
 61668,Strauss Wind LLC,onwind,,PP,US,95.3,,,,,,2023,,,2050,34.6729,-120.0169,,,,1
@@ -23755,24 +23755,24 @@
 12341,MidAmerican Energy Co,onwind,,PP,US,202.4,,,,,,2023,,,2050,43.0601,-92.3177,,,,1
 65929,"North Bend Wind Project, LLC",onwind,,PP,US,200,,,,,,2023,,,2050,44.5473,-99.4871,,,,1
 65948,"Roundhouse Renewable Energy II, LLC",onwind,,PP,US,105.7,,,,,,2023,,,2050,41.307,-104.6895,,,,1
-62744,"St. James Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2043,30.027,-90.7931,,,,1
-64526,ASA DeKalb NY Solar II LLC,solar,,PP,US,3,,,,,,2023,,,2043,44.4964,-75.0691,,,,1
-64527,ASA DeKalb NY Solar I LLC,solar,,PP,US,5,,,,,,2023,,,2043,44.4964,-75.0691,,,,2
-56769,Consolidated Edison Development Inc.,solar,,PP,US,20,,,,,,2023,,,2043,36.6953,-76.6398,,,,1
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,27.3773,-80.4721,,,,1
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,25.615,-80.5624,,,,1
-6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2043,27.3773,-80.4721,,,,1
-61944,MN8 Energy LLC,solar,,PP,US,1.7,,,,,,2023,,,2043,38.8295,-76.8473,,,,1
-61944,MN8 Energy LLC,solar,,PP,US,1.7,,,,,,2023,,,2043,38.8295,-76.8473,,,,2
-65507,"Chesapeake Solar Project, LLC",solar,,PP,US,132,,,,,,2023,,,2043,36.6778,-76.3023,,,,1
-60531,Standard Solar,solar,,PP,US,1.2,,,,,,2023,,,2043,38.8295,-76.8473,,,,1
-65807,"Energy 49, LLC",solar,,PP,US,6,,,,,,2023,,,2043,62.316,-149.5729,,,,1
-5248,Dominion Energy Inc.,solar,,PP,US,20,,,,,,2023,,,2043,36.8912,-76.7259,,,,1
-58135,Ecos Energy LLC,solar,,PP,US,1,,,,,,2023,,,2043,41.4367,-72.9471,,,,1
-66220,Spectrum Solar LLC,solar,,PP,US,3,,,,,,2023,,,2043,38.8295,-76.8473,,,,1
-66220,Spectrum Solar LLC,solar,,PP,US,2.6,,,,,,2023,,,2043,38.8295,-76.8473,,,,2
-20847,Wisconsin Electric Power Co,solar,,PP,US,7.5,,,,,,2023,,,2043,43.384,-87.9509,,,,1
-66356,Milford Pepes Farm Road Solar LLC,solar,,PP,US,1.5,,,,,,2023,,,2043,41.4367,-72.9471,,,,1
+62744,"St. James Solar, LLC",solar,,PP,US,20,,,,,,2023,,,2058,30.027,-90.7931,,,,1
+64526,ASA DeKalb NY Solar II LLC,solar,,PP,US,3,,,,,,2023,,,2058,44.4964,-75.0691,,,,1
+64527,ASA DeKalb NY Solar I LLC,solar,,PP,US,5,,,,,,2023,,,2058,44.4964,-75.0691,,,,2
+56769,Consolidated Edison Development Inc.,solar,,PP,US,20,,,,,,2023,,,2058,36.6953,-76.6398,,,,1
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,27.3773,-80.4721,,,,1
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,25.615,-80.5624,,,,1
+6452,Florida Power & Light Co,solar,,PP,US,74.5,,,,,,2023,,,2058,27.3773,-80.4721,,,,1
+61944,MN8 Energy LLC,solar,,PP,US,1.7,,,,,,2023,,,2058,38.8295,-76.8473,,,,1
+61944,MN8 Energy LLC,solar,,PP,US,1.7,,,,,,2023,,,2058,38.8295,-76.8473,,,,2
+65507,"Chesapeake Solar Project, LLC",solar,,PP,US,132,,,,,,2023,,,2058,36.6778,-76.3023,,,,1
+60531,Standard Solar,solar,,PP,US,1.2,,,,,,2023,,,2058,38.8295,-76.8473,,,,1
+65807,"Energy 49, LLC",solar,,PP,US,6,,,,,,2023,,,2058,62.316,-149.5729,,,,1
+5248,Dominion Energy Inc.,solar,,PP,US,20,,,,,,2023,,,2058,36.8912,-76.7259,,,,1
+58135,Ecos Energy LLC,solar,,PP,US,1,,,,,,2023,,,2058,41.4367,-72.9471,,,,1
+66220,Spectrum Solar LLC,solar,,PP,US,3,,,,,,2023,,,2058,38.8295,-76.8473,,,,1
+66220,Spectrum Solar LLC,solar,,PP,US,2.6,,,,,,2023,,,2058,38.8295,-76.8473,,,,2
+20847,Wisconsin Electric Power Co,solar,,PP,US,7.5,,,,,,2023,,,2058,43.384,-87.9509,,,,1
+66356,Milford Pepes Farm Road Solar LLC,solar,,PP,US,1.5,,,,,,2023,,,2058,41.4367,-72.9471,,,,1
 63722,"Alta Farms II Wind Project, LLC",onwind,,PP,US,200.5,,,,,,2023,,,2050,29.0821,-97.3567,,,,1
 49893,Invenergy Services LLC,onwind,,PP,US,259.8,,,,,,2023,,,2050,29.0821,-97.3567,,,,1
 54802,Dynegy Moss Landing Power Plant Hybrid,battery,,Store,US,350,,,,,,2023,,,2043,36.2171,-121.2388,,,,1

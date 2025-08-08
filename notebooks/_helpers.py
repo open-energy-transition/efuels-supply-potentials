@@ -3230,3 +3230,41 @@ def compute_line_expansion_capacity(n):
     line_exp_cap_state = n.lines.groupby("state")[["s_nom", 's_nom_opt']].sum() / 1e3  # Convert to GW
 
     return line_exp_cap_grid, line_exp_cap_state
+
+
+def preprocess_res_ces_share_eia(eia_gen_data):
+    eia_gen_data = eia_gen_data[eia_gen_data["YEAR"] == 2023]
+    eia_gen_data = eia_gen_data[eia_gen_data["STATE"] != "US-Total"]
+    eia_gen_data = eia_gen_data[eia_gen_data['TYPE OF PRODUCER'] == 'Total Electric Power Industry']
+    eia_gen_data = eia_gen_data[(eia_gen_data["ENERGY SOURCE"] != "Total")
+                                                        & (eia_gen_data["ENERGY SOURCE"] != "Other")]
+    eia_gen_data.replace({"ENERGY SOURCE":{"Coal": "coal",
+        "Hydroelectric Conventional": "hydro", 
+        "Pumped Storage": "PHS" , 
+        "Solar Thermal and Photovoltaic": "solar", 
+        "Natural Gas": "gas", 
+        "Petroleum": "oil", 
+        "Wind": "wind", 
+        "Nuclear": "nuclear", 
+        "Geothermal": "geothermal",
+        "Pumped Storage": "PHS",
+        "Wood and Wood Derived Fuels": "biomass",
+        "Other Biomass": "biomass",
+        "Other Gases": "gas"}}, inplace=True)
+
+    eia_gen_data["GENERATION (TWh)"] = eia_gen_data["GENERATION (Megawatthours)"] / 1e6
+    eia_gen_data_df = eia_gen_data.groupby(["STATE", "ENERGY SOURCE"])[["GENERATION (TWh)"]].sum().unstack(fill_value=0)
+    eia_gen_data_df.columns = eia_gen_data_df.columns.droplevel(0)
+
+    eia_res_carriers = ["solar", "wind", "hydro", "geothermal", "biomass", "PHS"]
+    eia_ces_carriers = eia_res_carriers + ["nuclear"]
+
+    res_total = eia_gen_data_df[eia_res_carriers].sum(axis=1)
+    ces_total = eia_gen_data_df[eia_ces_carriers].sum(axis=1)
+    all_total = eia_gen_data_df[['PHS', 'biomass', 'coal', 'gas', 'geothermal', 'hydro', 'nuclear',
+        'oil', 'solar', 'wind']].sum(axis=1)
+
+    eia_gen_data_df["% ACTUAL RES"] = (res_total / all_total) * 100
+    eia_gen_data_df["% ACTUAL CES"] = (ces_total / all_total) * 100
+
+    return eia_gen_data_df

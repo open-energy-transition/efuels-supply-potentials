@@ -3268,3 +3268,237 @@ def preprocess_res_ces_share_eia(eia_gen_data):
     eia_gen_data_df["% ACTUAL CES"] = (ces_total / all_total) * 100
 
     return eia_gen_data_df
+
+
+def compute_links_only_costs(network, name_tag):
+    """
+    Compute costs for LINKS ONLY (power generation), excluding generators (end-uses).
+    For coal, oil, biomass: OPEX = OPEX_links (from statistics) + fuel costs (calculated).
+    """
+    costs_raw = network.statistics()[['Capital Expenditure', 'Operational Expenditure']]
+    year_str = name_tag[-4:]
+
+    costs_reset = costs_raw.reset_index()
+
+    capex_raw = costs_reset[['carrier', 'Capital Expenditure']]
+    capex_raw['tech_label'] = capex_raw['carrier']
+
+    opex_raw = costs_reset[['carrier', 'Operational Expenditure']]
+    opex_raw['tech_label'] = opex_raw['carrier']
+
+    capex_grouped = capex_raw.groupby('tech_label', as_index=False).agg({
+        'Capital Expenditure': 'sum'
+    })
+    capex_grouped['cost_type'] = 'Capital expenditure'
+    capex_grouped.rename(columns={'Capital Expenditure': 'cost_billion'}, inplace=True)
+    capex_grouped['cost_billion'] /= 1e9
+    capex_grouped['year'] = year_str
+    capex_grouped['scenario'] = name_tag
+
+    opex_grouped = opex_raw.groupby('tech_label', as_index=False).agg({
+        'Operational Expenditure': 'sum'
+    })
+    opex_grouped.rename(columns={'Operational Expenditure': 'opex_billion'}, inplace=True)
+
+    carriers_of_interest = ["coal", "oil", "biomass"]
+    fuel_cost_adjustments = {}
+
+    for carrier in carriers_of_interest:
+        links = network.links[network.links.carrier == carrier]
+        total_fuel_cost = 0
+
+        for link_id in links.index:
+            try:
+                p0 = network.links_t.p0[link_id]
+                fuel_bus = links.loc[link_id, 'bus0']
+                fuel_price = network.buses_t.marginal_price[fuel_bus]
+                weightings = network.snapshot_weightings['objective']
+
+                fuel_cost = (-p0 * fuel_price * weightings).sum()
+                total_fuel_cost += fuel_cost
+            except KeyError:
+                continue
+
+        fuel_cost_adjustments[carrier] = total_fuel_cost / 1e9
+
+    final_results = []
+
+    for _, row in capex_grouped.iterrows():
+        final_results.append(row.to_dict())
+
+    for _, row in opex_grouped.iterrows():
+        tech = row['tech_label']
+        opex_stat = row['opex_billion']
+
+        if tech in carriers_of_interest:
+            total_opex = opex_stat + fuel_cost_adjustments.get(tech, 0)
+            new_row = {
+                'tech_label': f'{tech} (power)',
+                'cost_type': 'Operational expenditure',
+                'cost_billion': total_opex,
+                'year': year_str,
+                'scenario': name_tag
+            }
+            final_results.append(new_row)
+        else:
+            final_results.append({
+                'tech_label': tech,
+                'cost_type': 'Operational expenditure',
+                'cost_billion': opex_stat,
+                'year': year_str,
+                'scenario': name_tag
+            })
+
+    return pd.DataFrame(final_results)
+
+
+def identify_power_generation_technologies(rename_techs_capex, rename_techs_opex, categories_capex, categories_opex):
+    """
+    Identify technologies for power generation only (including (power) versions of conventional fuels)
+    """
+    power_gen_techs = set()
+    
+    # Check CAPEX mappings
+    for original_tech, intermediate_category in rename_techs_capex.items():
+        if categories_capex.get(intermediate_category) == 'Power & heat generation':
+            if intermediate_category != 'Heating':  # Exclude heating
+                # Convert conventional fuels to (power) format
+                if original_tech in ['coal', 'gas', 'oil', 'biomass']:
+                    power_gen_techs.add(f'{original_tech} (power)')
+                else:
+                    power_gen_techs.add(original_tech)
+    
+    # Check OPEX mappings  
+    for original_tech, intermediate_category in rename_techs_opex.items():
+        if categories_opex.get(intermediate_category) == 'Power & heat generation':
+            if intermediate_category != 'Heating':  # Exclude heating
+                # Convert conventional fuels to (power) format
+                if original_tech in ['coal', 'gas', 'oil', 'biomass']:
+                    power_gen_techs.add(f'{original_tech} (power)')
+                else:
+                    power_gen_techs.add(original_tech)
+    
+    return power_gen_techs
+
+
+def plot_power_generation_details(cost_data, cost_type_label, power_techs, 
+                                     tech_colors=None, nice_names=None, tech_order=None):
+    """
+    Plot interactive detailed breakdown of Power & heat generation technologies showing original tech_labels
+    
+    Parameters:
+    - cost_data: DataFrame with cost data containing original tech_labels
+    - cost_type_label: str, "Capital expenditure" or "Operational expenditure"  
+    - power_techs: set of technology names that belong to Power & heat generation
+    - tech_colors: dict, mapping from original tech_labels to colors
+    - nice_names: dict, mapping from original tech_labels to display names
+    """
+    
+    # Filter for Power & heat generation technologies
+    power_data = cost_data[
+        cost_data['tech_label'].isin(power_techs) &
+        (cost_data['cost_type'] == cost_type_label) &
+        (cost_data['cost_billion'] != 0)
+    ].copy()
+
+    # Aggrega tecnologie con stesso nome (es. Offshore Wind AC+DC)
+    power_data = power_data.groupby(
+        ['tech_label', 'cost_type', 'year', 'scenario'], 
+        as_index=False
+    ).agg({
+        'cost_billion': 'sum'
+    })
+
+    if power_data.empty:
+        return
+
+    # Create pivot table: years x technologies
+    pivot_table = power_data.pivot_table(
+        index='year',
+        columns='tech_label', 
+        values='cost_billion',
+        aggfunc='sum'
+    ).fillna(0)
+    
+    # Sort technologies by total cost (largest first)
+    if tech_order:
+        available_techs = set(pivot_table.columns)
+        ordered_techs = [tech for tech in tech_order if tech in available_techs]
+        remaining_techs = available_techs - set(ordered_techs)
+        ordered_techs.extend(sorted(remaining_techs))
+    else:
+        tech_totals = pivot_table.sum().sort_values(ascending=False)
+        ordered_techs = tech_totals.index.tolist()
+    
+    # Get colors for each technology
+    def get_tech_color(original_tech_label):
+        if tech_colors and original_tech_label in tech_colors:
+            return tech_colors[original_tech_label]
+        # Try some variations if exact match not found
+        elif tech_colors:
+            for variant in [original_tech_label.lower(), original_tech_label.title()]:
+                if variant in tech_colors:
+                    return tech_colors[variant]
+        # Default color if not found
+        import matplotlib.colors as mcolors
+        colors = list(mcolors.TABLEAU_COLORS.values())
+        return colors[hash(original_tech_label) % len(colors)]
+    
+    # Create interactive plotly chart
+    import plotly.graph_objects as go
+    
+    fig = go.Figure()
+    
+    # Add traces for each technology (in order of importance)
+    # Only exclude technologies that are ALL zeros
+    for tech in ordered_techs:
+        y_values = pivot_table[tech]
+        # Skip only if ALL values are exactly zero
+        if (y_values == 0).all():
+            continue
+            
+        display_name = nice_names.get(tech, tech) if nice_names else tech
+        color = get_tech_color(tech)
+        
+        fig.add_trace(go.Bar(
+            name=display_name,
+            x=pivot_table.index.astype(str),
+            y=y_values,
+            marker_color=color,
+            hovertemplate=f"%{{x}}<br>{display_name}: %{{y:.2f}}B USD<extra></extra>"
+        ))
+    
+    # Update layout for interactivity
+    fig.update_layout(
+        barmode='relative',  # Handle negative values correctly
+        title=dict(
+            text=f'Power & Heat Generation - {cost_type_label}',
+            font=dict(size=16)
+        ),
+        xaxis=dict(
+            title=dict(text="Years", font=dict(size=14)),
+            tickfont=dict(size=12)
+        ),
+        yaxis=dict(
+            title=dict(text=f"{cost_type_label} (Billion USD)", font=dict(size=14)),
+            tickfont=dict(size=12)
+        ),
+        template="plotly_white",
+        width=1400,
+        height=700,
+        margin=dict(l=40, r=300, t=50, b=50),
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=1,
+            xanchor="left", 
+            x=1.02,
+            font=dict(size=12),
+            traceorder='reversed'
+        )
+    )
+    
+    # Add horizontal line at zero
+    fig.add_hline(y=0, line_width=1, line_color="black")
+    
+    return fig

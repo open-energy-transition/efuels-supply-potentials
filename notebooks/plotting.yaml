@@ -810,4 +810,64 @@ categories_opex:
   e-fuels synthesis: Hydrogen & e-fuels
 
   Biofuels synthesis: Biofuels synthesis
-  
+
+
+# Power system costs data plot
+tech_power_color:
+  "Onshore wind": "#235ebc"
+  "Offshore wind": "#6895dd"
+  "Utility-scale solar": "#f9d002"
+  "Solar rooftop": "#ffea80"
+  "CSP": "#f7a401"
+  "Geothermal": "#9e3b20"
+  "Conventional hydro": "#298c81"
+  "Pumped hydro storage": "#51dbcc"
+  "Run-of-River hydro": "#3dbfb0"
+  "Biomass": "#4fba41"
+  "Gas CHP": "#db6a00"
+  "Gas OCGT": "#db6a00"
+  "Gas CCGT": "#db0000"
+  "Nuclear": "#e81cd0"
+  "Coal": "#000000"
+  "Oil": "#8B4513"
+
+nice_names_power:
+  "coal": "Coal"
+  "oil": "Oil"
+  "biomass": "Biomass"
+  "coal (power)": "Coal"
+  "oil (power)": "Oil"
+  "biomass (power)": "Biomass"
+  "Offshore Wind (DC)": "Offshore wind"
+  "Offshore Wind (AC)": "Offshore wind"
+  "Onshore Wind": "Onshore wind"
+  "Solar": "Utility-scale solar"
+  "solar rooftop": "Solar rooftop"
+  "Csp": "CSP"
+  "Geothermal": "Geothermal"
+  "Reservoir & Dam": "Conventional hydro"
+  "Pumped Hydro Storage": "Pumped hydro storage"
+  "Run of River": "Run-of-River hydro"
+  "biomass EOP": "Biomass"
+  "urban central gas CHP": "Gas CHP"
+  "OCGT": "Gas OCGT"
+  "CCGT": "Gas CCGT"
+  "Nuclear": "Nuclear"
+
+tech_power_order:
+  - "Gas CCGT"
+  - "Gas OCGT"
+  - "Gas CHP"
+  - "Coal"
+  - "Oil"
+  - "Conventional hydro"
+  - "Pumped hydro storage"
+  - "Run-of-River hydro"
+  - "Biomass"
+  - "Nuclear"
+  - "Geothermal"
+  - "Onshore wind"
+  - "Offshore wind"
+  - "Utility-scale solar"
+  - "Solar rooftop"
+  - "CSP"

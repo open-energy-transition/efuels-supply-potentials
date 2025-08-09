@@ -2412,11 +2412,11 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
                 weightings = network.snapshot_weightings['objective']
 
                 # Fuel cost (positive)
-                fuel_cost = (-p0 * fuel_price * weightings).sum()
+                fuel_cost = (p0 * fuel_price * weightings).sum()
 
                 # Other OPEX (marginal cost of link, positive)
                 marginal_cost = links.loc[link_id, 'marginal_cost']
-                other_opex = (-p0 * marginal_cost * weightings).sum()
+                other_opex = (p0 * marginal_cost * weightings).sum()
 
                 total_opex = fuel_cost + other_opex
 
@@ -2438,103 +2438,6 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     link_opex_df['main_category'] = link_opex_df['tech_label']
 
     return pd.concat([capex_grouped, opex_grouped, link_opex_df], ignore_index=True)
-
-
-def plot_stacked_costs_by_year(cost_data, cost_type_label, tech_colors=None, index='year'):
-
-    # Clean data
-    data_filtered = cost_data[
-        (cost_data['cost_type'] == cost_type_label) &
-        (cost_data['cost_billion'] != 0)
-    ].copy()
-
-    if data_filtered.empty:
-        print("No data to plot.")
-        return
-
-    # Pivot table: year x tech_label
-    pivot_table = data_filtered.pivot_table(
-        index=index,
-        columns='tech_label',
-        values='cost_billion',
-        aggfunc='sum'
-    ).fillna(0)
-
-    # Mapping dictionaries
-    label_to_macro = data_filtered.set_index('tech_label')['macro_category'].to_dict()
-    label_to_category = data_filtered.set_index('tech_label')['main_category'].to_dict()
-
-    # Define desired macro-category order (top-to-bottom in legend and bars)
-    desired_macro_order = [
-        'Hydrogen & e-fuels',
-        'Biofuels synthesis',
-        'DAC',
-        'End-uses',
-        'Industry',
-        'Power & heat generation',
-        'Storage',
-        'Transmission & distribution',
-        'Emissions',
-        'Other'
-    ]
-    macro_order_map = {macro: i for i, macro in enumerate(desired_macro_order)}
-
-    # Final tech_label order (top to bottom)
-    all_labels = data_filtered['tech_label'].drop_duplicates().tolist()
-    ordered_labels = sorted(
-        all_labels,
-        key=lambda lbl: (macro_order_map.get(label_to_macro.get(lbl, 'Other'), 999), all_labels.index(lbl))
-    )
-
-    # Stack order is reversed (bottom to top)
-    pivot_table = pivot_table[ordered_labels[::-1]]
-
-    # Assign colors
-    def get_color(label):
-        category = label_to_category.get(label, label)
-        return tech_colors.get(category, '#999999')
-    color_values = [get_color(label) for label in pivot_table.columns]
-
-    # Plot
-    ax = pivot_table.plot(
-        kind='bar',
-        stacked=True,
-        color=color_values,
-        figsize=(12, 6)
-    )
-    ax.axhline(0, color='black', linewidth=1)
-    ax.set_xlabel("Years (-)")
-    ax.set_ylabel(f"{cost_type_label} (Billion USD)")
-    ax.set_title(f"{cost_type_label}")
-    ax.set_xticklabels(pivot_table.index, rotation=0)
-    plt.tight_layout()
-
-    # Group for legend
-    grouped_labels = defaultdict(list)
-    for label in ordered_labels:
-        macro = label_to_macro.get(label, 'Other')
-        grouped_labels[macro].append(label)
-
-    # Order groups in legend
-    legend_elements = []
-    for macro in desired_macro_order:
-        if macro in grouped_labels:
-            legend_elements.append(Patch(facecolor='none', edgecolor='none', label=f'— {macro} —'))
-            for label in grouped_labels[macro]:
-                legend_elements.append(Patch(facecolor=get_color(label), label=label))
-
-    ax.legend(
-        handles=legend_elements,
-        bbox_to_anchor=(1.05, 1),
-        loc='upper left'
-    )
-
-    # Add y-limits margin
-    y_min, y_max = ax.get_ylim()
-    y_range = y_max - y_min
-    ax.set_ylim(y_min - 0.05 * y_range, y_max + 0.05 * y_range)
-
-    plt.show()
 
 
 def assign_macro_category(row, categories_capex, categories_opex):
@@ -3114,16 +3017,16 @@ def plot_stacked_costs_by_year_plotly(cost_data, cost_type_label, tech_colors=No
     fig.update_layout(
         barmode="relative",
         title=dict(
-            text=cost_type_label,
+            text=f"{cost_type_label} - Total system costs",
             font=dict(size=16)  # Titolo del grafico
         ),
         xaxis=dict(
-            title=dict(text="Years (-)", font=dict(size=14)),
+            title=dict(text="Years (-)", font=dict(size=12)),
             tickfont=dict(size=12)
         ),
         yaxis=dict(
             title=dict(text=f"{cost_type_label} (Billion USD)", font=dict(size=12)),
-            tickfont=dict(size=2)
+            tickfont=dict(size=12)
         ),
         template="plotly_white",
         width=1400,
@@ -3272,84 +3175,131 @@ def preprocess_res_ces_share_eia(eia_gen_data):
 
 def compute_links_only_costs(network, name_tag):
     """
-    Compute costs for LINKS ONLY (power generation), excluding generators (end-uses).
-    For coal, oil, biomass: OPEX = OPEX_links (from statistics) + fuel costs (calculated).
+    Compute costs for power generation only:
+    - Include: Fossil fuel links + all other generators (solar, wind, nuclear, etc.)
+    - Exclude: Fossil fuel generators (coal, oil, gas, biomass) - these are end-uses
     """
-    costs_raw = network.statistics()[['Capital Expenditure', 'Operational Expenditure']]
     year_str = name_tag[-4:]
 
-    costs_reset = costs_raw.reset_index()
-
-    capex_raw = costs_reset[['carrier', 'Capital Expenditure']]
-    capex_raw['tech_label'] = capex_raw['carrier']
-
-    opex_raw = costs_reset[['carrier', 'Operational Expenditure']]
-    opex_raw['tech_label'] = opex_raw['carrier']
-
-    capex_grouped = capex_raw.groupby('tech_label', as_index=False).agg({
-        'Capital Expenditure': 'sum'
-    })
-    capex_grouped['cost_type'] = 'Capital expenditure'
-    capex_grouped.rename(columns={'Capital Expenditure': 'cost_billion'}, inplace=True)
-    capex_grouped['cost_billion'] /= 1e9
-    capex_grouped['year'] = year_str
-    capex_grouped['scenario'] = name_tag
-
-    opex_grouped = opex_raw.groupby('tech_label', as_index=False).agg({
-        'Operational Expenditure': 'sum'
-    })
-    opex_grouped.rename(columns={'Operational Expenditure': 'opex_billion'}, inplace=True)
-
-    carriers_of_interest = ["coal", "oil", "biomass"]
-    fuel_cost_adjustments = {}
-
-    for carrier in carriers_of_interest:
-        links = network.links[network.links.carrier == carrier]
-        total_fuel_cost = 0
-
-        for link_id in links.index:
-            try:
-                p0 = network.links_t.p0[link_id]
-                fuel_bus = links.loc[link_id, 'bus0']
-                fuel_price = network.buses_t.marginal_price[fuel_bus]
-                weightings = network.snapshot_weightings['objective']
-
-                fuel_cost = (-p0 * fuel_price * weightings).sum()
-                total_fuel_cost += fuel_cost
-            except KeyError:
-                continue
-
-        fuel_cost_adjustments[carrier] = total_fuel_cost / 1e9
-
+    # Get statistics separated by component type
+    costs_detailed = network.statistics(groupby=None)[['Capital Expenditure', 'Operational Expenditure']]
+    
+    fossil_carriers = ["coal", "gas", "oil", "biomass"]
+    
+    # Build the final dataset by combining the right components
     final_results = []
-
-    for _, row in capex_grouped.iterrows():
-        final_results.append(row.to_dict())
-
-    for _, row in opex_grouped.iterrows():
-        tech = row['tech_label']
-        opex_stat = row['opex_billion']
-
-        if tech in carriers_of_interest:
-            total_opex = opex_stat + fuel_cost_adjustments.get(tech, 0)
-            new_row = {
-                'tech_label': f'{tech} (power)',
-                'cost_type': 'Operational expenditure',
-                'cost_billion': total_opex,
-                'year': year_str,
-                'scenario': name_tag
-            }
-            final_results.append(new_row)
-        else:
+    
+    # 1. Add ALL Link costs (including fossil links for power generation)
+    try:
+        link_costs = costs_detailed.loc['Link'].reset_index()
+        link_costs['tech_label'] = link_costs['carrier']
+        
+        # CAPEX from links
+        link_capex = link_costs.groupby('tech_label', as_index=False).agg({
+            'Capital Expenditure': 'sum'
+        })
+        for _, row in link_capex.iterrows():
             final_results.append({
-                'tech_label': tech,
-                'cost_type': 'Operational expenditure',
-                'cost_billion': opex_stat,
+                'tech_label': row['tech_label'],
+                'cost_type': 'Capital expenditure',
+                'cost_billion': row['Capital Expenditure'] / 1e9,
                 'year': year_str,
                 'scenario': name_tag
             })
+        
+        # OPEX from links
+        link_opex = link_costs.groupby('tech_label', as_index=False).agg({
+            'Operational Expenditure': 'sum'
+        })
+        for _, row in link_opex.iterrows():
+            final_results.append({
+                'tech_label': row['tech_label'],
+                'cost_type': 'Operational expenditure', 
+                'cost_billion': row['Operational Expenditure'] / 1e9,
+                'year': year_str,
+                'scenario': name_tag
+            })
+            
+    except KeyError:
+        pass  # No links found
+    
+    # 2. Add NON-FOSSIL Generator costs (solar, wind, nuclear, etc.)
+    try:
+        gen_costs = costs_detailed.loc['Generator'].reset_index()
+        gen_costs['tech_label'] = gen_costs['carrier']
+        
+        # Filter out fossil generators (keep only non-fossil generators)
+        non_fossil_gen = gen_costs[~gen_costs['tech_label'].isin(fossil_carriers)]
+        
+        if len(non_fossil_gen) > 0:
+            # CAPEX from non-fossil generators
+            gen_capex = non_fossil_gen.groupby('tech_label', as_index=False).agg({
+                'Capital Expenditure': 'sum'
+            })
+            for _, row in gen_capex.iterrows():
+                final_results.append({
+                    'tech_label': row['tech_label'],
+                    'cost_type': 'Capital expenditure',
+                    'cost_billion': row['Capital Expenditure'] / 1e9,
+                    'year': year_str,
+                    'scenario': name_tag
+                })
+            
+            # OPEX from non-fossil generators
+            gen_opex = non_fossil_gen.groupby('tech_label', as_index=False).agg({
+                'Operational Expenditure': 'sum'
+            })
+            for _, row in gen_opex.iterrows():
+                final_results.append({
+                    'tech_label': row['tech_label'],
+                    'cost_type': 'Operational expenditure',
+                    'cost_billion': row['Operational Expenditure'] / 1e9,
+                    'year': year_str,
+                    'scenario': name_tag
+                })
+                
+    except KeyError:
+        pass  # No generators found
 
-    return pd.DataFrame(final_results)
+    # 3. Calculate and add FUEL COSTS for fossil fuel links
+    fuel_cost_adjustments = {}
+    
+    for carrier in fossil_carriers:
+        links = network.links[network.links.carrier == carrier]
+        total_fuel_cost = 0
+        
+        for link_id in links.index:
+            try:
+                p0 = network.links_t.p0[link_id]
+                fuel_bus = links.loc[link_id, 'bus0']  
+                fuel_price = network.buses_t.marginal_price[fuel_bus]
+                weightings = network.snapshot_weightings['objective']
+
+                # Calculate fuel cost (positive)
+                fuel_cost = (p0 * fuel_price * weightings).sum()
+                total_fuel_cost += fuel_cost
+                
+            except KeyError:
+                continue
+
+        if total_fuel_cost > 0:
+            fuel_cost_adjustments[carrier] = total_fuel_cost / 1e9
+
+    # 4. Modify fossil fuel link OPEX to add fuel costs and rename to (power)
+    df_results = pd.DataFrame(final_results)
+    
+    # Find fossil link OPEX entries and modify them
+    for carrier in fossil_carriers:
+        if carrier in fuel_cost_adjustments:
+            # Find the OPEX entry for this fossil carrier
+            mask = (df_results['tech_label'] == carrier) & (df_results['cost_type'] == 'Operational expenditure')
+            if mask.any():
+                # Add fuel costs to existing OPEX
+                df_results.loc[mask, 'cost_billion'] += fuel_cost_adjustments[carrier]
+                # Rename to (power) version
+                df_results.loc[mask, 'tech_label'] = f'{carrier} (power)'
+
+    return df_results
 
 
 def identify_power_generation_technologies(rename_techs_capex, rename_techs_opex, categories_capex, categories_opex):
@@ -3401,7 +3351,7 @@ def plot_power_generation_details(cost_data, cost_type_label, power_techs,
         (cost_data['cost_billion'] != 0)
     ].copy()
 
-    # Aggrega tecnologie con stesso nome (es. Offshore Wind AC+DC)
+    # Aggregate technologies with the same name (e.g., Offshore Wind AC + DC)
     power_data = power_data.groupby(
         ['tech_label', 'cost_type', 'year', 'scenario'], 
         as_index=False
@@ -3472,7 +3422,7 @@ def plot_power_generation_details(cost_data, cost_type_label, power_techs,
     fig.update_layout(
         barmode='relative',  # Handle negative values correctly
         title=dict(
-            text=f'Power & Heat Generation - {cost_type_label}',
+            text=f'Power Generation - {cost_type_label}',
             font=dict(size=16)
         ),
         xaxis=dict(
@@ -3480,7 +3430,7 @@ def plot_power_generation_details(cost_data, cost_type_label, power_techs,
             tickfont=dict(size=12)
         ),
         yaxis=dict(
-            title=dict(text=f"{cost_type_label} (Billion USD)", font=dict(size=14)),
+            title=dict(text=f"{cost_type_label} (Billion USD)", font=dict(size=12)),
             tickfont=dict(size=12)
         ),
         template="plotly_white",
@@ -3502,3 +3452,216 @@ def plot_power_generation_details(cost_data, cost_type_label, power_techs,
     fig.add_hline(y=0, line_width=1, line_color="black")
     
     return fig
+
+def compute_h2_efuels_costs(network, name_tag):
+    """
+    Compute costs for H2 and e-fuels technologies (links only)
+    """
+    year_str = name_tag[-4:]
+    
+    # Define H2 and e-fuels technologies
+    h2_efuels_carriers = ["Alkaline electrolyzer large", "Fischer-Tropsch", "PEM electrolyzer", "SOEC"]
+    
+    # Get statistics separated by component type
+    costs_detailed = network.statistics(groupby=None)[['Capital Expenditure', 'Operational Expenditure']]
+    
+    final_results = []
+    
+    # Get ONLY Link costs for H2/e-fuels technologies
+    try:
+        link_costs = costs_detailed.loc['Link'].reset_index()
+        link_costs['tech_label'] = link_costs['carrier']
+        
+        # Filter for H2/e-fuels technologies only
+        h2_efuels_links = link_costs[link_costs['tech_label'].isin(h2_efuels_carriers)]
+        
+        if len(h2_efuels_links) > 0:
+            # CAPEX from H2/e-fuels links
+            link_capex = h2_efuels_links.groupby('tech_label', as_index=False).agg({
+                'Capital Expenditure': 'sum'
+            })
+            for _, row in link_capex.iterrows():
+                final_results.append({
+                    'tech_label': row['tech_label'],
+                    'cost_type': 'Capital expenditure',
+                    'cost_billion': row['Capital Expenditure'] / 1e9,
+                    'year': year_str,
+                    'scenario': name_tag
+                })
+            
+            # OPEX from H2/e-fuels links
+            link_opex = h2_efuels_links.groupby('tech_label', as_index=False).agg({
+                'Operational Expenditure': 'sum'
+            })
+            for _, row in link_opex.iterrows():
+                final_results.append({
+                    'tech_label': row['tech_label'],
+                    'cost_type': 'Operational expenditure', 
+                    'cost_billion': row['Operational Expenditure'] / 1e9,
+                    'year': year_str,
+                    'scenario': name_tag
+                })
+                
+    except KeyError:
+        pass  # No links found
+    
+    return pd.DataFrame(final_results)
+
+
+def plot_h2_efuels_details(cost_data, cost_type_label, tech_colors=None, tech_order=None):
+    """
+    Plot interactive detailed breakdown of H2 and e-fuels technologies
+    """
+    
+    # Filter for H2/e-fuels technologies
+    h2_efuels_data = cost_data[
+        (cost_data['cost_type'] == cost_type_label) &
+        (cost_data['cost_billion'].abs() > 0.001)  # Only values > 1 million USD
+    ].copy()
+    
+    if h2_efuels_data.empty:
+        print(f"No data for {cost_type_label}")
+        return
+
+    # Create pivot table: years x technologies
+    pivot_table = h2_efuels_data.pivot_table(
+        index='year',
+        columns='tech_label', 
+        values='cost_billion',
+        aggfunc='sum'
+    ).fillna(0)
+    
+    # Order technologies
+    if tech_order:
+        available_techs = set(pivot_table.columns)
+        ordered_techs = [tech for tech in tech_order if tech in available_techs]
+        remaining_techs = available_techs - set(ordered_techs)
+        ordered_techs.extend(sorted(remaining_techs))
+    else:
+        tech_totals = pivot_table.sum().sort_values(ascending=False)
+        ordered_techs = tech_totals.index.tolist()
+    
+    # Get colors for each technology
+    def get_tech_color(tech_label):
+        if tech_colors and tech_label in tech_colors:
+            return tech_colors[tech_label]
+        # Default colors matching your figure + magenta for Fischer-Tropsch
+        default_colors = {
+            "Alkaline electrolyzer large": "#1f77b4",  # Blue
+            "PEM electrolyzer": "#2ca02c",             # Green
+            "SOEC": "#d62728",                         # Red
+            "Fischer-Tropsch": "#e81cd0"               # Magenta
+        }
+        return default_colors.get(tech_label, "#999999")
+    
+    # Create interactive plotly chart
+    import plotly.graph_objects as go
+    
+    fig = go.Figure()
+    
+    # Add traces for each technology
+    for tech in ordered_techs:
+        y_values = pivot_table[tech]
+        # Skip if all values are zero
+        if (y_values == 0).all():
+            continue
+            
+        color = get_tech_color(tech)
+        
+        fig.add_trace(go.Bar(
+            name=tech,
+            x=pivot_table.index.astype(str),
+            y=y_values,
+            marker_color=color,
+            hovertemplate=f"%{{x}}<br>{tech}: %{{y:.2f}}B USD<extra></extra>"
+        ))
+    
+    # Update layout
+    fig.update_layout(
+        barmode='relative',
+        title=dict(
+            text=f'H2 & e-fuels Technologies - {cost_type_label}',
+            font=dict(size=16)
+        ),
+        xaxis=dict(
+            title=dict(text="Years", font=dict(size=14)),
+            tickfont=dict(size=12)
+        ),
+        yaxis=dict(
+            title=dict(text=f"{cost_type_label} (Billion USD)", font=dict(size=14)),
+            tickfont=dict(size=12),
+            tickformat=".2f"  # Force decimal format, no scientific notation
+        ),
+        template="plotly_white",
+        width=1200,
+        height=600,
+        margin=dict(l=40, r=200, t=50, b=50),
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=1,
+            xanchor="left", 
+            x=1.02,
+            font=dict(size=12),
+            traceorder='reversed'
+        )
+    )
+    
+    # Add horizontal line at zero
+    fig.add_hline(y=0, line_width=1, line_color="black")
+    
+    return fig
+
+
+def create_h2_efuels_analysis(networks):
+    """
+    Create complete analysis for H2 and e-fuels
+    """
+    
+    # Compute costs for all networks
+    all_h2_efuels_costs = []
+    for name_tag, network in networks.items():
+        df_costs = compute_h2_efuels_costs(network, name_tag)
+        all_h2_efuels_costs.append(df_costs)
+
+    df_h2_efuels_costs = pd.concat(all_h2_efuels_costs, ignore_index=True)
+    
+    # Define technology order (H2 first, then e-fuels)
+    h2_efuels_order = [
+        "Alkaline electrolyzer large",  # H2
+        "PEM electrolyzer",             # H2
+        "SOEC",                         # H2
+        "Fischer-Tropsch"               # e-fuels
+    ]
+    
+    # Define colors matching your figure + magenta for Fischer-Tropsch
+    h2_efuels_colors = {
+        "Alkaline electrolyzer large": "#1f77b4",  # Blue (from your figure)
+        "PEM electrolyzer": "#2ca02c",             # Green (from your figure)
+        "SOEC": "#d62728",                         # Red (from your figure)
+        "Fischer-Tropsch": "#e81cd0"               # Magenta
+    }
+    
+    # Create CAPEX plot
+    fig1 = plot_h2_efuels_details(
+        df_h2_efuels_costs,
+        "Capital expenditure",
+        tech_colors=h2_efuels_colors,
+        tech_order=h2_efuels_order
+    )
+    
+    # Create OPEX plot
+    fig2 = plot_h2_efuels_details(
+        df_h2_efuels_costs,
+        "Operational expenditure",
+        tech_colors=h2_efuels_colors,
+        tech_order=h2_efuels_order
+    )
+    
+    # Show plots
+    if fig1:
+        fig1.show()
+    if fig2:
+        fig2.show()
+    
+    return df_h2_efuels_costs

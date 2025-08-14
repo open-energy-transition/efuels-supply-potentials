@@ -10,7 +10,6 @@ sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 import shutil
 import warnings
 
-warnings.filterwarnings("ignore")
 from scripts._helper import (
     configure_logging,
     create_logger,
@@ -18,6 +17,7 @@ from scripts._helper import (
     update_config_from_wildcards,
 )
 
+warnings.filterwarnings("ignore")
 logger = create_logger(__name__)
 
 

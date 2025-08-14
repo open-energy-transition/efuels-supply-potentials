@@ -9,7 +9,6 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 import warnings
 
-warnings.filterwarnings("ignore")
 from scripts._helper import (
     PYPSA_EARTH_DIR,
     configure_logging,
@@ -19,6 +18,7 @@ from scripts._helper import (
     update_config_from_wildcards,
 )
 
+warnings.filterwarnings("ignore")
 logger = create_logger(__name__)
 
 

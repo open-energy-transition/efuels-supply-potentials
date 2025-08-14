@@ -9,7 +9,6 @@ import sys
 import warnings
 
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
-warnings.filterwarnings("ignore")
 
 from scripts._helper import (
     configure_logging,
@@ -18,6 +17,7 @@ from scripts._helper import (
     update_config_from_wildcards,
 )
 
+warnings.filterwarnings("ignore")
 logger = create_logger(__name__)
 
 if __name__ == "__main__":

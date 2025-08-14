@@ -8,12 +8,11 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 import warnings
-
 import pandas as pd
 
-warnings.filterwarnings("ignore")
 from scripts._helper import create_logger, mock_snakemake, update_config_from_wildcards
 
+warnings.filterwarnings("ignore")
 logger = create_logger(__name__)
 
 

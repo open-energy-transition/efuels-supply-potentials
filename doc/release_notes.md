@@ -49,7 +49,7 @@ Please list contributions, add reference to PRs if present.
 
 * Add **custom ammonia, ethanol, cement and steel industries** [PR #50](https://github.com/open-energy-transition/efuels-supply-potentials/pull/50)
 
-* Add **dynamic blending rate selection** rule [PR #55](https://github.com/open-energy-transition/efuels-supply-potentials/pull/55) 
+* Add **dynamic blending rate selection** rule [PR #55](https://github.com/open-energy-transition/efuels-supply-potentials/pull/55)
 
 * Add custom rule to **fetch scenario-dependent growth rates** for the US [PR #57](https://github.com/open-energy-transition/efuels-supply-potentials/pull/51)
 

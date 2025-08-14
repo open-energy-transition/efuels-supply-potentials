@@ -70,3 +70,4 @@ repos:
   rev: v5.0.2
   hooks:
   - id: reuse
+    exclude: ^(submodules/|\.git/)

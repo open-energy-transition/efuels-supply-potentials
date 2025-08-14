@@ -41,10 +41,10 @@ SPDX-License-Identifier = "CC0-1.0"
 path = "notebooks/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
-SPDX-License-Identifier = "CC0-1.0"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
 
 [[annotations]]
 path = "doc/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
-SPDX-License-Identifier = "CC0-1.0"
+SPDX-License-Identifier = "AGPL-3.0-or-later"

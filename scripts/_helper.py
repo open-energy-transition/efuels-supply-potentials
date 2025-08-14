@@ -13,20 +13,13 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import pypsa
-import pandas as pd
-import logging
-import random
 import snakemake as sm
 import yaml
 from pypsa.descriptors import Dict
 from snakemake.script import Snakemake
 
-import re
-from pathlib import Path 
-from zipfile import ZipFile
-from pypsa.components import component_attrs, components
 import googledrivedownloader as gdd
-import warnings
+
 warnings.filterwarnings("ignore")
 
 
@@ -210,14 +203,6 @@ def load_pypsa_network(scenario_folder):
     return network
 
 
-def load_network(path):
-    """
-    Loads a PyPSA network from a path
-    """
-    network = pypsa.Network(path)
-    return network
-
-
 def create_logger(logger_name, level=logging.INFO):
     """
     Create a logger for a module and adds a handler needed to capture in logs
@@ -326,7 +311,7 @@ def download_and_unzip_gdrive(
     except Exception as e:
         logger.error(f"Failed to download or extract the file: {str(e)}")
         return False
-    
+
 
 def osm_raw_outputs():
     outputs = [

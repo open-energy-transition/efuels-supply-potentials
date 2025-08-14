@@ -1,16 +1,25 @@
+# -*- coding: utf-8 -*-
 # SPDX-FileCopyrightText:  Open Energy Transition gGmbH
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../submodules/pypsa-earth/scripts/")))
+
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
+sys.path.append(
+    os.path.abspath(os.path.join(__file__, "../../submodules/pypsa-earth/scripts/"))
+)
 import pandas as pd
 import numpy as np
 import geopandas as gpd
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            configure_logging, load_network
+from scripts._helper import (
+    mock_snakemake,
+    update_config_from_wildcards,
+    create_logger,
+    configure_logging,
+    load_network,
+)
 from _helpers import prepare_costs
 from prepare_sector_network import normalize_by_country, p_set_from_scaling
 from build_demand_profiles_from_eia import read_data_center_profiles
@@ -21,7 +30,7 @@ logger = create_logger(__name__)
 
 def add_ammonia(n):
     """
-        Adds ammonia buses and stores, and adds links between ammonia and hydrogen bus
+    Adds ammonia buses and stores, and adds links between ammonia and hydrogen bus
     """
     # add ammonia carrier
     n.add("Carrier", "NH3")
@@ -68,10 +77,15 @@ def add_ammonia(n):
         / costs.at["Haber-Bosch", "electricity-input"],
         lifetime=costs.at["Haber-Bosch", "lifetime"],
     )
-    logger.info("Added Haber-Bosch process to produce ammonia from hydrogen and electricity")
+    logger.info(
+        "Added Haber-Bosch process to produce ammonia from hydrogen and electricity"
+    )
 
     # add ammonia demand in MWh
-    p_set = industrial_demand.loc[nodes, "ammonia"].rename(index=lambda x: x + " NH3") / nhours
+    p_set = (
+        industrial_demand.loc[nodes, "ammonia"].rename(index=lambda x: x + " NH3")
+        / nhours
+    )
     n.madd(
         "Load",
         nodes + " NH3",
@@ -84,7 +98,9 @@ def add_ammonia(n):
     # CCS retrofit for ammonia
     if "ammonia" in snakemake.params.ccs_retrofit:
         # prepare buses for SMR CC
-        SMR_CC_links = n.links.query("carrier == 'SMR'").copy().rename(index=lambda x: x + " CC")
+        SMR_CC_links = (
+            n.links.query("carrier == 'SMR'").copy().rename(index=lambda x: x + " CC")
+        )
         gas_buses = SMR_CC_links.bus0
         h2_buses = SMR_CC_links.bus1
         co2_stored_buses = gas_buses.str.replace("gas", "co2 stored")
@@ -114,7 +130,9 @@ def add_ammonia(n):
             * (1 - costs.at["ammonia carbon capture retrofit", "capture_rate"]),
             efficiency3=costs.at["gas", "CO2 intensity"]
             * costs.at["ammonia carbon capture retrofit", "capture_rate"],
-            efficiency4=-costs.at["ammonia carbon capture retrofit", "electricity-input"]
+            efficiency4=-costs.at[
+                "ammonia carbon capture retrofit", "electricity-input"
+            ]
             * costs.at["gas", "CO2 intensity"]
             * costs.at["ammonia carbon capture retrofit", "capture_rate"],
             capital_cost=capital_cost,
@@ -125,7 +143,7 @@ def add_ammonia(n):
 
 def add_ethanol(n):
     """
-        Adds ethanol buses and stores, and adds links between ethanol and hydrogen bus
+    Adds ethanol buses and stores, and adds links between ethanol and hydrogen bus
     """
     # bioethanol crop carrier
     n.add("Carrier", "bioethanol crop")
@@ -188,7 +206,10 @@ def add_ethanol(n):
     logger.info("Added links to model starch-based ethanol plants")
 
     # add ethanol demand in MWh
-    p_set = industrial_demand.loc[nodes, "ethanol"].rename(index=lambda x: x + " ethanol") / nhours
+    p_set = (
+        industrial_demand.loc[nodes, "ethanol"].rename(index=lambda x: x + " ethanol")
+        / nhours
+    )
     n.madd(
         "Load",
         nodes + " ethanol",
@@ -222,7 +243,9 @@ def add_ethanol(n):
             efficiency=costs.at["ethanol from starch crop", "efficiency"],
             efficiency2=costs.at["bioethanol crops", "CO2 intensity"]
             * costs.at["ethanol carbon capture retrofit", "capture_rate"],
-            efficiency3=-costs.at["ethanol carbon capture retrofit", "electricity-input"]
+            efficiency3=-costs.at[
+                "ethanol carbon capture retrofit", "electricity-input"
+            ]
             * costs.at["bioethanol crops", "CO2 intensity"]
             * costs.at["ethanol carbon capture retrofit", "capture_rate"],
             capital_cost=capital_cost,
@@ -234,7 +257,7 @@ def add_ethanol(n):
 
 def add_steel(n):
     """
-        Adds steel buses and stores, and adds links to produce iron and steel
+    Adds steel buses and stores, and adds links to produce iron and steel
     """
     # add iron ore carrier
     n.add("Carrier", "iron ore")
@@ -280,7 +303,13 @@ def add_steel(n):
     logger.info("Added DRI carrier and buses")
 
     # add DRI load in ton
-    p_set = industrial_demand.loc[nodes, "DRI + Electric arc"].rename(index=lambda x: x + " DRI") * 1e3 / nhours
+    p_set = (
+        industrial_demand.loc[nodes, "DRI + Electric arc"].rename(
+            index=lambda x: x + " DRI"
+        )
+        * 1e3
+        / nhours
+    )
     n.madd(
         "Load",
         nodes + " DRI",
@@ -300,7 +329,8 @@ def add_steel(n):
         bus3="co2 atmoshpere",
         p_nom_extendable=True,
         carrier="DRI",
-        efficiency=1/costs.at["natural gas direct iron reduction furnace", "gas-input"],
+        efficiency=1
+        / costs.at["natural gas direct iron reduction furnace", "gas-input"],
         efficiency2=-costs.at["natural gas direct iron reduction furnace", "ore-input"]
         / costs.at["natural gas direct iron reduction furnace", "gas-input"],
         efficiency3=costs.at["gas", "CO2 intensity"],
@@ -333,8 +363,11 @@ def add_steel(n):
             bus5=nodes,
             p_nom_extendable=True,
             carrier="DRI CC",
-            efficiency=1/costs.at["natural gas direct iron reduction furnace", "gas-input"],
-            efficiency2=-costs.at["natural gas direct iron reduction furnace", "ore-input"]
+            efficiency=1
+            / costs.at["natural gas direct iron reduction furnace", "gas-input"],
+            efficiency2=-costs.at[
+                "natural gas direct iron reduction furnace", "ore-input"
+            ]
             / costs.at["natural gas direct iron reduction furnace", "gas-input"],
             efficiency3=costs.at["gas", "CO2 intensity"]
             * (1 - costs.at["steel carbon capture retrofit", "capture_rate"]),
@@ -358,12 +391,26 @@ def add_steel(n):
             bus2=nodes,
             p_nom_extendable=True,
             carrier="DRI H2",
-            efficiency=1/costs.at["hydrogen natural gas direct iron reduction furnace", "hydrogen-input"],
-            efficiency2=-costs.at["hydrogen natural gas direct iron reduction furnace", "electricity-input"]
-            / costs.at["hydrogen natural gas direct iron reduction furnace", "hydrogen-input"],
-            capital_cost=costs.at["hydrogen natural gas direct iron reduction furnace", "fixed"]
-            / costs.at["hydrogen natural gas direct iron reduction furnace", "hydrogen-input"],
-            lifetime=costs.at["hydrogen natural gas direct iron reduction furnace", "lifetime"],
+            efficiency=1
+            / costs.at[
+                "hydrogen natural gas direct iron reduction furnace", "hydrogen-input"
+            ],
+            efficiency2=-costs.at[
+                "hydrogen natural gas direct iron reduction furnace",
+                "electricity-input",
+            ]
+            / costs.at[
+                "hydrogen natural gas direct iron reduction furnace", "hydrogen-input"
+            ],
+            capital_cost=costs.at[
+                "hydrogen natural gas direct iron reduction furnace", "fixed"
+            ]
+            / costs.at[
+                "hydrogen natural gas direct iron reduction furnace", "hydrogen-input"
+            ],
+            lifetime=costs.at[
+                "hydrogen natural gas direct iron reduction furnace", "lifetime"
+            ],
         )
         logger.info("Added DRI process to produce steel from hydrogen")
 
@@ -380,7 +427,13 @@ def add_steel(n):
     logger.info("Added steel BF-BOF carrier and buses")
 
     # add steel BF-BOF demand in ton
-    p_set = industrial_demand.loc[nodes, "Integrated steelworks"].rename(index=lambda x: x + " steel BF-BOF") * 1e3 / nhours
+    p_set = (
+        industrial_demand.loc[nodes, "Integrated steelworks"].rename(
+            index=lambda x: x + " steel BF-BOF"
+        )
+        * 1e3
+        / nhours
+    )
     n.madd(
         "Load",
         nodes + " steel BF-BOF",
@@ -432,7 +485,7 @@ def add_steel(n):
         bus4="co2 atmoshpere",
         p_nom_extendable=True,
         carrier="BF-BOF",
-        efficiency=1/costs.at["blast furnace-basic oxygen furnace", "coal-input"],
+        efficiency=1 / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
         efficiency2=-costs.at["blast furnace-basic oxygen furnace", "ore-input"]
         / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
         efficiency3=-costs.at["blast furnace-basic oxygen furnace", "scrap-input"]
@@ -466,7 +519,7 @@ def add_steel(n):
             bus5=nodes + " co2 stored",
             p_nom_extendable=True,
             carrier="BF-BOF CC",
-            efficiency=1/costs.at["blast furnace-basic oxygen furnace", "coal-input"],
+            efficiency=1 / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
             efficiency2=-costs.at["blast furnace-basic oxygen furnace", "ore-input"]
             / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
             efficiency3=-costs.at["blast furnace-basic oxygen furnace", "scrap-input"]
@@ -493,7 +546,13 @@ def add_steel(n):
     logger.info("Added steel EAF carrier and buses")
 
     # add steel EAF demand in ton
-    p_set = industrial_demand.loc[nodes, "Electric arc"].rename(index=lambda x: x + " steel EAF") * 1e3 / nhours
+    p_set = (
+        industrial_demand.loc[nodes, "Electric arc"].rename(
+            index=lambda x: x + " steel EAF"
+        )
+        * 1e3
+        / nhours
+    )
     n.madd(
         "Load",
         nodes + " steel EAF",
@@ -512,7 +571,8 @@ def add_steel(n):
         bus2=nodes + " scrap",
         p_nom_extendable=True,
         carrier="EAF",
-        efficiency=1/costs.at["electric arc furnace with hbi and scrap", "electricity-input"],
+        efficiency=1
+        / costs.at["electric arc furnace with hbi and scrap", "electricity-input"],
         efficiency2=-costs.at["electric arc furnace with hbi and scrap", "scrap-input"]
         / costs.at["electric arc furnace with hbi and scrap", "electricity-input"],
         capital_cost=costs.at["electric arc furnace with hbi and scrap", "fixed"]
@@ -524,7 +584,7 @@ def add_steel(n):
 
 def add_cement(n):
     """
-        Adds cement buses and stores, and adds links to produce cement
+    Adds cement buses and stores, and adds links to produce cement
     """
     # add cement dry clinker carrier
     n.add("Carrier", "clinker")
@@ -561,7 +621,11 @@ def add_cement(n):
     logger.info("Added cement carrier and buses")
 
     # add cement load in ton
-    p_set = industrial_demand.loc[nodes, "Cement"].rename(index=lambda x: x + " cement") * 1e3 / nhours
+    p_set = (
+        industrial_demand.loc[nodes, "Cement"].rename(index=lambda x: x + " cement")
+        * 1e3
+        / nhours
+    )
     n.madd(
         "Load",
         nodes + " cement",
@@ -581,7 +645,7 @@ def add_cement(n):
         bus3="co2 atmoshpere",
         p_nom_extendable=True,
         carrier="dry clinker",
-        efficiency=1/costs.at["cement dry clinker", "gas-input"],
+        efficiency=1 / costs.at["cement dry clinker", "gas-input"],
         efficiency2=-costs.at["cement dry clinker", "electricity-input"]
         / costs.at["cement dry clinker", "gas-input"],
         efficiency3=costs.at["gas", "CO2 intensity"],
@@ -602,7 +666,7 @@ def add_cement(n):
         bus2=nodes,
         p_nom_extendable=True,
         carrier="cement finishing",
-        efficiency=1/costs.at["cement finishing", "clinker-input"],
+        efficiency=1 / costs.at["cement finishing", "clinker-input"],
         efficiency2=-costs.at["cement finishing", "electricity-input"]
         / costs.at["cement finishing", "clinker-input"],
         capital_cost=costs.at["cement finishing", "fixed"]
@@ -611,7 +675,9 @@ def add_cement(n):
         / costs.at["cement finishing", "clinker-input"],
         lifetime=costs.at["cement finishing", "lifetime"],
     )
-    logger.info("Added cement finishing process to produce cement from clinker and electricity")
+    logger.info(
+        "Added cement finishing process to produce cement from clinker and electricity"
+    )
 
     # add cement dry clinker CC
     if "cement" in snakemake.params.ccs_retrofit:
@@ -638,7 +704,7 @@ def add_cement(n):
             bus4=nodes + " co2 stored",
             p_nom_extendable=True,
             carrier="dry clinker CC",
-            efficiency=1/costs.at["cement dry clinker", "gas-input"],
+            efficiency=1 / costs.at["cement dry clinker", "gas-input"],
             efficiency2=-costs.at["cement dry clinker", "electricity-input"]
             / costs.at["cement dry clinker", "gas-input"],
             efficiency3=costs.at["gas", "CO2 intensity"]
@@ -654,30 +720,32 @@ def add_cement(n):
 
 def extend_links(n, level):
     """
-        Replace NaN for bus and efficiency of the links for selected level
+    Replace NaN for bus and efficiency of the links for selected level
     """
     # find links with efficiency of NaN for given level
     nan_techs = n.links[n.links[f"efficiency{level}"].isna()].index
-    n.links.loc[nan_techs, f'bus{level}'] = ""
-    n.links.loc[nan_techs, f'efficiency{level}'] = 1.0
+    n.links.loc[nan_techs, f"bus{level}"] = ""
+    n.links.loc[nan_techs, f"efficiency{level}"] = 1.0
     logger.info(f"Fill bus{level} and efficiency{level} with default values")
 
 
 def split_biogenic_CO2(n):
     """
-        Splits biogenic co2 out of co2 stored
+    Splits biogenic co2 out of co2 stored
     """
     # add biogenic co2 carrier
     n.add("Carrier", "biogenic co2", co2_emissions=0)
 
     # add biogenic co2 stored buses
     co2_stored_buses = n.buses.query("carrier in 'co2 stored'")
-    biogenic_co2_stored_buses = [x.replace("co2 stored", "biogenic co2 stored") for x in co2_stored_buses.index]
+    biogenic_co2_stored_buses = [
+        x.replace("co2 stored", "biogenic co2 stored") for x in co2_stored_buses.index
+    ]
     n.madd(
         "Bus",
         biogenic_co2_stored_buses,
         location=co2_stored_buses.location.values,
-        carrier="biogenic co2 stored"
+        carrier="biogenic co2 stored",
     )
 
     # add biogenic co2 store
@@ -711,21 +779,29 @@ def split_biogenic_CO2(n):
     ethanol_CC_links = n.links.query("carrier in @ethanol_CC_carrier").index
 
     # switch bus2 of ethanol from starch CC from co2 stored to biogenic co2 stored
-    n.links.loc[ethanol_CC_links, "bus2"] = n.links.loc[ethanol_CC_links, "bus2"].str.replace("co2 stored","biogenic co2 stored")
-    logger.info(f"Rerouted {ethanol_CC_carrier} output from 'co2 stored' buses to 'biogenic co2 stored' buses")
+    n.links.loc[ethanol_CC_links, "bus2"] = n.links.loc[
+        ethanol_CC_links, "bus2"
+    ].str.replace("co2 stored", "biogenic co2 stored")
+    logger.info(
+        f"Rerouted {ethanol_CC_carrier} output from 'co2 stored' buses to 'biogenic co2 stored' buses"
+    )
 
     # get Fischer-Tropsch links to reroute input to biogenic co2 stored
     ft_carrier = "Fischer-Tropsch"
     ft_links = n.links.query("carrier in @ft_carrier").index
 
     # switch bus2 of Fischer-Tropsch from co2 stored to biogenic co2 stored
-    n.links.loc[ft_links, "bus2"] = n.links.loc[ft_links, "bus2"].str.replace("co2 stored", "biogenic co2 stored")
-    logger.info(f"Rerouted {ft_carrier} input from 'co2 stored' buses to 'biogenic co2 stored' buses")
+    n.links.loc[ft_links, "bus2"] = n.links.loc[ft_links, "bus2"].str.replace(
+        "co2 stored", "biogenic co2 stored"
+    )
+    logger.info(
+        f"Rerouted {ft_carrier} input from 'co2 stored' buses to 'biogenic co2 stored' buses"
+    )
 
 
 def define_grid_H2(n):
     """
-        Marks output of electrolysis as grid H2 and connects only grid H2 to Fischer-Tropsch
+    Marks output of electrolysis as grid H2 and connects only grid H2 to Fischer-Tropsch
     """
     # add grid H2 carrier
     n.add("Carrier", "grid H2")
@@ -745,16 +821,22 @@ def define_grid_H2(n):
 
     # get electrolyzers
     electrolysis_carriers = ["Alkaline electrolyzer large", "PEM electrolyzer", "SOEC"]
-    electrolyzers = n.links.query("carrier in @electrolysis_carriers")
+    electrolyzers = n.links[n.links.carrier.isin(electrolysis_carriers)]
 
     # reroute output of electrolyzers from H2 to grid H2
-    n.links.loc[electrolyzers.index, "bus1"] = n.links.loc[electrolyzers.index, "bus1"].str.replace("H2", "grid H2")
-    logger.info(f"Rerouted output of {electrolyzers.carrier.unique()} from 'H2' buses to 'grid H2' buses")
+    n.links.loc[electrolyzers.index, "bus1"] = n.links.loc[
+        electrolyzers.index, "bus1"
+    ].str.replace("H2", "grid H2")
+    logger.info(
+        f"Rerouted output of {electrolyzers.carrier.unique()} from 'H2' buses to 'grid H2' buses"
+    )
 
     # make sure Fischer-Tropsch uses grid H2 instead of H2
     ft_carrier = "Fischer-Tropsch"
     ft_links = n.links.query("carrier in @ft_carrier").index
-    n.links.loc[ft_links, "bus0"] = n.links.loc[ft_links, "bus0"].str.replace("H2", "grid H2")
+    n.links.loc[ft_links, "bus0"] = n.links.loc[ft_links, "bus0"].str.replace(
+        "H2", "grid H2"
+    )
     logger.info(f"Rerouted input of {ft_carrier} from 'H2' buses to 'grid H2' buses")
 
     # connect grid H2 buses to H2 buses so H2 can be supplied
@@ -773,7 +855,7 @@ def define_grid_H2(n):
 
 def add_other_electricity(n):
     """
-        Adds other electricity load to the network
+    Adds other electricity load to the network
     """
     # read energy totals
     energy_totals = pd.read_csv(snakemake.input.energy_totals, index_col=0)
@@ -802,9 +884,9 @@ def add_other_electricity(n):
 
 def get_gadm_to_bus_mapping(n, gadm_shape_path, geo_crs):
     """
-        Maps each gadm shape to one of the AC/DC buses. For each gadm shape, the bus is assigned as:
-        1) If bus lies within gadm shape, then this bus is assigned to gadm shape
-        2) If there is no bus inside of the shape, then nearest bus is assigned to the shape
+    Maps each gadm shape to one of the AC/DC buses. For each gadm shape, the bus is assigned as:
+    1) If bus lies within gadm shape, then this bus is assigned to gadm shape
+    2) If there is no bus inside of the shape, then nearest bus is assigned to the shape
     """
     # build GeoDataFrame of bus locations
     buses_gdf = gpd.GeoDataFrame(
@@ -862,23 +944,27 @@ def get_gadm_to_bus_mapping(n, gadm_shape_path, geo_crs):
 
 def add_data_centers_load(n):
     """
-        Adds data centers loads based on state-wise data
+    Adds data centers loads based on state-wise data
     """
     # data center demand year
-    demand_horizon = "2023" if snakemake.wildcards.planning_horizons == "2020" else snakemake.wildcards.planning_horizons
+    demand_horizon = (
+        "2023"
+        if snakemake.wildcards.planning_horizons == "2020"
+        else snakemake.wildcards.planning_horizons
+    )
 
     # read data center loads data for given horizon
-    demand_data_centers = read_data_center_profiles(demand_horizon, snakemake.params.data_center_profiles)
+    demand_data_centers = read_data_center_profiles(
+        demand_horizon, snakemake.params.data_center_profiles
+    )
 
     # get spatial mapping of network buses to states
-    gadm_to_bus_mapping = get_gadm_to_bus_mapping(n, snakemake.input.gadm_shape, snakemake.params.geo_crs)
+    gadm_to_bus_mapping = get_gadm_to_bus_mapping(
+        n, snakemake.input.gadm_shape, snakemake.params.geo_crs
+    )
 
     # map data center demands to buses
-    bus_demand = (
-        demand_data_centers
-        .groupby(gadm_to_bus_mapping)
-        .sum()
-    )
+    bus_demand = demand_data_centers.groupby(gadm_to_bus_mapping).sum()
 
     # add static data center load to the network
     n.madd(
@@ -886,10 +972,10 @@ def add_data_centers_load(n):
         bus_demand.index,
         suffix=" data center",
         bus=bus_demand.index,
-        p_set=bus_demand * 1e3, # convert to MW
+        p_set=bus_demand * 1e3,  # convert to MW
         carrier="data center",
     )
-    logger.info(f"Added data center loads")
+    logger.info("Added data center loads")
 
 
 if __name__ == "__main__":
@@ -916,7 +1002,9 @@ if __name__ == "__main__":
     n = load_network(snakemake.input.network)
 
     # load custom industrial energy demands
-    industrial_demand = pd.read_csv(snakemake.input.industrial_energy_demand_per_node, index_col=0)
+    industrial_demand = pd.read_csv(
+        snakemake.input.industrial_energy_demand_per_node, index_col=0
+    )
 
     # get industry nodes
     nodes = industrial_demand.rename_axis("Bus").index
@@ -956,7 +1044,11 @@ if __name__ == "__main__":
         extend_links(n, level=5)
 
     # apply biogenic CO2 split
-    if snakemake.params.biogenic_co2 and snakemake.params.add_ethanol and ("ethanol" in snakemake.params.ccs_retrofit):
+    if (
+        snakemake.params.biogenic_co2
+        and snakemake.params.add_ethanol
+        and ("ethanol" in snakemake.params.ccs_retrofit)
+    ):
         split_biogenic_CO2(n)
 
     # define electrolysis output as grid H2 to be used in Fischer-Tropsch

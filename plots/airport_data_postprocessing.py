@@ -34,7 +34,7 @@ def plot_consumption_per_passenger(final_data):
 def plot_comparision_consumption_passengers(df):
     fig, ax1 = plt.subplots(figsize=(12, 3))
     bar_width = 0.8
-    bars = ax1.bar(
+    ax1.bar(
         df["State"],
         df["Passengers"],
         width=bar_width,
@@ -43,7 +43,7 @@ def plot_comparision_consumption_passengers(df):
         label="Passengers",
     )
     ax2 = ax1.twinx()
-    line = ax2.plot(
+    ax2.plot(
         df["State"],
         df["Consumption (thousand barrels)"] / 1e3,
         color="red",

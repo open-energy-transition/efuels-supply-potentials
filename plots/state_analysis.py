@@ -15,7 +15,6 @@ import pypsa
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 from scripts._helper import (
     DATA_DIR,
-    load_pypsa_network,
     mock_snakemake,
     update_config_from_wildcards,
 )
@@ -54,7 +53,6 @@ def preprocess_eia_capacity(path, year):
         "Wind": "wind",
         "Nuclear": "nuclear",
         "Geothermal": "geothermal",
-        "Pumped Storage": "PHS",
         "Wood and Wood Derived Fuels": "biomass",
     }
 

@@ -32,6 +32,12 @@ SPDX-FileCopyrightText = "U.S. Department of Transportation, Bureau of Transport
 SPDX-License-Identifier = "CC0-1.0"
 
 [[annotations]]
+path = "data/demand_projections/*.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "National Renewable Energy Laboratory (Alliance), U.S. Department of Energy"
+SPDX-License-Identifier = "LicenseRef-NREL-Standard"
+
+[[annotations]]
 path = ".github/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Open Energy Transition gGmbH"

@@ -38,6 +38,12 @@ SPDX-FileCopyrightText = "National Renewable Energy Laboratory (Alliance), U.S. 
 SPDX-License-Identifier = "LicenseRef-NREL-Standard"
 
 [[annotations]]
+path = "data/industry_data/ethanolcapacity.xlsx"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "U.S. Energy Information Administration"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
 path = ".github/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Open Energy Transition gGmbH"

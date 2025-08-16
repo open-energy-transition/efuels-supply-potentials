@@ -16,13 +16,19 @@ SPDX-License-Identifier = "CC-BY-4.0"
 [[annotations]]
 path = "data/airport_data/airports.csv"
 precedence = "aggregate"
-SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-FileCopyrightText = "OurAirports (public domain, https://ourairports.com/data/)"
 SPDX-License-Identifier = "Unlicense"
 
 [[annotations]]
 path = "data/airport_data/fuel_jf.csv"
 precedence = "aggregate"
-SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-FileCopyrightText = "U.S. Energy Information Administration"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = "data/airport_data/T100_Domestic_Market_and_Segment_Data_-3591723781169319541.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "U.S. Department of Transportation, Bureau of Transportation Statistics"
 SPDX-License-Identifier = "CC0-1.0"
 
 [[annotations]]

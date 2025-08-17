@@ -1,3 +1,41 @@
 *.yaml text eol=lf
 *.yml text eol=lf
 .yamllint text eol=lf
+
+# Git LFS tracking for large files (>2MB)
+# Airport data
+data/airport_data/airports.csv filter=lfs diff=lfs merge=lfs -text
+data/airport_data/merged_airports_data.csv filter=lfs diff=lfs merge=lfs -text
+
+# Demand projections scaling factors
+data/demand_projections/Scaling_Factor_High_Moderate_2024_by_state.csv filter=lfs diff=lfs merge=lfs -text
+data/demand_projections/Scaling_Factor_High_Moderate_2030_by_state.csv filter=lfs diff=lfs merge=lfs -text
+data/demand_projections/Scaling_Factor_High_Moderate_2035_by_state.csv filter=lfs diff=lfs merge=lfs -text
+data/demand_projections/Scaling_Factor_High_Moderate_2040_by_state.csv filter=lfs diff=lfs merge=lfs -text
+data/demand_projections/Scaling_Factor_High_Moderate_2050_by_state.csv filter=lfs diff=lfs merge=lfs -text
+data/demand_projections/Scaling_Factor_Medium_Moderate_2024_by_state.csv filter=lfs diff=lfs merge=lfs -text
+data/demand_projections/Scaling_Factor_Medium_Moderate_2030_by_state.csv filter=lfs diff=lfs merge=lfs -text
+data/demand_projections/Scaling_Factor_Medium_Moderate_2035_by_state.csv filter=lfs diff=lfs merge=lfs -text
+data/demand_projections/Scaling_Factor_Medium_Moderate_2040_by_state.csv filter=lfs diff=lfs merge=lfs -text
+data/demand_projections/Scaling_Factor_Medium_Moderate_2050_by_state.csv filter=lfs diff=lfs merge=lfs -text
+data/demand_projections/Scaling_Factor_Reference_Moderate_2024_by_state.csv filter=lfs diff=lfs merge=lfs -text
+data/demand_projections/Scaling_Factor_Reference_Moderate_2030_by_state.csv filter=lfs diff=lfs merge=lfs -text
+data/demand_projections/Scaling_Factor_Reference_Moderate_2035_by_state.csv filter=lfs diff=lfs merge=lfs -text
+data/demand_projections/Scaling_Factor_Reference_Moderate_2040_by_state.csv filter=lfs diff=lfs merge=lfs -text
+data/demand_projections/Scaling_Factor_Reference_Moderate_2050_by_state.csv filter=lfs diff=lfs merge=lfs -text
+
+# EIA market module regions
+data/EIA_market_module_regions/EMM_regions.geojson filter=lfs diff=lfs merge=lfs -text
+
+# Industry data
+data/industry_data/uscities.csv filter=lfs diff=lfs merge=lfs -text
+
+# Geographic data
+data/NorthAmerica.csv filter=lfs diff=lfs merge=lfs -text
+
+# Validation data
+data/validation/EIA_statewise_data/use_all_phy.xlsx filter=lfs diff=lfs merge=lfs -text
+data/validation/ember_yearly_full_release_long_format.csv filter=lfs diff=lfs merge=lfs -text
+data/validation/existcapacity_annual.xlsx filter=lfs diff=lfs merge=lfs -text
+data/validation/gadm41_USA_1.json filter=lfs diff=lfs merge=lfs -text
+data/validation/usa_mapped.nc filter=lfs diff=lfs merge=lfs -text

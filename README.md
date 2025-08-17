@@ -6,7 +6,7 @@
 
 # efuels-supply-potentials
 
-[![CI](https://github.com/open-energy-transition/efuels-supply-potentials/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/open-energy-transition/efuels-supply-potentials/actions/workflows/ci.yml)
+[![CI](https://github.com/danielelerede-oet/efuels-supply-potentials/actions/workflows/ci.yml/badge.svg?branch=implement_pre_commit)](https://github.com/danielelerede-oet/efuels-supply-potentials/actions/workflows/ci.yml)
 
 ## 1. Installation
 Clone the repository including its submodules:

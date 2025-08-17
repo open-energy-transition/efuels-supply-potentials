@@ -17,14 +17,14 @@ repos:
   - id: check-added-large-files
     args: ['--maxkb=2000']
 
-# Find common spelling mistakes in comments and docstrings
+# Find common spelling mistakes in comments, docstrings, and actions
 - repo: https://github.com/codespell-project/codespell
   rev: v2.4.1
   hooks:
   - id: codespell
-    args: ['--ignore-regex="(\b[A-Z]+\b)"', '--ignore-words-list=fom,appartment,bage,ore,setis,tabacco,berfore,fo,FO']
+    args: ['--ignore-regex="(\b[A-Z]+\b)"', '--ignore-words-list=fom,appartment,bage,ore,setis,tabacco,berfore,fo,FO,vor']
     types_or: [python, rst, markdown]
-    files: ^(scripts|doc)/
+    files: ^(scripts|doc|actions)/
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.12.2
@@ -33,15 +33,6 @@ repos:
     types_or: [python, pyi, jupyter]
     args: [--fix, --exit-non-zero-on-fix]
   - id: ruff-format
-
-# Find common spelling mistakes in comments and docstrings
-- repo: https://github.com/codespell-project/codespell
-  rev: v2.4.1
-  hooks:
-  - id: codespell
-    args: ['--ignore-regex="\b[A-Z]+\b"', '--ignore-words-list=fom,appartment,bage,ore,setis,tabacco,berfore,vor'] # Ignore capital case words, e.g. country codes
-    types_or: [python, rst, markdown]
-    files: ^(actions|doc)/
 
 # Do YAML formatting (before the linter checks it for misses)
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks

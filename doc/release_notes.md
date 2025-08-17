@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Implemented **pre-commit hooks** in the repository: [PR #47](https://github.com/open-energy-transition/efuels-supply-potentials/pull/47)
+
 * Enable **custom busmap** to have the same clustering for all horizons and scenarios [PR #96](https://github.com/open-energy-transition/efuels-supply-potentials/pull/96)
 
 * Implement **maximum capacity constraint for geothermal** electricity generation plants [PR #95](https://github.com/open-energy-transition/efuels-supply-potentials/pull/95)
@@ -15,6 +17,7 @@ Please list contributions, add reference to PRs if present.
 * Implement **production tax credits** removing tax credits in the base year and reviewing tax credits to renewables based on latest developments (One Big Beautiful Bill) [PR #91](https://github.com/open-energy-transition/efuels-supply-potentials/pull/91)
 
 * Include biomass in RES and CES constraints-eligible sources [PR #90](https://github.com/open-energy-transition/efuels-supply-potentials/pull/90)
+
 
 * Add **capital cost for hydro** storage units [PR #93](https://github.com/open-energy-transition/efuels-supply-potentials/pull/93)
 
@@ -46,11 +49,11 @@ Please list contributions, add reference to PRs if present.
 
 * Add **custom ammonia, ethanol, cement and steel industries** [PR #50](https://github.com/open-energy-transition/efuels-supply-potentials/pull/50)
 
-* Add **dynamic blending rate selection** rule [PR #55](https://github.com/open-energy-transition/efuels-supply-potentials/pull/55) 
+* Add **dynamic blending rate selection** rule [PR #55](https://github.com/open-energy-transition/efuels-supply-potentials/pull/55)
 
 * Add custom rule to **fetch scenario-dependent growth rates** for the US [PR #57](https://github.com/open-energy-transition/efuels-supply-potentials/pull/51)
 
-* Add scenario configs for 2030, 2035 and 2040 and add data for scenario definition [PR #51](https://github.com/open-energy-transition/efuels-supply-potentials/pull/51) 
+* Add scenario configs for 2030, 2035 and 2040 and add data for scenario definition [PR #51](https://github.com/open-energy-transition/efuels-supply-potentials/pull/51)
 
 * Add **scenario configs for 2030, 2035 and 2040** and add data for scenario definition [PR #51](https://github.com/open-energy-transition/efuels-supply-potentials/pull/51)
 
@@ -64,7 +67,7 @@ Please list contributions, add reference to PRs if present.
 
 * Enabled **setting demand projections** based on the **NREL EFS**: [PR #38](https://github.com/open-energy-transition/efuels-supply-potentials/pull/38) and [PR #40](https://github.com/open-energy-transition/efuels-supply-potentials/pull/40)
 
-* Added functionality to separate **e-kerosene** demand and set **SAF mandate** by choosing blending rate: [PR #37](https://github.com/open-energy-transition/efuels-supply-potentials/pull/37) 
+* Added functionality to separate **e-kerosene** demand and set **SAF mandate** by choosing blending rate: [PR #37](https://github.com/open-energy-transition/efuels-supply-potentials/pull/37)
 
 * Integrated **generate aviation scenario** and **rescale fraction in airports dataset by state demand** into the workflow: [PR #35](https://github.com/open-energy-transition/efuels-supply-potentials/pull/35)
 
@@ -80,11 +83,11 @@ Please list contributions, add reference to PRs if present.
 
 * Prepared **merged airports** dataset: [PR #16](https://github.com/open-energy-transition/efuels-supply-potentials/pull/16)
 
-* Analyzed statewise **passengers and fuel consumption data** for fuel demand disaggregation for airports: [PR #9](https://github.com/open-energy-transition/efuels-supply-potentials/pull/9) 
+* Analyzed statewise **passengers and fuel consumption data** for fuel demand disaggregation for airports: [PR #9](https://github.com/open-energy-transition/efuels-supply-potentials/pull/9)
 
 * Facilitated **PyPSA-Earth sector run**: PyPSA-Earth [PR #1134](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1134), [PR #1143](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1143), [PR #1145](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1145), [PR #1165](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1165), [PR #1166](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1166)
 
-* Fixed **hydro profile data** by splitting inflow to powerplants: PyPSA-Earth [PR #1119](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1119) 
+* Fixed **hydro profile data** by splitting inflow to powerplants: PyPSA-Earth [PR #1119](https://github.com/pypsa-meets-earth/pypsa-earth/pull/1119)
 
 * Added **statewise validation** script that compares demand and installed capacities with EIA data: [PR #7](https://github.com/open-energy-transition/efuels-supply-potentials/pull/7)
 

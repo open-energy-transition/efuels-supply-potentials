@@ -1,20 +1,27 @@
+# -*- coding: utf-8 -*-
 # SPDX-FileCopyrightText:  Open Energy Transition gGmbH
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import os
 import sys
+
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 import pandas as pd
-import numpy as np
 import geopandas as gpd
 import pypsa
 import warnings
-warnings.filterwarnings("ignore")
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            download_and_unzip_gdrive, configure_logging, PYPSA_EARTH_DIR
 
+from scripts._helper import (
+    mock_snakemake,
+    update_config_from_wildcards,
+    create_logger,
+    configure_logging,
+)
+
+warnings.filterwarnings("ignore")
 logger = create_logger(__name__)
+
 
 def attach_emm_region_to_buses(network, path_shape, distance_crs):
     """
@@ -25,18 +32,17 @@ def attach_emm_region_to_buses(network, path_shape, distance_crs):
     # shape.rename(columns={"GRID_REGIO": "region"}, inplace=True)
 
     ac_dc_carriers = ["AC", "DC"]
-    location_mapping = network.buses.query(
-        "carrier in @ac_dc_carriers")[["x", "y"]]
+    location_mapping = network.buses[network.buses["carrier"].isin(ac_dc_carriers)][
+        ["x", "y"]
+    ]
 
-    network.buses["x"] = network.buses["location"].map(
-        location_mapping["x"]).fillna(0)
-    network.buses["y"] = network.buses["location"].map(
-        location_mapping["y"]).fillna(0)
+    network.buses["x"] = network.buses["location"].map(location_mapping["x"]).fillna(0)
+    network.buses["y"] = network.buses["location"].map(location_mapping["y"]).fillna(0)
 
     pypsa_gpd = gpd.GeoDataFrame(
         network.buses,
         geometry=gpd.points_from_xy(network.buses.x, network.buses.y),
-        crs=4326
+        crs=4326,
     )
 
     network_columns = network.buses.columns
@@ -47,7 +53,6 @@ def attach_emm_region_to_buses(network, path_shape, distance_crs):
     network.buses["region"] = st_buses["subregion"]
 
     return network
-
 
 
 if __name__ == "__main__":
@@ -66,13 +71,19 @@ if __name__ == "__main__":
             configfile="configs/calibration/config.base.yaml",
         )
 
+    configure_logging(snakemake)
+
     config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
 
     shape_path = snakemake.input.shape_path
     regional_fees_path = snakemake.input.regional_fees_path
     distance_crs = snakemake.params.distance_crs
     nc_path = snakemake.input.network
-    horizon = 2023 if int(snakemake.wildcards.planning_horizons) == 2020 else int(snakemake.wildcards.planning_horizons)
+    horizon = (
+        2023
+        if int(snakemake.wildcards.planning_horizons) == 2020
+        else int(snakemake.wildcards.planning_horizons)
+    )
 
     regional_fees = pd.read_csv(regional_fees_path).fillna(0)
     network = pypsa.Network(nc_path)
@@ -86,15 +97,16 @@ if __name__ == "__main__":
 
         if region_idx.empty:
             continue
-        
+
         if region in regional_fees.region.unique():
-            dist_fee = (regional_fees[(
-                regional_fees["Year"] == horizon) 
-                & (regional_fees["region"] == region)]["Distribution nom USD/MWh"].iloc[0])
-            
-            mask = (network.links.bus0.isin(region_idx)) & (network.links.index.str.contains(" electricity distribution grid"))
+            dist_fee = regional_fees[
+                (regional_fees["Year"] == horizon) & (regional_fees["region"] == region)
+            ]["Distribution nom USD/MWh"].iloc[0]
+
+            mask = (network.links.bus0.isin(region_idx)) & (
+                network.links.index.str.contains(" electricity distribution grid")
+            )
             network.links.loc[mask, "marginal_cost"] = dist_fee
             logger.info(f"set distribution fee of {dist_fee} USD/MWh for {region}")
 
-    
     network.export_to_netcdf(snakemake.output[0])

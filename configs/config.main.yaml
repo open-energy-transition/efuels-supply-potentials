@@ -51,7 +51,7 @@ demand_distribution:
 demand_projection:
   planning_horizon: 2023
   scenario: "Medium"
-  data_centers_load: false
+  data_centers_load: true
 
 state_policy: "on" # "off", "on" manage application of renewable/clean energy policies at State- or country-level
 

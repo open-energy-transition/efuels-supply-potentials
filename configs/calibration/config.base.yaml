@@ -35,14 +35,14 @@ policies:
   country: [] # "CES"
 
 electricity:
-  co2limit: 4.33e+9 #for calibration purposes
+  co2limit: 4.6e+9 #for calibration purposes
   co2base: 226.86e+6 #base_from_2020 Locations of the 250 MMmt of CO2 emissions from the WECC 2021.
   
   extendable_carriers:
     Generator: []
     Store: [battery, H2]
 
-  powerplants_filter: DateIn < 2023
+  powerplants_filter: DateIn <= 2023
   custom_powerplants: "replace" #  "false" use only powerplantmatching (ppm) data, "merge" combines ppm and custom powerplants, "replace" use only custom powerplants
 
   conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, geothermal, biomass]
@@ -60,10 +60,11 @@ renewable:
 costs:
   year: 2020
   efficiency:
-      coal: 0.3177
-      oil: 0.2976
-      CCGT: 0.442
-      nuclear: 0.3265
+      coal: 0.3195
+      oil: 0.3005
+      CCGT: 0.4429
+      nuclear: 0.3254
+      biomass: 0.30
 
 policy_config:
   hydrogen:
@@ -93,7 +94,7 @@ sector:
   land_transport_fuel_cell_share:
     AB_2020: 0
   land_transport_electric_share:
-    AB_2020: 0.012
+    AB_2020: 0.006
   shipping_hydrogen_share:
     AB_2020: 0
 

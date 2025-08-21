@@ -832,9 +832,9 @@ tech_power_color:
   "Oil": "#8B4513"
 
 nice_names_power:
-  "coal": "Coal"
-  "oil": "Oil"
-  "biomass": "Biomass"
+  #"coal": "Coal"
+  #"oil": "Oil"
+  #"biomass": "Biomass"
   "coal (power)": "Coal"
   "oil (power)": "Oil"
   "biomass (power)": "Biomass"

@@ -256,12 +256,12 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
             if build_year <= 2024 and 2024 <= planning_horizon <= 2032:
                 credit = ptc_credits.get("nuclear_existing", 0.0)
                 apply = True
-            elif 2030 <= build_year <= 2033 and planning_horizon <= build_year + 10:
+            elif 2030 <= build_year < 2033 and planning_horizon <= build_year + 10:
                 credit = ptc_credits.get("nuclear_new", 0.0)
                 apply = True
         elif carrier_key == "geothermal":
             if planning_horizon <= build_year + 10:
-                if 2030 <= build_year <= 2033:
+                if 2030 <= build_year < 2033:
                     apply = True
                 elif build_year == 2034:
                     apply, scale = True, 0.75
@@ -297,7 +297,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
 
             if planning_horizon <= build_year + 10:
                 scale = 0.0
-                if 2030 <= build_year <= 2033:
+                if 2030 <= build_year < 2033:
                     scale = 1.0
                 elif build_year == 2034:
                     scale = 0.75

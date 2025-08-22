@@ -3099,7 +3099,7 @@ def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names, use_scenario_
         ax.set_yticklabels(clean_labels, fontsize=10)
         ax.set_xlabel("LCOE (USD/MWh)", fontsize=10)
         ax.set_xlim(x_min, x_max)
-        ax.set_title(f"{region} - {key if use_scenario_names else year_str}", fontsize=11)
+        ax.set_title(f"\n{region} - {key if use_scenario_names else year_str}", fontsize=12)
         ax.grid(linestyle='--', alpha=0.5)
         ax.tick_params(axis='both', labelsize=9)
 
@@ -3167,8 +3167,8 @@ def preprocess_res_ces_share_eia(eia_gen_data):
     all_total = eia_gen_data_df[['PHS', 'biomass', 'coal', 'gas', 'geothermal', 'hydro', 'nuclear',
         'oil', 'solar', 'wind']].sum(axis=1)
 
-    eia_gen_data_df["% ACTUAL RES"] = (res_total / all_total) * 100
-    eia_gen_data_df["% ACTUAL CES"] = (ces_total / all_total) * 100
+    eia_gen_data_df["% Actual RES"] = (res_total / all_total) * 100
+    eia_gen_data_df["% Actual CES"] = (ces_total / all_total) * 100
 
     return eia_gen_data_df
 

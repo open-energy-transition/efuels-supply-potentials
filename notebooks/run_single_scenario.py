@@ -64,7 +64,9 @@ scenario_data = {
     "Power sector development - Transmission expansion": [
         "No new expansion"] * 4 + ["Optimal transmission expansion"] * 2 + ["No new expansion *"] * 4,
     "State policies for electricity generation": [
-        "Current policies"] * 4 + ["Current policies + 90% clean electricity by 2040"] * 2 + ["Current policies"] * 4
+        "Current policies"] * 4 + ["Current policies + 90% clean electricity by 2040"] * 2 + ["Current policies"] * 4,
+    "Hourly Resolution": [
+        "3-hour"] * 10
 }
 
 # scenarios_folder = ['scenario_01'] #, 'scenario_02', 'scenario_06', 'scenario_10']  # List of scenarios to analyze

@@ -2163,7 +2163,7 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
 
     # Store original links and apply filter
     original_links = n.links.copy()
-    n.links = n.links[n.links.index.isin(electricity_links.index)]
+    n.links = n.links[n.links.carrier=="DC"]
 
     # Plot network
     line_scale = 5e3

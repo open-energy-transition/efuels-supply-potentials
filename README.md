@@ -128,7 +128,11 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 5. [PR #51](https://github.com/open-energy-transition/pypsa-earth/pull/51): Add US cost configurations and split scenarios per technology group.
 6. [PR #56](https://github.com/open-energy-transition/pypsa-earth/pull/56): Introduce currency conversion in `simplify_network`.
 7. [PR #57](https://github.com/open-energy-transition/pypsa-earth/pull/57) [PR #58](https://github.com/open-energy-transition/pypsa-earth/pull/58) [PR #59](https://github.com/open-energy-transition/pypsa-earth/pull/59): Fix logic for currency conversion to handle past and future years and introduce clear log and warning messages.
-
+8. [PR #63](https://github.com/open-energy-transition/pypsa-earth/pull/63): Introduce `p_max_pu` for nuclear generators (or links, if necessary) to match base year statistics and to apply it to future years.
+9. [PR #65](https://github.com/open-energy-transition/pypsa-earth/pull/65): Remove lignite from default conventional carriers.
+10. [PR #69](https://github.com/open-energy-transition/pypsa-earth/pull/69): Extend lifetime of nuclear power plants to 60 years
+11. [PR #71](https://github.com/open-energy-transition/pypsa-earth/pull/71): Enable selection of custom busmap.
+ 
 ## 5. Validation
 
 ### 5.1. Country-level validation for the base scenario

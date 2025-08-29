@@ -661,6 +661,8 @@ if config["foresight"] == "myopic":
         input:
             ces_path="data/current_electricity_state_policies/clean_targets.csv",
             res_path="data/current_electricity_state_policies/res_targets.csv",
+            production_tax_credits="data/tax_credits/production_tax_credits.csv",
+            investment_tax_credits="data/tax_credits/investment_tax_credits.csv",
             gadm_shape_path="data/demand_data/gadm41_USA_1.json",
             overrides="data/override_component_attrs",
             network=PYPSA_EARTH_DIR + RESDIR
@@ -725,6 +727,8 @@ if config["foresight"] == "overnight" and config["state_policy"] != "off":
         input:
             ces_path="data/current_electricity_state_policies/clean_targets.csv",
             res_path="data/current_electricity_state_policies/res_targets.csv",
+            production_tax_credits="data/tax_credits/production_tax_credits.csv",
+            investment_tax_credits="data/tax_credits/investment_tax_credits.csv",
             gadm_shape_path="data/demand_data/gadm41_USA_1.json",
             overrides="data/override_component_attrs",
             network=PYPSA_EARTH_DIR + RESDIR
@@ -756,6 +760,17 @@ if config["foresight"] == "overnight" and config["state_policy"] != "off":
 
         
     ruleorder: solve_custom_sector_network > solve_sector_network
+
+
+use rule cluster_network from pypsa_earth with:
+    params:
+        **{k: v for k, v in rules.cluster_network.params.items() if k != "custom_busmap"},
+        custom_busmap=config["enable"].get("custom_busmap", False)
+    input:
+        **{k: v for k, v in rules.cluster_network.input.items() if k != "custom_busmap"},
+        custom_busmap=("data/custom_busmap_elec_s{simpl}_{clusters}.csv"
+                       if config["enable"].get("custom_busmap", False) else []),
+
 
 rule test_modify_prenetwork:
     input:

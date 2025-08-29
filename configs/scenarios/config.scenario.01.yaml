@@ -24,6 +24,7 @@ enable:
   retrieve_databundle_sector: true
   retrieve_cost_data: true  # true: retrieves cost data from technology data and saves in resources/costs.csv, false: uses cost data in data/costs.csv
   download_osm_data: true  # If 'true', OpenStreetMap data will be downloaded for the above given countries
+  custom_busmap: true
 
 run:
   name: "US_scenario_01" # use this to keep track of runs with different settings
@@ -33,9 +34,9 @@ foresight: myopic
 
 scenario:
   simpl: ['']
-  ll: ['copt']
+  ll: ['v1']
   clusters: [100]
-  opts: [3H]
+  opts: [CCL-3H]
   planning_horizons:
   - 2030
   - 2035
@@ -71,6 +72,7 @@ cluster_options:
     p_threshold_drop_isolated: 0.0
 
 electricity:
+  agg_p_nom_limits: data/agg_p_nom_minmax.csv
   extendable_carriers:
     Generator: [solar, onwind, offwind-ac, offwind-dc, csp, geothermal, nuclear, OCGT, CCGT, biomass]
     Store: [battery, H2]
@@ -87,6 +89,7 @@ renewable:
   hydro:
     normalization:
       method: eia
+    hydro_capital_cost: true
 
 costs:
   year: 2030
@@ -130,9 +133,9 @@ sector:
     AB_2035: 0.0
     AB_2040: 0.0
   land_transport_electric_share:
-    AB_2030: 0.165 # 0.041 (Reference) 0.165 (Medium) 0.191 (High)
-    AB_2035: 0.275 # 0.053 (Reference) 0.275 (Medium) 0.332 (High)
-    AB_2040: 0.353 # 0.064 (Reference) 0.353 (Medium) 0.462 (High)
+    AB_2030: 0.117
+    AB_2035: 0.201
+    AB_2040: 0.277
   shipping_hydrogen_share:
     AB_2030: 0.00
     AB_2035: 0.00

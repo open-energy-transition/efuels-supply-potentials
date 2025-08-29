@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Apply **pre-OB3 tax credits** for solar, wind, point-source CO2 and DAC for selected scenarios [PR #99](https://github.com/open-energy-transition/efuels-supply-potentials/pull/99)
+
 * Enable **custom busmap** to have the same clustering for all horizons and scenarios [PR #96](https://github.com/open-energy-transition/efuels-supply-potentials/pull/96)
 
 * Implement **maximum capacity constraint for geothermal** electricity generation plants [PR #95](https://github.com/open-energy-transition/efuels-supply-potentials/pull/95)

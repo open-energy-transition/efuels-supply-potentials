@@ -192,12 +192,9 @@ def propagate_base_year_efficiencies(network, base_year=2020, cutoff_year=2025):
         if gen.carrier == "nuclear" and getattr(gen, "build_year", float("inf")) <= cutoff_year:
             network.generators.at[name, "efficiency"] = base_efficiencies["nuclear"]
 
-def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, costs, log_path=None, verbose=False):
+def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, costs, config_file=None, log_path=None, verbose=False):
     """
     Apply production and investment tax credits to the network.
-
-    - PTC (Production Tax Credit) reduces marginal_cost for eligible generators and links.
-    - ITC (Investment Tax Credit) reduces capital_cost for eligible stores (batteries).
 
     Parameters:
         network: PyPSA network object
@@ -205,15 +202,26 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         itc_path: Path to CSV file with ITC (columns: carrier, credit)
         planning_horizon: Current planning year (int)
         costs: DataFrame containing the full cost structure, including capital_cost
+        config_file: Dict loaded from YAML config file
         log_path: Optional path to save a log of applied modifications
         verbose: If True, print detailed logging of applied credits
     """
 
     modifications = []
 
-    # Load PTC file
+    # Load PTC and ITC file
     ptc_df = pd.read_csv(ptc_path)
     ptc_credits = dict(zip(ptc_df["carrier"], ptc_df["credit"]))
+
+    itc_df = pd.read_csv(itc_path)
+    itc_credits = dict(zip(itc_df["carrier"], itc_df["credit"]))
+
+    # Pre-OB3 tax credits option
+    pre_ob3_tax_credits = None
+    if config_file is not None:
+        policies_cfg = config_file.get("policies", {})
+        if "pre_ob3_tax_credits" in policies_cfg:
+            pre_ob3_tax_credits = policies_cfg["pre_ob3_tax_credits"]
 
     biomass_aliases = {
         "biomass",
@@ -267,10 +275,17 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                     apply, scale = True, 0.75
                 elif build_year == 2035:
                     apply, scale = True, 0.5
-        # elif carrier_key in {"solar", "onwind", "offwind-ac", "offwind-dc"}:
-        #     if planning_horizon <= build_year + 10 and 2025 <= build_year <= 2027:
-        #         credit = ptc_credits.get(carrier_key, 0.0)
-        #         apply = True
+        elif carrier_key in {"solar", "onwind", "offwind-ac", "offwind-dc"} and pre_ob3_tax_credits:
+            #if planning_horizon <= build_year + 10 and 2025 <= build_year <= 2027:
+            #    credit = ptc_credits.get(carrier_key, 0.0)
+            #    apply = True
+            if planning_horizon <= build_year + 10:
+                if 2030 <= build_year < 2033:
+                    apply = True
+                elif build_year == 2034:
+                    apply, scale = True, 0.75
+                elif build_year == 2035:
+                    apply, scale = True, 0.5
 
         if apply:
             new_cost = base_cost + scale * credit
@@ -343,8 +358,6 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
 #                        logger.info(
 #                            f"[PTC LINK ELECTROLYZER] {name} | H₂ eff: {h2_efficiency:.3f} × {credit_per_mwh_h2:.2f} → credit: {credit:.2f}")
 
-
-        # Carbon Capture - CO2 stored
         elif carrier in cc_credit_on_co2_stored:
             if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
 
@@ -358,6 +371,9 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                 tco2 = get_co2_stored_efficiency(link)
                 credit_per_t = ptc_credits.get(carrier, 0.0)
 
+                if pre_ob3_tax_credits:
+                    credit_per_t -= 25  # from 85 to 60 USD/t_CO2
+
                 if tco2 > 0 and credit_per_t != 0.0:
                     credit = credit_per_t * tco2
                     new_cost = base_cost + credit
@@ -368,7 +384,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                         "original": base_cost, "credit": credit, "final": new_cost
                     })
                     if verbose:
-                        logger.info(f"[PTC LINK CC-stored] {name} | CO₂: {tco2:.3f} × {credit_per_t:.2f} → credit: {credit:.2f}")
+                        logger.info(f"[PTC LINK CC-stored] {name} | CO2: {tco2:.3f} × {credit_per_t:.2f} → credit: {credit:.2f}")
 
         # DAC - CO2 atmosphere
         elif carrier in cc_credit_on_co2_atmosphere:
@@ -376,6 +392,9 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
 
                 tco2 = link.efficiency
                 credit_per_t = ptc_credits.get(carrier, 0.0)
+
+                if pre_ob3_tax_credits:
+                    credit_per_t -= 50  # from 180 to 130 USD/t_CO2
 
                 if tco2 > 0 and credit_per_t != 0.0:
                     credit = credit_per_t * tco2

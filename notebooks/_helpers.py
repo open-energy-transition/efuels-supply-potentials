@@ -567,7 +567,7 @@ def print_hydrogen_capacity_summary(capacity_data):
             f"{carrier:25s}: {capacity:8.1f} MW ({capacity/total_national*100:5.1f}%)")
 
 
-def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_gw=0.01):
+def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_gw=0.01, year_title=True):
     """
     Create a geographic map with simple round circles showing FT capacity per state in gigawatts (GW).
     """
@@ -645,14 +645,14 @@ def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network"
     ax.set_position([0.05, 0.05, 0.9, 0.9])
 
     ax.set_title(
-        f"Fischer-Tropsch Capacity by State (GW){year_str}", fontsize=12)
+        f"Fischer-Tropsch Capacity by State (GW){year_str if year_title else network_name}", fontsize=12)
     ax.axis('off')
     plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
 
     return fig, ax, links_with_state
 
 
-def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_gw=0.01):
+def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_gw=0.01, year_title=True):
     """
     Create a map showing total FT capacity per grid region (GW) as full circles with linear radius scaling.
     """
@@ -721,7 +721,7 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
 
     ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
     ax.set_title(
-        f"Fischer-Tropsch Capacity by Grid Region (GW){year_str}", fontsize=12, pad=20)
+        f"Fischer-Tropsch Capacity by Grid Region (GW){year_str if year_title else network_name}", fontsize=12, pad=20)
     ax.axis('off')
     plt.tight_layout()
 
@@ -2520,7 +2520,7 @@ def calculate_total_inputs_outputs_ft(networks, ft_carrier="Fischer-Tropsch"):
     df["Year"] = df["Year"].astype(int)
     return df.sort_values("Year")
 
-def compute_ekerosene_production_cost_by_region(networks: dict):
+def compute_ekerosene_production_cost_by_region(networks: dict, year_title=True):
 
     for name, net in networks.items():
         year_match = re.search(r"\d{4}", name)
@@ -2611,7 +2611,7 @@ def compute_ekerosene_production_cost_by_region(networks: dict):
         if df_grouped.empty:
             continue
 
-        print(f"\n{year}:\n")
+        print(f"\n{year if year_title else name}:\n")
         display(
             df_grouped.round(2).style.format({
                 "Production (TWh)": "{:,.2f}",
@@ -3332,7 +3332,7 @@ def identify_power_generation_technologies(rename_techs_capex, rename_techs_opex
 
 
 def plot_power_generation_details(cost_data, cost_type_label, power_techs, 
-                                     tech_colors=None, nice_names=None, tech_order=None):
+                                     tech_colors=None, nice_names=None, tech_order=None, index='year'):
     """
     Plot interactive detailed breakdown of Power & heat generation technologies showing original tech_labels
     
@@ -3364,7 +3364,7 @@ def plot_power_generation_details(cost_data, cost_type_label, power_techs,
 
     # Create pivot table: years x technologies
     pivot_table = power_data.pivot_table(
-        index='year',
+        index=index,
         columns='tech_label', 
         values='cost_billion',
         aggfunc='sum'
@@ -3508,7 +3508,7 @@ def compute_h2_efuels_costs(network, name_tag):
     return pd.DataFrame(final_results)
 
 
-def plot_h2_efuels_details(cost_data, cost_type_label, tech_colors=None, tech_order=None):
+def plot_h2_efuels_details(cost_data, cost_type_label, tech_colors=None, tech_order=None, index='year'):
     """
     Plot interactive detailed breakdown of H2 and e-fuels technologies
     """
@@ -3525,7 +3525,7 @@ def plot_h2_efuels_details(cost_data, cost_type_label, tech_colors=None, tech_or
 
     # Create pivot table: years x technologies
     pivot_table = h2_efuels_data.pivot_table(
-        index='year',
+        index=index,
         columns='tech_label', 
         values='cost_billion',
         aggfunc='sum'
@@ -3613,7 +3613,7 @@ def plot_h2_efuels_details(cost_data, cost_type_label, tech_colors=None, tech_or
     return fig
 
 
-def create_h2_efuels_analysis(networks):
+def create_h2_efuels_analysis(networks, index='year'):
     """
     Create complete analysis for H2 and e-fuels
     """
@@ -3647,7 +3647,8 @@ def create_h2_efuels_analysis(networks):
         df_h2_efuels_costs,
         "Capital expenditure",
         tech_colors=h2_efuels_colors,
-        tech_order=h2_efuels_order
+        tech_order=h2_efuels_order,
+        index=index
     )
     
     # Create OPEX plot
@@ -3655,7 +3656,8 @@ def create_h2_efuels_analysis(networks):
         df_h2_efuels_costs,
         "Operational expenditure",
         tech_colors=h2_efuels_colors,
-        tech_order=h2_efuels_order
+        tech_order=h2_efuels_order,
+        index=index
     )
     
     # Show plots
@@ -3665,3 +3667,78 @@ def create_h2_efuels_analysis(networks):
         fig2.show()
     
     return df_h2_efuels_costs
+
+
+def hourly_matching_plot(networks, year_title=True):
+    for idx, (network_name, network) in enumerate(networks.items()):    
+        year_str = network_name.split("_")[-1]
+        # define additionality
+        additionality = True
+
+        # calculate electrolyzers consumption
+        electrolysis_carrier = [
+            'H2 Electrolysis',
+            'Alkaline electrolyzer large',
+            'Alkaline electrolyzer medium',
+            'Alkaline electrolyzer small',
+            'PEM electrolyzer',
+            'SOEC'
+        ]
+
+        electrolyzers = network.links[network.links.carrier.isin(electrolysis_carrier)].index
+        electrolyzers_consumption = network.links_t.p0[electrolyzers].multiply(
+            network.snapshot_weightings.objective, axis=0
+        ).sum(axis=1)
+
+        # calculate RES generation
+        res_carriers = [
+            "csp",
+            "solar",
+            "onwind",
+            "offwind-ac",
+            "offwind-dc",
+            "ror",
+        ]
+        res_stor_techs = ["hydro"]
+
+        # get RES generators and storage units
+        res_gens = network.generators.query("carrier in @res_carriers").index
+        res_storages = network.storage_units.query("carrier in @res_stor_techs").index
+
+        if additionality:
+            # get new generators and storage_units
+            new_gens = network.generators.loc[
+                network.generators.build_year == int(year_str)
+            ].index
+            new_stor = network.storage_units.loc[
+                network.storage_units.build_year == int(year_str)
+            ].index
+            # keep only new RES generators and storage units
+            res_gens = res_gens.intersection(new_gens)
+            res_storages = res_storages.intersection(new_stor)
+
+        # calculate RES generation
+        res_generation = network.generators_t.p[res_gens].multiply(
+            network.snapshot_weightings.objective, axis=0
+        ).sum(axis=1)
+        res_storages_dispatch = network.storage_units_t.p[res_storages].multiply(
+            network.snapshot_weightings.objective, axis=0
+        ).sum(axis=1)
+        res_generation_total = res_generation + res_storages_dispatch
+
+        compare_df = pd.concat([res_generation_total, electrolyzers_consumption], axis=1)
+        compare_df.rename(columns={0: "RES generation", 1: "Electrolyzer consumption"}, inplace=True)
+        # compare_df = compare_df.resample("D").mean()
+
+
+        fig, ax = plt.subplots(figsize=(10, 2.5))
+        (
+            compare_df[["RES generation", "Electrolyzer consumption"]]
+            .div(network.snapshot_weightings.objective, axis=0)
+            .div(1e3).resample("D").mean().plot(ax=ax)
+        )
+        ax.set_ylabel("GW")
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
+        ax.set_xlabel(None)
+        ax.set_title(year_str if year_title else network_name)
+        ax.legend(loc="lower left")

@@ -354,6 +354,8 @@ nice_names:
   csp: CSP
   solid biomass: Solid biomass
   biogas: Biogas
+  urban central gas CHP: Gas CHP
+  urban central solid biomass CHP: Biomass CHP
   co2: CO2
   h2: Hydrogen
   H2: Hydrogen
@@ -416,12 +418,12 @@ rename_tech_capex:
   gas: Fossil generators
   CCGT: Fossil generators
   OCGT: Fossil generators
-  urban central gas CHP: Fossil generators
+  Gas CHP: Fossil generators
 
   # Biomass generators
   biomass: Biomass generators
   biomass EOP: Biomass generators
-  urban central solid biomass CHP: Biomass generators
+  Biomass CHP: Biomass generators
   solid biomass: Biomass generators
   biogas: Biomass generators
 
@@ -501,7 +503,6 @@ rename_tech_capex:
   residential urban decentral gas boiler: Heating
   services rural gas boiler: Heating
   residential rural gas boiler: Heating
-  urban central solid biomass CHP: Heating
 
   # Transmission
   electricity distribution grid: Power distribution
@@ -576,7 +577,7 @@ rename_tech_opex:
   oil (power): Fossil fuels 
   CCGT: Fossil fuels
   OCGT: Fossil fuels
-  urban central gas CHP: Fossil fuels
+  Gas CHP: Fossil fuels
   gas for industry: Fossil fuels
 
   # Biomass fuels
@@ -585,6 +586,7 @@ rename_tech_opex:
   biomass EOP: Biomass fuels
   solid biomass: Biomass fuels
   biogas: Biomass fuels
+  Biomass CHP: Biomass fuels
 
   # Industry OPEX
   BF-BOF: Industry
@@ -665,7 +667,6 @@ rename_tech_opex:
   residential urban decentral gas boiler: Heating
   services rural gas boiler: Heating
   residential rural gas boiler: Heating
-  urban central solid biomass CHP: Heating
 
   # Transmission
   electricity distribution grid: Power distribution
@@ -824,7 +825,8 @@ tech_power_color:
   "Pumped hydro storage": "#51dbcc"
   "Run-of-River hydro": "#3dbfb0"
   "Biomass": "#4fba41"
-  "Gas CHP": "#db6a00"
+  "Gas CHP": "#a61945"
+  "Biomass CHP": "#405c43"
   "Gas OCGT": "#db6a00"
   "Gas CCGT": "#db0000"
   "Nuclear": "#e81cd0"
@@ -849,6 +851,7 @@ nice_names_power:
   "Pumped Hydro Storage": "Pumped hydro storage"
   "Run of River": "Run-of-River hydro"
   "biomass EOP": "Biomass"
+  "urban central solid biomass CHP": "Biomass CHP"
   "urban central gas CHP": "Gas CHP"
   "OCGT": "Gas OCGT"
   "CCGT": "Gas CCGT"
@@ -864,6 +867,7 @@ tech_power_order:
   - "Pumped hydro storage"
   - "Run-of-River hydro"
   - "Biomass"
+  - "Biomass CHP"
   - "Nuclear"
   - "Geothermal"
   - "Onshore wind"

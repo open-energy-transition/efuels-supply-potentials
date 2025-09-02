@@ -2449,7 +2449,7 @@ def assign_macro_category(row, categories_capex, categories_opex):
         return 'Other'
 
 
-def calculate_total_inputs_outputs_ft(networks, ft_carrier="Fischer-Tropsch"):
+def calculate_total_inputs_outputs_ft(networks, ft_carrier="Fischer-Tropsch", year_index=True):
     """
     Calculates input/output flows for Fischer-Tropsch across a set of PyPSA networks.
     
@@ -2504,7 +2504,7 @@ def calculate_total_inputs_outputs_ft(networks, ft_carrier="Fischer-Tropsch"):
         year = int(match.group())
 
         results.append({
-            "Year": year,
+            "Year": year if year_index else name,
             "Used electricity (TWh)": elec_input_twh,
             "Used hydrogen (TWh)": h2_input_twh,
             "Used hydrogen (t)": h2_tons,
@@ -2516,8 +2516,10 @@ def calculate_total_inputs_outputs_ft(networks, ft_carrier="Fischer-Tropsch"):
     df = pd.DataFrame(results)
     if df.empty:
         return df
+    
+    if year_index != False:
+        df["Year"] = df["Year"].astype(int)
 
-    df["Year"] = df["Year"].astype(int)
     return df.sort_values("Year")
 
 def compute_ekerosene_production_cost_by_region(networks: dict, year_title=True):

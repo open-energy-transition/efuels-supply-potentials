@@ -3744,3 +3744,316 @@ def hourly_matching_plot(networks, year_title=True):
         ax.set_xlabel(None)
         ax.set_title(year_str if year_title else network_name)
         ax.legend(loc="lower left")
+
+def preprocess_res_ces_share_eia_region(eia_gen_data, grid_regions):
+    """
+    Aggregate EIA 2023 generation data by grid region.
+    Uses the mapping in grid_regions_to_states.xlsx.
+    Returns a DataFrame with % Actual RES and % Actual CES for each grid region.
+    """
+
+    # Filter EIA data
+    eia_gen_data = eia_gen_data[eia_gen_data["YEAR"] == 2023]
+    eia_gen_data = eia_gen_data[eia_gen_data["STATE"] != "US-Total"]
+    eia_gen_data = eia_gen_data[eia_gen_data['TYPE OF PRODUCER'] == 'Total Electric Power Industry']
+    eia_gen_data = eia_gen_data[
+        (eia_gen_data["ENERGY SOURCE"] != "Total") &
+        (eia_gen_data["ENERGY SOURCE"] != "Other")
+    ]
+
+    # Normalize energy source names
+    eia_gen_data.replace({"ENERGY SOURCE": {
+        "Coal": "coal",
+        "Hydroelectric Conventional": "hydro", 
+        "Pumped Storage": "PHS", 
+        "Solar Thermal and Photovoltaic": "solar", 
+        "Natural Gas": "gas", 
+        "Petroleum": "oil", 
+        "Wind": "wind", 
+        "Nuclear": "nuclear", 
+        "Geothermal": "geothermal",
+        "Wood and Wood Derived Fuels": "biomass",
+        "Other Biomass": "biomass",
+        "Other Gases": "gas"
+    }}, inplace=True)
+
+    # Convert to TWh
+    eia_gen_data["GENERATION (TWh)"] = eia_gen_data["GENERATION (Megawatthours)"] / 1e6
+
+    # Pivot: state × source
+    eia_state_df = (
+        eia_gen_data.groupby(["STATE", "ENERGY SOURCE"])[["GENERATION (TWh)"]]
+        .sum()
+        .unstack(fill_value=0)
+    )
+    eia_state_df.columns = eia_state_df.columns.droplevel(0)
+
+    # Merge with grid region mapping
+    eia_with_region = eia_state_df.reset_index().rename(columns={"STATE": "State"})
+    grid_regions = grid_regions.copy()
+    grid_regions["States"] = grid_regions["States"].str.strip().str.upper()
+    eia_with_region = eia_with_region.merge(grid_regions, left_on="State", right_on="States")
+
+    # Aggregate by grid region
+    region_agg = eia_with_region.groupby("Grid region").sum(numeric_only=True)
+
+    # Compute % RES and % CES
+    eia_res_carriers = ["solar", "wind", "hydro", "geothermal", "biomass", "PHS"]
+    eia_ces_carriers = eia_res_carriers + ["nuclear"]
+
+    total = region_agg.sum(axis=1)
+    res_total = region_agg[eia_res_carriers].sum(axis=1)
+    ces_total = region_agg[eia_ces_carriers].sum(axis=1)
+
+    region_agg["% Actual RES"] = (res_total / total) * 100
+    region_agg["% Actual CES"] = (ces_total / total) * 100
+
+    return region_agg[["% Actual RES", "% Actual CES"]]
+
+def evaluate_res_ces_by_region(networks, ces_carriers, res_carriers, multiple_scenarios=False):
+    """
+    Evaluate RES and CES shares from the model, aggregated by grid region.
+    Assumes `attach_grid_region_to_buses` has been called on each network.
+    """
+
+    results = {}
+
+    for name, network in networks.items():
+        year = int(name[-4:])
+
+        snapshots = network.snapshots
+        timestep_h = (snapshots[1] - snapshots[0]).total_seconds() / 3600
+        snapshots_slice = slice(None)
+
+        gen_and_sto_carriers = {
+            'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac', 'nuclear',
+            'geothermal', 'ror', 'hydro', 'solar rooftop'
+        }
+        link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass', 'lignite']
+
+        # Generators
+        gen = network.generators[network.generators.carrier.isin(gen_and_sto_carriers)].copy()
+        gen["grid_region"] = gen["bus"].map(network.buses["grid_region"])
+        gen = gen[gen["grid_region"].notna()]
+
+        gen_p = network.generators_t.p.loc[snapshots_slice, gen.index].clip(lower=0)
+        gen_energy = gen_p.multiply(timestep_h).sum()
+        gen_energy = gen_energy.to_frame(name="energy_mwh")
+        gen_energy["carrier"] = gen.loc[gen_energy.index, "carrier"]
+        gen_energy["grid_region"] = gen.loc[gen_energy.index, "grid_region"]
+
+        # Storage
+        sto = network.storage_units[network.storage_units.carrier.isin(gen_and_sto_carriers)].copy()
+        sto["grid_region"] = sto["bus"].map(network.buses["grid_region"])
+        sto = sto[sto["grid_region"].notna()]
+
+        sto_p = network.storage_units_t.p.loc[snapshots_slice, sto.index].clip(lower=0)
+        sto_energy = sto_p.multiply(timestep_h).sum()
+        sto_energy = sto_energy.to_frame(name="energy_mwh")
+        sto_energy["carrier"] = sto.loc[sto_energy.index, "carrier"]
+        sto_energy["grid_region"] = sto.loc[sto_energy.index, "grid_region"]
+
+        # Links
+        link_data = []
+        for i, link in network.links.iterrows():
+            if (
+                link["carrier"] in link_carriers and
+                pd.notna(network.buses.loc[link["bus1"], "grid_region"])
+            ):
+                p1 = -network.links_t.p1.loc[snapshots_slice, i].clip(upper=0)
+                energy_mwh = p1.sum() * timestep_h
+                link_data.append({
+                    "carrier": link["carrier"],
+                    "grid_region": network.buses.loc[link["bus1"], "grid_region"],
+                    "energy_mwh": energy_mwh
+                })
+
+        link_energy = pd.DataFrame(link_data)
+
+        # Combine
+        all_energy = pd.concat([
+            gen_energy[["carrier", "grid_region", "energy_mwh"]],
+            sto_energy[["carrier", "grid_region", "energy_mwh"]],
+            link_energy[["carrier", "grid_region", "energy_mwh"]]
+        ])
+
+        # Aggregate by grid region
+        region_totals = all_energy.groupby("grid_region")["energy_mwh"].sum()
+        region_ces = all_energy[all_energy["carrier"].isin(ces_carriers)].groupby("grid_region")["energy_mwh"].sum()
+        region_res = all_energy[all_energy["carrier"].isin(res_carriers)].groupby("grid_region")["energy_mwh"].sum()
+
+        df = pd.DataFrame({
+            "Total (MWh)": region_totals,
+            "CES_energy": region_ces,
+            "RES_energy": region_res
+        }).fillna(0)
+
+        df["% CES"] = 100 * df["CES_energy"] / df["Total (MWh)"]
+        df["% RES"] = 100 * df["RES_energy"] / df["Total (MWh)"]
+
+        df = df[["% RES", "% CES"]].round(2)
+
+        if multiple_scenarios:
+            results[name] = df.sort_index()
+        else:
+            results[year] = df.sort_index()
+
+    return results
+
+from IPython.display import display, HTML
+
+def display_grid_region_results(networks, eia_generation_data, grid_regions, ces_carriers, res_carriers):
+    """
+    Display RES/CES results aggregated by grid region:
+    - For 2023: model vs EIA comparison with deviation colors.
+    - For future years: only model results (no targets, no EIA).
+    Tables are displayed horizontally with scroll if needed.
+    """
+
+    html_blocks = []
+    legend_html = """
+    <div style="padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:5px; width: fit-content;">
+    <strong>Legend</strong>
+    <ul style="margin:5px 0; padding-left:20px;">
+        <li style="background-color:#d4edda; padding:2px;">Diff. ≤ ±5%</li>
+        <li style="background-color:#fff3cd; padding:2px;">Diff. > ±5% and ≤ ±10%</li>
+        <li style="background-color:#ffe5b4; padding:2px;">Diff. > ±10% and ≤ ±15%</li>
+        <li style="background-color:#f8d7da; padding:2px;">Diff. > ±15%</li>
+    </ul>
+    </div>
+    """
+
+    res_by_region = evaluate_res_ces_by_region(
+        networks,
+        ces_carriers=ces_carriers,
+        res_carriers=res_carriers
+    )
+
+    for year in sorted(res_by_region.keys()):
+        df_year = res_by_region[year].copy()
+
+        if year == 2023:
+            # Merge with EIA actuals
+            eia_region = preprocess_res_ces_share_eia_region(eia_generation_data, grid_regions)
+            df_year = df_year.merge(eia_region, left_index=True, right_index=True)
+
+            df_disp = df_year[["% RES", "% Actual RES", "% CES", "% Actual CES"]].round(2)
+            df_disp.index.name = "Grid Region"
+
+            def style_row(row):
+                return [
+                    deviation_color(row['% RES'], row['% Actual RES']),
+                    deviation_color(row['% RES'], row['% Actual RES']),
+                    deviation_color(row['% CES'], row['% Actual CES']),
+                    deviation_color(row['% CES'], row['% Actual CES'])
+                ]
+
+            styled_df = (
+                df_disp.style
+                .apply(style_row, axis=1)
+                .format(fmt_2dp_or_na)
+                .set_table_styles([{'selector': 'th.row_heading', 'props': 'font-weight:bold;'}])
+            )
+            df_html = styled_df.to_html() + legend_html
+
+        else:
+            # Future years: only model values
+            df_disp = df_year[["% RES", "% CES"]].round(2)
+            df_disp.index.name = "Grid Region"
+
+            styled_df = (
+                df_disp.style
+                .format(fmt_2dp_or_na)
+                .set_table_styles([{'selector': 'th.row_heading', 'props': 'font-weight:bold;'}])
+            )
+            df_html = styled_df.to_html()
+
+        block = f"""
+        <div style="flex:0 0 auto; padding:15px; min-width:250px;">
+            <h4 style="text-align:left;">Year: {year}</h4>
+            {df_html}
+        </div>
+        """
+        html_blocks.append(block)
+
+    row = (
+        "<div style='display:flex; gap:15px; flex-wrap:nowrap; overflow-x:auto;'>"
+        + "".join(html_blocks) +
+        "</div>"
+    )
+
+    display(HTML(row))
+
+# Function to format values
+def fmt_2dp_or_na(v):
+    if isinstance(v, str) and v.strip().upper() == "N/A":
+        return "N/A"
+    if pd.isna(v):
+        return ""
+    try:
+        return f"{float(v):.2f}"
+    except Exception:
+        return v
+
+# Function for deviation-based coloring (2023 only)
+def deviation_color(a, b):
+    """
+    Returns a CSS background-color based on deviation of a from b (± percentage):
+        - Green  -> |deviation| ≤ 5%
+        - Yellow -> 5% < |deviation| ≤ 10%
+        - Orange -> 10% < |deviation| ≤ 15%
+        - Red    -> |deviation| > 15%
+        - None   -> if b is 'N/A' or non-numeric (no color)
+    """
+    try:
+        if isinstance(b, str) and b.strip().upper() == "N/A":
+            return ''
+        a_val = float(a)
+        b_val = float(b)
+        if b_val == 0:
+            return ''  # avoid division by zero
+        deviation = abs((a_val - b_val) / b_val) * 100
+        if deviation <= 5:
+            return 'background-color:#d4edda;'  # green
+        elif deviation <= 10:
+            return 'background-color:#fff3cd;'  # yellow
+        elif deviation <= 15:
+            return 'background-color:#ffe5b4;'  # orange
+        else:
+            return 'background-color:#f8d7da;'  # red
+    except:
+        return ''
+
+# Simple green/red for future years
+def simple_color(a, b):
+    """
+    Returns green if a >= b, red if a < b, none if N/A or not numeric.
+    """
+    try:
+        if isinstance(b, str) and b.strip().upper() == "N/A":
+            return ''
+        return 'background-color:#d4edda;' if float(a) >= float(b) else 'background-color:#f8d7da;'
+    except:
+        return ''
+
+def get_us_from_eia(eia_generation_data):
+    """
+    Compute national (US) RES and CES shares from EIA data (2023).
+    Weighted by total generation (TWh) of each state.
+    """
+    eia_state = preprocess_res_ces_share_eia(eia_generation_data)
+
+    # Get total generation per state in TWh
+    eia_gen_data = eia_generation_data[
+        (eia_generation_data["YEAR"] == 2023) &
+        (eia_generation_data["STATE"] != "US-Total") &
+        (eia_generation_data['TYPE OF PRODUCER'] == 'Total Electric Power Industry')
+    ].copy()
+    eia_gen_data["GENERATION (TWh)"] = eia_gen_data["GENERATION (Megawatthours)"] / 1e6
+    total_by_state = eia_gen_data.groupby("STATE")["GENERATION (TWh)"].sum()
+
+    # Weighted average
+    us_res = (eia_state["% Actual RES"] * total_by_state).sum() / total_by_state.sum()
+    us_ces = (eia_state["% Actual CES"] * total_by_state).sum() / total_by_state.sum()
+
+    return round(us_res, 2), round(us_ces, 2)

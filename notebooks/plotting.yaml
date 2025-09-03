@@ -418,12 +418,12 @@ rename_tech_capex:
   gas: Fossil generators
   CCGT: Fossil generators
   OCGT: Fossil generators
-  Gas CHP: Fossil generators
+  urban central gas CHP: Fossil generators
 
   # Biomass generators
   biomass: Biomass generators
   biomass EOP: Biomass generators
-  Biomass CHP: Biomass generators
+  urban central solid biomass CHP: Biomass generators
   solid biomass: Biomass generators
   biogas: Biomass generators
 
@@ -577,7 +577,7 @@ rename_tech_opex:
   oil (power): Fossil fuels 
   CCGT: Fossil fuels
   OCGT: Fossil fuels
-  Gas CHP: Fossil fuels
+  urban central gas CHP: Fossil fuels
   gas for industry: Fossil fuels
 
   # Biomass fuels
@@ -586,7 +586,7 @@ rename_tech_opex:
   biomass EOP: Biomass fuels
   solid biomass: Biomass fuels
   biogas: Biomass fuels
-  Biomass CHP: Biomass fuels
+  urban central solid biomass CHP: Biomass fuels
 
   # Industry OPEX
   BF-BOF: Industry

@@ -892,6 +892,57 @@ def add_data_centers_load(n):
     logger.info(f"Added data center loads")
 
 
+def add_co2_storage_tanks(n):
+    """
+        Adds CO2 storage tanks to the network
+    """
+    # get existing CO2 stores
+    co2_stores = n.stores[n.stores.carrier == "co2 stored"]
+    co2_stored_buses = n.buses[n.buses.carrier == "co2 stored"]
+
+    # set capital cost for co2 stored and e_cyclic
+    n.stores.loc[co2_stores.index, "capital_cost"] = config["costs"]["co2_storage_tank_capital_cost"]
+    n.stores.loc[co2_stores.index, "e_cyclic"] = True
+    logger.info(f"Set capital cost to {config['costs']['co2_storage_tank_capital_cost']} and e_cyclic for existing CO2 stores to imitate storage tanks")
+
+    # create CO2 sequestered buses
+    n.madd(
+        "Bus",
+        co2_stored_buses.index.str.replace("stored", "sequestered"),
+        location=co2_stored_buses.location.values,
+        carrier="co2 sequestered",
+        x=co2_stored_buses.x.values,
+        y=co2_stored_buses.y.values,
+    )
+
+    # create CO2 sequestered stores
+    n.madd(
+        "Store",
+        co2_stores.index.str.replace("stored", "sequestered"),
+        bus=co2_stores.index.str.replace("stored", "sequestered"),
+        e_nom_extendable=True,
+        e_nom_max=np.inf,
+        capital_cost=config["sector"]["co2_sequestration_cost"],
+        carrier="co2 sequestered",
+    )
+
+    logger.info("Added CO2 sequestered buses, and stores")
+
+    # add links from co2 stored to co2 sequestered
+    n.madd(
+        "Link",
+        co2_stored_buses.index.str.replace("stored", "sequestered"),
+        bus0=co2_stored_buses.index,
+        bus1=co2_stored_buses.index.str.replace("stored", "sequestered"),
+        p_nom_extendable=True,
+        carrier="co2 sequestered",
+        efficiency=1,
+        capital_cost=0,
+    )
+
+    logger.info("Added links from 'co2 stored' to 'co2 sequestered'")
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -899,7 +950,7 @@ if __name__ == "__main__":
             configfile="configs/calibration/config.base.yaml",
             simpl="",
             ll="copt",
-            clusters=10,
+            clusters=100,
             opts="Co2L-24H",
             sopts="24H",
             planning_horizons="2020",
@@ -970,6 +1021,10 @@ if __name__ == "__main__":
     # add data center load
     if snakemake.params.data_centers:
         add_data_centers_load(n)
+
+    # introduce CO2 storage tanks
+    if snakemake.params.co2_storage_tanks:
+        add_co2_storage_tanks(n)
 
     # save the modified network
     n.export_to_netcdf(snakemake.output.modified_network)

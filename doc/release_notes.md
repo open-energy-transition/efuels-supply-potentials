@@ -8,6 +8,12 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Increase **oil VOM** to prevent overuse of oil over coal [PR #100](https://github.com/open-energy-transition/efuels-supply-potentials/pull/100)
+
+* Correct **data center loads** for 2023 [PR #98](https://github.com/open-energy-transition/efuels-supply-potentials/pull/98)
+
+* Enable **efficiency transfer** for already existing powerplants [PR #97](https://github.com/open-energy-transition/efuels-supply-potentials/pull/97)
+
 * Enable **custom busmap** to have the same clustering for all horizons and scenarios [PR #96](https://github.com/open-energy-transition/efuels-supply-potentials/pull/96)
 
 * Implement **maximum capacity constraint for geothermal** electricity generation plants [PR #95](https://github.com/open-energy-transition/efuels-supply-potentials/pull/95)

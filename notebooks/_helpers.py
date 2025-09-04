@@ -1420,10 +1420,10 @@ def calculate_weighted_lcoh_table_by_year(networks, h2_carriers, output_threshol
             df_bus.groupby('grid_region')
             .apply(lambda g: pd.Series({
                 'Weighted Average LCOH (USD/kg)': (g['lcoh'] * g['h2_output']).sum() / g['h2_output'].sum(),
-                # MWh --> tons
                 'Total Hydrogen Dispatch (tons)': g['h2_output'].sum() * 33.33 / 1000
             }))
             .reset_index()
+            .rename(columns={"grid_region": "Grid Region"})
         )
         if year_title:
             all_results[simple_year] = region_summary.round(2)
@@ -1703,47 +1703,42 @@ def analyze_ft_costs_by_region(networks: dict, year_title=True):
         print(f"\nYear: {year if year_title else name}\n")
         display(styled)
 
-
 def compute_aviation_fuel_demand(networks):
     results = {}
 
     for name, n in networks.items():
-        # Extract year
+        # Extract the year from the scenario name
         year = ''.join(filter(str.isdigit, name[-4:]))
 
-        # Trova i load per ciascun carrier
-        kerosene_load_names = n.loads[n.loads.carrier ==
-                                      "kerosene for aviation"].index
-        ekerosene_load_names = n.loads[n.loads.carrier ==
-                                       "e-kerosene for aviation"].index
+        # Find loads for each carrier
+        kerosene_load_names = n.loads[n.loads.carrier == "kerosene for aviation"].index
+        ekerosene_load_names = n.loads[n.loads.carrier == "e-kerosene for aviation"].index
 
-        # Timestep duration
+        # Snapshot weighting
         weightings = n.snapshot_weightings.generators
 
         # Energy in MWh
-        kerosene_mwh = n.loads_t.p[kerosene_load_names].multiply(
-            weightings, axis=0).sum().sum()
-        ekerosene_mwh = n.loads_t.p[ekerosene_load_names].multiply(
-            weightings, axis=0).sum().sum()
+        kerosene_mwh = n.loads_t.p[kerosene_load_names].multiply(weightings, axis=0).sum().sum()
+        ekerosene_mwh = n.loads_t.p[ekerosene_load_names].multiply(weightings, axis=0).sum().sum()
 
-        # Conversion in TWh
+        # Convert to TWh
         kerosene_twh = kerosene_mwh / 1e6
         ekerosene_twh = ekerosene_mwh / 1e6
 
+        # Store results for this scenario
         results[name] = {
+            "Year": year,
             "Kerosene (TWh)": kerosene_twh,
-            "e-Kerosene (TWh)": ekerosene_twh
+            "e-Kerosene (TWh)": ekerosene_twh,
         }
 
-    df = pd.DataFrame.from_dict(results, orient="index")
-    df.index.name = "scenario"
-    df.reset_index(inplace=True)
-    df['year'] = year
+    # Convert results dictionary to DataFrame
+    df = pd.DataFrame.from_dict(results, orient="index").reset_index()
+    df = df.drop(columns=["index"])   # drop scenario name
 
-    # Totali e percentuali
+    # Totals and shares
     df["Total (TWh)"] = df["Kerosene (TWh)"] + df["e-Kerosene (TWh)"]
-    df["e-Kerosene Share (%)"] = (df["e-Kerosene (TWh)"] /
-                                  df["Total (TWh)"]) * 100
+    df["e-Kerosene Share (%)"] = (df["e-Kerosene (TWh)"] / df["Total (TWh)"]) * 100
 
     # Remove values close to zero
     df[df.select_dtypes(include='number').columns] = df.select_dtypes(include='number').applymap(
@@ -1751,6 +1746,7 @@ def compute_aviation_fuel_demand(networks):
     )
 
     return df
+
 
 
 def compute_emissions_from_links(net):

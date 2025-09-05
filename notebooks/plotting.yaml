@@ -55,6 +55,7 @@ tech_colors:
   gas for industry CC: '#692e0a'
   gas pipeline: '#ebbca0'
   gas pipeline new: '#a87c62'
+  Oil: '#555555'
   oil: '#555555'
   oil primary: '#d2d2d2'
   oil refining: '#e6e6e6'
@@ -335,7 +336,7 @@ nice_names:
   coal: Coal
   coal (power): coal (power)
   gas (power): gas (power)
-  oil (power): bil (power)
+  oil (power): oil (power)
   biomass (power): biomass (power)
   lignite: Lignite
   biomass: Biomass
@@ -414,6 +415,7 @@ rename_tech_capex:
   # Fossil generators
   coal: Fossil generators
   oil: Fossil generators
+  Oil: Fossil generators
   lignite: Fossil generators
   gas: Fossil generators
   CCGT: Fossil generators
@@ -575,6 +577,7 @@ rename_tech_opex:
   gas (power): Fossil fuels
   coal (power): Fossil fuels
   oil (power): Fossil fuels 
+  Oil: Fossil fuels
   CCGT: Fossil fuels
   OCGT: Fossil fuels
   urban central gas CHP: Fossil fuels
@@ -740,7 +743,6 @@ renamed_tech_colors:
   Hydropower (incl. tax credits): '#298c81'
   Nuclear: '#e8a9d5'
   Nuclear (incl. tax credits): '#e377c2'
-  Oil: '#7f3b08'
   Solar: '#ffdd57'
   Solar (incl. tax credits): '#ffdd57'
   Wind: '#a6cee3'

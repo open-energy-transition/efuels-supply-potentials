@@ -930,7 +930,7 @@ def add_co2_storage_tanks(n):
             mask = n.links[col].notna() & n.links[col].str.contains("co2 stored", na=False)
             n.links.loc[mask, col] = n.links.loc[mask, col].str.replace("co2 stored", "buffer co2 storage tank", regex=False)
 
-    # create buffer co2 stored and buffer biogenic co2 stored buses
+    # create buffer co2 storage tank and buffer biogenic co2 storage tank buses
     for c in ["co2 storage tank", "biogenic co2 storage tank"]:
         co2_storage_tank_buses = n.buses[n.buses.carrier == c]
         n.madd(
@@ -942,6 +942,21 @@ def add_co2_storage_tanks(n):
             y=co2_storage_tank_buses.y.values,
         )
         logger.info(f"Added buffer {c} buses")
+
+    # connect buffer co2 storage tank with co2 storage tank
+    for c in ["co2 storage tank", "biogenic co2 storage tank"]:
+        buffer_co2_storage_tank_buses = n.buses[n.buses.carrier == f"buffer {c}"]
+        n.madd(
+            "Link",
+            buffer_co2_storage_tank_buses.index + " to tank",
+            bus0=buffer_co2_storage_tank_buses.index,
+            bus1=buffer_co2_storage_tank_buses.index.str.replace("buffer ", ""),
+            p_nom_extendable=True,
+            carrier=f"buffer {c} to tank",
+            efficiency=1,
+            capital_cost=0,
+        )
+        logger.info(f"Added links from buffer '{c}' to tank'")
 
     # create CO2 sequestered buses
     co2_storage_tank_buses = n.buses[n.buses.carrier == "co2 storage tank"]

@@ -3806,16 +3806,27 @@ def preprocess_res_ces_share_eia_region(eia_gen_data, grid_regions):
 
     return region_agg[["% Actual RES", "% Actual CES"]]
 
-def evaluate_res_ces_by_region(networks, ces_carriers, res_carriers, multiple_scenarios=False):
+def evaluate_res_ces_by_region(networks, ces_carriers, res_carriers):
     """
     Evaluate RES and CES shares from the model, aggregated by grid region.
     Assumes `attach_grid_region_to_buses` has been called on each network.
+    Returns results[(scenario, year)] = df.
     """
 
     results = {}
 
     for name, network in networks.items():
-        year = int(name[-4:])
+        # Extract scenario and year from network name (e.g., "scenario_01_2030" -> scenario="scenario_01", year=2030)
+        match = re.search(r'(?:scenario_(\d{2})|Base)_(\d{4})', name)
+        if match:
+            if match.group(1):
+                scenario = f"scenario_{match.group(1)}"
+            else:
+                scenario = "Base"
+            year = int(match.group(2))
+        else:
+            print(f"Warning: Skipping network '{name}' - does not match expected format (e.g., 'scenario_01_2030' or 'Base_2023').")
+            continue
 
         snapshots = network.snapshots
         timestep_h = (snapshots[1] - snapshots[0]).total_seconds() / 3600
@@ -3889,14 +3900,10 @@ def evaluate_res_ces_by_region(networks, ces_carriers, res_carriers, multiple_sc
 
         df = df[["% RES", "% CES"]].round(2)
 
-        if multiple_scenarios:
-            results[name] = df.sort_index()
-        else:
-            results[year] = df.sort_index()
+        results[(scenario, year)] = df.sort_index()
 
     return results
 
-from IPython.display import display, HTML
 
 def display_grid_region_results(networks, eia_generation_data, grid_regions, ces_carriers, res_carriers):
     """

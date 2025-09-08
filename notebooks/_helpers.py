@@ -2519,6 +2519,13 @@ def calculate_total_inputs_outputs_ft(networks, ft_carrier="Fischer-Tropsch", ye
     return df.sort_values("Year")
 
 def compute_ekerosene_production_cost_by_region(networks: dict, year_title=True):
+    # --- Energy content conversion for e-kerosene ---
+    # 1 MWh = 3600 MJ
+    # Energy density of kerosene ≈ 34 MJ/L
+    # 1 US gallon = 3.78541 L
+    # Energy per liter = 34 / 3600 = 0.009444... MWh/L
+    # Energy per gallon = 0.009444... × 3.78541 ≈ 0.0357 MWh/gallon
+    MWH_PER_GALLON = 34.0 / 3600.0 * 3.78541  
 
     for name, net in networks.items():
         year_match = re.search(r"\d{4}", name)
@@ -2527,7 +2534,7 @@ def compute_ekerosene_production_cost_by_region(networks: dict, year_title=True)
         year = year_match.group()
 
         ft_links = net.links[
-            (net.links.carrier.str.contains("Fischer", case=False, na=False)) &
+            (net.links.carrier.str.contains("Fischer-Tropsch", case=False, na=False)) &
             (
                 (net.links.get("p_nom_opt", 0) > 0) |
                 ((net.links.get("p_nom", 0) > 0) & (net.links.get("p_nom_extendable", False) == False))
@@ -2560,21 +2567,22 @@ def compute_ekerosene_production_cost_by_region(networks: dict, year_title=True)
             h2_price   = net.buses_t.marginal_price[ft_links.at[link, "bus0"]]
             co2_price  = net.buses_t.marginal_price[ft_links.at[link, "bus2"]]
 
+            # link power flows, converted to energy with timestep
             p1 = -net.links_t.p1[link] * timestep_hours  # Output (MWh)
-            p3 =  net.links_t.p3[link] * timestep_hours  # Electricity in (MWh)
-            p0 =  net.links_t.p0[link] * timestep_hours  # H2 in (MWh)
-            p2 =  net.links_t.p2[link].clip(upper=0) * timestep_hours  # CO2 in (t), negative only
+            p3 =  net.links_t.p3[link] * timestep_hours  # Electricity input (MWh)
+            p0 =  net.links_t.p0[link] * timestep_hours  # H2 input (MWh)
+            p2 =  net.links_t.p2[link].clip(upper=0) * timestep_hours  # CO2 input (t), negative only
 
-            prod = p1.sum() / 1e6  # MWh → TWh
+            prod = p1.sum() / 1e6  # convert MWh → TWh
 
             if prod < 1e-3:
-                continue  # skip links with negligible production
+                continue  # skip negligible production
 
             fuel_output_safe = p1.sum()
 
             elec_cost = (p3 * elec_price).sum() / fuel_output_safe
             h2_cost   = (p0 * h2_price).sum() / fuel_output_safe
-            co2_cost  = (-p2 * co2_price).sum() / fuel_output_safe  # cost per MWh of product
+            co2_cost  = (-p2 * co2_price).sum() / fuel_output_safe
 
             total_cost = elec_cost + h2_cost + co2_cost  # USD/MWh of product
 
@@ -2609,7 +2617,27 @@ def compute_ekerosene_production_cost_by_region(networks: dict, year_title=True)
         if df_grouped.empty:
             continue
 
-        print(f"\n{year if year_title else name}:\n")
+        # make "Grid Region" a visible column
+        df_grouped = df_grouped.reset_index()
+
+        # add cost in USD/gallon
+        df_grouped["Total cost (USD/gallon e-kerosene)"] = (
+            df_grouped["Total production cost (USD/MWh e-kerosene)"] * MWH_PER_GALLON
+        )
+
+        # weighted average across all regions
+        total_prod = df_grouped["Production (TWh)"].sum()
+        weighted_avg_cost = (
+            (df_grouped["Total production cost (USD/MWh e-kerosene)"] * df_grouped["Production (TWh)"]).sum()
+            / total_prod
+        )
+        weighted_avg_cost_gal = weighted_avg_cost * MWH_PER_GALLON
+
+        print(f"\n{year if year_title else name}:")
+        print(f"\nWeighted average e-kerosene production cost: "
+              f"{weighted_avg_cost:.2f} USD/MWh "
+              f"({weighted_avg_cost_gal:.2f} USD/gallon)\n")
+
         display(
             df_grouped.round(2).style.format({
                 "Production (TWh)": "{:,.2f}",
@@ -2617,15 +2645,9 @@ def compute_ekerosene_production_cost_by_region(networks: dict, year_title=True)
                 "Hydrogen cost (USD/MWh e-kerosene)": "{:,.2f}",
                 "CO2 cost (USD/MWh e-kerosene)": "{:.2f}",
                 "Total production cost (USD/MWh e-kerosene)": "{:,.2f}",
+                "Total cost (USD/gallon e-kerosene)": "{:,.2f}",
             }).hide(axis="index")
         )
-
-        total_prod = df_grouped["Production (TWh)"].sum()
-        weighted_avg_cost = (
-            (df_grouped["Total production cost (USD/MWh e-kerosene)"] * df_grouped["Production (TWh)"]).sum()
-            / total_prod
-        )
-        print(f"Weighted average production cost: {weighted_avg_cost:.2f} USD/MWh")
 
 
 #### VALIDATION HELPERS FUNCTIONS #####
@@ -3037,8 +3059,11 @@ def plot_stacked_costs_by_year_plotly(cost_data, cost_type_label, tech_colors=No
     
     fig.show()
 
-
 def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names, use_scenario_names=False):
+    import re, math
+    import numpy as np
+    import matplotlib.pyplot as plt
+
     # Extract year from the key using regex
     year_match = re.search(r'\d{4}', key)
     year_str = year_match.group() if year_match else "Year N/A"
@@ -3073,7 +3098,17 @@ def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names, use_scenario_
     for idx, region in enumerate(regions):
         ax = axs[idx]
 
-        table_lcoe_df = table_df[table_df.columns[table_df.columns.get_level_values(0).str.contains('lcoe')]][carrier_list]
+        # Filter only available carriers
+        available_carriers = [c for c in carrier_list if c in table_df.columns.get_level_values(0)]
+        if not available_carriers:
+            ax.set_title(f"{region} - No carriers available", fontsize=12)
+            ax.axis("off")
+            continue
+
+        table_lcoe_df = table_df[
+            table_df.columns[table_df.columns.get_level_values(0).str.contains('lcoe')]
+        ][available_carriers]
+
         table_lcoe_df_region = table_lcoe_df.loc[region, :]
 
         lcoe_tech_list = table_lcoe_df_region.xs('max', level=1).index
@@ -3106,6 +3141,7 @@ def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names, use_scenario_
         fig.delaxes(axs[j])
 
     plt.show()
+
 
 
 def compute_line_expansion_capacity(n):

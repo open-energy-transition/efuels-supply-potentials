@@ -3968,10 +3968,16 @@ def display_grid_region_results(networks, eia_generation_data, grid_regions, ces
         res_carriers=res_carriers
     )
 
-    for year in sorted(res_by_region.keys()):
-        df_year = res_by_region[year].copy()
+    # Sort by year
+    for key in sorted(res_by_region.keys(), key=lambda k: (k[1] if isinstance(k, tuple) else k)):
+        if isinstance(key, tuple):
+            scenario, yr = key
+        else:
+            scenario, yr = 'Base', key
 
-        if year == 2023:
+        df_year = res_by_region[key].copy()
+
+        if yr == 2023:
             # Merge with EIA actuals
             eia_region = preprocess_res_ces_share_eia_region(eia_generation_data, grid_regions)
             df_year = df_year.merge(eia_region, left_index=True, right_index=True)
@@ -3981,10 +3987,10 @@ def display_grid_region_results(networks, eia_generation_data, grid_regions, ces
 
             def style_row(row):
                 return [
-                    deviation_color(row['% RES'], row['% Actual RES']),
-                    deviation_color(row['% RES'], row['% Actual RES']),
-                    deviation_color(row['% CES'], row['% Actual CES']),
-                    deviation_color(row['% CES'], row['% Actual CES'])
+                    deviation_color(row['% RES'], row['% Actual RES']),  # color model RES
+                    '',  # no color on actual
+                    deviation_color(row['% CES'], row['% Actual CES']),  # color model CES
+                    ''   # no color on actual
                 ]
 
             styled_df = (
@@ -4007,9 +4013,10 @@ def display_grid_region_results(networks, eia_generation_data, grid_regions, ces
             )
             df_html = styled_df.to_html()
 
+        # Show only the year in the title
         block = f"""
         <div style="flex:0 0 auto; padding:15px; min-width:250px;">
-            <h4 style="text-align:left;">Year: {year}</h4>
+            <h4 style="text-align:left;">Year: {yr}</h4>
             {df_html}
         </div>
         """

@@ -1557,7 +1557,10 @@ def plot_hydrogen_dispatch(networks, h2_carriers, output_threshold=1.0, year_tit
 
     if not dispatch_series_by_network:
         print("No valid hydrogen dispatch data found.")
-        return
+        return pd.DataFrame()
+    
+    merged_dispatch_df = pd.concat(dispatch_series_by_network, axis=1)
+
 
     # Second pass: generate plots with fixed y-axis
     for key, df in dispatch_series_by_network.items():
@@ -1589,6 +1592,9 @@ def plot_hydrogen_dispatch(networks, h2_carriers, output_threshold=1.0, year_tit
 
         plt.tight_layout(rect=[0, 0, 0.85, 1])
         plt.show()
+    
+    return merged_dispatch_df
+
 
 
 def analyze_ft_costs_by_region(networks: dict, year_title=True):
@@ -1703,50 +1709,92 @@ def analyze_ft_costs_by_region(networks: dict, year_title=True):
         print(f"\nYear: {year if year_title else name}\n")
         display(styled)
 
-def compute_aviation_fuel_demand(networks):
+def compute_aviation_fuel_demand(networks,
+                                      include_scenario: bool = False,
+                                      scenario_as_index: bool = False,
+                                      wide: bool = False):
+    """
+    Compute kerosene / e-kerosene demand per scenario.
+
+    Parameters
+    ----------
+    networks : dict[str, pypsa.Network]
+    include_scenario : bool
+        (Ignored when wide=True; kept for backward compatibility in long mode)
+    scenario_as_index : bool
+        (Ignored when wide=True)
+    wide : bool
+        If True returns a wide table with MultiIndex columns (Scenario, Metric) and a single Year column.
+
+    Returns
+    -------
+    pandas.DataFrame
+    """
+    import re
     results = {}
 
     for name, n in networks.items():
-        # Extract the year from the scenario name
-        year = ''.join(filter(str.isdigit, name[-4:]))
+        m = re.search(r'(?:scenario_(\d{2})|Base)_(\d{4})', name)
+        if m:
+            scenario = f"scenario_{m.group(1)}" if m.group(1) else "Base"
+            year = int(m.group(2))
+        else:
+            scenario = name
+            digits = ''.join(filter(str.isdigit, name[-4:]))
+            year = int(digits) if digits.isdigit() else None
 
-        # Find loads for each carrier
-        kerosene_load_names = n.loads[n.loads.carrier == "kerosene for aviation"].index
-        ekerosene_load_names = n.loads[n.loads.carrier == "e-kerosene for aviation"].index
+        kerosene_idx = n.loads.index[n.loads.carrier == "kerosene for aviation"]
+        ekerosene_idx = n.loads.index[n.loads.carrier == "e-kerosene for aviation"]
 
-        # Snapshot weighting
-        weightings = n.snapshot_weightings.generators
+        if kerosene_idx.empty and ekerosene_idx.empty:
+            kerosene_twh = 0.0
+            ekerosene_twh = 0.0
+        else:
+            w = n.snapshot_weightings.generators
+            kerosene_mwh = (n.loads_t.p[kerosene_idx].multiply(w, axis=0).sum().sum()
+                            if len(kerosene_idx) else 0.0)
+            ekerosene_mwh = (n.loads_t.p[ekerosene_idx].multiply(w, axis=0).sum().sum()
+                             if len(ekerosene_idx) else 0.0)
+            kerosene_twh = kerosene_mwh / 1e6
+            ekerosene_twh = ekerosene_mwh / 1e6
 
-        # Energy in MWh
-        kerosene_mwh = n.loads_t.p[kerosene_load_names].multiply(weightings, axis=0).sum().sum()
-        ekerosene_mwh = n.loads_t.p[ekerosene_load_names].multiply(weightings, axis=0).sum().sum()
-
-        # Convert to TWh
-        kerosene_twh = kerosene_mwh / 1e6
-        ekerosene_twh = ekerosene_mwh / 1e6
-
-        # Store results for this scenario
         results[name] = {
+            "Scenario": scenario,
             "Year": year,
             "Kerosene (TWh)": kerosene_twh,
             "e-Kerosene (TWh)": ekerosene_twh,
         }
 
-    # Convert results dictionary to DataFrame
-    df = pd.DataFrame.from_dict(results, orient="index").reset_index()
-    df = df.drop(columns=["index"])   # drop scenario name
+    df = pd.DataFrame.from_dict(results, orient="index").reset_index(drop=True)
 
-    # Totals and shares
     df["Total (TWh)"] = df["Kerosene (TWh)"] + df["e-Kerosene (TWh)"]
-    df["e-Kerosene Share (%)"] = (df["e-Kerosene (TWh)"] / df["Total (TWh)"]) * 100
-
-    # Remove values close to zero
-    df[df.select_dtypes(include='number').columns] = df.select_dtypes(include='number').applymap(
-        lambda x: 0 if abs(x) < 1e-6 else x
+    df["e-Kerosene Share (%)"] = df.apply(
+        lambda r: 0.0 if r["Total (TWh)"] == 0 else 100 * r["e-Kerosene (TWh)"] / r["Total (TWh)"],
+        axis=1
     )
 
-    return df
+    num_cols = df.select_dtypes(include="number").columns
+    df[num_cols] = df[num_cols].applymap(lambda x: 0.0 if abs(x) < 1e-9 else x)
 
+    if not wide:
+        if not include_scenario:
+            df = df.drop(columns=["Scenario"])
+        else:
+            if scenario_as_index:
+                df = df.set_index("Scenario")
+        df = df.sort_values(["Year"] + (["Scenario"] if include_scenario and not scenario_as_index else []))
+        return df.reset_index(drop=not scenario_as_index)
+
+    # Wide: columns (Scenario, Metric), single Year column
+    metrics = ["Kerosene (TWh)", "e-Kerosene (TWh)", "Total (TWh)", "e-Kerosene Share (%)"]
+    wide_df = df.pivot_table(index="Year", columns="Scenario", values=metrics, aggfunc="first")
+
+    # Current pivot gives (Metric, Scenario); swap to (Scenario, Metric)
+    wide_df.columns = wide_df.columns.swaplevel(0, 1)
+    wide_df = wide_df.sort_index(axis=1, level=[0, 1])
+
+    wide_df = wide_df.reset_index()  # keep single Year column
+    return wide_df
 
 
 def compute_emissions_from_links(net):
@@ -2445,80 +2493,251 @@ def assign_macro_category(row, categories_capex, categories_opex):
         return 'Other'
 
 
-def calculate_total_inputs_outputs_ft(networks, ft_carrier="Fischer-Tropsch", year_index=True):
+def calculate_total_inputs_outputs_ft(
+    networks: dict,
+    ft_carrier: str = "Fischer-Tropsch",
+    year_index: bool = True,
+    include_scenario: bool = False,
+    scenario_regex: str = r"(scenario_\d{2})",
+    keep_empty: bool = False,
+    wide: bool = False,
+    scenario_first_level: bool = True,
+):
     """
-    Calculates input/output flows for Fischer-Tropsch across a set of PyPSA networks.
-    
-    For each network:
-    - electricity used (TWh)
-    - hydrogen used (TWh and tons)
-    - CO2 used (Mt), only negative p2 flows
-    - e-kerosene produced (TWh)
-    
-    Returns:
-        pd.DataFrame with results per year.
+    Calculate Fischer-Tropsch (FT) process inputs/outputs per network.
+
+    For each network (scenario-year):
+      - Used electricity (TWh)    : links_t.p3
+      - Used hydrogen (TWh / t)   : links_t.p0
+      - Used CO2 (Mt)             : links_t.p2  (sum of flow; negative convention => absolute used)
+      - Produced e-kerosene (TWh) : links_t.p1  (output taken as negative of p1 aggregated)
+
+    Parameters
+    ----------
+    networks : dict
+        {name: pypsa.Network}
+    ft_carrier : str
+        Link carrier name to filter Fischer-Tropsch units.
+    year_index : bool
+        If True (default) the output keeps a numeric Year column (and sorts by it).
+        If False, original network name retained in 'Year' column (for backward compatibility).
+    include_scenario : bool
+        If True, adds a 'Scenario' column (parsed with scenario_regex; 'Base' if not found).
+    scenario_regex : str
+        Regex to extract scenario label from the network name.
+    keep_empty : bool
+        If True, include rows for scenarios without FT links (filled with zeros).
+    wide : bool
+        If True, returns a pivoted (wide) table:
+            - Index: Year (or Scenario) depending on flags
+            - Columns: metrics (or MultiIndex with scenario + metric)
+    scenario_first_level : bool
+        If wide=True and include_scenario=True: choose MultiIndex order:
+            True  => (Scenario, Metric)
+            False => (Metric, Scenario)
+
+    Returns
+    -------
+    pd.DataFrame
+        Long or wide formatted table with FT energy/material balances.
+
+    Notes
+    -----
+    - Previous behavior preserved when include_scenario=False, wide=False.
+    - Hydrogen tons conversion: TWh -> kWh -> kg -> t  (1 TWh = 1e9 kWh; LHV ≈ 33.33 kWh/kg).
     """
-    
-    results = []
+
+    rows = []
 
     for name, net in networks.items():
+        # Extract scenario
+        scenario_match = re.search(scenario_regex, name) if include_scenario else None
+        scenario = scenario_match.group(1) if (scenario_match and include_scenario) else ("Base" if include_scenario else None)
+
         ft_links = net.links[net.links.carrier == ft_carrier]
         if ft_links.empty:
+            if keep_empty:
+                # Extract year anyway
+                year_match = re.search(r"\d{4}", name)
+                yr_val = int(year_match.group()) if year_match else None
+                rows.append({
+                    "Year": (yr_val if year_index else name),
+                    "Scenario": scenario,
+                    "Used electricity (TWh)": 0.0,
+                    "Used hydrogen (TWh)": 0.0,
+                    "Used hydrogen (t)": 0.0,
+                    "Used CO2 (Mt)": 0.0,
+                    "Produced e-kerosene (TWh)": 0.0,
+                })
             continue
 
-        ft_link_ids = ft_links.index
+        ft_ids = ft_links.index
 
-        # Determine timestep in hours
-        timestep_hours = (
+        # Timestep hours
+        timestep_h = (
             (net.snapshots[1] - net.snapshots[0]).total_seconds() / 3600
             if len(net.snapshots) > 1 else 1.0
         )
 
-        # Helper function to get total energy (TWh) across selected links
-        def get_energy(df, link_ids):
-            df_selected = df.reindex(columns=link_ids, fill_value=0.0)
-            return (df_selected * timestep_hours).sum().sum() / 1e6  # MWh → TWh
+        def _energy(df, ids):
+            sel = df.reindex(columns=ids, fill_value=0.0)
+            return (sel * timestep_h).sum().sum() / 1e6  # MWh -> TWh
 
-        # Energy flows
-        elec_input_twh = get_energy(net.links_t.p3, ft_link_ids)
-        h2_input_twh = get_energy(net.links_t.p0, ft_link_ids)
-        fuel_output_twh = get_energy(net.links_t.p1, ft_link_ids)
+        elec_twh = _energy(net.links_t.p3, ft_ids)
+        h2_twh = _energy(net.links_t.p0, ft_ids)
+        kerosene_twh_raw = _energy(net.links_t.p1, ft_ids)
+        # p1 likely negative for output (depending on sign convention). Keep positive production:
+        kerosene_twh = -kerosene_twh_raw
 
-        def get_co2_flow(df, link_ids):
-            df_selected = df.reindex(columns=link_ids, fill_value=0.0)
-            return (df_selected * timestep_hours).sum().sum() / 1e6  # t → Mt
-        
-        co2_input_mt = get_co2_flow(net.links_t.p2, ft_link_ids)
+        def _co2(df, ids):
+            sel = df.reindex(columns=ids, fill_value=0.0)
+            # Sum raw (can be negative). For clarity assume negative means consumption:
+            total = (sel * timestep_h).sum().sum() / 1e6  # t -> Mt
+            # Use absolute if negative is consumption; keep sign if desired. Here make it positive usage.
+            return -total if total < 0 else total
 
-        # Hydrogen in tons
-        h2_tons = h2_input_twh * 1e9 / 33.33 / 1000  # TWh → kWh → kg → t
+        co2_mt = _co2(net.links_t.p2, ft_ids)
 
-        # Extract year from network name
-        match = re.search(r"\d{4}", name)
-        if not match:
+        # Hydrogen tons
+        h2_tons = h2_twh * 1e9 / 33.33 / 1000  # TWh -> kWh -> kg -> t
+
+        year_match = re.search(r"\d{4}", name)
+        if not year_match:
             continue
-        year = int(match.group())
+        year_val = int(year_match.group())
 
-        results.append({
-            "Year": year if year_index else name,
-            "Used electricity (TWh)": elec_input_twh,
-            "Used hydrogen (TWh)": h2_input_twh,
+        row = {
+            "Year": (year_val if year_index else name),
+            "Used electricity (TWh)": elec_twh,
+            "Used hydrogen (TWh)": h2_twh,
             "Used hydrogen (t)": h2_tons,
-            "Used CO2 (Mt)": co2_input_mt,
-            "Produced e-kerosene (TWh)": -fuel_output_twh,
-        })
+            "Used CO2 (Mt)": co2_mt,
+            "Produced e-kerosene (TWh)": kerosene_twh,
+        }
+        if include_scenario:
+            row["Scenario"] = scenario
+        rows.append(row)
 
-    # Compile and sort results
-    df = pd.DataFrame(results)
-    if df.empty:
-        return df
-    
-    if year_index != False:
-        df["Year"] = df["Year"].astype(int)
+    if not rows:
+        return pd.DataFrame(columns=[
+            "Year",
+            *(["Scenario"] if include_scenario else []),
+            "Used electricity (TWh)",
+            "Used hydrogen (TWh)",
+            "Used hydrogen (t)",
+            "Used CO2 (Mt)",
+            "Produced e-kerosene (TWh)"
+        ])
 
-    return df.sort_values("Year")
+    df = pd.DataFrame(rows)
 
-def compute_ekerosene_production_cost_by_region(networks: dict, year_title=True):
+    # Ensure proper dtypes
+    if year_index and "Year" in df.columns:
+        df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+
+    # Sort
+    sort_cols = []
+    if include_scenario:
+        sort_cols.append("Scenario")
+    if "Year" in df.columns:
+        sort_cols.append("Year")
+    if sort_cols:
+        df = df.sort_values(sort_cols)
+
+    if not wide:
+        return df.reset_index(drop=True)
+
+    # Wide formatting
+    value_cols = [
+        "Used electricity (TWh)",
+        "Used hydrogen (TWh)",
+        "Used hydrogen (t)",
+        "Used CO2 (Mt)",
+        "Produced e-kerosene (TWh)"
+    ]
+
+    if include_scenario:
+        if scenario_first_level:
+            # Columns: Scenario -> Metric
+            pivot_index = "Year" if year_index else None
+            if pivot_index:
+                wide_df = df.pivot(index=pivot_index, columns="Scenario", values=value_cols)
+                # Reorder to Scenario first => (Scenario, Metric)
+                wide_df = wide_df.swaplevel(0, 1, axis=1).sort_index(axis=1)
+            else:
+                # No year index: just aggregate by scenario (single row per scenario)
+                wide_df = df.groupby("Scenario")[value_cols].sum()
+        else:
+            # Columns: Metric -> Scenario
+            pivot_index = "Year" if year_index else None
+            if pivot_index:
+                wide_df = df.pivot(index=pivot_index, columns="Scenario", values=value_cols)
+            else:
+                wide_df = df.groupby("Scenario")[value_cols].sum().T
+        return wide_df
+
+    # include_scenario False in wide mode
+    if year_index:
+        wide_df = df.set_index("Year")[value_cols]
+    else:
+        wide_df = df.set_index("Year")[value_cols]  # 'Year' holds original name when year_index=False
+    return wide_df
+
+
+def compute_ekerosene_production_cost_by_region(
+    networks: dict,
+    year_title: bool = True,
+    aggregate: bool = False,
+    wide: bool = False,
+    scenario_regex: str = r"(?:scenario_(\d{2})|Base)",
+    scenario_first_level: bool = True,
+    min_production_twh: float = 1e-3,
+    return_weighted_average: bool = False,
+    expected_scenarios: list | None = None,
+    expected_years: list | None = None,
+    fill_cost_with: float | None = None,  # None → NaN
+):
+    """
+    Extended: ensure ALL expected scenarios and years (even with no production)
+    appear in the output (long and wide). Missing combinations get:
+        Production (TWh) = 0
+        Costs = NaN (or fill_cost_with if provided)
+
+    Parameters added
+    ----------------
+    expected_scenarios : list | None
+        Full list of scenarios to include (e.g. ['Base','scenario_01',...]).
+        If None -> inferred from networks.
+    expected_years : list | None
+        Full list of model years to include (e.g. [2023,2030,2035,2040]).
+        If None -> inferred from networks.
+    fill_cost_with : float | None
+        Value to fill missing cost metrics. Default None keeps NaN.
+    """
+    import re
+    import pandas as pd
+    from itertools import product
+
+    all_rows = []
+
+    # Infer scenarios / years if not provided
+    inferred_scenarios = set()
+    inferred_years = set()
+
+    for name in networks.keys():
+        m = re.search(r'(?:scenario_(\d{2})|Base)_(\d{4})', name)
+        if not m:
+            continue
+        scen = f"scenario_{m.group(1)}" if m.group(1) else "Base"
+        yr = int(m.group(2))
+        inferred_scenarios.add(scen)
+        inferred_years.add(yr)
+
+    if expected_scenarios is None:
+        expected_scenarios = sorted(inferred_scenarios, key=lambda x: (x != "Base", x))
+    if expected_years is None:
+        expected_years = sorted(inferred_years)
+
     # --- Energy content conversion for e-kerosene ---
     # 1 MWh = 3600 MJ
     # Energy density of kerosene ≈ 34 MJ/L
@@ -2527,17 +2746,34 @@ def compute_ekerosene_production_cost_by_region(networks: dict, year_title=True)
     # Energy per gallon = 0.009444... × 3.78541 ≈ 0.0357 MWh/gallon
     MWH_PER_GALLON = 34.0 / 3600.0 * 3.78541  
 
+    cost_cols = [
+        "Electricity cost (USD/MWh e-kerosene)",
+        "Hydrogen cost (USD/MWh e-kerosene)",
+        "CO2 cost (USD/MWh e-kerosene)",
+        "Total production cost (USD/MWh e-kerosene)",
+        "Total cost (USD/gallon e-kerosene)",
+    ]
+    metrics_all = ["Production (TWh)"] + cost_cols
+
     for name, net in networks.items():
         year_match = re.search(r"\d{4}", name)
         if not year_match:
             continue
-        year = year_match.group()
+        year = int(year_match.group())
+
+        scen_match = re.search(scenario_regex, name)
+        if scen_match:
+            scen_raw = scen_match.group(0)
+            scenario = "Base" if "Base" in scen_raw else scen_raw
+        else:
+            scenario = "Base"
 
         ft_links = net.links[
             (net.links.carrier.str.contains("Fischer-Tropsch", case=False, na=False)) &
             (
                 (net.links.get("p_nom_opt", 0) > 0) |
-                ((net.links.get("p_nom", 0) > 0) & (net.links.get("p_nom_extendable", False) == False))
+                ((net.links.get("p_nom", 0) > 0) &
+                 (net.links.get("p_nom_extendable", False) == False))
             )
         ]
         if ft_links.empty:
@@ -2545,7 +2781,10 @@ def compute_ekerosene_production_cost_by_region(networks: dict, year_title=True)
 
         ft_link_ids = [
             l for l in ft_links.index
-            if all(l in getattr(net.links_t, p).columns for p in ["p0", "p1", "p2", "p3"])
+            if all(
+                hasattr(net.links_t, p) and (l in getattr(net.links_t, p).columns)
+                for p in ["p0", "p1", "p2", "p3"]
+            )
         ]
         if not ft_link_ids:
             continue
@@ -2555,99 +2794,208 @@ def compute_ekerosene_production_cost_by_region(networks: dict, year_title=True)
             if len(net.snapshots) > 1 else 1.0
         )
 
-        records = []
-
         for link in ft_link_ids:
             try:
                 region = net.buses.at[ft_links.at[link, "bus1"], "grid_region"]
             except KeyError:
                 continue
+            if pd.isna(region):
+                continue
 
-            elec_price = net.buses_t.marginal_price[ft_links.at[link, "bus3"]]
-            h2_price   = net.buses_t.marginal_price[ft_links.at[link, "bus0"]]
-            co2_price  = net.buses_t.marginal_price[ft_links.at[link, "bus2"]]
+            try:
+                elec_price = net.buses_t.marginal_price[ft_links.at[link, "bus3"]]
+                h2_price   = net.buses_t.marginal_price[ft_links.at[link, "bus0"]]
+                co2_price  = net.buses_t.marginal_price[ft_links.at[link, "bus2"]]
+            except KeyError:
+                continue
 
-            # link power flows, converted to energy with timestep
-            p1 = -net.links_t.p1[link] * timestep_hours  # Output (MWh)
-            p3 =  net.links_t.p3[link] * timestep_hours  # Electricity input (MWh)
-            p0 =  net.links_t.p0[link] * timestep_hours  # H2 input (MWh)
-            p2 =  net.links_t.p2[link].clip(upper=0) * timestep_hours  # CO2 input (t), negative only
+            p1 = -net.links_t.p1[link] * timestep_hours  # product out (MWh)
+            p3 =  net.links_t.p3[link] * timestep_hours  # elec in
+            p0 =  net.links_t.p0[link] * timestep_hours  # H2 in
+            p2 =  net.links_t.p2[link].clip(upper=0) * timestep_hours  # CO2 (t, negative)
 
-            prod = p1.sum() / 1e6  # convert MWh → TWh
-
-            if prod < 1e-3:
-                continue  # skip negligible production
-
+            prod_twh = p1.sum() / 1e6
+            if prod_twh < min_production_twh:
+                continue
             fuel_output_safe = p1.sum()
+            if fuel_output_safe <= 0:
+                continue
 
             elec_cost = (p3 * elec_price).sum() / fuel_output_safe
             h2_cost   = (p0 * h2_price).sum() / fuel_output_safe
             co2_cost  = (-p2 * co2_price).sum() / fuel_output_safe
+            total_cost = elec_cost + h2_cost + co2_cost
+            total_cost_gallon = total_cost * MWH_PER_GALLON
 
-            total_cost = elec_cost + h2_cost + co2_cost  # USD/MWh of product
-
-            records.append({
+            all_rows.append({
+                "Scenario": scenario,
+                "Year": year,
                 "Grid Region": region,
-                "Production (TWh)": prod,
+                "Production (TWh)": prod_twh,
                 "Electricity cost (USD/MWh e-kerosene)": elec_cost,
                 "Hydrogen cost (USD/MWh e-kerosene)": h2_cost,
                 "CO2 cost (USD/MWh e-kerosene)": co2_cost,
                 "Total production cost (USD/MWh e-kerosene)": total_cost,
+                "Total cost (USD/gallon e-kerosene)": total_cost_gallon,
             })
 
-        if not records:
-            continue
+    # ---------------- legacy print mode ----------------
+    if not (aggregate or wide):
+        # unchanged legacy behavior (only for networks with data)
+        if not all_rows:
+            print("No e-kerosene production found.")
+            return
+        df_all = pd.DataFrame(all_rows)
+        for (scen, yr), df_sub in df_all.groupby(["Scenario", "Year"]):
+            def wavg(g, col):
+                return (g[col]*g["Production (TWh)"]).sum()/g["Production (TWh)"].sum()
+            grouped = df_sub.groupby("Grid Region").apply(
+                lambda g: pd.Series({
+                    "Production (TWh)": g["Production (TWh)"].sum(),
+                    **{c: wavg(g, c) for c in cost_cols}
+                })
+            )
+            grouped = grouped[grouped["Production (TWh)"] >= min_production_twh]
+            if grouped.empty:
+                continue
+            print(f"\n{yr if year_title else scen+'_'+str(yr)}:\n")
+            display(
+                grouped.round(2).style.format({
+                    "Production (TWh)": "{:,.2f}",
+                    **{c: "{:,.2f}" for c in cost_cols}
+                }).hide(axis="index")
+            )
+            total_prod = grouped["Production (TWh)"].sum()
+            if total_prod > 0:
+                w_cost = (grouped["Total production cost (USD/MWh e-kerosene)"] *
+                          grouped["Production (TWh)"]).sum()/total_prod
+                w_cost_gallon = w_cost * MWH_PER_GALLON
+                print(f"Weighted average production cost: {w_cost:.2f} USD/MWh ({w_cost_gallon:.2f} USD/gallon)")
+        return
 
-        df = pd.DataFrame(records)
+    # ---------------- aggregated (long) ----------------
+    if not all_rows:
+        # build empty frame with expected combos
+        base = []
+        for scen, yr in product(expected_scenarios, expected_years):
+            base.append({
+                "Scenario": scen,
+                "Year": yr,
+                "Grid Region": None,
+                "Production (TWh)": 0.0,
+                **{c: (fill_cost_with if fill_cost_with is not None else float('nan')) for c in cost_cols}
+            })
+        df_empty = pd.DataFrame(base)
+        return df_empty if not wide else pd.DataFrame()
 
-        # Weighted average per region based on production
-        def weighted_avg(group, col):
-            return (group[col] * group["Production (TWh)"]).sum() / group["Production (TWh)"].sum()
+    df_all = pd.DataFrame(all_rows)
 
-        grouped = df.groupby("Grid Region")
-        df_grouped = grouped.apply(lambda g: pd.Series({
+    # weighted aggregation per Scenario-Year-Region
+    def wavg_group(g, col):
+        return (g[col]*g["Production (TWh)"]).sum()/g["Production (TWh)"].sum()
+
+    grouped = (
+        df_all.groupby(["Scenario", "Year", "Grid Region"])
+        .apply(lambda g: pd.Series({
             "Production (TWh)": g["Production (TWh)"].sum(),
-            "Electricity cost (USD/MWh e-kerosene)": weighted_avg(g, "Electricity cost (USD/MWh e-kerosene)"),
-            "Hydrogen cost (USD/MWh e-kerosene)": weighted_avg(g, "Hydrogen cost (USD/MWh e-kerosene)"),
-            "CO2 cost (USD/MWh e-kerosene)": weighted_avg(g, "CO2 cost (USD/MWh e-kerosene)"),
-            "Total production cost (USD/MWh e-kerosene)": weighted_avg(g, "Total production cost (USD/MWh e-kerosene)"),
+            **{c: wavg_group(g, c) for c in cost_cols}
         }))
+        .reset_index()
+    )
 
-        df_grouped = df_grouped[df_grouped["Production (TWh)"] >= 1e-3]
-        if df_grouped.empty:
-            continue
+    # Collect all grid regions encountered
+    grid_regions_all = sorted(grouped["Grid Region"].unique())
 
-        # make "Grid Region" a visible column
-        df_grouped = df_grouped.reset_index()
+    # Insert missing scenario-year-region combinations
+    existing_keys = set(zip(grouped.Scenario, grouped.Year, grouped["Grid Region"]))
+    missing_rows = []
+    for scen, yr, reg in product(expected_scenarios, expected_years, grid_regions_all):
+        if (scen, yr, reg) not in existing_keys:
+            missing_rows.append({
+                "Scenario": scen,
+                "Year": yr,
+                "Grid Region": reg,
+                "Production (TWh)": 0.0,
+                **{c: (fill_cost_with if fill_cost_with is not None else float('nan')) for c in cost_cols}
+            })
+    if missing_rows:
+        grouped = pd.concat([grouped, pd.DataFrame(missing_rows)], ignore_index=True)
 
-        # add cost in USD/gallon
-        df_grouped["Total cost (USD/gallon e-kerosene)"] = (
-            df_grouped["Total production cost (USD/MWh e-kerosene)"] * MWH_PER_GALLON
+    # Sort
+    grouped = grouped.sort_values(["Scenario", "Year", "Grid Region"])
+
+    if wide:
+        # Pivot: index -> (Grid Region, Year) if multiple years
+        multi = grouped.pivot_table(
+            index=["Grid Region", "Year"],
+            columns="Scenario",
+            values=metrics_all,
+            aggfunc="first"
         )
 
-        # weighted average across all regions
-        total_prod = df_grouped["Production (TWh)"].sum()
-        weighted_avg_cost = (
-            (df_grouped["Total production cost (USD/MWh e-kerosene)"] * df_grouped["Production (TWh)"]).sum()
-            / total_prod
-        )
-        weighted_avg_cost_gal = weighted_avg_cost * MWH_PER_GALLON
+        # Reorder columns so scenarios in expected_scenarios order
+        # Current columns: (metric, scenario) -> swap if needed
+        if scenario_first_level:
+            # we want (Scenario, Metric)
+            multi = multi.swaplevel(0, 1, axis=1)
 
-        print(f"\n{year if year_title else name}:")
-        print(f"\nWeighted average e-kerosene production cost: "
-              f"{weighted_avg_cost:.2f} USD/MWh "
-              f"({weighted_avg_cost_gal:.2f} USD/gallon)\n")
+        # Ensure all scenarios present
+        # Build full column MultiIndex
+        if scenario_first_level:
+            full_cols = pd.MultiIndex.from_product(
+                [expected_scenarios, metrics_all],
+                names=multi.columns.names
+            )
+        else:
+            full_cols = pd.MultiIndex.from_product(
+                [metrics_all, expected_scenarios],
+                names=multi.columns.names
+            )
 
-        display(
-            df_grouped.round(2).style.format({
-                "Production (TWh)": "{:,.2f}",
-                "Electricity cost (USD/MWh e-kerosene)": "{:,.2f}",
-                "Hydrogen cost (USD/MWh e-kerosene)": "{:,.2f}",
-                "CO2 cost (USD/MWh e-kerosene)": "{:.2f}",
-                "Total production cost (USD/MWh e-kerosene)": "{:,.2f}",
-                "Total cost (USD/gallon e-kerosene)": "{:,.2f}",
-            }).hide(axis="index")
-        )
+        multi = multi.reindex(columns=full_cols)
+
+        # If years missing, add them
+        current_years = sorted({idx[1] for idx in multi.index})
+        missing_years = [y for y in expected_years if y not in current_years]
+        if missing_years:
+            # create empty rows for each grid region
+            grids = sorted({idx[0] for idx in multi.index})
+            add_index = pd.MultiIndex.from_product(
+                [grids, missing_years],
+                names=multi.index.names
+            )
+            empty_df = pd.DataFrame(
+                0.0,
+                index=add_index,
+                columns=multi.columns
+            )
+            # For cost columns set NaN (or fill value)
+            if scenario_first_level:
+                for scen in expected_scenarios:
+                    for cost_col in cost_cols:
+                        col = (scen, cost_col)
+                        if fill_cost_with is None:
+                            empty_df[col] = float('nan')
+                        else:
+                            empty_df[col] = fill_cost_with
+            else:
+                for cost_col in cost_cols:
+                    for scen in expected_scenarios:
+                        col = (cost_col, scen)
+                        if fill_cost_with is None:
+                            empty_df[col] = float('nan')
+                        else:
+                            empty_df[col] = fill_cost_with
+            multi = pd.concat([multi, empty_df]).sort_index()
+
+        # Drop Year level if single expected year
+        if len(expected_years) == 1:
+            multi.index = multi.index.droplevel("Year")
+
+        return multi if not return_weighted_average else (multi, None)
+
+    # Long form
+    return grouped if not return_weighted_average else (grouped, None)
 
 
 #### VALIDATION HELPERS FUNCTIONS #####
@@ -3141,7 +3489,6 @@ def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names, use_scenario_
         fig.delaxes(axs[j])
 
     plt.show()
-
 
 
 def compute_line_expansion_capacity(n):

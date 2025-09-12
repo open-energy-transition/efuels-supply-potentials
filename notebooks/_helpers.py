@@ -1229,7 +1229,7 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
     ax.add_artist(line_legend)
     ax.add_artist(tech_legend)
 
-    ax.set_extent([-130, -60, 20, 50], crs=ccrs.PlateCarree())
+    ax.set_extent([-130, -65, 20, 55], crs=ccrs.PlateCarree())
 
     ax.set_title(f'Installed electrolyzer capacity - {title} (only nodes ≥ 10 MW)\n')
     plt.tight_layout()
@@ -2192,7 +2192,7 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
     capacity_df = capacity_df.loc[capacity_df.index.intersection(valid_buses.index)]
 
     # Setup map
-    fig, ax = plt.subplots(figsize=(22, 10), subplot_kw={"projection": ccrs.PlateCarree()})
+    fig, ax = plt.subplots(figsize=(28, 10), subplot_kw={"projection": ccrs.PlateCarree()})
     bbox = box(-130, 20, -60, 50)
     regions_onshore_clipped = regions_onshore.to_crs(epsg=4326).clip(bbox)
 
@@ -2329,8 +2329,8 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
     ax.add_artist(ac_legend)
     ax.add_artist(dc_legend)
     ax.add_artist(carrier_legend)
-
-    ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
+    
+    ax.set_extent([-125, -65, 20, 55], crs=ccrs.PlateCarree())
     ax.autoscale(False)
 
     year = key[-4:]
@@ -4281,101 +4281,12 @@ def evaluate_res_ces_by_region(networks, ces_carriers, res_carriers):
         df["% CES"] = 100 * df["CES_energy"] / df["Total (MWh)"]
         df["% RES"] = 100 * df["RES_energy"] / df["Total (MWh)"]
 
-        df = df[["% RES", "% CES"]].round(2)
+        df = df[["Total (MWh)", "% RES", "% CES"]].round(2)
 
         results[(scenario, year)] = df.sort_index()
 
     return results
 
-
-def display_grid_region_results(networks, eia_generation_data, grid_regions, ces_carriers, res_carriers):
-    """
-    Display RES/CES results aggregated by grid region:
-    - For 2023: model vs EIA comparison with deviation colors.
-    - For future years: only model results (no targets, no EIA).
-    Tables are displayed horizontally with scroll if needed.
-    """
-
-    html_blocks = []
-    legend_html = """
-    <div style="padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:5px; width: fit-content;">
-    <strong>Legend</strong>
-    <ul style="margin:5px 0; padding-left:20px;">
-        <li style="background-color:#d4edda; padding:2px;">Diff. ≤ ±5%</li>
-        <li style="background-color:#fff3cd; padding:2px;">Diff. > ±5% and ≤ ±10%</li>
-        <li style="background-color:#ffe5b4; padding:2px;">Diff. > ±10% and ≤ ±15%</li>
-        <li style="background-color:#f8d7da; padding:2px;">Diff. > ±15%</li>
-    </ul>
-    </div>
-    """
-
-    res_by_region = evaluate_res_ces_by_region(
-        networks,
-        ces_carriers=ces_carriers,
-        res_carriers=res_carriers
-    )
-
-    # Sort by year
-    for key in sorted(res_by_region.keys(), key=lambda k: (k[1] if isinstance(k, tuple) else k)):
-        if isinstance(key, tuple):
-            scenario, yr = key
-        else:
-            scenario, yr = 'Base', key
-
-        df_year = res_by_region[key].copy()
-
-        if yr == 2023:
-            # Merge with EIA actuals
-            eia_region = preprocess_res_ces_share_eia_region(eia_generation_data, grid_regions)
-            df_year = df_year.merge(eia_region, left_index=True, right_index=True)
-
-            df_disp = df_year[["% RES", "% Actual RES", "% CES", "% Actual CES"]].round(2)
-            df_disp.index.name = "Grid Region"
-
-            def style_row(row):
-                return [
-                    deviation_color(row['% RES'], row['% Actual RES']),  # color model RES
-                    '',  # no color on actual
-                    deviation_color(row['% CES'], row['% Actual CES']),  # color model CES
-                    ''   # no color on actual
-                ]
-
-            styled_df = (
-                df_disp.style
-                .apply(style_row, axis=1)
-                .format(fmt_2dp_or_na)
-                .set_table_styles([{'selector': 'th.row_heading', 'props': 'font-weight:bold;'}])
-            )
-            df_html = styled_df.to_html() + legend_html
-
-        else:
-            # Future years: only model values
-            df_disp = df_year[["% RES", "% CES"]].round(2)
-            df_disp.index.name = "Grid Region"
-
-            styled_df = (
-                df_disp.style
-                .format(fmt_2dp_or_na)
-                .set_table_styles([{'selector': 'th.row_heading', 'props': 'font-weight:bold;'}])
-            )
-            df_html = styled_df.to_html()
-
-        # Show only the year in the title
-        block = f"""
-        <div style="flex:0 0 auto; padding:15px; min-width:250px;">
-            <h4 style="text-align:left;">Year: {yr}</h4>
-            {df_html}
-        </div>
-        """
-        html_blocks.append(block)
-
-    row = (
-        "<div style='display:flex; gap:15px; flex-wrap:nowrap; overflow-x:auto;'>"
-        + "".join(html_blocks) +
-        "</div>"
-    )
-
-    display(HTML(row))
 
 # Function to format values
 def fmt_2dp_or_na(v):
@@ -4391,31 +4302,30 @@ def fmt_2dp_or_na(v):
 # Function for deviation-based coloring (2023 only)
 def deviation_color(a, b):
     """
-    Returns a CSS background-color based on deviation of a from b (± percentage):
-        - Green  -> |deviation| ≤ 5%
-        - Yellow -> 5% < |deviation| ≤ 10%
-        - Orange -> 10% < |deviation| ≤ 15%
-        - Red    -> |deviation| > 15%
-        - None   -> if b is 'N/A' or non-numeric (no color)
+    Color by absolute percent deviation |a - b| / b:
+      - Green  -> ≤ 10%
+      - Yellow -> > 10% and ≤ 20%
+      - Red    -> > 20%
+      - None   -> if b is 'N/A', NaN, or zero
     """
     try:
         if isinstance(b, str) and b.strip().upper() == "N/A":
             return ''
         a_val = float(a)
         b_val = float(b)
-        if b_val == 0:
-            return ''  # avoid division by zero
-        deviation = abs((a_val - b_val) / b_val) * 100
-        if deviation <= 5:
-            return 'background-color:#d4edda;'  # green
-        elif deviation <= 10:
-            return 'background-color:#fff3cd;'  # yellow
-        elif deviation <= 15:
-            return 'background-color:#ffe5b4;'  # orange
+        if not pd.notna(b_val) or b_val == 0:
+            return ''  # avoid invalid/zero baseline
+        deviation = abs((a_val - b_val) / b_val) * 100.0
+
+        if deviation <= 10:
+            return 'background-color:#d4edda;'   # green
+        elif deviation <= 20:
+            return 'background-color:#fff3cd;'   # yellow
         else:
-            return 'background-color:#f8d7da;'  # red
-    except:
+            return 'background-color:#f8d7da;'   # red
+    except Exception:
         return ''
+
 
 # Simple green/red for future years
 def simple_color(a, b):
@@ -4596,3 +4506,183 @@ def compute_LCO_ekerosene_by_region(networks: dict,
                 "Total LCO e-kerosene (USD/gal)": "{:,.2f}",
             }).hide(axis="index")
         )
+
+def preprocess_res_ces_share_grid_region(eia_gen_data=None, grid_regions=None,
+                                         file_path="./validation_data/generation_grid_regions.xlsx",
+                                         sheet_name="Generation (TWh)"):
+    """
+    Drop-in replacement for preprocess_res_ces_share_eia_region.
+    Ignores eia_gen_data and grid_regions, and instead loads
+    precomputed grid-region data in TWh from generation_grid_regions.xlsx.
+    """
+
+    import pandas as pd
+    df = pd.read_excel(file_path, sheet_name=sheet_name)
+
+    if "Region" in df.columns and "Grid Region" not in df.columns:
+        df = df.rename(columns={"Region": "Grid Region"})
+
+    res_carriers = ["Solar", "Wind", "Hydro", "Geothermal", "Biomass"]
+    ces_carriers = res_carriers + ["Nuclear"]
+
+    total = df[["Coal", "Gas", "Oil", "Nuclear", "Other"] + res_carriers].sum(axis=1)
+    res_total = df[res_carriers].sum(axis=1)
+    ces_total = df[ces_carriers].sum(axis=1)
+
+    result = df[["Grid Region"]].copy()
+    result["% Actual RES"] = (res_total / total) * 100
+    result["% Actual CES"] = (ces_total / total) * 100
+
+    return result.set_index("Grid Region")
+
+def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
+    """
+    Show RES/CES results for grid regions using pre-aggregated Excel file
+    (generation_grid_regions.xlsx). Adds columns for absolute generation (TWh),
+    regional shares (%), and a national total row (U.S.).
+    Applies deviation-based coloring also to generation and share comparisons.
+    """
+
+    res_by_region = evaluate_res_ces_by_region(
+        networks,
+        ces_carriers=ces_carriers,
+        res_carriers=res_carriers
+    )
+
+    legend_html = """
+    <div style="padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:5px; width: fit-content;">
+    <strong>Legend</strong>
+    <ul style="margin:5px 0; padding-left:20px;">
+        <li style="background-color:#d4edda; padding:2px;">Diff. ≤ ±10%</li>
+        <li style="background-color:#fff3cd; padding:2px;">10% &lt; Diff. ≤ ±20%</li>
+        <li style="background-color:#f8d7da; padding:2px;">Diff. &gt; ±20%</li>
+    </ul>
+    </div>
+    """
+
+
+    html_blocks = []
+    cols_per_row = 2
+
+    for (scenario, yr) in sorted(res_by_region.keys()):
+        df_year = res_by_region[(scenario, yr)].copy()
+
+        if yr == 2023:
+            # Load actuals from Excel
+            eia_region = preprocess_res_ces_share_grid_region()
+
+            excel_df = pd.read_excel(
+                "./validation_data/generation_grid_regions.xlsx",
+                sheet_name="Generation (TWh)"
+            )
+            if "Region" in excel_df.columns and "Grid Region" not in excel_df.columns:
+                excel_df = excel_df.rename(columns={"Region": "Grid Region"})
+            excel_df = excel_df.set_index("Grid Region")
+
+            # Add stats total generation
+            eia_region = eia_region.join(excel_df[["Net generation (TWh)"]])
+
+            # Add model total generation (TWh)
+            df_year["Model generation (TWh)"] = df_year["Total (MWh)"] / 1e6
+
+            # Merge with stats
+            df_year = df_year.merge(eia_region, left_index=True, right_index=True)
+            df_year = df_year.rename(columns={"Net generation (TWh)": "Stats generation (TWh)"})
+
+            # Regional shares
+            df_year["% Model share"] = df_year["Model generation (TWh)"] / df_year["Model generation (TWh)"].sum() * 100
+            df_year["% Stats share"] = df_year["Stats generation (TWh)"] / df_year["Stats generation (TWh)"].sum() * 100
+
+            # Add national total row (U.S.)
+            totals = pd.Series({
+                "% RES": (df_year["% RES"] * df_year["Model generation (TWh)"]).sum() / df_year["Model generation (TWh)"].sum(),
+                "% Actual RES": (df_year["% Actual RES"] * df_year["Stats generation (TWh)"]).sum() / df_year["Stats generation (TWh)"].sum(),
+                "% CES": (df_year["% CES"] * df_year["Model generation (TWh)"]).sum() / df_year["Model generation (TWh)"].sum(),
+                "% Actual CES": (df_year["% Actual CES"] * df_year["Stats generation (TWh)"]).sum() / df_year["Stats generation (TWh)"].sum(),
+                "Model generation (TWh)": df_year["Model generation (TWh)"].sum(),
+                "Stats generation (TWh)": df_year["Stats generation (TWh)"].sum(),
+                "% Model share": 100.0,
+                "% Stats share": 100.0
+            }, name="U.S.")
+            df_year = pd.concat([df_year, totals.to_frame().T])
+
+            df_disp = df_year[[
+                "% RES", "% Actual RES",
+                "% CES", "% Actual CES",
+                "Model generation (TWh)", "Stats generation (TWh)",
+                "% Model share", "% Stats share"
+            ]].round(2)
+
+            # Rename index column safely
+            df_disp = df_disp.reset_index()
+            df_disp = df_disp.rename(columns={df_disp.columns[0]: "Grid Region"}).set_index("Grid Region")
+
+            def style_row(row):
+                return [
+                    deviation_color(row['% RES'], row['% Actual RES']),
+                    deviation_color(row['% RES'], row['% Actual RES']),
+                    deviation_color(row['% CES'], row['% Actual CES']),
+                    deviation_color(row['% CES'], row['% Actual CES']),
+                    deviation_color(row['Model generation (TWh)'], row['Stats generation (TWh)']),
+                    deviation_color(row['Model generation (TWh)'], row['Stats generation (TWh)']),
+                    deviation_color(row['% Model share'], row['% Stats share']),
+                    deviation_color(row['% Model share'], row['% Stats share'])
+                ]
+
+            styled_df = (
+                df_disp.style
+                .apply(style_row, axis=1)
+                .format(fmt_2dp_or_na)
+                .set_table_styles([{'selector': 'th.row_heading', 'props': 'font-weight:bold;'}])
+            )
+            df_html = styled_df.to_html() + legend_html
+
+        else:
+            expected_cols = ['% RES', '% RES target', '% CES', '% CES target']
+            cols_present = [c for c in expected_cols if c in df_year.columns]
+            df_year = df_year.reindex(columns=cols_present).round(2)
+
+            # Add national total row (U.S.) also for future years
+            totals = pd.Series({c: df_year[c].mean() for c in cols_present}, name="U.S.")
+            df_year = pd.concat([df_year, totals.to_frame().T])
+
+            # Rename index column safely
+            df_disp = df_year.reset_index()
+            df_disp = df_disp.rename(columns={df_disp.columns[0]: "Grid Region"}).set_index("Grid Region")
+
+            def style_row(row):
+                styles = []
+                for col in df_disp.columns:
+                    if col.startswith('% RES'):
+                        styles.append(simple_color(row.get('% RES'), row.get('% RES target')))
+                    elif col.startswith('% CES'):
+                        styles.append(simple_color(row.get('% CES'), row.get('% CES target')))
+                    else:
+                        styles.append("")
+                return styles
+
+            styled_df = (
+                df_disp.style
+                .apply(style_row, axis=1)
+                .format(fmt_2dp_or_na)
+                .set_table_styles([{'selector': 'th.row_heading', 'props': 'font-weight:bold;'}])
+            )
+            df_html = styled_df.to_html()
+
+        block = f"""
+        <div style="flex:1; padding:20px; min-width:300px;">
+            <h4 style="text-align:left;">Year: {yr}</h4>
+            {df_html}
+        </div>
+        """
+        html_blocks.append(block)
+
+    rows = [
+        "<div style='display:flex; gap:10px; flex-wrap:wrap;'>" +
+        "".join(html_blocks[i:i+cols_per_row]) +
+        "</div>"
+        for i in range(0, len(html_blocks), cols_per_row)
+    ]
+
+    for row in rows:
+        display(HTML(row))

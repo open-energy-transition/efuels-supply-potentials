@@ -4686,3 +4686,126 @@ def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
 
     for row in rows:
         display(HTML(row))
+
+def compute_ekerosene_unit_inputs_by_region(networks: dict,
+                                            year_title: bool = True,
+                                            p_nom_threshold: float = 1e-3):
+    """
+    Compute unit costs (USD/MWh, USD/tCO2) and input rates per output (MWh or t per MWh_out)
+    for Fischer-Tropsch e-kerosene plants, grouped by grid region.
+
+    This is a "pre-table" companion to the LCO breakdown in USD/gal.
+    """
+
+    for name, net in networks.items():
+        m = re.search(r"\d{4}", str(name))
+        scen_year = int(m.group()) if m else 2030
+
+        # Selezione dei link Fischer-Tropsch
+        ft = net.links[net.links.carrier.str.contains("Fischer-Tropsch", case=False, na=False)].copy()
+        if ft.empty:
+            continue
+
+        # Applica threshold sulla capacità nominale
+        cap_series = np.where(
+            ft.get("p_nom_extendable", False),
+            ft.get("p_nom_opt", 0.0),
+            ft.get("p_nom", 0.0),
+        )
+        ft = ft[pd.Series(cap_series, index=ft.index) > p_nom_threshold]
+        if ft.empty:
+            continue
+
+        # Assicurati che ci siano tutte le colonne necessarie
+        needed_cols = ("p0", "p1", "p2", "p3")
+        ft_ids = [l for l in ft.index if all(l in getattr(net.links_t, c).columns for c in needed_cols)]
+        if not ft_ids:
+            continue
+        ft = ft.loc[ft_ids]
+
+        dt_h = (net.snapshots[1] - net.snapshots[0]).total_seconds() / 3600.0 if len(net.snapshots) > 1 else 1.0
+        rows = []
+
+        for link in ft.index:
+            ym = re.search(r"-(\d{4})$", str(link))
+            install_year = int(ym.group(1)) if ym else scen_year
+
+            try:
+                region = net.buses.at[ft.at[link, "bus1"], "grid_region"]
+            except KeyError:
+                continue
+
+            # Prezzi
+            p_elec = net.buses_t.marginal_price[ft.at[link, "bus3"]]  # USD/MWh
+            p_h2   = net.buses_t.marginal_price[ft.at[link, "bus0"]]  # USD/MWh
+            p_co2  = net.buses_t.marginal_price[ft.at[link, "bus2"]]  # USD/tCO2
+
+            # Flussi
+            out_MWh = (-net.links_t.p1[link] * dt_h).sum()
+            if out_MWh <= 0:
+                continue
+            elec_in_MWh = (net.links_t.p3[link] * dt_h).sum()
+            h2_in_MWh   = (net.links_t.p0[link] * dt_h).sum()
+            co2_in_t    = (net.links_t.p2[link] * dt_h).sum()
+
+            # Rate per MWh_out
+            r_elec = elec_in_MWh / out_MWh if out_MWh > 0 else 0.0
+            r_h2   = h2_in_MWh / out_MWh if out_MWh > 0 else 0.0
+            r_co2  = co2_in_t  / out_MWh if out_MWh > 0 else 0.0
+
+            # Prezzi medi (ponderati)
+            avg_p_elec = (net.links_t.p3[link] * p_elec * dt_h).sum() / elec_in_MWh if elec_in_MWh > 0 else 0.0
+            avg_p_h2   = (net.links_t.p0[link] * p_h2   * dt_h).sum() / h2_in_MWh if h2_in_MWh > 0 else 0.0
+            avg_p_co2  = (net.links_t.p2[link] * p_co2  * dt_h).sum() / co2_in_t  if co2_in_t  > 0 else 0.0
+
+            rows.append({
+                "Grid Region": region,
+                "Production (TWh)": out_MWh / 1e6,
+                "Electricity rate (MWh in / MWh out)": r_elec,
+                "H2 rate (MWh in / MWh out)":          r_h2,
+                "CO2 rate (t CO2 / MWh out)":          r_co2,
+                "Electricity price (USD/MWh)": avg_p_elec,
+                "H2 price (USD/MWh)":          avg_p_h2,
+                "CO2 price (USD/t CO2)":       avg_p_co2,
+            })
+
+        if not rows:
+            continue
+
+        df = pd.DataFrame(rows)
+
+        def wavg(group, col):
+            return (group[col] * group["Production (TWh)"]).sum() / group["Production (TWh)"].sum()
+
+        g = (
+            df.groupby("Grid Region", as_index=False)
+              .apply(lambda x: pd.Series({
+                  "Production (TWh)":                       x["Production (TWh)"].sum(),
+                  "Electricity rate (MWh in / MWh out)":    wavg(x, "Electricity rate (MWh in / MWh out)"),
+                  "H2 rate (MWh in / MWh out)":             wavg(x, "H2 rate (MWh in / MWh out)"),
+                  "CO2 rate (t CO2 / MWh out)":             wavg(x, "CO2 rate (t CO2 / MWh out)"),
+                  "Electricity price (USD/MWh)":            wavg(x, "Electricity price (USD/MWh)"),
+                  "H2 price (USD/MWh)":                     wavg(x, "H2 price (USD/MWh)"),
+                  "CO2 price (USD/t CO2)":                  wavg(x, "CO2 price (USD/t CO2)"),
+              }))
+              .reset_index(drop=True)
+        )
+
+        if g.empty:
+            continue
+
+        title = re.search(r"\d{4}", str(name)).group() if year_title and re.search(r"\d{4}", str(name)) else str(name)
+        print(f"\n{title}:")
+        print("Unit input rates and prices per region:\n")
+
+        display(
+            g.style.format({
+                "Production (TWh)": "{:,.2f}",
+                "Electricity rate (MWh in / MWh out)": "{:,.3f}",
+                "H2 rate (MWh in / MWh out)": "{:,.3f}",
+                "CO2 rate (t CO2 / MWh out)": "{:,.3f}",
+                "Electricity price (USD/MWh)": "{:,.2f}",
+                "H2 price (USD/MWh)": "{:,.2f}",
+                "CO2 price (USD/t CO2)": "{:,.2f}",
+            }).hide(axis="index")
+        )

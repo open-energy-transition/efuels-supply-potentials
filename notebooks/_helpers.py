@@ -293,6 +293,7 @@ def compute_h2_capacities(network):
         index='bus0',
         columns='carrier',
         values='p_nom_mw',
+        aggfunc='sum',
         fill_value=0
     )
 

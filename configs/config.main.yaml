@@ -61,6 +61,10 @@ policy_config:
     additionality: true
     temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro, nuclear]
 
+sector:
+  co2_sequestration_potential: 250 # MtCO2/a sequestration potential for US
+  co2_sequestration_cost: 8 # USD/tCO2 for sequestration of CO2
+
 custom_industry:
   enable: true
   ethanol: true

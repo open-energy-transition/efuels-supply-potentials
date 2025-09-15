@@ -894,44 +894,44 @@ def add_data_centers_load(n):
 
 def add_co2_storage_tanks(n):
     """
-        Adds CO2 storage tanks to the network
+        Adds CO2 storage steel tanks to the network
     """
-    # repurpose co2 stored to co2 storage tanks
+    # repurpose co2 stored to co2 storage steel tanks
     for c in ["co2 stored", "biogenic co2 stored"]:
         # repurpose buses
-        n.buses.index = n.buses.index.str.replace(c, f"{c[:-7]} storage tank")
-        n.buses.loc[n.buses.carrier == c, "carrier"] = f"{c[:-7]} storage tank"
+        n.buses.index = n.buses.index.str.replace(c, f"{c[:-7]} storage steel tank")
+        n.buses.loc[n.buses.carrier == c, "carrier"] = f"{c[:-7]} storage steel tank"
 
         # repurpose stores
-        n.stores.index = n.stores.index.str.replace(c, f"{c[:-7]} storage tank")
-        n.stores.loc[n.stores.carrier == c, "bus"] = n.stores.loc[n.stores.carrier == c, "bus"].str.replace(c, f"{c[:-7]} storage tank")
+        n.stores.index = n.stores.index.str.replace(c, f"{c[:-7]} storage steel tank")
+        n.stores.loc[n.stores.carrier == c, "bus"] = n.stores.loc[n.stores.carrier == c, "bus"].str.replace(c, f"{c[:-7]} storage steel tank")
 
-        # set capital costs and e_cyclic for storage tanks
-        n.stores.loc[n.stores.carrier == c, "capital_cost"] = costs.at["CO2 storage tank", "fixed"]
+        # set capital costs and e_cyclic for storage steel tanks
+        n.stores.loc[n.stores.carrier == c, "capital_cost"] = costs.at["CO2 storage steel tank", "fixed"]
         n.stores.loc[n.stores.carrier == c, "e_cyclic"] = True
 
         # rename carriers for stores
-        n.stores.loc[n.stores.carrier == c, "carrier"] = f"{c[:-7]} storage tank"
-        logger.info(f"Repurposed {c} to {c[:-7]} storage tank")
+        n.stores.loc[n.stores.carrier == c, "carrier"] = f"{c[:-7]} storage steel tank"
+        logger.info(f"Repurposed {c} to {c[:-7]} storage steel tank")
 
-    # make Fischer-Tropsch use co2 storage tanks
+    # make Fischer-Tropsch use co2 storage steel tanks
     ft_links = n.links[n.links.carrier == "Fischer-Tropsch"]
     if not ft_links.empty and "bus2" in n.links.columns:
         ft_co2_mask = ft_links["bus2"].str.contains("co2 stored", na=False)
         n.links.loc[ft_links.index[ft_co2_mask], "bus2"] = (
-            ft_links.loc[ft_co2_mask, "bus2"].str.replace("co2 stored", "co2 storage tank", regex=False)
+            ft_links.loc[ft_co2_mask, "bus2"].str.replace("co2 stored", "co2 storage steel tank", regex=False)
         )
-    logger.info("Updated Fischer-Tropsch bus2 connections from 'co2 stored' to 'co2 storage tank'")
+    logger.info("Updated Fischer-Tropsch bus2 connections from 'co2 stored' to 'co2 storage steel tank'")
 
     # connect links to buffer co2 stored
     bus_cols = ["bus0", "bus1", "bus2", "bus3", "bus4", "bus5"]
     for col in bus_cols:
         if col in n.links.columns:
             mask = n.links[col].notna() & n.links[col].str.contains("co2 stored", na=False)
-            n.links.loc[mask, col] = n.links.loc[mask, col].str.replace("co2 stored", "buffer co2 storage tank", regex=False)
+            n.links.loc[mask, col] = n.links.loc[mask, col].str.replace("co2 stored", "buffer co2 storage steel tank", regex=False)
 
-    # create buffer co2 storage tank and buffer biogenic co2 storage tank buses
-    for c in ["co2 storage tank", "biogenic co2 storage tank"]:
+    # create buffer co2 storage steel tank and buffer biogenic co2 storage steel tank buses
+    for c in ["co2 storage steel tank", "biogenic co2 storage steel tank"]:
         co2_storage_tank_buses = n.buses[n.buses.carrier == c]
         n.madd(
             "Bus",
@@ -943,8 +943,8 @@ def add_co2_storage_tanks(n):
         )
         logger.info(f"Added buffer {c} buses")
 
-    # connect buffer co2 storage tank with co2 storage tank
-    for c in ["co2 storage tank", "biogenic co2 storage tank"]:
+    # connect buffer co2 storage steel tank with co2 storage steel tank
+    for c in ["co2 storage steel tank", "biogenic co2 storage steel tank"]:
         buffer_co2_storage_tank_buses = n.buses[n.buses.carrier == f"buffer {c}"]
         n.madd(
             "Link",
@@ -959,10 +959,10 @@ def add_co2_storage_tanks(n):
         logger.info(f"Added links from buffer '{c}' to tank'")
 
     # create CO2 sequestered buses
-    co2_storage_tank_buses = n.buses[n.buses.carrier == "co2 storage tank"]
+    co2_storage_tank_buses = n.buses[n.buses.carrier == "co2 storage steel tank"]
     n.madd(
         "Bus",
-        co2_storage_tank_buses.index.str.replace("storage tank", "sequestered"),
+        co2_storage_tank_buses.index.str.replace("storage steel tank", "sequestered"),
         location=co2_storage_tank_buses.location.values,
         carrier="co2 sequestered",
         x=co2_storage_tank_buses.x.values,
@@ -970,11 +970,11 @@ def add_co2_storage_tanks(n):
     )
 
     # create CO2 sequestered stores
-    co2_storage_tank_stores = n.stores[n.stores.carrier == "co2 storage tank"]
+    co2_storage_tank_stores = n.stores[n.stores.carrier == "co2 storage steel tank"]
     n.madd(
         "Store",
-        co2_storage_tank_stores.index.str.replace("storage tank", "sequestered"),
-        bus=co2_storage_tank_stores.index.str.replace("storage tank", "sequestered"),
+        co2_storage_tank_stores.index.str.replace("storage steel tank", "sequestered"),
+        bus=co2_storage_tank_stores.index.str.replace("storage steel tank", "sequestered"),
         e_nom_extendable=True,
         e_nom_max=np.inf,
         capital_cost=config["sector"]["co2_sequestration_cost"],
@@ -983,14 +983,14 @@ def add_co2_storage_tanks(n):
 
     logger.info("Added CO2 sequestered buses, and stores")
 
-    # add links from co2 storage tank to co2 sequestered
-    for c in ["co2 storage tank", "biogenic co2 storage tank"]:
+    # add links from co2 storage steel tank to co2 sequestered
+    for c in ["co2 storage steel tank", "biogenic co2 storage steel tank"]:
         co2_storage_tank_buses = n.buses[n.buses.carrier == c]
         n.madd(
             "Link",
             co2_storage_tank_buses.index + " sequestered",
             bus0=co2_storage_tank_buses.index,
-            bus1=co2_storage_tank_buses.index.str.replace("storage tank", "sequestered"),
+            bus1=co2_storage_tank_buses.index.str.replace("storage steel tank", "sequestered"),
             p_nom_extendable=True,
             carrier=f"{c} sequestered",
             efficiency=1,
@@ -998,14 +998,14 @@ def add_co2_storage_tanks(n):
         )
         logger.info(f"Added links from '{c}' to 'co2 sequestered'")
 
-    # add link from buffer co2 storage tank to co2 sequestration
-    for c in ["buffer co2 storage tank", "buffer biogenic co2 storage tank"]:
+    # add link from buffer co2 storage steel tank to co2 sequestration
+    for c in ["buffer co2 storage steel tank", "buffer biogenic co2 storage steel tank"]:
         buffer_co2_storage_tank_buses = n.buses[n.buses.carrier == c]
         n.madd(
             "Link",
             buffer_co2_storage_tank_buses.index + " sequestered",
             bus0=buffer_co2_storage_tank_buses.index,
-            bus1=buffer_co2_storage_tank_buses.index.str.replace("buffer ", "").str.replace("storage tank", "sequestered"),
+            bus1=buffer_co2_storage_tank_buses.index.str.replace("buffer ", "").str.replace("storage steel tank", "sequestered"),
             p_nom_extendable=True,
             carrier=f"{c} sequestered",
             efficiency=1,
@@ -1093,7 +1093,7 @@ if __name__ == "__main__":
     if snakemake.params.data_centers:
         add_data_centers_load(n)
 
-    # introduce CO2 storage tanks
+    # introduce CO2 storage steel tanks
     if snakemake.params.co2_storage_tanks:
         add_co2_storage_tanks(n)
 

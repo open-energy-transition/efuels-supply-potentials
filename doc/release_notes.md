@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Update **geothermal projections** based on new [NREL data](https://docs.nrel.gov/docs/fy23osti/84822.pdf) [PR #102](https://github.com/open-energy-transition/efuels-supply-potentials/pull/102)
+
 * Increase **oil VOM** to prevent overuse of oil over coal [PR #100](https://github.com/open-energy-transition/efuels-supply-potentials/pull/100)
 
 * Correct **data center loads** for 2023 [PR #98](https://github.com/open-energy-transition/efuels-supply-potentials/pull/98)

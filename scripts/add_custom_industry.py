@@ -958,60 +958,60 @@ def add_co2_storage_tanks(n):
         )
         logger.info(f"Added links from buffer '{c}' to tank'")
 
-    # create CO2 sequestered buses
+    # create CO2 geological sequestration buses
     co2_storage_tank_buses = n.buses[n.buses.carrier == "co2 storage steel tank"]
     n.madd(
         "Bus",
-        co2_storage_tank_buses.index.str.replace("storage steel tank", "sequestered"),
+        co2_storage_tank_buses.index.str.replace("storage steel tank", "geological sequestration"),
         location=co2_storage_tank_buses.location.values,
-        carrier="co2 sequestered",
+        carrier="co2 geological sequestration",
         x=co2_storage_tank_buses.x.values,
         y=co2_storage_tank_buses.y.values,
     )
 
-    # create CO2 sequestered stores
+    # create CO2 geological sequestration stores
     co2_storage_tank_stores = n.stores[n.stores.carrier == "co2 storage steel tank"]
     n.madd(
         "Store",
-        co2_storage_tank_stores.index.str.replace("storage steel tank", "sequestered"),
-        bus=co2_storage_tank_stores.index.str.replace("storage steel tank", "sequestered"),
+        co2_storage_tank_stores.index.str.replace("storage steel tank", "geological sequestration"),
+        bus=co2_storage_tank_stores.index.str.replace("storage steel tank", "geological sequestration"),
         e_nom_extendable=True,
         e_nom_max=np.inf,
         capital_cost=config["sector"]["co2_sequestration_cost"],
-        carrier="co2 sequestered",
+        carrier="co2 geological sequestration",
     )
 
-    logger.info("Added CO2 sequestered buses, and stores")
+    logger.info("Added CO2 geological sequestration buses, and stores")
 
-    # add links from co2 storage steel tank to co2 sequestered
+    # add links from co2 storage steel tank to co2 geological sequestration
     for c in ["co2 storage steel tank", "biogenic co2 storage steel tank"]:
         co2_storage_tank_buses = n.buses[n.buses.carrier == c]
         n.madd(
             "Link",
-            co2_storage_tank_buses.index + " sequestered",
+            co2_storage_tank_buses.index + " geological sequestration",
             bus0=co2_storage_tank_buses.index,
-            bus1=co2_storage_tank_buses.index.str.replace("storage steel tank", "sequestered"),
+            bus1=co2_storage_tank_buses.index.str.replace("storage steel tank", "geological sequestration"),
             p_nom_extendable=True,
-            carrier=f"{c} sequestered",
+            carrier=f"{c} geological sequestration",
             efficiency=1,
             capital_cost=0,
         )
-        logger.info(f"Added links from '{c}' to 'co2 sequestered'")
+        logger.info(f"Added links from '{c}' to 'co2 geological sequestration'")
 
     # add link from buffer co2 storage steel tank to co2 sequestration
     for c in ["buffer co2 storage steel tank", "buffer biogenic co2 storage steel tank"]:
         buffer_co2_storage_tank_buses = n.buses[n.buses.carrier == c]
         n.madd(
             "Link",
-            buffer_co2_storage_tank_buses.index + " sequestered",
+            buffer_co2_storage_tank_buses.index + " geological sequestration",
             bus0=buffer_co2_storage_tank_buses.index,
-            bus1=buffer_co2_storage_tank_buses.index.str.replace("buffer ", "").str.replace("storage steel tank", "sequestered"),
+            bus1=buffer_co2_storage_tank_buses.index.str.replace("buffer ", "").str.replace("storage steel tank", "geological sequestration"),
             p_nom_extendable=True,
-            carrier=f"{c} sequestered",
+            carrier=f"{c} geological sequestration",
             efficiency=1,
             capital_cost=0,
         )
-        logger.info(f"Added links from '{c}' to 'co2 sequestered'")
+        logger.info(f"Added links from '{c}' to 'co2 geological sequestration'")
 
 
 if __name__ == "__main__":

@@ -877,3 +877,20 @@ tech_power_order:
   - "Utility-scale solar"
   - "Solar rooftop"
   - "CSP"
+
+emm_mapping:
+  Alaska: WECC/Northwest Power Pool
+  California: WECC/CA South
+  Delta: Midcontinent ISO/South
+  Florida: Florida Reliability Coordinating Council
+  Hawaii: WECC/CA North
+  Mid-Atlantic: PJM/West
+  Midwest: Midcontinent ISO/West
+  Mountain: WECC/Rockies
+  New England: NPCC/New England
+  New York: NPCC/Upstate NY
+  Northwest: WECC/Basin
+  Plains: Southwest Power Pool/South
+  Southeast: SERC Reliability Corporation/Southeast
+  Southwest: WECC/Southwest
+  Texas: Texas Reliability Entity

@@ -4689,6 +4689,7 @@ def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
         display(HTML(row))
 
 def compute_ekerosene_unit_inputs_by_region(networks: dict,
+                                            regional_fees: pd.DataFrame,
                                             year_title: bool = True,
                                             p_nom_threshold: float = 1e-3):
     """
@@ -4701,6 +4702,8 @@ def compute_ekerosene_unit_inputs_by_region(networks: dict,
     for name, net in networks.items():
         m = re.search(r"\d{4}", str(name))
         scen_year = int(m.group()) if m else 2030
+
+        emm_mapping = dict(zip(net.buses.grid_region, net.buses.emm_region))
 
         # Selezione dei link Fischer-Tropsch
         ft = net.links[net.links.carrier.str.contains("Fischer-Tropsch", case=False, na=False)].copy()
@@ -4791,6 +4794,14 @@ def compute_ekerosene_unit_inputs_by_region(networks: dict,
               }))
               .reset_index(drop=True)
         )
+
+        g["EMM Region"] = g["Grid Region"].map(emm_mapping)
+        fee_map = regional_fees.loc[
+            regional_fees["Year"] == int(name.split("_")[-1]), ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"]
+        ].set_index("region")[["Transmission nom USD/MWh", "Distribution nom USD/MWh"]]
+        g["Transmission USD/MWh"] = g["EMM Region"].map(fee_map.loc[:,"Transmission nom USD/MWh"])
+        g["Distribution USD/MWh"] = g["EMM Region"].map(fee_map.loc[:,"Distribution nom USD/MWh"])
+        g.drop(columns=["EMM Region"], inplace=True)
 
         if g.empty:
             continue

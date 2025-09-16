@@ -10,6 +10,8 @@ Please list contributions, add reference to PRs if present.
 
 * Remove electrolyzers tax credits from config files, **new discount rate** and **levelized tax credits** [PR #104](https://github.com/open-energy-transition/efuels-supply-potentials/pull/104)
 
+* Set **OCGT and CCGT lifetime to 35 years** to be consistent with lifetime in `custom_powerplants.csv` [PR #103](https://github.com/open-energy-transition/efuels-supply-potentials/pull/103)
+
 * Increase **oil VOM** to prevent overuse of oil over coal [PR #100](https://github.com/open-energy-transition/efuels-supply-potentials/pull/100)
 
 * Correct **data center loads** for 2023 [PR #98](https://github.com/open-energy-transition/efuels-supply-potentials/pull/98)

@@ -4810,3 +4810,34 @@ def compute_ekerosene_unit_inputs_by_region(networks: dict,
                 "CO2 price (USD/t CO2)": "{:,.2f}",
             }).hide(axis="index")
         )
+
+
+def attach_emm_region_to_buses(network, path_shape, distance_crs):
+    """
+    Attach EMM region to buses
+    """
+    # Read the shapefile using geopandas
+    shape = gpd.read_file(path_shape, crs=distance_crs)
+    # shape.rename(columns={"GRID_REGIO": "region"}, inplace=True)
+
+    ac_dc_carriers = ["AC", "DC"]
+    location_mapping = network.buses.query(
+        "carrier in @ac_dc_carriers")[["x", "y"]]
+
+    network.buses["x"] = network.buses["location"].map(
+        location_mapping["x"]).fillna(0)
+    network.buses["y"] = network.buses["location"].map(
+        location_mapping["y"]).fillna(0)
+
+    pypsa_gpd = gpd.GeoDataFrame(
+        network.buses,
+        geometry=gpd.points_from_xy(network.buses.x, network.buses.y),
+        crs=4326
+    )
+
+    network_columns = network.buses.columns
+    bus_cols = [*network_columns, "subregion"]
+
+    st_buses = gpd.sjoin_nearest(shape, pypsa_gpd, how="right")[bus_cols]
+
+    network.buses["emm_region"] = st_buses["subregion"]

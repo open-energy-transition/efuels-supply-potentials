@@ -1365,7 +1365,7 @@ def add_chp_constraints(n):
 
 
 def add_co2_sequestration_limit(n, sns):
-    co2_stores = n.stores.loc[n.stores.carrier == "co2 sequestered"].index
+    co2_stores = n.stores.loc[n.stores.carrier == "co2 geological sequestration"].index
 
     if co2_stores.empty or ("Store", "e") not in n.variables.index:
         return

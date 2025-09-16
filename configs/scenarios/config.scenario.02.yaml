@@ -98,6 +98,8 @@ costs:
     electricity: "moderate"
     H2_electrolysis: "moderate"
     dac: "moderate"
+  VOM:
+    oil: 100.0
 
 policy_config:
   hydrogen:

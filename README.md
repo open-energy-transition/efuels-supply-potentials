@@ -132,6 +132,7 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 9. [PR #65](https://github.com/open-energy-transition/pypsa-earth/pull/65): Remove lignite from default conventional carriers.
 10. [PR #69](https://github.com/open-energy-transition/pypsa-earth/pull/69): Extend lifetime of nuclear power plants to 60 years
 11. [PR #71](https://github.com/open-energy-transition/pypsa-earth/pull/71): Enable selection of custom busmap.
+12. [PR #76](https://github.com/open-energy-transition/pypsa-earth/pull/76): Add functionality to overwrite cost attributes in sector model.
  
 ## 5. Validation
 

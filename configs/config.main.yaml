@@ -28,6 +28,9 @@ costs:
     dac: "moderate"
   financial_case: "market" # only used if `country_specific_data: "US"`; can be "market" or "r&d"
   discountrate: [0.071] #, 0.086, 0.111]
+  lifetime:
+    CCGT: 35
+    OCGT: 35
 
 # defining the aviation demand scenario
 aviation_demand_scenario:
@@ -51,7 +54,7 @@ demand_distribution:
 demand_projection:
   planning_horizon: 2023
   scenario: "Medium"
-  data_centers_load: false
+  data_centers_load: true
 
 state_policy: "on" # "off", "on" manage application of renewable/clean energy policies at State- or country-level
 

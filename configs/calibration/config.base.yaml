@@ -60,11 +60,13 @@ renewable:
 costs:
   year: 2020
   efficiency:
-      coal: 0.3195
-      oil: 0.3005
-      CCGT: 0.4429
-      nuclear: 0.3254
-      biomass: 0.30
+    coal: 0.3195
+    oil: 0.3005
+    CCGT: 0.4429
+    nuclear: 0.3254
+    biomass: 0.30
+  VOM:
+    oil: 100.0
 
 policy_config:
   hydrogen:

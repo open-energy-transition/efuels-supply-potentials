@@ -4365,6 +4365,7 @@ def get_us_from_eia(eia_generation_data):
 def compute_LCO_ekerosene_by_region(networks: dict,
                                     fx_2020: float,
                                     fx_recent: float,
+                                    regional_fees: pd.DataFrame,
                                     year_title: bool = True,
                                     p_nom_threshold: float = 1e-3):
     """
@@ -4487,6 +4488,15 @@ def compute_LCO_ekerosene_by_region(networks: dict,
         g = g[g["Production (TWh)"] >= 1e-3]
         if g.empty:
             continue
+        
+        # Map EMM regions and transmission fees
+        g["EMM Region"] = g["Grid Region"].map(emm_mapping)
+        fee_map = regional_fees.loc[
+            regional_fees["Year"] == int(name.split("_")[-1]), ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"]
+        ].set_index("region")[["Transmission nom USD/MWh", "Distribution nom USD/MWh"]]
+        g["Transmission USD/MWh"] = g["EMM Region"].map(fee_map.loc[:,"Transmission nom USD/MWh"])
+        g["Distribution USD/MWh"] = g["EMM Region"].map(fee_map.loc[:,"Distribution nom USD/MWh"])
+        g.drop(columns=["EMM Region"], inplace=True)
 
         tot_prod = g["Production (TWh)"].sum()
         wavg_usd_gal = (g["Total LCO e-kerosene (USD/gal)"] * g["Production (TWh)"]).sum() / tot_prod
@@ -4507,6 +4517,7 @@ def compute_LCO_ekerosene_by_region(networks: dict,
                 "Total LCO e-kerosene (USD/gal)": "{:,.2f}",
             }).hide(axis="index")
         )
+
 
 def preprocess_res_ces_share_grid_region(eia_gen_data=None, grid_regions=None,
                                          file_path="./validation_data/generation_grid_regions.xlsx",
@@ -4795,6 +4806,7 @@ def compute_ekerosene_unit_inputs_by_region(networks: dict,
               .reset_index(drop=True)
         )
 
+        # Map EMM regions and transmission fees
         g["EMM Region"] = g["Grid Region"].map(emm_mapping)
         fee_map = regional_fees.loc[
             regional_fees["Year"] == int(name.split("_")[-1]), ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"]

@@ -260,25 +260,41 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         credit = ptc_credits.get(carrier_key, 0.0)
         apply, scale = False, 1.0
 
+        # Nuclear
         if carrier_key == "nuclear":
+            # Existing nuclear
             if build_year <= 2024 and 2024 <= planning_horizon <= 2032:
                 credit = ptc_credits.get("nuclear_existing", 0.0)
                 apply = True
-            elif 2030 <= build_year < 2033 and planning_horizon <= build_year + 10:
-                credit = ptc_credits.get("nuclear_new", 0.0)
-                apply = True
+
+            # New nuclear
+            elif 2030 <= build_year < 2033:
+                if pre_ob3_tax_credits:
+                    # Special case: extended until 2040 inclusive (-75% CO2 reduction reached in 2040)
+                    if planning_horizon <= 2040:
+                        credit = ptc_credits.get("nuclear_new", 0.0)
+                        apply = True
+                else:
+                    # Normal case: valid until build_year + 10
+                    if planning_horizon <= build_year + 10:
+                        credit = ptc_credits.get("nuclear_new", 0.0)
+                        apply = True
+
+        # Geothermal
         elif carrier_key == "geothermal":
-            if planning_horizon <= build_year + 10:
+            # Horizon limit differs depending on policy regime
+            horizon_limit = 2040 if pre_ob3_tax_credits else build_year + 10
+
+            if planning_horizon <= horizon_limit:
                 if 2030 <= build_year < 2033:
                     apply = True
                 elif build_year == 2034:
                     apply, scale = True, 0.75
                 elif build_year == 2035:
                     apply, scale = True, 0.5
+
+        # Solar and wind (only with pre-OB3 tax credits)
         elif carrier_key in {"solar", "onwind", "offwind-ac", "offwind-dc"} and pre_ob3_tax_credits:
-            #if planning_horizon <= build_year + 10 and 2025 <= build_year <= 2027:
-            #    credit = ptc_credits.get(carrier_key, 0.0)
-            #    apply = True
             if planning_horizon <= build_year + 10:
                 if 2030 <= build_year < 2033:
                     apply = True
@@ -286,6 +302,18 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                     apply, scale = True, 0.75
                 elif build_year == 2035:
                     apply, scale = True, 0.5
+
+        # Apply modification if valid
+        if apply:
+            new_cost = base_cost + scale * credit
+            network.generators.at[name, "marginal_cost"] = new_cost
+            modifications.append({
+                "component": "generator", "name": name,
+                "carrier": carrier, "build_year": build_year,
+                "original": base_cost, "credit": scale * credit, "final": new_cost
+            })
+            if verbose:
+                logger.info(f"[PTC GEN] {name} | +{scale * credit:.2f}")
 
         if apply:
             new_cost = base_cost + scale * credit
@@ -310,7 +338,10 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
             if carrier_key not in ptc_credits:
                 continue
 
-            if planning_horizon <= build_year + 10:
+            # Horizon limit depends on policy regime
+            horizon_limit = 2040 if pre_ob3_tax_credits else build_year + 10
+
+            if planning_horizon <= horizon_limit:
                 scale = 0.0
                 if 2030 <= build_year < 2033:
                     scale = 1.0
@@ -338,26 +369,27 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                             f"[PTC LINK Biomass] {name} | eff: {elec_eff:.3f} × credit: {scale * credit_per_mwh:.2f} → {credit:.2f}"
                         )
 
-#        # Electrolyzers
-#        elif carrier in electrolyzer_carriers:
-#            if 2025 <= build_year <= 2025 and planning_horizon <= build_year + 10:
-#
-#                credit_per_mwh_h2 = ptc_credits.get(carrier, 0.0)
-#                h2_efficiency = link.get("efficiency", 0.0)
-#
-#                if h2_efficiency > 0 and credit_per_mwh_h2 != 0.0:
-#                    credit = credit_per_mwh_h2 * h2_efficiency
-#                    new_cost = base_cost + credit
-#                    network.links.at[name, "marginal_cost"] = new_cost
-#                    modifications.append({
-#                        "component": "link", "name": name,
-#                        "carrier": carrier, "build_year": build_year,
-#                        "original": base_cost, "credit": credit, "final": new_cost
-#                    })
-#                    if verbose:
-#                        logger.info(
-#                            f"[PTC LINK ELECTROLYZER] {name} | H₂ eff: {h2_efficiency:.3f} × {credit_per_mwh_h2:.2f} → credit: {credit:.2f}")
+        # Electrolyzers
+        elif carrier in electrolyzer_carriers and pre_ob3_tax_credits:
+            if 2025 <= build_year <= 2032 and planning_horizon <= build_year + 10:
 
+                credit_per_mwh_h2 = ptc_credits.get(carrier, 0.0)
+                h2_efficiency = link.get("efficiency", 0.0)
+
+                if h2_efficiency > 0 and credit_per_mwh_h2 != 0.0:
+                    credit = credit_per_mwh_h2 * h2_efficiency
+                    new_cost = base_cost + credit
+                    network.links.at[name, "marginal_cost"] = new_cost
+                    modifications.append({
+                        "component": "link", "name": name,
+                        "carrier": carrier, "build_year": build_year,
+                        "original": base_cost, "credit": credit, "final": new_cost
+                    })
+                    if verbose:
+                        logger.info(
+                            f"[PTC LINK ELECTROLYZER] {name} | H₂ eff: {h2_efficiency:.3f} × {credit_per_mwh_h2:.2f} → credit: {credit:.2f}")
+
+        # Carbon capture with CO2 storage
         elif carrier in cc_credit_on_co2_stored:
             if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
 
@@ -384,7 +416,8 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                         "original": base_cost, "credit": credit, "final": new_cost
                     })
                     if verbose:
-                        logger.info(f"[PTC LINK CC-stored] {name} | CO2: {tco2:.3f} × {credit_per_t:.2f} → credit: {credit:.2f}")
+                        logger.info(
+                            f"[PTC LINK CC-stored] {name} | CO2: {tco2:.3f} × {credit_per_t:.2f} → credit: {credit:.2f}")
 
         # DAC - CO2 atmosphere
         elif carrier in cc_credit_on_co2_atmosphere:
@@ -394,7 +427,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                 credit_per_t = ptc_credits.get(carrier, 0.0)
 
                 if pre_ob3_tax_credits:
-                    credit_per_t -= 50  # from 180 to 130 USD/t_CO2
+                    credit_per_t *= 130 / 180  # from 180 to 130 USD/t_CO2
 
                 if tco2 > 0 and credit_per_t != 0.0:
                     credit = credit_per_t * tco2
@@ -406,7 +439,8 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                         "original": base_cost, "credit": credit, "final": new_cost
                     })
                     if verbose:
-                        logger.info(f"[PTC LINK DAC] {name} | CO₂: {tco2:.3f} × {credit_per_t:.2f} → credit: {credit:.2f}")
+                        logger.info(
+                            f"[PTC LINK DAC] {name} | CO2: {tco2:.3f} × {credit_per_t:.2f} → credit: {credit:.2f}")
 
     # Apply Investment Tax Credits to STORAGE UNITS (batteries)
     if os.path.exists(itc_path):
@@ -422,7 +456,10 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
             for idx, su in affected.iterrows():
                 build_year = su.get("build_year", planning_horizon)
 
-                if planning_horizon <= build_year + 10:
+                # Horizon limit depends on policy regime
+                horizon_limit = 2040 if pre_ob3_tax_credits else build_year + 10
+
+                if planning_horizon <= horizon_limit:
                     scale = 0.0
                     if 2030 <= build_year <= 2033:
                         scale = 1.0

@@ -4366,6 +4366,7 @@ def compute_LCO_ekerosene_by_region(networks: dict,
                                     fx_2020: float,
                                     fx_recent: float,
                                     regional_fees: pd.DataFrame,
+                                    emm_mapping: dict,
                                     year_title: bool = True,
                                     p_nom_threshold: float = 1e-3):
     """

@@ -907,7 +907,7 @@ def add_co2_storage_tanks(n):
         n.stores.loc[n.stores.carrier == c, "bus"] = n.stores.loc[n.stores.carrier == c, "bus"].str.replace(c, f"{c[:-7]} storage steel tank")
 
         # set capital costs and e_cyclic for storage steel tanks
-        n.stores.loc[n.stores.carrier == c, "capital_cost"] = costs.at["CO2 storage steel tank", "fixed"]
+        n.stores.loc[n.stores.carrier == c, "capital_cost"] = costs.at["CO2 storage tank", "fixed"]
         n.stores.loc[n.stores.carrier == c, "e_cyclic"] = True
 
         # rename carriers for stores

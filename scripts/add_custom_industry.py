@@ -927,6 +927,8 @@ def add_co2_storage_tanks(n):
     bus_cols = ["bus0", "bus1", "bus2", "bus3", "bus4", "bus5"]
     for col in bus_cols:
         if col in n.links.columns:
+            mask_biogenic = n.links[col].notna() & n.links[col].str.contains("biogenic co2 stored", na=False)
+            n.links.loc[mask_biogenic, col] = n.links.loc[mask_biogenic, col].str.replace("biogenic co2 stored", "buffer biogenic co2 storage steel tank", regex=False)
             mask = n.links[col].notna() & n.links[col].str.contains("co2 stored", na=False)
             n.links.loc[mask, col] = n.links.loc[mask, col].str.replace("co2 stored", "buffer co2 storage steel tank", regex=False)
 
@@ -990,7 +992,7 @@ def add_co2_storage_tanks(n):
             "Link",
             co2_storage_tank_buses.index + " geological sequestration",
             bus0=co2_storage_tank_buses.index,
-            bus1=co2_storage_tank_buses.index.str.replace("storage steel tank", "geological sequestration"),
+            bus1=co2_storage_tank_buses.index.str.replace("biogenic ", "").str.replace("storage steel tank", "geological sequestration"),
             p_nom_extendable=True,
             carrier=f"{c} geological sequestration",
             efficiency=1,
@@ -1005,7 +1007,7 @@ def add_co2_storage_tanks(n):
             "Link",
             buffer_co2_storage_tank_buses.index + " geological sequestration",
             bus0=buffer_co2_storage_tank_buses.index,
-            bus1=buffer_co2_storage_tank_buses.index.str.replace("buffer ", "").str.replace("storage steel tank", "geological sequestration"),
+            bus1=buffer_co2_storage_tank_buses.index.str.split("buffer").str[0].str.strip() + " co2 geological sequestration",
             p_nom_extendable=True,
             carrier=f"{c} geological sequestration",
             efficiency=1,

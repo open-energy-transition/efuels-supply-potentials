@@ -976,7 +976,7 @@ def calculate_lcoe_summary_and_map(n, shapes):
         if row['energy'] <= 0:
             return np.nan
         if row['carrier'] == 'oil':
-            return np.nan  # no generator cost, no fuel cost
+            return np.nan # no generator cost, no fuel cost
         else:
             return (
                 row['capital_cost'] * row['p_nom_opt']
@@ -4380,6 +4380,8 @@ def get_us_from_eia(eia_generation_data):
 def compute_LCO_ekerosene_by_region(networks: dict,
                                     fx_2020: float,
                                     fx_recent: float,
+                                    regional_fees: pd.DataFrame,
+                                    emm_mapping: dict,
                                     year_title: bool = True,
                                     p_nom_threshold: float = 1e-3):
     """
@@ -4502,6 +4504,15 @@ def compute_LCO_ekerosene_by_region(networks: dict,
         g = g[g["Production (TWh)"] >= 1e-3]
         if g.empty:
             continue
+        
+        # Map EMM regions and transmission fees
+        g["EMM Region"] = g["Grid Region"].map(emm_mapping)
+        fee_map = regional_fees.loc[
+            regional_fees["Year"] == int(name.split("_")[-1]), ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"]
+        ].set_index("region")[["Transmission nom USD/MWh", "Distribution nom USD/MWh"]]
+        g["Transmission USD/MWh"] = g["EMM Region"].map(fee_map.loc[:,"Transmission nom USD/MWh"])
+        g["Distribution USD/MWh"] = g["EMM Region"].map(fee_map.loc[:,"Distribution nom USD/MWh"])
+        g.drop(columns=["EMM Region"], inplace=True)
 
         tot_prod = g["Production (TWh)"].sum()
         wavg_usd_gal = (g["Total LCO e-kerosene (USD/gal)"] * g["Production (TWh)"]).sum() / tot_prod
@@ -4522,6 +4533,7 @@ def compute_LCO_ekerosene_by_region(networks: dict,
                 "Total LCO e-kerosene (USD/gal)": "{:,.2f}",
             }).hide(axis="index")
         )
+
 
 def preprocess_res_ces_share_grid_region(eia_gen_data=None, grid_regions=None,
                                          file_path="./validation_data/generation_grid_regions.xlsx",
@@ -4713,6 +4725,7 @@ def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
 
 
 def compute_ekerosene_unit_inputs_by_region(networks: dict,
+                                            regional_fees: pd.DataFrame,
                                             year_title: bool = True,
                                             p_nom_threshold: float = 1e-3):
     """
@@ -4725,6 +4738,8 @@ def compute_ekerosene_unit_inputs_by_region(networks: dict,
     for name, net in networks.items():
         m = re.search(r"\d{4}", str(name))
         scen_year = int(m.group()) if m else 2030
+
+        emm_mapping = dict(zip(net.buses.grid_region, net.buses.emm_region))
 
         # Selezione dei link Fischer-Tropsch
         ft = net.links[net.links.carrier.str.contains("Fischer-Tropsch", case=False, na=False)].copy()
@@ -4816,6 +4831,15 @@ def compute_ekerosene_unit_inputs_by_region(networks: dict,
               .reset_index(drop=True)
         )
 
+        # Map EMM regions and transmission fees
+        g["EMM Region"] = g["Grid Region"].map(emm_mapping)
+        fee_map = regional_fees.loc[
+            regional_fees["Year"] == int(name.split("_")[-1]), ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"]
+        ].set_index("region")[["Transmission nom USD/MWh", "Distribution nom USD/MWh"]]
+        g["Transmission USD/MWh"] = g["EMM Region"].map(fee_map.loc[:,"Transmission nom USD/MWh"])
+        g["Distribution USD/MWh"] = g["EMM Region"].map(fee_map.loc[:,"Distribution nom USD/MWh"])
+        g.drop(columns=["EMM Region"], inplace=True)
+
         if g.empty:
             continue
 
@@ -4834,3 +4858,34 @@ def compute_ekerosene_unit_inputs_by_region(networks: dict,
                 "CO2 price (USD/t CO2)": "{:,.2f}",
             }).hide(axis="index")
         )
+
+
+def attach_emm_region_to_buses(network, path_shape, distance_crs):
+    """
+    Attach EMM region to buses
+    """
+    # Read the shapefile using geopandas
+    shape = gpd.read_file(path_shape, crs=distance_crs)
+    # shape.rename(columns={"GRID_REGIO": "region"}, inplace=True)
+
+    ac_dc_carriers = ["AC", "DC"]
+    location_mapping = network.buses.query(
+        "carrier in @ac_dc_carriers")[["x", "y"]]
+
+    network.buses["x"] = network.buses["location"].map(
+        location_mapping["x"]).fillna(0)
+    network.buses["y"] = network.buses["location"].map(
+        location_mapping["y"]).fillna(0)
+
+    pypsa_gpd = gpd.GeoDataFrame(
+        network.buses,
+        geometry=gpd.points_from_xy(network.buses.x, network.buses.y),
+        crs=4326
+    )
+
+    network_columns = network.buses.columns
+    bus_cols = [*network_columns, "subregion"]
+
+    st_buses = gpd.sjoin_nearest(shape, pypsa_gpd, how="right")[bus_cols]
+
+    network.buses["emm_region"] = st_buses["subregion"]

@@ -922,17 +922,19 @@ def compute_and_plot_load(n, key="", ymax=None, start_date=None, end_date=None):
 def calculate_lcoe_summary_and_map(n, shapes):
     snapshot_weights = n.snapshot_weightings.generators
 
-    # Define carrier sets by component
     gen_carriers = {
         'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac',
         'nuclear', 'geothermal', 'ror', 'hydro', 'solar rooftop',
     }
 
     storage_carriers = {
-        'battery', 'hydro', 'PHS'  # Customize based on actual model
+        'battery storage', 'hydro', 'PHS'
     }
 
-    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass', 'lignite', "urban central solid biomass CHP", "urban central gas CHP"]
+    link_carriers = [
+        'coal', 'oil', 'OCGT', 'CCGT', 'biomass', 'lignite',
+        "urban central solid biomass CHP", "urban central gas CHP"
+    ]
 
     electric_buses = set(n.buses[n.buses.carrier == 'AC'].index)
 
@@ -952,7 +954,7 @@ def calculate_lcoe_summary_and_map(n, shapes):
     sto['lcoe'] = (sto.capital_cost * sto.p_nom_opt + sto.marginal_cost * sto.energy) / sto.energy
     sto['type'] = 'storage'
 
-    # Links (using p1 logic consistent with total generation)
+    # Links
     link = n.links[
         (n.links.carrier.isin(link_carriers)) &
         (n.links.bus1.isin(electric_buses)) &
@@ -969,7 +971,20 @@ def calculate_lcoe_summary_and_map(n, shapes):
     link['fuel_cost'] = link.bus0.map(n.generators.marginal_cost)
 
     link = link[(link.p_nom_opt > 0) & (link.fuel_usage > 0)]
-    link['lcoe'] = (link.capital_cost * link.p_nom_opt + link.marginal_cost * link.fuel_usage + link.fuel_cost * link.fuel_usage) / link.energy
+
+    def lcoe_link(row):
+        if row['energy'] <= 0:
+            return np.nan
+        if row['carrier'] == 'oil':
+            return (row['fuel_cost'] * row['fuel_usage']) / row['energy']
+        else:
+            return (
+                row['capital_cost'] * row['p_nom_opt']
+                + row['marginal_cost'] * row['fuel_usage']
+                + row['fuel_cost'] * row['fuel_usage']
+            ) / row['energy']
+
+    link['lcoe'] = link.apply(lcoe_link, axis=1)
     link['type'] = 'link'
 
     # Merge data
@@ -4553,7 +4568,6 @@ def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
     Show RES/CES results for grid regions using pre-aggregated Excel file
     (generation_grid_regions.xlsx). Adds columns for absolute generation (TWh),
     regional shares (%), and a national total row (U.S.).
-    Applies deviation-based coloring also to generation and share comparisons.
     """
 
     res_by_region = evaluate_res_ces_by_region(
@@ -4567,12 +4581,11 @@ def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
     <strong>Legend</strong>
     <ul style="margin:5px 0; padding-left:20px;">
         <li style="background-color:#d4edda; padding:2px;">Diff. ≤ ±10%</li>
-        <li style="background-color:#fff3cd; padding:2px;">10% &lt; Diff. ≤ ±20%</li>
-        <li style="background-color:#f8d7da; padding:2px;">Diff. &gt; ±20%</li>
+        <li style="background-color:#fff3cd; padding:2px;">10% < Diff. ≤ 20%</li>
+        <li style="background-color:#f8d7da; padding:2px;">Diff. > 20%</li>
     </ul>
     </div>
     """
-
 
     html_blocks = []
     cols_per_row = 2
@@ -4603,8 +4616,12 @@ def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
             df_year = df_year.rename(columns={"Net generation (TWh)": "Stats generation (TWh)"})
 
             # Regional shares
-            df_year["% Model share"] = df_year["Model generation (TWh)"] / df_year["Model generation (TWh)"].sum() * 100
-            df_year["% Stats share"] = df_year["Stats generation (TWh)"] / df_year["Stats generation (TWh)"].sum() * 100
+            df_year["% Model generation share"] = (
+                df_year["Model generation (TWh)"] / df_year["Model generation (TWh)"].sum() * 100
+            )
+            df_year["% Stats generation share"] = (
+                df_year["Stats generation (TWh)"] / df_year["Stats generation (TWh)"].sum() * 100
+            )
 
             # Add national total row (U.S.)
             totals = pd.Series({
@@ -4614,8 +4631,8 @@ def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
                 "% Actual CES": (df_year["% Actual CES"] * df_year["Stats generation (TWh)"]).sum() / df_year["Stats generation (TWh)"].sum(),
                 "Model generation (TWh)": df_year["Model generation (TWh)"].sum(),
                 "Stats generation (TWh)": df_year["Stats generation (TWh)"].sum(),
-                "% Model share": 100.0,
-                "% Stats share": 100.0
+                "% Model generation share": 100.0,
+                "% Stats generation share": 100.0
             }, name="U.S.")
             df_year = pd.concat([df_year, totals.to_frame().T])
 
@@ -4623,24 +4640,23 @@ def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
                 "% RES", "% Actual RES",
                 "% CES", "% Actual CES",
                 "Model generation (TWh)", "Stats generation (TWh)",
-                "% Model share", "% Stats share"
+                "% Model generation share", "% Stats generation share"
             ]].round(2)
 
-            # Rename index column safely
-            df_disp = df_disp.reset_index()
-            df_disp = df_disp.rename(columns={df_disp.columns[0]: "Grid Region"}).set_index("Grid Region")
+            df_disp = df_disp.reset_index().rename(columns={"index": "Grid Region"}).set_index("Grid Region")
 
             def style_row(row):
-                return [
-                    deviation_color(row['% RES'], row['% Actual RES']),
-                    deviation_color(row['% RES'], row['% Actual RES']),
-                    deviation_color(row['% CES'], row['% Actual CES']),
-                    deviation_color(row['% CES'], row['% Actual CES']),
-                    deviation_color(row['Model generation (TWh)'], row['Stats generation (TWh)']),
-                    deviation_color(row['Model generation (TWh)'], row['Stats generation (TWh)']),
-                    deviation_color(row['% Model share'], row['% Stats share']),
-                    deviation_color(row['% Model share'], row['% Stats share'])
-                ]
+                styles = []
+                for col in df_disp.columns:
+                    if "RES" in col:
+                        styles.append(deviation_color(row.get("% RES"), row.get("% Actual RES")))
+                    elif "CES" in col:
+                        styles.append(deviation_color(row.get("% CES"), row.get("% Actual CES")))
+                    elif "generation" in col or "share" in col:
+                        styles.append(deviation_color(row.get("Model generation (TWh)"), row.get("Stats generation (TWh)")))
+                    else:
+                        styles.append("")
+                return styles
 
             styled_df = (
                 df_disp.style
@@ -4648,20 +4664,27 @@ def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
                 .format(fmt_2dp_or_na)
                 .set_table_styles([{'selector': 'th.row_heading', 'props': 'font-weight:bold;'}])
             )
+
+            # Force wide table (no wrapping)
             df_html = styled_df.to_html() + legend_html
+            df_html = f"<div style='overflow-x:auto; white-space:nowrap;'>{df_html}</div>"
 
         else:
             expected_cols = ['% RES', '% RES target', '% CES', '% CES target']
             cols_present = [c for c in expected_cols if c in df_year.columns]
             df_year = df_year.reindex(columns=cols_present).round(2)
 
-            # Add national total row (U.S.) also for future years
-            totals = pd.Series({c: df_year[c].mean() for c in cols_present}, name="U.S.")
+            # Add model total generation for future years
+            if "Total (MWh)" in df_year.columns:
+                df_year["Model generation (TWh)"] = df_year["Total (MWh)"] / 1e6
+                df_year["% Model generation share"] = (
+                    df_year["Model generation (TWh)"] / df_year["Model generation (TWh)"].sum() * 100
+                )
+
+            totals = pd.Series({c: df_year[c].mean() for c in df_year.columns}, name="U.S.")
             df_year = pd.concat([df_year, totals.to_frame().T])
 
-            # Rename index column safely
-            df_disp = df_year.reset_index()
-            df_disp = df_disp.rename(columns={df_disp.columns[0]: "Grid Region"}).set_index("Grid Region")
+            df_disp = df_year.reset_index().rename(columns={"index": "Grid Region"}).set_index("Grid Region")
 
             def style_row(row):
                 styles = []
@@ -4699,6 +4722,7 @@ def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
 
     for row in rows:
         display(HTML(row))
+
 
 def compute_ekerosene_unit_inputs_by_region(networks: dict,
                                             regional_fees: pd.DataFrame,

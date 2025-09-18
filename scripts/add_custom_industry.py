@@ -892,6 +892,24 @@ def add_data_centers_load(n):
     logger.info(f"Added data center loads")
 
 
+def modify_dac_inputs(n):
+    """
+        Modifies DAC inputs
+    """
+    # get DAC links
+    dac_links = n.links.query("carrier in 'DAC'").index
+
+    # remove or keep heat input based on config
+    if not snakemake.params.dac_inputs["heat"] and not dac_links.empty:
+        n.links.loc[dac_links, ["bus3", "efficiency3"]] = np.nan
+        logger.info(f"Removed heat input from Direct air capture technologies")
+
+    # set electricity input efficiency based on config
+    if snakemake.params.dac_inputs["electricity"] and not dac_links.empty:
+        n.links.loc[dac_links, "efficiency2"] = -snakemake.params.dac_inputs["electricity"]
+        logger.info(f"Set electricity input efficiency of Direct air capture technologies to {snakemake.params.dac_inputs['electricity']}")
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -970,6 +988,9 @@ if __name__ == "__main__":
     # add data center load
     if snakemake.params.data_centers:
         add_data_centers_load(n)
+
+    # modify DAC inputs
+    modify_dac_inputs(n)
 
     # save the modified network
     n.export_to_netcdf(snakemake.output.modified_network)

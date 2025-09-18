@@ -509,6 +509,7 @@ if config["custom_industry"]["enable"]:
             other_electricity=config["custom_industry"]["other_electricity"],
             data_centers=config["demand_projection"]["data_centers_load"],
             data_center_profiles="data/data_center_profiles/",
+            dac_inputs=config["custom_industry"]["dac_inputs"],
             geo_crs=config["crs"]["geo_crs"],
         input:
             industrial_energy_demand_per_node=PYPSA_EARTH_DIR + "resources/"

@@ -76,6 +76,9 @@ custom_industry:
   biogenic_co2: false # define output of ethanol from starch CC as biogenic CO2 to be used in Fischer-Tropsch
   grid_H2: true # mark output of electrolysis as grid H2 (which can be used in Fischer-Tropsch)
   other_electricity: true # add other electricity as a consumption
+  dac_inputs:
+    heat: false
+    electricity: 1.4 # in MWh per ton CO2
 
 custom_databundles:
   bundle_cutouts_USA:

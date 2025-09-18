@@ -938,7 +938,7 @@ def calculate_lcoe_summary_and_map(n, shapes):
 
     electric_buses = set(n.buses[n.buses.carrier == 'AC'].index)
 
-    # Generators
+    # --- Generators ---
     gen = n.generators[n.generators.carrier.isin(gen_carriers)].copy()
     gen_dispatch = n.generators_t.p[gen.index].multiply(snapshot_weights, axis=0)
     gen['energy'] = gen_dispatch.sum()
@@ -946,7 +946,7 @@ def calculate_lcoe_summary_and_map(n, shapes):
     gen['lcoe'] = (gen.capital_cost * gen.p_nom_opt + gen.marginal_cost * gen.energy) / gen.energy
     gen['type'] = 'generator'
 
-    # Storage units
+    # --- Storage units ---
     sto = n.storage_units[n.storage_units.carrier.isin(storage_carriers)].copy()
     sto_dispatch = n.storage_units_t.p[sto.index].clip(lower=0).multiply(snapshot_weights, axis=0)
     sto['energy'] = sto_dispatch.sum()
@@ -954,7 +954,7 @@ def calculate_lcoe_summary_and_map(n, shapes):
     sto['lcoe'] = (sto.capital_cost * sto.p_nom_opt + sto.marginal_cost * sto.energy) / sto.energy
     sto['type'] = 'storage'
 
-    # Links
+    # --- Links ---
     link = n.links[
         (n.links.carrier.isin(link_carriers)) &
         (n.links.bus1.isin(electric_buses)) &
@@ -970,24 +970,28 @@ def calculate_lcoe_summary_and_map(n, shapes):
     link['fuel_usage'] = weighted_fuel_usage.sum()
     link['fuel_cost'] = link.bus0.map(n.generators.marginal_cost)
 
-    link = link[(link.p_nom_opt > 0) & (link.fuel_usage > 0)]
+    # capacity factor
+    H = float(snapshot_weights.sum())
+    link['CF'] = link['energy'] / (link['p_nom_opt'] * H)
 
     def lcoe_link(row):
         if row['energy'] <= 0:
             return np.nan
         if row['carrier'] == 'oil':
-            return np.nan # no generator cost, no fuel cost
-        else:
-            return (
-                row['capital_cost'] * row['p_nom_opt']
-                + row['marginal_cost'] * row['fuel_usage']
-                + row['fuel_cost'] * row['fuel_usage']
-            ) / row['energy']
+            return np.nan
+        # filtro: se CF < 5% → NaN
+        if row['CF'] < 0.05:
+            return np.nan
+        return (
+            row['capital_cost'] * row['p_nom_opt']
+            + row['marginal_cost'] * row['fuel_usage']
+            + row['fuel_cost'] * row['fuel_usage']
+        ) / row['energy']
 
     link['lcoe'] = link.apply(lcoe_link, axis=1)
     link['type'] = 'link'
 
-    # Merge data
+    # --- Merge data ---
     gen_data = gen[['bus', 'carrier', 'lcoe', 'type', 'energy']]
     sto_data = sto[['bus', 'carrier', 'lcoe', 'type', 'energy']]
     link_data = link[['bus1', 'carrier', 'lcoe', 'type', 'energy']].rename(columns={'bus1': 'bus'})
@@ -1017,11 +1021,6 @@ def calculate_lcoe_summary_and_map(n, shapes):
     region_summary['lcoe'] = region_summary['total_cost'] / region_summary['dispatch_mwh']
     region_summary['dispatch'] = region_summary['dispatch_mwh'] / 1e6
 
-    weighted_avg_grid_region = (
-        region_summary.groupby('grid_region')
-        .apply(lambda df: (df['dispatch_mwh'] * df['lcoe']).sum() / df['dispatch_mwh'].sum())
-    )
-
     table = region_summary.pivot(index='grid_region', columns='carrier', values=['lcoe', 'dispatch'])
     table.columns = [
         f"{carrier} {metric} ({'USD/MWh' if metric == 'lcoe' else 'TWh'})"
@@ -1029,6 +1028,7 @@ def calculate_lcoe_summary_and_map(n, shapes):
     ]
     table = table.reset_index()
 
+    # filtra dispatch e sostituisci lcoe per dispatch bassi
     dispatch_cols = [col for col in table.columns if 'dispatch' in col.lower()]
     for col in dispatch_cols:
         table[col] = pd.to_numeric(table[col], errors='coerce').fillna(0.0)
@@ -1057,12 +1057,13 @@ def calculate_lcoe_summary_and_map(n, shapes):
             table[col] = table[col].round(2) if table[col].dtype != object else table[col]
 
     vmin = lcoe_by_bus['weighted_lcoe'].quantile(0.05)
-    vmax = max(vmin, min(weighted_avg_grid_region.max() * 1.1, lcoe_by_bus['weighted_lcoe'].max()))
+    vmax = max(vmin, min(grid_region_weighted_lcoe.max() * 1.1, lcoe_by_bus['weighted_lcoe'].max()))
 
     geometry = [Point(xy) for xy in zip(lcoe_by_bus['x'], lcoe_by_bus['y'])]
     lcoe_gdf = gpd.GeoDataFrame(lcoe_by_bus, geometry=geometry, crs=shapes.crs).to_crs(shapes.crs)
 
     return lcoe_gdf, table, lcoe_by_bus, lcoe_data, vmin, vmax
+
 
 def plot_lcoe_map_by_grid_region(lcoe_by_bus, lcoe_data, shapes, title=None, key=None, ax=None, vmin=None, vmax=None):
     grid_region_lcoe = (
@@ -1250,15 +1251,23 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
     plt.show()
 
 
-def plot_lcoh_maps_by_grid_region_marginal(networks, shapes, h2_carriers, regional_fees, emm_mapping,
-                                           output_threshold=1.0):
+def plot_lcoh_maps_by_grid_region_lcoe(
+    networks,
+    shapes,
+    h2_carriers,
+    regional_fees,
+    emm_mapping,
+    output_threshold=1.0,
+):
     """
     Plot weighted average LCOH incl. Transmission fees (USD/kg),
-    using marginal electricity prices. Transmission fees are weighted by H2 output.
+    using LCOE-based electricity prices from additional renewable generators.
+    Transmission fees are weighted by H2 output.
     """
+
     all_results = []
 
-    # Normalize region column
+    # Normalize region column in shapefile
     for col in ["Grid Region", "GRID_REGIO", "grid_region"]:
         if col in shapes.columns:
             shapes = shapes.rename(columns={col: "grid_region"})
@@ -1269,6 +1278,7 @@ def plot_lcoh_maps_by_grid_region_marginal(networks, shapes, h2_carriers, region
     for year, net in networks.items():
         scen_year = int(re.search(r"\d{4}", str(year)).group())
 
+        # Select electrolyzers
         links = net.links[net.links.carrier.isin(h2_carriers)]
         if links.empty:
             continue
@@ -1277,8 +1287,8 @@ def plot_lcoh_maps_by_grid_region_marginal(networks, shapes, h2_carriers, region
         p1 = net.links_t.p1[links.index]  # H2 output (MW)
         w = net.snapshot_weightings.generators
 
-        cons_MWh = (p0).clip(lower=0).multiply(w, axis=0)  # MWh el
-        h2_MWh   = (-p1).clip(lower=0).multiply(w, axis=0) # MWh H2
+        cons_MWh = (p0).clip(lower=0).multiply(w, axis=0)   # MWh electricity
+        h2_MWh   = (-p1).clip(lower=0).multiply(w, axis=0)  # MWh H2
         h2_out   = h2_MWh.sum()
 
         valid = h2_out > output_threshold
@@ -1286,8 +1296,11 @@ def plot_lcoh_maps_by_grid_region_marginal(networks, shapes, h2_carriers, region
             continue
 
         # Transmission fee mapping
-        fee_map = regional_fees.loc[regional_fees["Year"] == scen_year,
-                                    ["region", "Transmission nom USD/MWh"]].set_index("region")
+        fee_map = regional_fees.loc[
+            regional_fees["Year"] == scen_year,
+            ["region", "Transmission nom USD/MWh"]
+        ].set_index("region")
+
         df = pd.DataFrame({
             "bus": links.loc[valid, "bus0"],
             "h2_out": h2_out[valid]
@@ -1300,9 +1313,30 @@ def plot_lcoh_maps_by_grid_region_marginal(networks, shapes, h2_carriers, region
         elec_rate = cons_MWh.loc[:, valid].sum(axis=0) / h2_out[valid]  # MWh el / MWh H2
         fee_trans_kg = (fee_trans * elec_rate / 33).reindex(df.index)
 
-        # Dummy baseline (just marginal + transmission fees for plotting)
-        df["LCOH incl. Transmission"] = fee_trans_kg
+        # --- Compute LCOE for renewables built in scen_year ---
+        allowed_carriers = ["csp", "solar", "onwind", "offwind-ac", "offwind-dc", "ror", "hydro", "nuclear"]
+        gens = net.generators[net.generators.carrier.isin(allowed_carriers)].copy()
+        gens = gens[gens["build_year"] == scen_year]  # additionality
+        if gens.empty:
+            continue
+
+        # Capacity factors
+        gen_dispatch = net.generators_t.p[gens.index].multiply(w, axis=0).sum()
+        gen_energy = gen_dispatch.sum()
+        if gen_energy <= 0:
+            continue
+
+        capex = (gens.capital_cost * gens.p_nom_opt).sum()
+        opex  = (gens.marginal_cost * gen_dispatch).sum()
+        lcoe_val = (capex + opex) / gen_energy  # USD/MWh el
+
+        # Assign same LCOE to all buses
+        df["LCOE elec"] = lcoe_val
+
+        # LCOH incl. transmission
+        df["LCOH incl. Transmission"] = (df["LCOE elec"] * elec_rate / 33) + fee_trans_kg
         df["year"] = scen_year
+
         all_results.append(df.dropna(subset=["grid_region"]))
 
     if not all_results:
@@ -1310,6 +1344,8 @@ def plot_lcoh_maps_by_grid_region_marginal(networks, shapes, h2_carriers, region
         return
 
     all_df = pd.concat(all_results, ignore_index=True)
+
+    # Weighted average by region
     region_lcoh = (
         all_df.groupby(["grid_region", "year"])
         .apply(lambda g: pd.Series({
@@ -1318,6 +1354,7 @@ def plot_lcoh_maps_by_grid_region_marginal(networks, shapes, h2_carriers, region
         .reset_index()
     )
 
+    # Merge with shapes for plotting
     plot_df = shapes.merge(region_lcoh, on="grid_region", how="left")
     vmin = plot_df["weighted_lcoh"].quantile(0.05)
     vmax = plot_df["weighted_lcoh"].quantile(0.95)
@@ -1325,25 +1362,39 @@ def plot_lcoh_maps_by_grid_region_marginal(networks, shapes, h2_carriers, region
     for y in sorted(region_lcoh.year.unique()):
         fig, ax = plt.subplots(figsize=(12, 10), subplot_kw={"projection": ccrs.PlateCarree()})
         year_df = plot_df[plot_df.year == y]
-        year_df.plot(column="weighted_lcoh", cmap="RdYlGn_r",
-                     linewidth=0.8, edgecolor="0.8", legend=True,
-                     legend_kwds={"label": "LCOH incl. Transmission (USD/kg)"},
-                     vmin=vmin, vmax=vmax, ax=ax)
+        year_df.plot(
+            column="weighted_lcoh",
+            cmap="RdYlGn_r",
+            linewidth=0.8,
+            edgecolor="0.8",
+            legend=True,
+            legend_kwds={"label": "LCOH incl. Transmission (USD/kg)"},
+            vmin=vmin, vmax=vmax, ax=ax
+        )
         ax.set_extent([-130, -65, 20, 55])
         ax.axis("off")
-        ax.set_title(f"LCOH (incl. Transmission fees, elec. cost = marginal cost) – {y}")
+        ax.set_title(f"LCOH (incl. Transmission fees, elec. cost = LCOE) – {y}")
         plt.show()
 
 
-def plot_lcoh_maps_by_grid_region_lcoe(networks, shapes, h2_carriers, regional_fees, emm_mapping,
-                                       lcoe_by_bus, output_threshold=1.0):
+
+def plot_lcoh_maps_by_grid_region_marginal(
+    networks, shapes, h2_carriers, regional_fees, emm_mapping,
+    output_threshold=1.0
+):
     """
     Plot weighted average LCOH incl. Transmission fees (USD/kg),
-    using LCOE-based electricity prices. Transmission fees are weighted by H2 output.
+    using marginal electricity prices. Transmission fees are weighted by H2 output.
+
+    Notes
+    -----
+    - Electricity cost is computed from nodal marginal prices at the electrolyzer bus,
+      weighted by electricity consumption and normalized per kg H2.
     """
+
     all_results = []
 
-    # Normalize region column
+    # Normalize region column in shapes
     for col in ["Grid Region", "GRID_REGIO", "grid_region"]:
         if col in shapes.columns:
             shapes = shapes.rename(columns={col: "grid_region"})
@@ -1358,11 +1409,12 @@ def plot_lcoh_maps_by_grid_region_lcoe(networks, shapes, h2_carriers, regional_f
         if links.empty:
             continue
 
+        # Electricity input and H2 output
         p0 = net.links_t.p0[links.index]  # electricity input (MW)
         p1 = net.links_t.p1[links.index]  # H2 output (MW)
         w = net.snapshot_weightings.generators
 
-        cons_MWh = (p0).clip(lower=0).multiply(w, axis=0)  # MWh el
+        cons_MWh = p0.clip(lower=0).multiply(w, axis=0)   # MWh el
         h2_MWh   = (-p1).clip(lower=0).multiply(w, axis=0) # MWh H2
         h2_out   = h2_MWh.sum()
 
@@ -1371,8 +1423,11 @@ def plot_lcoh_maps_by_grid_region_lcoe(networks, shapes, h2_carriers, regional_f
             continue
 
         # Transmission fee mapping
-        fee_map = regional_fees.loc[regional_fees["Year"] == scen_year,
-                                    ["region", "Transmission nom USD/MWh"]].set_index("region")
+        fee_map = regional_fees.loc[
+            regional_fees["Year"] == scen_year,
+            ["region", "Transmission nom USD/MWh"]
+        ].set_index("region")
+
         df = pd.DataFrame({
             "bus": links.loc[valid, "bus0"],
             "h2_out": h2_out[valid]
@@ -1381,14 +1436,25 @@ def plot_lcoh_maps_by_grid_region_lcoe(networks, shapes, h2_carriers, regional_f
         df["EMM"] = df["grid_region"].map(emm_mapping)
         fee_trans = df["EMM"].map(fee_map["Transmission nom USD/MWh"])
 
-        # Convert to USD/kg H2 (weighted)
+        # Electricity consumption rate per H2 output
         elec_rate = cons_MWh.loc[:, valid].sum(axis=0) / h2_out[valid]  # MWh el / MWh H2
-        fee_trans_kg = (fee_trans * elec_rate / 33).reindex(df.index)
 
-        # Use LCOE value per bus
-        df["lcoe_bus"] = df["bus"].map(lcoe_by_bus.set_index("bus")["weighted_lcoe"])
-        df["LCOH incl. Transmission"] = (df["lcoe_bus"] * elec_rate / 33) + fee_trans_kg
+        # ---- Electricity cost from marginal prices ----
+        elec_costs = {}
+        for l in valid.index[valid]:
+            bus = links.at[l, "bus0"]
+            prices = net.buses_t.marginal_price[bus]
+            cons = cons_MWh[l]
+            elec_costs[l] = (cons * prices).sum()
+
+        elec_cost_series = pd.Series(elec_costs)
+        elec_val = elec_cost_series / h2_out[valid] / 33.0  # USD/kg H2
+
+        # Add transmission fees
+        fee_trans_kg = (fee_trans * elec_rate / 33).reindex(df.index)
+        df["LCOH incl. Transmission"] = elec_val + fee_trans_kg
         df["year"] = scen_year
+
         all_results.append(df.dropna(subset=["grid_region"]))
 
     if not all_results:
@@ -1411,37 +1477,58 @@ def plot_lcoh_maps_by_grid_region_lcoe(networks, shapes, h2_carriers, regional_f
     for y in sorted(region_lcoh.year.unique()):
         fig, ax = plt.subplots(figsize=(12, 10), subplot_kw={"projection": ccrs.PlateCarree()})
         year_df = plot_df[plot_df.year == y]
-        year_df.plot(column="weighted_lcoh", cmap="RdYlGn_r",
-                     linewidth=0.8, edgecolor="0.8", legend=True,
-                     legend_kwds={"label": "LCOH incl. Transmission (USD/kg)"},
-                     vmin=vmin, vmax=vmax, ax=ax)
+        year_df.plot(
+            column="weighted_lcoh", cmap="RdYlGn_r",
+            linewidth=0.8, edgecolor="0.8", legend=True,
+            legend_kwds={"label": "LCOH incl. Transmission (USD/kg)"},
+            vmin=vmin, vmax=vmax, ax=ax
+        )
         ax.set_extent([-130, -65, 20, 55])
         ax.axis("off")
-        ax.set_title(f"LCOH (incl. Transmission fees, elec.cost = LCOE) – {y}")
+        ax.set_title(f"LCOH (incl. Transmission fees, elec.cost = marginal) – {y}")
         plt.show()
 
 
 def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
                              output_threshold=1.0, year_title=True,
-                             electricity_price="marginal", grid_region_lcoe=None):
+                             electricity_price="marginal", planning_horizon=None):
     """
     Compute weighted average LCOH by grid region and year, including CAPEX, OPEX,
-    electricity cost (marginal or LCOE), and T&D fees.
+    electricity cost (marginal or LCOE with hourly matching + additionality),
+    and T&D fees.
 
     Parameters
     ----------
+    networks : dict
+        Dictionary of PyPSA Network objects, keyed by year or scenario.
+    h2_carriers : list
+        List of link carrier names representing electrolyzers.
+    regional_fees : pd.DataFrame
+        Table with regional transmission & distribution fees by year.
+    emm_mapping : dict
+        Mapping from grid_region to EMM region.
+    output_threshold : float, optional
+        Minimum H2 output (MWh) to include a link in the calculation.
+    year_title : bool, optional
+        If True, use scenario year as key in results; else keep original key.
     electricity_price : {"marginal", "LCOE"}
         Method for electricity cost:
         - "marginal": use nodal marginal price of electricity
-        - "LCOE":     use weighted average LCOE per grid region (requires grid_region_lcoe)
-    grid_region_lcoe : pd.Series
-        Weighted average LCOE (USD/MWh el) per grid region, indexed by "grid_region".
-        Required if electricity_price="LCOE".
+        - "LCOE": compute weighted LCOE from allowed additional generators
+    planning_horizon : int or None
+        Planning horizon year. If given and electricity_price="LCOE",
+        only generators with build_year == planning_horizon are considered.
     """
+
     results = {}
 
     conv = 33.0   # MWh H2 per ton
     suffix = "USD/kg H2"
+
+    # Allowed carriers and additionality flag (fixed)
+    allowed_carriers = ["csp", "solar", "onwind", "offwind-ac", "offwind-dc",
+                        "ror", "hydro", "nuclear"]
+    additionality = True
 
     for year_key, net in networks.items():
         scen_year = int(re.search(r"\d{4}", str(year_key)).group())
@@ -1467,17 +1554,49 @@ def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
         # Electricity cost depending on method
         elec_cost = pd.Series(0.0, index=valid.index[valid])
         if electricity_price == "marginal":
+            # Electricity cost is computed as a consumption-weighted average of nodal marginal prices:
+            # for each electrolyzer, multiply its hourly electricity use (already weighted by snapshot weightings)
+            # by the marginal price of the connected bus, and sum over all time steps.
+            # This ensures that the effective electricity cost reflects both the temporal profile of consumption
+            # and the locational marginal price at the bus where the electrolyzer is connected.
+
+            # Consumption-weighted average nodal marginal prices
             for l in valid.index[valid]:
                 bus = links.at[l, "bus0"]
                 elec_cost[l] = (cons[l] * net.buses_t.marginal_price[bus]).sum()
+
         elif electricity_price == "LCOE":
-            if grid_region_lcoe is None:
-                raise ValueError("grid_region_lcoe must be provided when electricity_price='LCOE'")
+            # Electricity cost is computed as a weighted average LCOE of eligible (renewable + additional) generators
+            # in the same grid region, based on their actual generation.
+            
+            # Select eligible generators
+            gens = net.generators[net.generators.carrier.isin(allowed_carriers)].copy()
+            if additionality and planning_horizon is not None:
+                gens = gens[gens.build_year == planning_horizon]
+            if gens.empty:
+                continue
+
+            # Weighted generation
+            gen_dispatch = net.generators_t.p[gens.index].multiply(net.snapshot_weightings.generators, axis=0)
+            gen_energy = gen_dispatch.sum()
+
+            # Simple generator-level LCOE estimate [USD/MWh]
+            # (here capital_cost is already annuitized capex + fixed opex in PyPSA)
+            gen_lcoe = (gens.capital_cost + gens.marginal_cost).reindex(gen_energy.index)
+
+            # Weighted average per region
+            region_lcoe = (
+                gen_energy.groupby(gens.grid_region)
+                .apply(lambda g: (gen_lcoe[g.index] * gen_energy[g.index]).sum() / gen_energy[g.index].sum())
+            )
+
+            # Apply to each electrolyzer
             for l in valid.index[valid]:
                 bus = links.at[l, "bus0"]
                 region = net.buses.at[bus, "grid_region"]
-                avg_price = grid_region_lcoe.get(region, np.nan)
+                avg_price = region_lcoe.get(region, np.nan)
                 elec_cost[l] = cons[l].sum() * avg_price
+
         else:
             raise ValueError("electricity_price must be 'marginal' or 'LCOE'")
 
@@ -1540,7 +1659,7 @@ def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
             .reset_index().rename(columns={"grid_region": "Grid Region"})
         )
 
-        # Round and display
+        # Round and store
         region_summary = region_summary.round(2)
         key = str(scen_year) if year_title else year_key
         results[key] = region_summary
@@ -4841,25 +4960,12 @@ def compute_ekerosene_by_region(
     year_title: bool = True,
     p_nom_threshold: float = 1e-3,
     unit: str = "MWh",  # "MWh" or "gal"
-    fx_2020: float = 1.0,
-    fx_recent: float = 1.0,
 ):
     """
     Compute input rates, input prices, T&D fees and total unit cost for
     Fischer-Tropsch e-kerosene plants by grid region.
-
-    Parameters
-    ----------
-    unit : {"MWh", "gal"}
-        Output unit for costs: USD/MWh e-ker or USD/gal e-ker.
     """
-
-    import re
-    import numpy as np
-    import pandas as pd
-    from IPython.display import display
-
-    # conversion factor
+    
     MWH_PER_GAL = (34.0 / 3600.0) * 3.78541  # MWh per gallon
     conv = 1.0 if unit == "MWh" else MWH_PER_GAL
     suffix = f"USD/{unit} e-ker"
@@ -4868,10 +4974,8 @@ def compute_ekerosene_by_region(
         m = re.search(r"\d{4}", str(name))
         scen_year = int(m.group()) if m else 2030
 
-        # map grid -> EMM region (needed for fees)
         emm_mapping = dict(zip(net.buses.grid_region, net.buses.emm_region))
 
-        # select Fischer-Tropsch links
         ft = net.links[net.links.carrier.str.contains("Fischer-Tropsch", case=False, na=False)].copy()
         if ft.empty:
             continue
@@ -4895,38 +4999,46 @@ def compute_ekerosene_by_region(
         rows = []
 
         for link in ft.index:
-            ym = re.search(r"-(\d{4})$", str(link))
-            install_year = int(ym.group(1)) if ym else scen_year
-
             try:
                 region = net.buses.at[ft.at[link, "bus1"], "grid_region"]
             except KeyError:
                 continue
 
-            # input prices
-            p_elec = net.buses_t.marginal_price[ft.at[link, "bus3"]]  # USD/MWh el
-            p_h2   = net.buses_t.marginal_price[ft.at[link, "bus0"]]  # USD/MWh H2
-            p_co2  = net.buses_t.marginal_price[ft.at[link, "bus2"]]  # USD/tCO2
+            bus_map = {}
+            for i in range(4):
+                b = ft.at[link, f"bus{i}"]
+                if b not in net.buses.index:
+                    continue
+                carrier = net.buses.at[b, "carrier"]
+                bus_map[carrier] = i
 
-            # flows
             out_MWh = (-net.links_t.p1[link] * dt_h).sum()
             if out_MWh <= 0:
                 continue
-            elec_in = (net.links_t.p3[link] * dt_h).sum()
-            h2_in   = (net.links_t.p0[link] * dt_h).sum()
-            co2_in  = (net.links_t.p2[link] * dt_h).sum()
 
-            # rates per 1 MWh e-ker
+            def get_flow_and_price(carrier_key):
+                if carrier_key not in bus_map:
+                    return 0.0, None
+                idx = bus_map[carrier_key]
+                flow = (net.links_t[f"p{idx}"][link] * dt_h).sum()
+                price = net.buses_t.marginal_price[ft.at[link, f"bus{idx}"]]
+                return flow, price
+
+            elec_in, p_elec = get_flow_and_price("AC")
+            h2_in,   p_h2   = get_flow_and_price("grid H2")
+            co2_in,  p_co2  = get_flow_and_price("co2 stored")
+
             r_elec = elec_in / out_MWh if out_MWh > 0 else 0.0
             r_h2   = h2_in   / out_MWh if out_MWh > 0 else 0.0
             r_co2  = co2_in  / out_MWh if out_MWh > 0 else 0.0
 
-            # avg input prices
-            avg_p_elec = (net.links_t.p3[link] * p_elec * dt_h).sum() / elec_in if elec_in > 0 else 0.0
-            avg_p_h2   = (net.links_t.p0[link] * p_h2   * dt_h).sum() / h2_in   if h2_in   > 0 else 0.0
-            avg_p_co2  = (net.links_t.p2[link] * p_co2  * dt_h).sum() / co2_in  if co2_in  > 0 else 0.0
+            def avg_price(flow_series, price_series, total_flow):
+                return (flow_series * price_series * dt_h).sum() / total_flow if total_flow > 0 else 0.0
 
-            # costs normalized
+            avg_p_elec = avg_price(net.links_t[f"p{bus_map['AC']}"][link], p_elec, elec_in) if "AC" in bus_map else 0.0
+            avg_p_h2   = avg_price(net.links_t[f"p{bus_map['grid H2']}"][link], p_h2, h2_in) if "grid H2" in bus_map else 0.0
+            avg_p_co2  = avg_price(net.links_t[f"p{bus_map['co2 stored']}"][link], p_co2, co2_in) if "co2 stored" in bus_map else 0.0
+
             c_elec = avg_p_elec * r_elec / conv
             c_h2   = avg_p_h2   * r_h2   / conv
             c_co2  = avg_p_co2  * r_co2  / conv
@@ -4951,7 +5063,7 @@ def compute_ekerosene_by_region(
             return (group[col] * group["Production (TWh)"]).sum() / group["Production (TWh)"].sum()
 
         g = (
-            df.groupby("Grid Region", as_index=False)
+            df.groupby("Grid Region")
               .apply(lambda x: pd.Series({
                   "Production (TWh)": x["Production (TWh)"].sum(),
                   f"Electricity rate (MWh el / MWh e-ker)": wavg(x, f"Electricity rate (MWh el / MWh e-ker)"),
@@ -4961,17 +5073,15 @@ def compute_ekerosene_by_region(
                   f"Hydrogen cost ({suffix})":              wavg(x, f"Hydrogen cost ({suffix})"),
                   f"CO2 cost ({suffix})":                   wavg(x, f"CO2 cost ({suffix})"),
               }))
-              .reset_index(drop=True)
+              .reset_index()   # keep Grid Region, drop numeric index
         )
 
-        # map EMM regions and fees
         g["EMM Region"] = g["Grid Region"].map(emm_mapping)
         fee_map = regional_fees.loc[
             regional_fees["Year"] == scen_year,
             ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"]
         ].set_index("region")
 
-        # fees → per unit
         g[f"Transmission fees ({suffix})"] = (
             g["EMM Region"].map(fee_map["Transmission nom USD/MWh"]) *
             g[f"Electricity rate (MWh el / MWh e-ker)"] / conv
@@ -4982,7 +5092,6 @@ def compute_ekerosene_by_region(
         )
         g.drop(columns=["EMM Region"], inplace=True)
 
-        # total
         g[f"LCO e-kerosene incl. T&D ({suffix})"] = (
             g[f"Electricity cost ({suffix})"]
             + g[f"Hydrogen cost ({suffix})"]
@@ -4994,6 +5103,159 @@ def compute_ekerosene_by_region(
         title = re.search(r"\d{4}", str(name)).group() if year_title and re.search(r"\d{4}", str(name)) else str(name)
         print(f"\n{title} ({unit} view):")
         display(g.round(3))
+
+
+def compute_ekerosene_by_region(
+    networks: dict,
+    regional_fees: pd.DataFrame,
+    year_title: bool = True,
+    p_nom_threshold: float = 1e-3,
+    unit: str = "MWh",  # "MWh" or "gal"
+):
+    """
+    Compute input rates, input prices, T&D fees and total unit cost for
+    Fischer-Tropsch e-kerosene plants by grid region.
+    """
+    
+    MWH_PER_GAL = (34.0 / 3600.0) * 3.78541  # MWh per gallon
+    conv = 1.0 if unit == "MWh" else MWH_PER_GAL
+    suffix = f"USD/{unit} e-ker"
+
+    for name, net in networks.items():
+        m = re.search(r"\d{4}", str(name))
+        scen_year = int(m.group()) if m else 2030
+
+        emm_mapping = dict(zip(net.buses.grid_region, net.buses.emm_region))
+
+        ft = net.links[net.links.carrier.str.contains("Fischer-Tropsch", case=False, na=False)].copy()
+        if ft.empty:
+            continue
+
+        cap_series = np.where(
+            ft.get("p_nom_extendable", False),
+            ft.get("p_nom_opt", 0.0),
+            ft.get("p_nom", 0.0),
+        )
+        ft = ft[pd.Series(cap_series, index=ft.index) > p_nom_threshold]
+        if ft.empty:
+            continue
+
+        needed_cols = ("p0", "p1", "p2", "p3")
+        ft_ids = [l for l in ft.index if all(l in getattr(net.links_t, c).columns for c in needed_cols)]
+        if not ft_ids:
+            continue
+        ft = ft.loc[ft_ids]
+
+        dt_h = (net.snapshots[1] - net.snapshots[0]).total_seconds()/3600.0 if len(net.snapshots) > 1 else 1.0
+        rows = []
+
+        for link in ft.index:
+            try:
+                region = net.buses.at[ft.at[link, "bus1"], "grid_region"]
+            except KeyError:
+                continue
+
+            bus_map = {}
+            for i in range(4):
+                b = ft.at[link, f"bus{i}"]
+                if b not in net.buses.index:
+                    continue
+                carrier = net.buses.at[b, "carrier"]
+                bus_map[carrier] = i
+
+            out_MWh = (-net.links_t.p1[link] * dt_h).sum()
+            if out_MWh <= 0:
+                continue
+
+            def get_flow_and_price(carrier_key):
+                if carrier_key not in bus_map:
+                    return 0.0, None
+                idx = bus_map[carrier_key]
+                flow = (net.links_t[f"p{idx}"][link] * dt_h).sum()
+                price = net.buses_t.marginal_price[ft.at[link, f"bus{idx}"]]
+                return flow, price
+
+            elec_in, p_elec = get_flow_and_price("AC")
+            h2_in,   p_h2   = get_flow_and_price("grid H2")
+            co2_in,  p_co2  = get_flow_and_price("co2 stored")
+
+            r_elec = elec_in / out_MWh if out_MWh > 0 else 0.0
+            r_h2   = h2_in   / out_MWh if out_MWh > 0 else 0.0
+            r_co2  = co2_in  / out_MWh if out_MWh > 0 else 0.0
+
+            def avg_price(flow_series, price_series, total_flow):
+                return (flow_series * price_series * dt_h).sum() / total_flow if total_flow > 0 else 0.0
+
+            avg_p_elec = avg_price(net.links_t[f"p{bus_map['AC']}"][link], p_elec, elec_in) if "AC" in bus_map else 0.0
+            avg_p_h2   = avg_price(net.links_t[f"p{bus_map['grid H2']}"][link], p_h2, h2_in) if "grid H2" in bus_map else 0.0
+            avg_p_co2  = avg_price(net.links_t[f"p{bus_map['co2 stored']}"][link], p_co2, co2_in) if "co2 stored" in bus_map else 0.0
+
+            c_elec = avg_p_elec * r_elec / conv
+            c_h2   = avg_p_h2   * r_h2   / conv
+            c_co2  = avg_p_co2  * r_co2  / conv
+
+            rows.append({
+                "Grid Region": region,
+                "Production (TWh)": out_MWh / 1e6,
+                f"Electricity rate (MWh el / MWh e-ker)": r_elec,
+                f"H2 rate (MWh H2 / MWh e-ker)":          r_h2,
+                f"CO2 rate (tCO2 / MWh e-ker)":           r_co2,
+                f"Electricity cost ({suffix})": c_elec,
+                f"Hydrogen cost ({suffix})":    c_h2,
+                f"CO2 cost ({suffix})":         c_co2,
+            })
+
+        if not rows:
+            continue
+
+        df = pd.DataFrame(rows)
+
+        def wavg(group, col):
+            return (group[col] * group["Production (TWh)"]).sum() / group["Production (TWh)"].sum()
+
+        g = (
+            df.groupby("Grid Region")
+              .apply(lambda x: pd.Series({
+                  "Production (TWh)": x["Production (TWh)"].sum(),
+                  f"Electricity rate (MWh el / MWh e-ker)": wavg(x, f"Electricity rate (MWh el / MWh e-ker)"),
+                  f"H2 rate (MWh H2 / MWh e-ker)":          wavg(x, f"H2 rate (MWh H2 / MWh e-ker)"),
+                  f"CO2 rate (tCO2 / MWh e-ker)":           wavg(x, f"CO2 rate (tCO2 / MWh e-ker)"),
+                  f"Electricity cost ({suffix})":           wavg(x, f"Electricity cost ({suffix})"),
+                  f"Hydrogen cost ({suffix})":              wavg(x, f"Hydrogen cost ({suffix})"),
+                  f"CO2 cost ({suffix})":                   wavg(x, f"CO2 cost ({suffix})"),
+              }))
+              .reset_index()   # keep Grid Region, drop numeric index
+        )
+
+        g["EMM Region"] = g["Grid Region"].map(emm_mapping)
+        fee_map = regional_fees.loc[
+            regional_fees["Year"] == scen_year,
+            ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"]
+        ].set_index("region")
+
+        g[f"Transmission fees ({suffix})"] = (
+            g["EMM Region"].map(fee_map["Transmission nom USD/MWh"]) *
+            g[f"Electricity rate (MWh el / MWh e-ker)"] / conv
+        )
+        g[f"Distribution fees ({suffix})"] = (
+            g["EMM Region"].map(fee_map["Distribution nom USD/MWh"]) *
+            g[f"Electricity rate (MWh el / MWh e-ker)"] / conv
+        )
+        g.drop(columns=["EMM Region"], inplace=True)
+
+        g[f"LCO e-kerosene incl. T&D ({suffix})"] = (
+            g[f"Electricity cost ({suffix})"]
+            + g[f"Hydrogen cost ({suffix})"]
+            + g[f"CO2 cost ({suffix})"]
+            + g[f"Transmission fees ({suffix})"]
+            + g[f"Distribution fees ({suffix})"]
+        )
+
+        title = re.search(r"\d{4}", str(name)).group() if year_title and re.search(r"\d{4}", str(name)) else str(name)
+        print(f"\n{title} ({unit} view):")
+        display(g.round(3))
+
+
 
 def compute_LCO_ekerosene_by_region(
     networks: dict,
@@ -5007,30 +5269,19 @@ def compute_LCO_ekerosene_by_region(
     electricity_price: str = "marginal",   # "marginal" or "lcoe"
     hydrogen_price: str = "marginal",      # "marginal" or "lcoh"
     lcoe_by_region: pd.Series = None,      # required if electricity_price="lcoe"
-    lcoh_by_region: dict = None            # required if hydrogen_price="lcoh"
+    lcoh_by_region: dict = None,           # required if hydrogen_price="lcoh"
 ):
     """
-    Compute levelized cost of e-kerosene (USD/gal or USD/MWh e-ker) by grid region,
-    including input prices (electricity, H2, CO2), input rates, CAPEX, VOM, and T&D fees.
-
-    Parameters
-    ----------
-    electricity_price : {"marginal", "lcoe"}
-        Method for electricity price:
-        - "marginal": use nodal marginal price
-        - "lcoe":     use weighted average LCOE per grid region
-    hydrogen_price : {"marginal", "lcoh"}
-        Method for hydrogen price:
-        - "marginal": use nodal marginal price
-        - "lcoh":     use weighted average LCOH per grid region (USD/kg H2, converted to USD/MWh H2)
+    Levelized cost of e-kerosene by grid region (USD/gal or USD/MWh e-ker).
+    - Input rates = consumed energy / MWh e-ker (production-weighted).
+    - Input prices = consumption-weighted marginal price (or LCOE/LCOH if requested).
+    - Autodetects flow sign per port (robust to sign conventions).
     """
 
-    # Conversion factors
-    MWH_PER_GALLON = (34.0 / 3600.0) * 3.78541  # MWh per gallon e-ker
+    MWH_PER_GALLON = (34.0 / 3600.0) * 3.78541
     conv = MWH_PER_GALLON if unit == "gal" else 1.0
     suffix = f"USD/{unit} e-ker"
 
-    # VOM cost trajectory (EUR/MWh)
     vom_eur_points = {2020: 5.6360, 2025: 5.0512, 2030: 4.4663, 2035: 3.9346, 2040: 3.4029}
     years_sorted = np.array(sorted(vom_eur_points.keys()))
     values_sorted = np.array([vom_eur_points[y] for y in years_sorted])
@@ -5043,7 +5294,7 @@ def compute_LCO_ekerosene_by_region(
     for name, net in networks.items():
         scen_year = int(re.search(r"\d{4}", str(name)).group())
 
-        # Select Fischer-Tropsch links
+        # FIX HERE: .str.contains (not .str_contains)
         ft = net.links[net.links.carrier.str.contains("Fischer-Tropsch", case=False, na=False)].copy()
         if ft.empty:
             continue
@@ -5054,67 +5305,70 @@ def compute_LCO_ekerosene_by_region(
         if ft.empty:
             continue
 
-        rows = []
         dt_h = (net.snapshots[1] - net.snapshots[0]).total_seconds()/3600.0 if len(net.snapshots) > 1 else 1.0
 
+        def energy_in(series):   # MWh consumed at that port
+            e_pos = (series.clip(lower=0) * dt_h).sum()
+            e_neg = ((-series).clip(lower=0) * dt_h).sum()
+            return ((-series).clip(lower=0) * dt_h) if e_neg >= e_pos else (series.clip(lower=0) * dt_h)
+
+        def energy_out(series):  # MWh produced at that port
+            e_pos = (series.clip(lower=0) * dt_h).sum()
+            e_neg = ((-series).clip(lower=0) * dt_h).sum()
+            return (series.clip(lower=0) * dt_h) if e_pos >= e_neg else ((-series).clip(lower=0) * dt_h)
+
+        rows = []
         for link in ft.index:
             try:
                 region = net.buses.at[ft.at[link, "bus1"], "grid_region"]
             except KeyError:
                 continue
 
-            # Flows
-            out_MWh = (-net.links_t.p1[link] * dt_h).sum()
+            out_MWh = energy_out(net.links_t.p1[link]).sum()
             if out_MWh <= 0:
                 continue
-            elec_in = (net.links_t.p3[link] * dt_h).sum()
-            h2_in   = (net.links_t.p0[link] * dt_h).sum()
-            co2_in  = (net.links_t.p2[link] * dt_h).sum()
 
-            # Input rates (per MWh e-ker output)
-            r_elec = elec_in / out_MWh
-            r_h2   = h2_in   / out_MWh
-            r_co2  = co2_in  / out_MWh
+            elec_cons = energy_in(net.links_t.p3[link])  # AC
+            h2_cons   = energy_in(net.links_t.p0[link])  # H2
+            co2_cons  = energy_in(net.links_t.p2[link])  # CO2
 
-            # Electricity price
+            r_elec = elec_cons.sum() / out_MWh
+            r_h2   = h2_cons.sum()   / out_MWh
+            r_co2  = co2_cons.sum()  / out_MWh
+
             if electricity_price == "marginal":
                 p_elec = net.buses_t.marginal_price[ft.at[link, "bus3"]]
-                avg_p_elec = (net.links_t.p3[link] * p_elec * dt_h).sum() / elec_in if elec_in > 0 else 0.0
+                avg_p_elec = (elec_cons * p_elec).sum() / elec_cons.sum() if elec_cons.sum() > 0 else 0.0
             elif electricity_price == "lcoe":
-                if lcoe_by_region is None:
-                    raise ValueError("Must provide lcoe_by_region when electricity_price='lcoe'")
                 avg_p_elec = lcoe_by_region.loc[region]
             else:
                 raise ValueError("electricity_price must be 'marginal' or 'lcoe'")
 
-            # Hydrogen price
             if hydrogen_price == "marginal":
                 p_h2 = net.buses_t.marginal_price[ft.at[link, "bus0"]]
-                avg_p_h2 = (net.links_t.p0[link] * p_h2 * dt_h).sum() / h2_in if h2_in > 0 else 0.0
+                avg_p_h2 = (h2_cons * p_h2).sum() / h2_cons.sum() if h2_cons.sum() > 0 else 0.0
             elif hydrogen_price == "lcoh":
-                if lcoh_by_region is None:
-                    raise ValueError("Must provide lcoh_by_region when hydrogen_price='lcoh'")
-                # lcoh_by_region is in USD/kg H2 → convert to USD/MWh H2
-                lcoh_val_kg = lcoh_by_region[str(scen_year)].set_index("Grid Region").at[region, "LCOH + T&D fees (USD/kg H2)"]
-                avg_p_h2 = lcoh_val_kg * 33.0
+                avg_p_h2 = (
+                    lcoh_by_region[str(scen_year)]
+                    .set_index("Grid Region")
+                    .at[region, "LCOH + T&D fees (USD/kg H2)"]
+                    * 33.0
+                )
             else:
                 raise ValueError("hydrogen_price must be 'marginal' or 'lcoh'")
 
-            # CO₂ price (always marginal)
             p_co2 = net.buses_t.marginal_price[ft.at[link, "bus2"]]
-            avg_p_co2 = (net.links_t.p2[link] * p_co2 * dt_h).sum() / co2_in if co2_in > 0 else 0.0
+            avg_p_co2 = (co2_cons * p_co2).sum() / co2_cons.sum() if co2_cons.sum() > 0 else 0.0
 
-            # Costs per unit of e-kerosene
             c_elec = avg_p_elec * r_elec * conv
             c_h2   = avg_p_h2   * r_h2   * conv
             c_co2  = avg_p_co2  * r_co2  * conv
 
             cap_cost = float(ft.at[link, "capital_cost"])
             cap_MW = float(ft.at[link, "p_nom_opt"] if ft.at[link, "p_nom_extendable"] else ft.at[link, "p_nom"])
-            c_capex = ((cap_cost * cap_MW) / out_MWh) * conv if out_MWh > 0 else 0.0
+            c_capex = ((cap_cost * cap_MW) / out_MWh) * conv
 
             c_vom = vom_usd_for_year(scen_year) * conv
-
             lco_excl_TD = c_elec + c_h2 + c_co2 + c_capex + c_vom
 
             rows.append({
@@ -5139,14 +5393,13 @@ def compute_LCO_ekerosene_by_region(
 
         df = pd.DataFrame(rows)
 
-        # Weighted average per region
         def wavg(group, col):
             return (group[col] * group["Production (TWh)"]).sum() / group["Production (TWh)"].sum()
 
         g = (
             df.groupby("Grid Region")
               .apply(lambda x: pd.Series({
-                  "Production (TWh)":                x["Production (TWh)"].sum(),
+                  "Production (TWh)": x["Production (TWh)"].sum(),
                   "Electricity rate (MWh el / MWh e-ker)": wavg(x, "Electricity rate (MWh el / MWh e-ker)"),
                   "H2 rate (MWh H2 / MWh e-ker)":          wavg(x, "H2 rate (MWh H2 / MWh e-ker)"),
                   "CO2 rate (tCO2 / MWh e-ker)":           wavg(x, "CO2 rate (tCO2 / MWh e-ker)"),
@@ -5163,10 +5416,9 @@ def compute_LCO_ekerosene_by_region(
               .reset_index()
         )
 
-        # Transmission & distribution fees
         g["EMM Region"] = g["Grid Region"].map(emm_mapping)
         fee_map = regional_fees.loc[
-            regional_fees["Year"] == scen_year, 
+            regional_fees["Year"] == scen_year,
             ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"]
         ].set_index("region")
 
@@ -5186,7 +5438,6 @@ def compute_LCO_ekerosene_by_region(
             g[f"Distribution fees ({suffix})"]
         )
 
-        # Weighted average total across regions
         tot_prod = g["Production (TWh)"].sum()
         wavg_cost = (g[f"LCO e-kerosene (incl. T&D fees) ({suffix})"] * g["Production (TWh)"]).sum() / tot_prod
 
@@ -5194,10 +5445,11 @@ def compute_LCO_ekerosene_by_region(
         print(f"\n{title}:")
         print(f"Weighted average LCO e-kerosene (incl. T&D): {wavg_cost:.2f} {suffix}\n")
 
-        g = g.round(2)
         numeric_cols = g.select_dtypes(include="number").columns
         fmt = {col: "{:.2f}" for col in numeric_cols}
         display(g.style.format(fmt).hide(axis="index"))
+
+
 
 def compute_ft_load_factor(
     networks: dict,

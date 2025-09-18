@@ -98,10 +98,6 @@ costs:
     electricity: "moderate"
     H2_electrolysis: "advanced"
     dac: "moderate"
-  marginal_cost:
-    Alkaline electrolyzer large size: -90.00 # USD/MWh - 45 V (max credit 3.00 $/kg_H2)
-    PEM electrolyzer small size: -90.00 # USD/MWh - 45 V (max credit 3.00 $/kg_H2)
-    SOEC: -90.00 # USD/MWh - 45 V (max credit 3.00 $/kg_H2)
   VOM:
     oil: 100.0
 

@@ -892,6 +892,151 @@ def add_data_centers_load(n):
     logger.info(f"Added data center loads")
 
 
+def add_co2_storage_tanks(n):
+    """
+        Adds CO2 storage steel tanks to the network
+    """
+    # repurpose co2 stored to co2 storage steel tanks
+    carriers_to_process = ["co2 stored"]
+
+    # Add biogenic co2 stored only if biogenic_co2 is enabled
+    if snakemake.params.biogenic_co2:
+        carriers_to_process.append("biogenic co2 stored")
+
+    for c in carriers_to_process:
+        # repurpose buses
+        n.buses.index = n.buses.index.str.replace(c, f"{c[:-7]} storage steel tank")
+        n.buses.loc[n.buses.carrier == c, "carrier"] = f"{c[:-7]} storage steel tank"
+
+        # repurpose stores
+        n.stores.index = n.stores.index.str.replace(c, f"{c[:-7]} storage steel tank")
+        n.stores.loc[n.stores.carrier == c, "bus"] = n.stores.loc[n.stores.carrier == c, "bus"].str.replace(c, f"{c[:-7]} storage steel tank")
+
+        # set capital costs and e_cyclic for storage steel tanks
+        n.stores.loc[n.stores.carrier == c, "capital_cost"] = costs.at["CO2 storage tank", "fixed"]
+        n.stores.loc[n.stores.carrier == c, "e_cyclic"] = True
+
+        # rename carriers for stores
+        n.stores.loc[n.stores.carrier == c, "carrier"] = f"{c[:-7]} storage steel tank"
+        logger.info(f"Repurposed {c} to {c[:-7]} storage steel tank")
+
+    # make Fischer-Tropsch use co2 storage steel tanks
+    ft_links = n.links[n.links.carrier == "Fischer-Tropsch"]
+    if not ft_links.empty and "bus2" in n.links.columns:
+        ft_co2_mask = ft_links["bus2"].str.contains("co2 stored", na=False)
+        n.links.loc[ft_links.index[ft_co2_mask], "bus2"] = (
+            ft_links.loc[ft_co2_mask, "bus2"].str.replace("co2 stored", "co2 storage steel tank", regex=False)
+        )
+    logger.info("Updated Fischer-Tropsch bus2 connections from 'co2 stored' to 'co2 storage steel tank'")
+
+    # connect links to buffer co2 stored
+    bus_cols = ["bus0", "bus1", "bus2", "bus3", "bus4", "bus5"]
+    for col in bus_cols:
+        if col in n.links.columns:
+            # Handle biogenic CO2 only if enabled
+            if snakemake.params.biogenic_co2:
+                mask_biogenic = n.links[col].notna() & n.links[col].str.contains("biogenic co2 stored", na=False)
+                n.links.loc[mask_biogenic, col] = n.links.loc[mask_biogenic, col].str.replace("biogenic co2 stored", "buffer biogenic co2 storage steel tank", regex=False)
+
+            mask = n.links[col].notna() & n.links[col].str.contains("co2 stored", na=False)
+            n.links.loc[mask, col] = n.links.loc[mask, col].str.replace("co2 stored", "buffer co2 storage steel tank", regex=False)
+
+    # create buffer co2 storage steel tank and buffer biogenic co2 storage steel tank buses
+    carriers_for_buffer = ["co2 storage steel tank"]
+    if snakemake.params.biogenic_co2:
+        carriers_for_buffer.append("biogenic co2 storage steel tank")
+
+    for c in carriers_for_buffer:
+        co2_storage_tank_buses = n.buses[n.buses.carrier == c]
+        n.madd(
+            "Bus",
+            co2_storage_tank_buses.index.str.replace(c, f"buffer {c}"),
+            location=co2_storage_tank_buses.location.values,
+            carrier=f"buffer {c}",
+            x=co2_storage_tank_buses.x.values,
+            y=co2_storage_tank_buses.y.values,
+        )
+        logger.info(f"Added buffer {c} buses")
+
+    # connect buffer co2 storage steel tank with co2 storage steel tank
+    for c in carriers_for_buffer:
+        buffer_co2_storage_tank_buses = n.buses[n.buses.carrier == f"buffer {c}"]
+        n.madd(
+            "Link",
+            buffer_co2_storage_tank_buses.index + " to tank",
+            bus0=buffer_co2_storage_tank_buses.index,
+            bus1=buffer_co2_storage_tank_buses.index.str.replace("buffer ", ""),
+            p_nom_extendable=True,
+            carrier=f"buffer {c} to tank",
+            efficiency=1,
+            capital_cost=0,
+        )
+        logger.info(f"Added links from buffer '{c}' to tank'")
+
+    # create CO2 geological sequestration buses
+    co2_storage_tank_buses = n.buses[n.buses.carrier == "co2 storage steel tank"]
+    n.madd(
+        "Bus",
+        co2_storage_tank_buses.index.str.replace("storage steel tank", "geological sequestration"),
+        location=co2_storage_tank_buses.location.values,
+        carrier="co2 geological sequestration",
+        x=co2_storage_tank_buses.x.values,
+        y=co2_storage_tank_buses.y.values,
+    )
+
+    # create CO2 geological sequestration stores
+    co2_storage_tank_stores = n.stores[n.stores.carrier == "co2 storage steel tank"]
+    n.madd(
+        "Store",
+        co2_storage_tank_stores.index.str.replace("storage steel tank", "geological sequestration"),
+        bus=co2_storage_tank_stores.index.str.replace("storage steel tank", "geological sequestration"),
+        e_nom_extendable=True,
+        e_nom_max=np.inf,
+        capital_cost=config["sector"]["co2_sequestration_cost"],
+        carrier="co2 geological sequestration",
+    )
+
+    logger.info("Added CO2 geological sequestration buses, and stores")
+
+    # add links from co2 storage steel tank to co2 geological sequestration
+    carriers_for_geo = ["co2 storage steel tank"]
+    if snakemake.params.biogenic_co2:
+        carriers_for_geo.append("biogenic co2 storage steel tank")
+
+    for c in carriers_for_geo:
+        co2_storage_tank_buses = n.buses[n.buses.carrier == c]
+        n.madd(
+            "Link",
+            co2_storage_tank_buses.index + " geological sequestration",
+            bus0=co2_storage_tank_buses.index,
+            bus1=co2_storage_tank_buses.index.str.replace("biogenic ", "").str.replace("storage steel tank", "geological sequestration"),
+            p_nom_extendable=True,
+            carrier=f"{c} geological sequestration",
+            efficiency=1,
+            capital_cost=0,
+        )
+        logger.info(f"Added links from '{c}' to 'co2 geological sequestration'")
+
+    # add link from buffer co2 storage steel tank to co2 sequestration
+    carriers_for_buffer_geo = ["buffer co2 storage steel tank"]
+    if snakemake.params.biogenic_co2:
+        carriers_for_buffer_geo.append("buffer biogenic co2 storage steel tank")
+
+    for c in carriers_for_buffer_geo:
+        buffer_co2_storage_tank_buses = n.buses[n.buses.carrier == c]
+        n.madd(
+            "Link",
+            buffer_co2_storage_tank_buses.index + " geological sequestration",
+            bus0=buffer_co2_storage_tank_buses.index,
+            bus1=buffer_co2_storage_tank_buses.index.str.split("buffer").str[0].str.strip() + " co2 geological sequestration",
+            p_nom_extendable=True,
+            carrier=f"{c} geological sequestration",
+            efficiency=1,
+            capital_cost=0,
+        )
+        logger.info(f"Added links from '{c}' to 'co2 geological sequestration'")
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -899,7 +1044,7 @@ if __name__ == "__main__":
             configfile="configs/calibration/config.base.yaml",
             simpl="",
             ll="copt",
-            clusters=10,
+            clusters=100,
             opts="Co2L-24H",
             sopts="24H",
             planning_horizons="2020",
@@ -970,6 +1115,10 @@ if __name__ == "__main__":
     # add data center load
     if snakemake.params.data_centers:
         add_data_centers_load(n)
+
+    # introduce CO2 storage steel tanks
+    if snakemake.params.co2_storage_tanks:
+        add_co2_storage_tanks(n)
 
     # save the modified network
     n.export_to_netcdf(snakemake.output.modified_network)

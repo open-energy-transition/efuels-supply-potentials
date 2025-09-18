@@ -5073,3 +5073,81 @@ def compute_LCO_ekerosene_by_region(
         numeric_cols = g.select_dtypes(include="number").columns
         fmt = {col: "{:.2f}" for col in numeric_cols}
         display(g.style.format(fmt).hide(axis="index"))
+
+def compute_ft_load_factor(
+    networks: dict,
+    carrier_regex: str = "Fischer-Tropsch",
+    p_nom_threshold: float = 1e-3,
+    year_title: bool = True,
+    round_digits: int = 2,
+):
+    """
+    Compute load factor (capacity factor) of Fischer-Tropsch plants by grid region.
+    """
+
+    results = {}
+
+    for year_key, n in networks.items():
+        scen_year = int(re.search(r"\d{4}", str(year_key)).group())
+
+        # Select FT links
+        ft = n.links[n.links.carrier.str.contains(carrier_regex, case=False, na=False)].copy()
+        if ft.empty:
+            continue
+
+        # Capacity series
+        cap_series = pd.Series(
+            np.where(ft.get("p_nom_extendable", False),
+                     ft.get("p_nom_opt", 0.0),
+                     ft.get("p_nom", 0.0)),
+            index=ft.index
+        ).astype(float)
+
+        # Apply capacity threshold
+        ft = ft[cap_series > p_nom_threshold]
+        cap_series = cap_series.loc[ft.index]
+        if ft.empty:
+            continue
+
+        # Snapshot weighting
+        dt_h = (n.snapshots[1] - n.snapshots[0]).total_seconds()/3600.0 if len(n.snapshots) > 1 else 1.0
+        w = n.snapshot_weightings.generators
+        hours = len(n.snapshots) * dt_h
+
+        # Output energy (MWh)
+        p1 = n.links_t.p1[ft.index]
+        energy_out = (-p1).clip(lower=0).multiply(w, axis=0).sum(axis=0) * dt_h
+
+        # Load factor per link
+        cf_link = (energy_out / (cap_series * hours)).replace([np.inf, -np.inf], np.nan)
+
+        # Add region info
+        ft["grid_region"] = ft["bus1"].map(n.buses["grid_region"])
+        df_links = pd.DataFrame({
+            "Link": ft.index,
+            "Grid Region": ft["grid_region"],
+            "Capacity (MW)": cap_series,
+            "Output (MWh)": energy_out,
+            "Load factor": cf_link,
+        }).dropna()
+
+        # Weighted average CF per region
+        region_summary = (
+            df_links.groupby("Grid Region")
+            .apply(lambda g: pd.Series({
+                "Capacity (MW)": g["Capacity (MW)"].sum(),
+                "Output (MWh)": g["Output (MWh)"].sum(),
+                "Load factor": (g["Load factor"] * g["Capacity (MW)"]).sum() / g["Capacity (MW)"].sum(),
+            }))
+            .reset_index()
+        )
+
+        # Round + formatting only numeric columns
+        region_summary = region_summary.round(round_digits)
+        key = str(scen_year) if year_title else year_key
+        results[key] = region_summary
+
+        numeric_cols = region_summary.select_dtypes(include="number").columns
+
+    return results
+

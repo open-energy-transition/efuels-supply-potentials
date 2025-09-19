@@ -5256,6 +5256,83 @@ def compute_ekerosene_by_region(
         display(g.round(3))
 
 
+def compute_ft_load_factor(
+    networks: dict,
+    carrier_regex: str = "Fischer-Tropsch",
+    p_nom_threshold: float = 1e-3,
+    year_title: bool = True,
+    round_digits: int = 2,
+):
+    """
+    Compute load factor (capacity factor) of Fischer-Tropsch plants by grid region.
+    """
+
+    results = {}
+
+    for year_key, n in networks.items():
+        scen_year = int(re.search(r"\d{4}", str(year_key)).group())
+
+        # Select FT links
+        ft = n.links[n.links.carrier.str.contains(carrier_regex, case=False, na=False)].copy()
+        if ft.empty:
+            continue
+
+        # Capacity series
+        cap_series = pd.Series(
+            np.where(ft.get("p_nom_extendable", False),
+                     ft.get("p_nom_opt", 0.0),
+                     ft.get("p_nom", 0.0)),
+            index=ft.index
+        ).astype(float)
+
+        # Apply capacity threshold
+        ft = ft[cap_series > p_nom_threshold]
+        cap_series = cap_series.loc[ft.index]
+        if ft.empty:
+            continue
+
+        # Snapshot weighting
+        dt_h = (n.snapshots[1] - n.snapshots[0]).total_seconds()/3600.0 if len(n.snapshots) > 1 else 1.0
+        w = n.snapshot_weightings.generators
+        hours = len(n.snapshots) * dt_h
+
+        # Output energy (MWh)
+        p1 = n.links_t.p1[ft.index]
+        energy_out = (-p1).clip(lower=0).multiply(w, axis=0).sum(axis=0) * dt_h
+
+        # Load factor per link
+        cf_link = (energy_out / (cap_series * hours)).replace([np.inf, -np.inf], np.nan)
+
+        # Add region info
+        ft["grid_region"] = ft["bus1"].map(n.buses["grid_region"])
+        df_links = pd.DataFrame({
+            "Link": ft.index,
+            "Grid Region": ft["grid_region"],
+            "Capacity (MW)": cap_series,
+            "Output (MWh)": energy_out,
+            "Load factor (%)": cf_link,
+        }).dropna()
+
+        # Weighted average CF per region
+        region_summary = (
+            df_links.groupby("Grid Region")
+            .apply(lambda g: pd.Series({
+                "Capacity (MW)": g["Capacity (MW)"].sum(),
+                "Output (MWh)": g["Output (MWh)"].sum(),
+                "Load factor (%)": (g["Load factor (%)"] * g["Capacity (MW)"]).sum() / g["Capacity (MW)"].sum(),
+            }))
+            .reset_index()
+        )
+
+        # Round + formatting only numeric columns
+        region_summary = region_summary.round(round_digits)
+        key = str(scen_year) if year_title else year_key
+        results[key] = region_summary
+
+        numeric_cols = region_summary.select_dtypes(include="number").columns
+
+    return results
+
 
 def compute_LCO_ekerosene_by_region(
     networks: dict,
@@ -5268,13 +5345,15 @@ def compute_LCO_ekerosene_by_region(
     p_nom_threshold: float = 1e-3,
     electricity_price: str = "marginal",   # "marginal" or "lcoe"
     hydrogen_price: str = "marginal",      # "marginal" or "lcoh"
+    co2_price: str = "marginal",           # "marginal" or "lcoc"
     lcoe_by_region: pd.Series = None,      # required if electricity_price="lcoe"
     lcoh_by_region: dict = None,           # required if hydrogen_price="lcoh"
+    lcoc_by_region: dict = None            # required if co2_price="lcoc"
 ):
     """
     Levelized cost of e-kerosene by grid region (USD/gal or USD/MWh e-ker).
     - Input rates = consumed energy / MWh e-ker (production-weighted).
-    - Input prices = consumption-weighted marginal price (or LCOE/LCOH if requested).
+    - Input prices = consumption-weighted marginal price (or LCOE/LCOH/LCOC if requested).
     - Autodetects flow sign per port (robust to sign conventions).
     """
 
@@ -5294,7 +5373,6 @@ def compute_LCO_ekerosene_by_region(
     for name, net in networks.items():
         scen_year = int(re.search(r"\d{4}", str(name)).group())
 
-        # FIX HERE: .str.contains (not .str_contains)
         ft = net.links[net.links.carrier.str.contains("Fischer-Tropsch", case=False, na=False)].copy()
         if ft.empty:
             continue
@@ -5336,6 +5414,7 @@ def compute_LCO_ekerosene_by_region(
             r_h2   = h2_cons.sum()   / out_MWh
             r_co2  = co2_cons.sum()  / out_MWh
 
+            # --- electricity price ---
             if electricity_price == "marginal":
                 p_elec = net.buses_t.marginal_price[ft.at[link, "bus3"]]
                 avg_p_elec = (elec_cons * p_elec).sum() / elec_cons.sum() if elec_cons.sum() > 0 else 0.0
@@ -5344,6 +5423,7 @@ def compute_LCO_ekerosene_by_region(
             else:
                 raise ValueError("electricity_price must be 'marginal' or 'lcoe'")
 
+            # --- hydrogen price ---
             if hydrogen_price == "marginal":
                 p_h2 = net.buses_t.marginal_price[ft.at[link, "bus0"]]
                 avg_p_h2 = (h2_cons * p_h2).sum() / h2_cons.sum() if h2_cons.sum() > 0 else 0.0
@@ -5357,9 +5437,20 @@ def compute_LCO_ekerosene_by_region(
             else:
                 raise ValueError("hydrogen_price must be 'marginal' or 'lcoh'")
 
-            p_co2 = net.buses_t.marginal_price[ft.at[link, "bus2"]]
-            avg_p_co2 = (co2_cons * p_co2).sum() / co2_cons.sum() if co2_cons.sum() > 0 else 0.0
+            # --- CO2 price ---
+            if co2_price == "marginal":
+                p_co2 = net.buses_t.marginal_price[ft.at[link, "bus2"]]
+                avg_p_co2 = (co2_cons * p_co2).sum() / co2_cons.sum() if co2_cons.sum() > 0 else 0.0
+            elif co2_price == "lcoc":
+                lcoc_df = lcoc_by_region[str(scen_year)].set_index("Grid Region")
+                if region in lcoc_df.index:
+                    avg_p_co2 = lcoc_df.at[region, "LCOC incl. T&D fees (USD/tCO2)"]
+                else:
+                    avg_p_co2 = 0.0   # fallback: no CCS/DAC activity in this region
+            else:
+                raise ValueError("co2_price must be 'marginal' or 'lcoc'")
 
+            # --- cost components ---
             c_elec = avg_p_elec * r_elec * conv
             c_h2   = avg_p_h2   * r_h2   * conv
             c_co2  = avg_p_co2  * r_co2  * conv
@@ -5450,81 +5541,196 @@ def compute_LCO_ekerosene_by_region(
         display(g.style.format(fmt).hide(axis="index"))
 
 
-
-def compute_ft_load_factor(
+def compute_LCOC_by_region(
     networks: dict,
-    carrier_regex: str = "Fischer-Tropsch",
-    p_nom_threshold: float = 1e-3,
+    regional_fees: pd.DataFrame,
+    emm_mapping: dict,
+    electricity_price: str = "marginal",   # or "lcoe"
+    lcoe_by_region: pd.Series = None,      # required if electricity_price="lcoe"
     year_title: bool = True,
-    round_digits: int = 2,
+    captured_threshold_mt: float = 1e-6,   # MtCO₂ threshold
+    verbose: bool = True                   # if False, no print/display
 ):
     """
-    Compute load factor (capacity factor) of Fischer-Tropsch plants by grid region.
+    Compute Levelized Cost of CO₂ Capture (LCOC) by grid region.
+    - Results aggregated by grid region, weighted by captured CO₂.
+    - Includes both excl. and incl. T&D fees.
+    - Units: USD/tCO₂
     """
+
+    if verbose:
+        print("Note: LCOC is computed per ton of CO₂ captured.")
 
     results = {}
 
-    for year_key, n in networks.items():
-        scen_year = int(re.search(r"\d{4}", str(year_key)).group())
+    for name, net in networks.items():
+        scen_year = int(re.search(r"\d{4}", str(name)).group())
 
-        # Select FT links
-        ft = n.links[n.links.carrier.str.contains(carrier_regex, case=False, na=False)].copy()
-        if ft.empty:
+        # --- detect CCS/DAC links ---
+        mask = net.links.carrier.str.contains(r"(DAC|CC(?!GT))", case=False, na=False)
+        ccs = net.links[mask].copy()
+        if ccs.empty:
             continue
 
-        # Capacity series
-        cap_series = pd.Series(
-            np.where(ft.get("p_nom_extendable", False),
-                     ft.get("p_nom_opt", 0.0),
-                     ft.get("p_nom", 0.0)),
-            index=ft.index
-        ).astype(float)
-
-        # Apply capacity threshold
-        ft = ft[cap_series > p_nom_threshold]
-        cap_series = cap_series.loc[ft.index]
-        if ft.empty:
-            continue
-
-        # Snapshot weighting
-        dt_h = (n.snapshots[1] - n.snapshots[0]).total_seconds()/3600.0 if len(n.snapshots) > 1 else 1.0
-        w = n.snapshot_weightings.generators
-        hours = len(n.snapshots) * dt_h
-
-        # Output energy (MWh)
-        p1 = n.links_t.p1[ft.index]
-        energy_out = (-p1).clip(lower=0).multiply(w, axis=0).sum(axis=0) * dt_h
-
-        # Load factor per link
-        cf_link = (energy_out / (cap_series * hours)).replace([np.inf, -np.inf], np.nan)
-
-        # Add region info
-        ft["grid_region"] = ft["bus1"].map(n.buses["grid_region"])
-        df_links = pd.DataFrame({
-            "Link": ft.index,
-            "Grid Region": ft["grid_region"],
-            "Capacity (MW)": cap_series,
-            "Output (MWh)": energy_out,
-            "Load factor (%)": cf_link,
-        }).dropna()
-
-        # Weighted average CF per region
-        region_summary = (
-            df_links.groupby("Grid Region")
-            .apply(lambda g: pd.Series({
-                "Capacity (MW)": g["Capacity (MW)"].sum(),
-                "Output (MWh)": g["Output (MWh)"].sum(),
-                "Load factor (%)": (g["Load factor (%)"] * g["Capacity (MW)"]).sum() / g["Capacity (MW)"].sum(),
-            }))
-            .reset_index()
+        rows = []
+        dt_h = (
+            (net.snapshots[1] - net.snapshots[0]).total_seconds() / 3600.0
+            if len(net.snapshots) > 1 else 1.0
         )
 
-        # Round + formatting only numeric columns
-        region_summary = region_summary.round(round_digits)
-        key = str(scen_year) if year_title else year_key
-        results[key] = region_summary
+        def energy_flow(series):
+            pos = (series.clip(lower=0) * dt_h).sum()
+            neg = ((-series).clip(lower=0) * dt_h).sum()
+            return series.clip(lower=0) * dt_h if pos >= neg else (-series).clip(lower=0) * dt_h
 
-        numeric_cols = region_summary.select_dtypes(include="number").columns
+        for link in ccs.index:
+            captured, sequestered = 0.0, 0.0
+            elec_series, elec_bus = None, None
+
+            for j in range(6):
+                col = f"p{j}"
+                if col not in net.links_t or link not in net.links_t[col]:
+                    continue
+
+                series = net.links_t[col][link]
+                bus = net.links.at[link, f"bus{j}"]
+
+                if "co2" in bus.lower():
+                    flow = series.sum()
+                    if flow < 0:
+                        captured += -flow * dt_h
+                        if "storage" in bus.lower() or "sequest" in bus.lower():
+                            sequestered += -flow * dt_h
+                elif isinstance(bus, str) and bus.strip() and "co2" not in bus.lower():
+                    if re.match(r"US\d+(\s\d+)?$", bus):
+                        elec_series = energy_flow(series)
+                        elec_bus = bus
+
+            if captured <= 0:
+                continue
+
+            try:
+                region = net.buses.at[ccs.at[link, "bus0"], "grid_region"]
+            except KeyError:
+                continue
+
+            cap_cost = float(ccs.at[link, "capital_cost"])
+            cap_mw = float(
+                ccs.at[link, "p_nom_opt"] if ccs.at[link, "p_nom_extendable"]
+                else ccs.at[link, "p_nom"]
+            )
+            c_capex = (cap_cost * cap_mw) / captured
+
+            if elec_series is not None and elec_series.sum() > 0:
+                elec_rate = elec_series.sum() / captured
+                if electricity_price == "marginal":
+                    p_elec = net.buses_t.marginal_price[elec_bus]
+                    avg_p_elec = (elec_series * p_elec).sum() / elec_series.sum()
+                elif electricity_price == "lcoe":
+                    avg_p_elec = lcoe_by_region.loc[region]
+                else:
+                    raise ValueError("electricity_price must be 'marginal' or 'lcoe'")
+                c_elec = avg_p_elec * elec_rate
+            else:
+                elec_rate, avg_p_elec, c_elec = 0.0, 0.0, 0.0
+
+            lco_excl = c_capex + c_elec
+
+            rows.append({
+                "Grid Region": region,
+                "Captured CO2 (Mt)": captured / 1e6,
+                "Sequestered CO2 (Mt)": sequestered / 1e6,
+                "CAPEX (USD/tCO2)": c_capex,
+                "Electricity rate (MWh el / tCO2)": elec_rate,
+                "Electricity price (USD/MWh el)": avg_p_elec,
+                "Electricity cost (USD/tCO2)": c_elec,
+                "LCOC excl. T&D fees (USD/tCO2)": lco_excl,
+            })
+
+        if not rows:
+            continue
+
+        df = pd.DataFrame(rows)
+
+        def wavg(group, col):
+            return (group[col] * group["Captured CO2 (Mt)"]).sum() / group["Captured CO2 (Mt)"].sum()
+
+        g = (
+            df.groupby("Grid Region")
+              .apply(lambda x: pd.Series({
+                  "Captured CO2 (Mt)": x["Captured CO2 (Mt)"].sum(),
+                  "Sequestered CO2 (Mt)": x["Sequestered CO2 (Mt)"].sum(),
+                  "CAPEX (USD/tCO2)": wavg(x, "CAPEX (USD/tCO2)"),
+                  "Electricity rate (MWh el / tCO2)": wavg(x, "Electricity rate (MWh el / tCO2)"),
+                  "Electricity price (USD/MWh el)": wavg(x, "Electricity price (USD/MWh el)"),
+                  "Electricity cost (USD/tCO2)": wavg(x, "Electricity cost (USD/tCO2)"),
+                  "LCOC excl. T&D fees (USD/tCO2)": wavg(x, "LCOC excl. T&D fees (USD/tCO2)"),
+              }))
+              .reset_index()
+        )
+
+        g = g[g["Captured CO2 (Mt)"] > captured_threshold_mt]
+        if g.empty:
+            continue
+
+        g["EMM Region"] = g["Grid Region"].map(emm_mapping)
+        fee_map = regional_fees.loc[
+            regional_fees["Year"] == scen_year,
+            ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"]
+        ].set_index("region")
+
+        g["Transmission fee (USD/MWh)"] = g["EMM Region"].map(fee_map["Transmission nom USD/MWh"])
+        g["Distribution fee (USD/MWh)"] = g["EMM Region"].map(fee_map["Distribution nom USD/MWh"])
+
+        g["Transmission cost (USD/tCO2)"] = g["Transmission fee (USD/MWh)"] * g["Electricity rate (MWh el / tCO2)"]
+        g["Distribution cost (USD/tCO2)"] = g["Distribution fee (USD/MWh)"] * g["Electricity rate (MWh el / tCO2)"]
+
+        g["LCOC incl. T&D fees (USD/tCO2)"] = (
+            g["LCOC excl. T&D fees (USD/tCO2)"] +
+            g["Transmission cost (USD/tCO2)"] +
+            g["Distribution cost (USD/tCO2)"]
+        )
+
+        g.drop(columns=["EMM Region"], inplace=True)
+        results[str(scen_year)] = g
+
+        if verbose:
+            tot_captured = g["Captured CO2 (Mt)"].sum()
+            wavg_cost = (g["LCOC incl. T&D fees (USD/tCO2)"] * g["Captured CO2 (Mt)"]).sum() / tot_captured
+            title = re.search(r"\d{4}", str(name)).group() if year_title else str(name)
+            print(f"\nYear: {title}")
+            print(f"Total captured CO2: {tot_captured:.2f} Mt")
+            print(f"Weighted average LCOC (incl. T&D fees): {wavg_cost:.2f} USD/tCO2\n")
+            numeric_cols = g.select_dtypes(include="number").columns
+            fmt = {col: "{:.2f}" for col in numeric_cols}
+            display(g.style.format(fmt).hide(axis="index"))
+
 
     return results
 
+def calculate_LCOC_by_region(
+    networks: dict,
+    regional_fees: pd.DataFrame,
+    emm_mapping: dict,
+    electricity_price: str = "marginal",   # or "lcoe"
+    lcoe_by_region: pd.Series = None,      # required if electricity_price="lcoe"
+    year_title: bool = True,
+    captured_threshold_mt: float = 1e-6,   # MtCO₂ threshold
+    verbose: bool = False
+) -> dict:
+    """
+    Lightweight wrapper around compute_LCOC_by_region.
+    Returns the results dictionary {year: DataFrame}.
+
+    If verbose=True, compute_LCOC_by_region will also print summaries.
+    """
+    return compute_LCOC_by_region(
+        networks=networks,
+        regional_fees=regional_fees,
+        emm_mapping=emm_mapping,
+        electricity_price=electricity_price,
+        lcoe_by_region=lcoe_by_region,
+        year_title=year_title,
+        captured_threshold_mt=captured_threshold_mt,
+        verbose=verbose
+    )

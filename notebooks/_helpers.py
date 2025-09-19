@@ -5620,6 +5620,7 @@ def compute_LCO_ekerosene_by_region(
         display(g.style.format(fmt).hide(axis="index"))
 
 
+
 def compute_LCOC_by_region(
     networks: dict,
     regional_fees: pd.DataFrame,
@@ -5813,3 +5814,93 @@ def calculate_LCOC_by_region(
         captured_threshold_mt=captured_threshold_mt,
         verbose=verbose
     )
+
+
+
+def save_to_excel_with_formatting(df, sheet_name, title, excel_file_path, freeze_pane="B3"):
+    from openpyxl.utils import column_index_from_string  # local import to parse column letters
+
+    with pd.ExcelWriter(excel_file_path, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+        df.to_excel(writer, sheet_name=sheet_name, startrow=1)
+
+        # Get the worksheet for formatting
+        worksheet = writer.sheets[sheet_name]
+        
+        # Add a title for df summary
+        worksheet['A1'] = title
+        worksheet['A1'].font = Font(bold=True, size=14, color="2F4F4F")
+        worksheet['A1'].alignment = Alignment(horizontal="center", vertical="center")
+
+        extra_col = df.index.nlevels
+        max_col = len(df.columns) + extra_col  # include index columns
+
+        if max_col > 1:
+            worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=max_col)
+
+        # Format headers (row 2: MultiIndex headers)
+        header_fill = PatternFill(start_color="2F4F4F", end_color="2F4F4F", fill_type="solid")
+        header_font = Font(color="FFFFFF", bold=True, size=10)
+        header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        border_thin = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+  
+        for col in range(1, max_col + 1):
+            cell = worksheet.cell(row=2, column=col)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = header_alignment
+            cell.border = border_thin
+        
+        # Format data cells
+        extra_row = getattr(df.columns, "nlevels", 1)
+        max_row = len(df) + extra_row + 2  # +2 for title and headers
+        data_font = Font(size=10)
+        data_alignment = Alignment(horizontal="center", vertical="center")
+        
+        for row in range(3, max_row + 1):
+            for col in range(1, max_col + 1):
+                cell = worksheet.cell(row=row, column=col)
+                cell.font = data_font
+                cell.alignment = data_alignment
+                cell.border = border_thin
+        
+        # Auto-adjust column widths
+        for col in range(1, max_col + 1):
+            column_letter = get_column_letter(col)
+            max_length = 0
+            for row in range(2, min(max_row + 1, 100)):  # Sample first 100 rows
+                try:
+                    cell_value = str(worksheet.cell(row=row, column=col).value)
+                    max_length = max(max_length, len(cell_value))
+                except:
+                    pass
+            adjusted_width = min(max(max_length + 2, 10), 50)
+            worksheet.column_dimensions[column_letter].width = adjusted_width
+
+        # Derive frozen rows/columns from freeze_pane (e.g., "B3" -> rows 1..2 and col 1 frozen)
+        try:
+            m = re.match(r"([A-Za-z]+)(\d+)", str(freeze_pane))
+            freeze_col_idx = column_index_from_string(m.group(1)) if m else 2
+            freeze_row_idx = int(m.group(2)) if m else 3
+        except Exception:
+            freeze_col_idx, freeze_row_idx = 2, 3  # sensible fallback for "B3"
+
+        # Bold the frozen header rows (above the horizontal split), preserving existing header colors
+        for r in range(1, max(1, freeze_row_idx)):
+            for c in range(1, max_col + 1):
+                cell = worksheet.cell(row=r, column=c)
+                try:
+                    cell.font = cell.font.copy(bold=True)
+                except Exception:
+                    cell.font = Font(bold=True, size=(cell.font.sz if cell.font else 10))
+
+        # Bold the frozen index columns (to the left of the vertical split) for data rows
+        for r in range(3, max_row + 1):  # data area; header rows already bold
+            for c in range(1, max(1, freeze_col_idx)):
+                cell = worksheet.cell(row=r, column=c)
+                try:
+                    cell.font = cell.font.copy(bold=True)
+                except Exception:
+                    cell.font = Font(bold=True, size=data_font.size)
+
+        # Freeze panes for better navigation
+        worksheet.freeze_panes = worksheet[freeze_pane]

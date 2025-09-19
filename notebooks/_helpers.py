@@ -2315,14 +2315,18 @@ def plot_emissions_maps_by_group(
 
         merged = gdf_states.merge(df_group, on="State", how="left")
 
+        # Replace exact zeros with NaN so they are plotted as white
+        plot_col = f"{column}_plot"
+        merged[plot_col] = merged[column].replace(0, np.nan)
+
         merged.plot(
-            column=column,
+            column=plot_col,
             cmap="RdYlGn_r",  # red = positive (emissions), green = negative (removals)
             legend=True,
             ax=ax,
             vmin=vmin,
             vmax=vmax,
-            missing_kwds={"color": "lightgrey", "label": "No data"},
+            missing_kwds={"color": "white", "label": "0 or no data"},  # white = 0 or missing
             edgecolor="black"
         )
 

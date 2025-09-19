@@ -248,6 +248,14 @@ tech_colors:
   co2: '#f29dae'
   co2 vent: '#ffd4dc'
   CO2 pipeline: '#f5627f'
+  buffer co2 storage steel tank: '#f2385a'
+  buffer biogenic co2 storage steel tank: '#f2385a'
+  biogenic co2 storage steel tank: '#f2385a'
+  co2 geological sequestration: '#f2385a'
+  co2 storage steel tank: '#f2385a'
+  co2 storage steel tank geological sequestration: '#f2385a'
+  buffer co2 storage steel tank geological sequestration: '#f2385a'
+  buffer co2 storage steel tank to tank: '#f2385a'  
   process emissions CC: '#000000'
   process emissions: '#222222'
   process emissions to stored: '#444444'
@@ -460,16 +468,16 @@ rename_tech_capex:
   Reservoir & Dam: Hydropower
 
   # Storage
-  battery: Storage
-  battery charger: Storage
-  battery discharger: Storage
-  home battery: Storage
-  home battery charger: Storage
-  home battery discharger: Storage
-  Li ion: Storage
-  battery storage: Storage
-  H2 Store Tank: Storage
-  BEV charger: Storage
+  battery: Electricity Storage
+  battery charger: Electricity Storage
+  battery discharger: Electricity Storage
+  home battery: Electricity Storage
+  home battery charger: Electricity Storage
+  home battery discharger: Electricity Storage
+  Li ion: Electricity Storage
+  battery storage: Electricity Storage
+  H2 Store Tank: Electricity Storage
+  BEV charger: Electricity Storage
 
   # Carbon capture
   DAC: DAC
@@ -529,8 +537,16 @@ rename_tech_capex:
   oil emissions: Emissions
   shipping oil emissions: Emissions
   co2: Emissions
-  co2 stored: Storage
-
+  co2 stored: CO2 Storage
+  buffer co2 storage steel tank: CO2 Storage
+  buffer biogenic co2 storage steel tank: CO2 Storage
+  biogenic co2 storage steel tank: CO2 Storage
+  co2 geological sequestration: CO2 Storage
+  co2 storage steel tank: CO2 Storage
+  co2 storage steel tank geological sequestration: CO2 Storage
+  buffer co2 storage steel tank geological sequestration: CO2 Storage
+  buffer co2 storage steel tank to tank: CO2 Storage
+  
   # Hydrogen & Electrolyzers
   SOEC: Hydrogen
   PEM electrolyzer: Hydrogen
@@ -624,17 +640,25 @@ rename_tech_opex:
   Geothermal: Geothermal (incl. tax credits)
 
   # Storage
-  battery: Storage
-  battery charger: Storage
-  battery discharger: Storage
-  home battery: Storage
-  home battery charger: Storage
-  home battery discharger: Storage
-  Li ion: Storage
-  co2 stored: Storage
-  battery storage: Storage
-  H2 Store Tank: Storage
-  BEV charger: Storage
+  battery: Electricity Storage
+  battery charger: Electricity Storage
+  battery discharger: Electricity Storage
+  home battery: Electricity Storage
+  home battery charger: Electricity Storage
+  home battery discharger: Electricity Storage
+  Li ion: Electricity Storage
+  co2 stored: CO2 Storage
+  battery storage: Electricity Storage
+  H2 Store Tank: Hydrogen Storage
+  BEV charger: Electricity Storage
+  buffer co2 storage steel tank: CO2 Storage
+  buffer biogenic co2 storage steel tank: CO2 Storage
+  biogenic co2 storage steel tank: CO2 Storage
+  co2 geological sequestration: CO2 Storage
+  co2 storage steel tank: CO2 Storage
+  co2 storage steel tank geological sequestration: CO2 Storage
+  buffer co2 storage steel tank geological sequestration: CO2 Storage
+  buffer co2 storage steel tank to tank: CO2 Storage
 
   # Carbon capture
   DAC: DAC
@@ -733,7 +757,9 @@ renamed_tech_colors:
   CO2 transport: '#1d4cdb'
   Biomass transport: '#bae38a'
   Others: '#c7c7c7'
-  Storage: '#17becf'
+  CO2 Storage: '#94ffea'
+  Electricity Storage: '#fffd94'
+  Hydrogen Storage: '#17becf'
   Transport: '#ff7f0e'
   Biomass generators: '#2ca02c'
   Biomass fuels (end uses): '#2ca02c'
@@ -762,7 +788,9 @@ categories_capex:
   Solar: Power & heat generation
   Heating: Power & heat generation  
 
-  Storage: Storage
+  Electricity Storage: Storage
+  CO2 Storage: Storage
+  Hydrogen Storage: Storage
 
   Industry: Industry
   Industry CC: Industry
@@ -798,7 +826,9 @@ categories_opex:
   Industry: Industry
   Industry CC (incl. tax credits): Industry
 
-  Storage: Storage
+  Electricity Storage: Storage
+  CO2 Storage: Storage
+  Hydrogen Storage: Storage
 
   DAC: DAC
 

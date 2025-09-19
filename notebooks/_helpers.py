@@ -2067,7 +2067,7 @@ def compute_emissions_from_links(net):
 
             flow = net.links_t[p_col][link_name].mean() * 8760  # MWh/year
 
-            if "co2 atmosphere" in bus_val or "co2 atmoshpere" in bus_val:
+            if "co2 atmosphere" in bus_val:
                 co2_atmosphere -= flow
             elif "co2 stored" in bus_val:
                 co2_stored -= flow
@@ -2123,7 +2123,7 @@ def compute_emissions_grouped(net, carrier_groups):
 
             flow = net.links_t[p_col][link_name].mean() * 8760  # MWh/year
 
-            if "co2 atmosphere" in bus_val or "co2 atmoshpere" in bus_val:
+            if "co2 atmosphere" in bus_val:
                 co2_atmosphere -= flow
             elif "co2 stored" in bus_val:
                 co2_stored -= flow
@@ -2188,7 +2188,7 @@ def compute_emissions_by_state(net, carrier_groups):
 
             flow = net.links_t[p_col][link_name].mean() * 8760  # Mt CO2/year
 
-            if "co2 atmosphere" in bus_val or "co2 atmoshpere" in bus_val:
+            if "co2 atmosphere" in bus_val:
                 co2_atmos -= flow
             elif "co2 stored" in bus_val:
                 co2_stored += flow
@@ -5548,18 +5548,18 @@ def compute_LCOC_by_region(
     electricity_price: str = "marginal",   # or "lcoe"
     lcoe_by_region: pd.Series = None,      # required if electricity_price="lcoe"
     year_title: bool = True,
-    captured_threshold_mt: float = 1e-6,   # MtCO₂ threshold
+    captured_threshold_mt: float = 1e-6,   # MtCO2 threshold
     verbose: bool = True                   # if False, no print/display
 ):
     """
-    Compute Levelized Cost of CO₂ Capture (LCOC) by grid region.
-    - Results aggregated by grid region, weighted by captured CO₂.
+    Compute Levelized Cost of CO2 Capture (LCOC) by grid region.
+    - Results aggregated by grid region, weighted by captured CO2.
     - Includes both excl. and incl. T&D fees.
-    - Units: USD/tCO₂
+    - Units: USD/tCO2
     """
 
     if verbose:
-        print("Note: LCOC is computed per ton of CO₂ captured.")
+        print("Note: LCOC is computed per ton of CO2 captured.")
 
     results = {}
 
@@ -5715,7 +5715,7 @@ def calculate_LCOC_by_region(
     electricity_price: str = "marginal",   # or "lcoe"
     lcoe_by_region: pd.Series = None,      # required if electricity_price="lcoe"
     year_title: bool = True,
-    captured_threshold_mt: float = 1e-6,   # MtCO₂ threshold
+    captured_threshold_mt: float = 1e-6,   # MtCO2 threshold
     verbose: bool = False
 ) -> dict:
     """

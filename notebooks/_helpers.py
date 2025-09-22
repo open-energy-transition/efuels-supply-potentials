@@ -5346,6 +5346,9 @@ def compute_ft_load_factor(
 ):
     """
     Compute load factor (capacity factor) of Fischer-Tropsch plants by grid region.
+
+    - Input H2 (bus0, p0) è negativo → usiamo valore assoluto.
+    - Output fuel (bus1, p1) è negativo → prendiamo l’opposto e poi clip >= 0.
     """
 
     results = {}
@@ -5377,12 +5380,18 @@ def compute_ft_load_factor(
         w = n.snapshot_weightings.generators
         hours = len(n.snapshots) * dt_h
 
-        # Output energy (MWh)
-        p1 = n.links_t.p1[ft.index]
-        energy_out = (-p1).clip(lower=0).multiply(w, axis=0).sum(axis=0) * dt_h
+        # --- Energy calculations ---
+        # Input H2 (p0) è negativo -> usiamo valore assoluto
+        p0 = n.links_t.p0[ft.index]
+        energy_in = p0.abs().multiply(w, axis=0).sum(axis=0) * dt_h
+
+        # Output fuel (p1) è negativo -> prendiamo l’opposto
+        p1 = -n.links_t.p1[ft.index]
+        energy_out = p1.clip(lower=0).multiply(w, axis=0).sum(axis=0) * dt_h
 
         # Load factor per link
-        cf_link = (energy_out / (cap_series * hours)).replace([np.inf, -np.inf], np.nan)
+        cf_in = (energy_in / (cap_series * hours)).replace([np.inf, -np.inf], np.nan)
+        cf_out = (energy_out / (cap_series * hours)).replace([np.inf, -np.inf], np.nan)
 
         # Add region info
         ft["grid_region"] = ft["bus1"].map(n.buses["grid_region"])
@@ -5390,8 +5399,10 @@ def compute_ft_load_factor(
             "Link": ft.index,
             "Grid Region": ft["grid_region"],
             "Capacity (MW)": cap_series,
-            "Output (MWh)": energy_out,
-            "Load factor (%)": cf_link,
+            "Input Energy (MWh)": energy_in,
+            "Output Energy (MWh)": energy_out,
+            "Load factor input (p0, %)": cf_in,
+            "Load factor output (p1, %)": cf_out,
         }).dropna()
 
         # Weighted average CF per region
@@ -5399,8 +5410,10 @@ def compute_ft_load_factor(
             df_links.groupby("Grid Region")
             .apply(lambda g: pd.Series({
                 "Capacity (MW)": g["Capacity (MW)"].sum(),
-                "Output (MWh)": g["Output (MWh)"].sum(),
-                "Load factor (%)": (g["Load factor (%)"] * g["Capacity (MW)"]).sum() / g["Capacity (MW)"].sum(),
+                "Input Energy (MWh)": g["Input Energy (MWh)"].sum(),
+                "Output Energy (MWh)": g["Output Energy (MWh)"].sum(),
+                "Load factor input (p0, %)": (g["Load factor input (p0, %)"] * g["Capacity (MW)"]).sum() / g["Capacity (MW)"].sum(),
+                "Load factor output (p1, %)": (g["Load factor output (p1, %)"] * g["Capacity (MW)"]).sum() / g["Capacity (MW)"].sum(),
             }))
             .reset_index()
         )
@@ -5409,8 +5422,6 @@ def compute_ft_load_factor(
         region_summary = region_summary.round(round_digits)
         key = str(scen_year) if year_title else year_key
         results[key] = region_summary
-
-        numeric_cols = region_summary.select_dtypes(include="number").columns
 
     return results
 

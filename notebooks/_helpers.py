@@ -37,6 +37,10 @@ from collections import OrderedDict
 from shapely.geometry import LineString
 import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
+from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+from openpyxl import load_workbook
 import yaml
 
 import warnings

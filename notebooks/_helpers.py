@@ -5444,7 +5444,8 @@ def compute_LCO_ekerosene_by_region(
     co2_price: str = "marginal",           # "marginal" or "lcoc"
     lcoe_by_region=None,                   # Series or dict
     lcoh_by_region: dict = None,           # required if hydrogen_price="lcoh"
-    lcoc_by_region: dict = None            # required if co2_price="lcoc"
+    lcoc_by_region: dict = None,           # required if co2_price="lcoc"
+    verbose=True,
 ):
     """
     Levelized cost of e-kerosene by grid region (USD/gal or USD/MWh e-ker).
@@ -5466,6 +5467,8 @@ def compute_LCO_ekerosene_by_region(
     MWH_PER_GALLON = (34.0 / 3600.0) * 3.78541
     conv = MWH_PER_GALLON if unit == "gal" else 1.0
     suffix = f"USD/{unit} e-ker"
+
+    results = {}
 
     vom_eur_points = {2020: 5.6360, 2025: 5.0512, 2030: 4.4663, 2035: 3.9346, 2040: 3.4029}
     years_sorted = np.array(sorted(vom_eur_points.keys()))
@@ -5652,18 +5655,19 @@ def compute_LCO_ekerosene_by_region(
             g[f"Distribution fees ({suffix})"]
         )
 
-        tot_prod = g["Production (TWh)"].sum()
-        wavg_cost = (g[f"LCO e-kerosene (incl. T&D fees) ({suffix})"] * g["Production (TWh)"]).sum() / tot_prod
+        if verbose:
+            tot_prod = g["Production (TWh)"].sum()
+            wavg_cost = (g[f"LCO e-kerosene (incl. T&D fees) ({suffix})"] * g["Production (TWh)"]).sum() / tot_prod
 
-        title = re.search(r"\d{4}", str(name)).group() if year_title else str(name)
-        print(f"\n{title}:")
-        print(f"Weighted average LCO e-kerosene (incl. T&D): {wavg_cost:.2f} {suffix}\n")
+            title = re.search(r"\d{4}", str(name)).group() if year_title else str(name)
+            print(f"\n{title}:")
+            print(f"Weighted average LCO e-kerosene (incl. T&D): {wavg_cost:.2f} {suffix}\n")
 
-        numeric_cols = g.select_dtypes(include="number").columns
-        fmt = {col: "{:.2f}" for col in numeric_cols}
-        display(g.style.format(fmt).hide(axis="index"))
+            numeric_cols = g.select_dtypes(include="number").columns
+            fmt = {col: "{:.2f}" for col in numeric_cols}
+            display(g.style.format(fmt).hide(axis="index"))
 
-
+    return results
 
 def compute_LCOC_by_region(
     networks: dict,

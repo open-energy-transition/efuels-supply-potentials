@@ -10,6 +10,11 @@ Please list contributions, add reference to PRs if present.
 
 * Apply **pre-OB3 tax credits** for solar, wind, electrolyzers, point-source CO2 and DAC for selected scenarios [PR #99](https://github.com/open-energy-transition/efuels-supply-potentials/pull/99)
 
+* Adjust *base year CO2 emissions limit* after changes in [PR #106] [PR #107](https://github.com/open-energy-transition/efuels-supply-potentials/pull/106)
+
+* Modify DAC inputs by **removing heat input** and **setting electricity-input to 1.4 MWh/t_CO2** [PR #105](https://github.com/open-energy-transition/efuels-supply-potentials/pull/105)
+
+
 * Set **OCGT and CCGT lifetime to 35 years** to be consistent with lifetime in `custom_powerplants.csv` [PR #103](https://github.com/open-energy-transition/efuels-supply-potentials/pull/103)
 
 * Increase **oil VOM** to prevent overuse of oil over coal [PR #100](https://github.com/open-energy-transition/efuels-supply-potentials/pull/100)

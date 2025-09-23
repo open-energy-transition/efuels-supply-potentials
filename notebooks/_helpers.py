@@ -5664,6 +5664,8 @@ def compute_LCO_ekerosene_by_region(
             g[f"Transmission fees ({suffix})"] +
             g[f"Distribution fees ({suffix})"]
         )
+        
+        results[f"{scen_year if year_title else str(name)}"] = g
 
         if verbose:
             tot_prod = g["Production (TWh)"].sum()

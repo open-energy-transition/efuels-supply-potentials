@@ -2296,7 +2296,6 @@ def plot_emissions_maps_by_group(
         Color scale limits.
     """
 
-    # 🔎 Check: column must exist
     if column not in all_state_emissions.columns:
         raise KeyError(
             f"Column '{column}' not found in DataFrame. "
@@ -5454,22 +5453,25 @@ def compute_LCO_ekerosene_by_region(
     - Autodetects flow sign per port (robust to sign conventions).
     """
 
-    def get_nearest_year(data_dict, scen_year: int) -> str:
-        """Return the closest available year in the dataset as string."""
+    def get_year(data_dict, scen_year: int) -> str:
+        """Return scen_year if available, otherwise fallback (only 2023→2020)."""
         if not data_dict:
-            raise ValueError("Dataset is empty, cannot determine nearest year.")
-        years = sorted(int(y) for y in data_dict.keys())
-        nearest = min(years, key=lambda y: abs(y - scen_year))
-        if str(scen_year) not in data_dict:
-            print(f"Year {scen_year} not found in dataset, using {nearest} instead.")
-        return str(nearest)
+            raise ValueError("Dataset is empty, cannot determine year.")
+        if str(scen_year) in data_dict:
+            return str(scen_year)
+        if scen_year == 2023 and "2020" in data_dict:
+            print("Year 2023 not found in dataset, using 2020 instead.")
+            return "2020"
+        raise KeyError(f"Year {scen_year} not found and no fallback available. Keys: {list(data_dict.keys())}")
 
+    # Conversion MWh ↔ gallon
     MWH_PER_GALLON = (34.0 / 3600.0) * 3.78541
     conv = MWH_PER_GALLON if unit == "gal" else 1.0
     suffix = f"USD/{unit} e-ker"
 
     results = {}
 
+    # VOM trajectory (EUR)
     vom_eur_points = {2020: 5.6360, 2025: 5.0512, 2030: 4.4663, 2035: 3.9346, 2040: 3.4029}
     years_sorted = np.array(sorted(vom_eur_points.keys()))
     values_sorted = np.array([vom_eur_points[y] for y in years_sorted])
@@ -5482,16 +5484,19 @@ def compute_LCO_ekerosene_by_region(
     for name, net in networks.items():
         scen_year = int(re.search(r"\d{4}", str(name)).group())
 
+        # Select Fischer-Tropsch links
         ft = net.links[net.links.carrier.str.contains("Fischer-Tropsch", case=False, na=False)].copy()
         if ft.empty:
             continue
 
+        # Capacity filter
         cap_series = np.where(ft.get("p_nom_extendable", False),
                               ft.get("p_nom_opt", 0.0), ft.get("p_nom", 0.0))
         ft = ft[pd.Series(cap_series, index=ft.index) > p_nom_threshold]
         if ft.empty:
             continue
 
+        # Snapshot duration [h]
         dt_h = (net.snapshots[1] - net.snapshots[0]).total_seconds()/3600.0 if len(net.snapshots) > 1 else 1.0
 
         def energy_in(series):
@@ -5534,7 +5539,7 @@ def compute_LCO_ekerosene_by_region(
                     if not lcoe_by_region:
                         avg_p_elec = 0.0
                     else:
-                        year = get_nearest_year(lcoe_by_region, scen_year)
+                        year = get_year(lcoe_by_region, scen_year)
                         avg_p_elec = lcoe_by_region[year].loc[region]
                 else:
                     avg_p_elec = lcoe_by_region.loc[region]
@@ -5549,7 +5554,7 @@ def compute_LCO_ekerosene_by_region(
                 if not lcoh_by_region:
                     avg_p_h2 = 0.0
                 else:
-                    year = get_nearest_year(lcoh_by_region, scen_year)
+                    year = get_year(lcoh_by_region, scen_year)
                     avg_p_h2 = (
                         lcoh_by_region[year]
                         .set_index("Grid Region")
@@ -5566,13 +5571,14 @@ def compute_LCO_ekerosene_by_region(
             elif co2_price == "lcoc":
                 if not lcoc_by_region:
                     avg_p_co2 = 0.0
+                elif scen_year == 2023:
+                    # Special case: no CO₂ captured in 2023
+                    avg_p_co2 = 0.0
+                elif str(scen_year) in lcoc_by_region:
+                    lcoc_df = lcoc_by_region[str(scen_year)].set_index("Grid Region")
+                    avg_p_co2 = lcoc_df.at[region, "LCOC incl. T&D fees (USD/tCO2)"] if region in lcoc_df.index else 0.0
                 else:
-                    year = get_nearest_year(lcoc_by_region, scen_year)
-                    lcoc_df = lcoc_by_region[year].set_index("Grid Region")
-                    if region in lcoc_df.index:
-                        avg_p_co2 = lcoc_df.at[region, "LCOC incl. T&D fees (USD/tCO2)"]
-                    else:
-                        avg_p_co2 = 0.0
+                    raise KeyError(f"LCOC dataset does not contain year {scen_year}. Available: {list(lcoc_by_region.keys())}")
             else:
                 raise ValueError("co2_price must be 'marginal' or 'lcoc'")
 
@@ -5607,9 +5613,13 @@ def compute_LCO_ekerosene_by_region(
 
         if not rows:
             continue
-
+        
         df = pd.DataFrame(rows)
-
+        
+        # Skip scenario if total production is zero
+        if df["Production (TWh)"].sum() <= 1e-3:
+            continue
+    
         def wavg(group, col):
             return (group[col] * group["Production (TWh)"]).sum() / group["Production (TWh)"].sum()
 
@@ -5658,16 +5668,18 @@ def compute_LCO_ekerosene_by_region(
         if verbose:
             tot_prod = g["Production (TWh)"].sum()
             wavg_cost = (g[f"LCO e-kerosene (incl. T&D fees) ({suffix})"] * g["Production (TWh)"]).sum() / tot_prod
-
+        
             title = re.search(r"\d{4}", str(name)).group() if year_title else str(name)
             print(f"\n{title}:")
-            print(f"Weighted average LCO e-kerosene (incl. T&D): {wavg_cost:.2f} {suffix}\n")
-
+            print(f"Weighted average LCO e-kerosene (incl. T&D): {wavg_cost:.2f} {suffix}")
+            print(f"Total production: {tot_prod:.2f} TWh\n")  # scientific notation
+        
             numeric_cols = g.select_dtypes(include="number").columns
             fmt = {col: "{:.2f}" for col in numeric_cols}
             display(g.style.format(fmt).hide(axis="index"))
 
     return results
+
 
 def compute_LCOC_by_region(
     networks: dict,

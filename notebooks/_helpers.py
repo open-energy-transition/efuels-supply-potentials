@@ -5444,7 +5444,8 @@ def compute_LCO_ekerosene_by_region(
     co2_price: str = "marginal",           # "marginal" or "lcoc"
     lcoe_by_region: pd.Series = None,      # required if electricity_price="lcoe"
     lcoh_by_region: dict = None,           # required if hydrogen_price="lcoh"
-    lcoc_by_region: dict = None            # required if co2_price="lcoc"
+    lcoc_by_region: dict = None,            # required if co2_price="lcoc"
+    verbose=True
 ):
     """
     Levelized cost of e-kerosene by grid region (USD/gal or USD/MWh e-ker).
@@ -5461,6 +5462,8 @@ def compute_LCO_ekerosene_by_region(
     years_sorted = np.array(sorted(vom_eur_points.keys()))
     values_sorted = np.array([vom_eur_points[y] for y in years_sorted])
 
+    results = {}
+    
     def vom_usd_for_year(y: int) -> float:
         vom_eur = float(np.interp(y, years_sorted, values_sorted))
         fx = fx_2020 if y == 2020 else fx_recent
@@ -5625,17 +5628,21 @@ def compute_LCO_ekerosene_by_region(
             g[f"Distribution fees ({suffix})"]
         )
 
-        tot_prod = g["Production (TWh)"].sum()
-        wavg_cost = (g[f"LCO e-kerosene (incl. T&D fees) ({suffix})"] * g["Production (TWh)"]).sum() / tot_prod
+        results[f"{scen_year if year_title else str(name)}"] = g
 
-        title = re.search(r"\d{4}", str(name)).group() if year_title else str(name)
-        print(f"\n{title}:")
-        print(f"Weighted average LCO e-kerosene (incl. T&D): {wavg_cost:.2f} {suffix}\n")
+        if verbose:
+            tot_prod = g["Production (TWh)"].sum()
+            wavg_cost = (g[f"LCO e-kerosene (incl. T&D fees) ({suffix})"] * g["Production (TWh)"]).sum() / tot_prod
 
-        numeric_cols = g.select_dtypes(include="number").columns
-        fmt = {col: "{:.2f}" for col in numeric_cols}
-        display(g.style.format(fmt).hide(axis="index"))
+            title = re.search(r"\d{4}", str(name)).group() if year_title else str(name)
+            print(f"\n{title}:")
+            print(f"Weighted average LCO e-kerosene (incl. T&D): {wavg_cost:.2f} {suffix}\n")
 
+            numeric_cols = g.select_dtypes(include="number").columns
+            fmt = {col: "{:.2f}" for col in numeric_cols}
+            display(g.style.format(fmt).hide(axis="index"))
+        
+        return results
 
 
 def compute_LCOC_by_region(
@@ -5789,7 +5796,7 @@ def compute_LCOC_by_region(
         )
 
         g.drop(columns=["EMM Region"], inplace=True)
-        results[str(scen_year)] = g
+        results[f"{scen_year if year_title else str(name)}"] = g
 
         if verbose:
             tot_captured = g["Captured CO2 (Mt)"].sum()

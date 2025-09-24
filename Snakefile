@@ -509,7 +509,10 @@ if config["custom_industry"]["enable"]:
             other_electricity=config["custom_industry"]["other_electricity"],
             data_centers=config["demand_projection"]["data_centers_load"],
             data_center_profiles="data/data_center_profiles/",
+            dac_inputs=config["custom_industry"]["dac_inputs"],
             geo_crs=config["crs"]["geo_crs"],
+            buffer_co2_stored=config["custom_industry"]["buffer_co2_stored"],
+            co2_storage_tanks=config["custom_industry"]["co2_storage_tanks"],
         input:
             industrial_energy_demand_per_node=PYPSA_EARTH_DIR + "resources/"
             + SECDIR

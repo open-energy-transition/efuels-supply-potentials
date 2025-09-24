@@ -5340,18 +5340,22 @@ def compute_ekerosene_by_region(
         display(g.round(3))
 
 
-def compute_ft_load_factor(
+def compute_ft_capacity_factor(
     networks: dict,
     carrier_regex: str = "Fischer-Tropsch",
-    p_nom_threshold: float = 1e-3,
+    p_nom_threshold: float = 1,  # MW
     year_title: bool = True,
     round_digits: int = 2,
+    output_threshold: float = 1,  # MWh
 ):
     """
-    Compute load factor (capacity factor) of Fischer-Tropsch plants by grid region.
+    Compute annual capacity factor of Fischer-Tropsch plants by grid region.
 
-    - Input H2 (bus0, p0) è negativo → usiamo valore assoluto.
-    - Output fuel (bus1, p1) è negativo → prendiamo l’opposto e poi clip >= 0.
+    - hydrogen input (p0) is negative → take absolute value (informative only).
+    - e-kerosene output (p1) is negative → take the opposite, clip >= 0 → used for CF.
+    - capacity factor is based ONLY on the output fuel.
+    - installed capacity is reported in GW (aggregated by region).
+    - if all regions produce less than output_threshold, skip result.
     """
 
     results = {}
@@ -5359,12 +5363,12 @@ def compute_ft_load_factor(
     for year_key, n in networks.items():
         scen_year = int(re.search(r"\d{4}", str(year_key)).group())
 
-        # Select FT links
+        # select FT links
         ft = n.links[n.links.carrier.str.contains(carrier_regex, case=False, na=False)].copy()
         if ft.empty:
             continue
 
-        # Capacity series
+        # capacity series (MW)
         cap_series = pd.Series(
             np.where(ft.get("p_nom_extendable", False),
                      ft.get("p_nom_opt", 0.0),
@@ -5372,61 +5376,64 @@ def compute_ft_load_factor(
             index=ft.index
         ).astype(float)
 
-        # Apply capacity threshold
+        # apply capacity threshold
         ft = ft[cap_series > p_nom_threshold]
         cap_series = cap_series.loc[ft.index]
         if ft.empty:
             continue
 
-        # Snapshot weighting
+        # snapshot weighting
         dt_h = (n.snapshots[1] - n.snapshots[0]).total_seconds()/3600.0 if len(n.snapshots) > 1 else 1.0
         w = n.snapshot_weightings.generators
         hours = len(n.snapshots) * dt_h
 
-        # --- Energy calculations ---
-        # Input H2 (p0) è negativo -> usiamo valore assoluto
+        # hydrogen input (MWh)
         p0 = n.links_t.p0[ft.index]
         energy_in = p0.abs().multiply(w, axis=0).sum(axis=0) * dt_h
 
-        # Output fuel (p1) è negativo -> prendiamo l’opposto
+        # e-kerosene output (MWh)
         p1 = -n.links_t.p1[ft.index]
         energy_out = p1.clip(lower=0).multiply(w, axis=0).sum(axis=0) * dt_h
 
-        # Load factor per link
-        cf_in = (energy_in / (cap_series * hours)).replace([np.inf, -np.inf], np.nan)
+        # capacity factor (based on e-kerosene output)
         cf_out = (energy_out / (cap_series * hours)).replace([np.inf, -np.inf], np.nan)
 
-        # Add region info
+        # add region info
         ft["grid_region"] = ft["bus1"].map(n.buses["grid_region"])
         df_links = pd.DataFrame({
             "Link": ft.index,
             "Grid Region": ft["grid_region"],
             "Capacity (MW)": cap_series,
-            "Input Energy (MWh)": energy_in,
-            "Output Energy (MWh)": energy_out,
-            "Load factor input (p0, %)": cf_in,
-            "Load factor output (p1, %)": cf_out,
+            "Hydrogen input (MWh)": energy_in,
+            "E-kerosene output (MWh)": energy_out,
+            "Capacity factor (%)": cf_out,
         }).dropna()
 
-        # Weighted average CF per region
+        # aggregate by region
         region_summary = (
             df_links.groupby("Grid Region")
             .apply(lambda g: pd.Series({
-                "Capacity (MW)": g["Capacity (MW)"].sum(),
-                "Input Energy (MWh)": g["Input Energy (MWh)"].sum(),
-                "Output Energy (MWh)": g["Output Energy (MWh)"].sum(),
-                "Load factor input (p0, %)": (g["Load factor input (p0, %)"] * g["Capacity (MW)"]).sum() / g["Capacity (MW)"].sum(),
-                "Load factor output (p1, %)": (g["Load factor output (p1, %)"] * g["Capacity (MW)"]).sum() / g["Capacity (MW)"].sum(),
+                "Capacity (GW)": g["Capacity (MW)"].sum() / 1e3,
+                "Hydrogen input (MWh)": g["Hydrogen input (MWh)"].sum(),
+                "E-kerosene output (MWh)": g["E-kerosene output (MWh)"].sum(),
+                "Capacity factor (%)": (
+                    g["E-kerosene output (MWh)"].sum() /
+                    (g["Capacity (MW)"].sum() * hours)
+                ),
             }))
             .reset_index()
         )
 
-        # Round + formatting only numeric columns
+        # skip if total production is below threshold
+        if region_summary["E-kerosene output (MWh)"].sum() < output_threshold:
+            continue
+
         region_summary = region_summary.round(round_digits)
         key = str(scen_year) if year_title else year_key
         results[key] = region_summary
 
     return results
+
 
 
 def compute_LCO_ekerosene_by_region(
@@ -5968,90 +5975,201 @@ def save_to_excel_with_formatting(df, sheet_name, title, excel_file_path, freeze
         worksheet.freeze_panes = worksheet[freeze_pane]
 
 
-def compare_h2_kerosene_production(network, plot=True, network_name="Network"):
+def compare_h2_kerosene_production(network, plot=True, network_name="Network", plot_threshold_gw=1e-3):
     """
-    Compare hydrogen production and e-kerosene production from a PyPSA network.
-    
-    Parameters:
-    -----------
-    network : pypsa.Network
-        The PyPSA network to analyze
-    plot : bool, default True
-        Whether to create a plot comparing the productions
-    network_name : str, default "Network"
-        Name for the network (useful for titles and when looping)
-    
-    Returns:
-    --------
-    dict : Dictionary containing:
-        - 'h2_production': pandas.Series with hydrogen production time series
-        - 'kerosene_production': pandas.Series with e-kerosene production time series
-        - 'h2_summary': dict with hydrogen production statistics
-        - 'kerosene_summary': dict with e-kerosene production statistics
-        - 'comparison_table': pandas.DataFrame comparing both productions
+    Compare H2 and e-kerosene production from a PyPSA network.
+
+    - Production time series are expressed in GW (daily average power).
+    - Installed capacity is expressed in GW.
+    - Total production is in MWh, computed using snapshot_weightings (accounts for non-hourly resolution).
+    - The plot is only shown if at least one daily average exceeds plot_threshold_gw (GW).
     """
-    
+
     # Define hydrogen carriers
     h2_carriers = [
         "Alkaline electrolyzer large",
-        "Alkaline electrolyzer medium", 
+        "Alkaline electrolyzer medium",
         "Alkaline electrolyzer small",
         "PEM electrolyzer",
-        "SOEC"
+        "SOEC",
     ]
-    
-    # Get Fischer-Tropsch (e-kerosene) links
+
+    # FT (e-kerosene) links
     ft_links = network.links[
         network.links['carrier'].str.contains('FT|Fischer|Tropsch', case=False, na=False) |
         network.links.index.str.contains('FT|Fischer|Tropsch', case=False, na=False)
     ].copy()
-    
-    # Calculate hydrogen production
-    h2_links = network.links[network.links.carrier.isin(h2_carriers)]
-    h2_production = np.multiply(-1, network.links_t.p1[h2_links.index]).sum(axis=1)
-    h2_production = h2_production.resample("D").mean()
 
-    # Calculate e-kerosene production
-    kerosene_production = np.multiply(-1, network.links_t.p1[ft_links.index]).sum(axis=1)
-    kerosene_production = kerosene_production.resample("D").mean()
+    # H2 links
+    h2_links = network.links[network.links.carrier.isin(h2_carriers)].copy()
 
-    # Create summary statistics
+    # Helper: sum p1 across given links, robust to empty indices
+    def sum_p1(idx):
+        if len(idx) == 0:
+            try:
+                base = network.links_t.p1.iloc[:, :1].copy()
+                base.iloc[:, 0] = 0.0
+                return base.iloc[:, 0]
+            except Exception:
+                return pd.Series(dtype=float, index=network.snapshots)
+        return np.multiply(-1, network.links_t.p1[idx]).sum(axis=1)
+
+    # Productions in MW (per snapshot)
+    h2_prod_mw = sum_p1(h2_links.index)
+    kerosene_prod_mw = sum_p1(ft_links.index)
+
+    # Daily averages in GW
+    h2_prod_gw = h2_prod_mw.resample("D").mean() / 1e3
+    kerosene_prod_gw = kerosene_prod_mw.resample("D").mean() / 1e3
+
+    # Snapshot durations (in hours)
+    weights = network.snapshot_weightings["generators"]
+
+    # Summaries: total production in MWh, installed capacity in GW
     h2_summary = {
-        'total_production_MWh': h2_production.sum(),
-        'installed_capacity_MW': h2_links.p_nom_opt.sum(),
+        'total_production_MWh': (h2_prod_mw * weights).sum(),
+        'installed_capacity_GW': (h2_links.p_nom_opt.sum() if 'p_nom_opt' in h2_links else h2_links.p_nom.sum()) / 1e3,
     }
-    
     kerosene_summary = {
-        'total_production_MWh': kerosene_production.sum(),
-        'installed_capacity_MW': ft_links.p_nom_opt.sum(),
+        'total_production_MWh': (kerosene_prod_mw * weights).sum(),
+        'installed_capacity_GW': (ft_links.p_nom_opt.sum() if 'p_nom_opt' in ft_links else ft_links.p_nom.sum()) / 1e3,
     }
-    
-    # Create comparison table
+
+    # Comparison table
     comparison_data = {
-        'Metric': ['Total Production (MWh)', 'Installed Capacity (MW)',],
-        'Hydrogen': [h2_summary['total_production_MWh'],h2_summary['installed_capacity_MW']],
-        'E-Kerosene': [kerosene_summary['total_production_MWh'], kerosene_summary['installed_capacity_MW']]
+        'Metric': ['Total Production (MWh)', 'Installed Capacity (GW)'],
+        'Hydrogen': [h2_summary['total_production_MWh'], h2_summary['installed_capacity_GW']],
+        'E-Kerosene': [kerosene_summary['total_production_MWh'], kerosene_summary['installed_capacity_GW']],
     }
-    
     comparison_table = pd.DataFrame(comparison_data)
-    
-    # Create plot if requested
+
+    # Plot in GW if above threshold
     if plot:
-        plt.figure(figsize=(12, 6))
-        h2_production.plot(label='Hydrogen Production', alpha=0.8)
-        kerosene_production.plot(label='E-Kerosene Production', alpha=0.8)
-        plt.title(f'Hydrogen vs E-Kerosene Production - {network_name}')
-        plt.xlabel('Time')
-        plt.ylabel('Production (MW)')
-        plt.legend()
-        plt.grid(True, alpha=0.3)
-        plt.tight_layout()
-        plt.show()
-    
+        avg_h2_gw = h2_prod_gw.mean()
+        avg_kerosene_gw = kerosene_prod_gw.mean()
+        if (avg_h2_gw > plot_threshold_gw) or (avg_kerosene_gw > plot_threshold_gw):
+            fig, ax = plt.subplots(figsize=(15, 5))
+            h2_prod_gw.plot(ax=ax, label='Hydrogen Production (daily avg)', alpha=0.8)
+            kerosene_prod_gw.plot(ax=ax, label='E-Kerosene Production (daily avg)', alpha=0.8)
+
+            ax.set_title(f'Hydrogen vs e-kerosene Production (GW) - {network_name}')
+            ax.set_xlabel('')
+            ax.set_ylabel('Production (GW)')
+
+            # x-axis formatting: monthly ticks with abbreviated month names
+            ax.xaxis.set_major_locator(mdates.MonthLocator())
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
+
+            # legend outside
+            ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0.)
+            ax.grid(True, alpha=0.3)
+            plt.tight_layout(rect=[0, 0, 0.85, 1])  # leave space for legend
+            plt.show()
+        else:
+            print(f"\nSkipped {network_name}: both daily-average productions are below {plot_threshold_gw*1000:.1f} MW.\n")
+
     return {
-        'h2_production': h2_production,
-        'kerosene_production': kerosene_production,
-        'h2_summary': h2_summary,
-        'kerosene_summary': kerosene_summary,
+        'h2_production': h2_prod_gw,               # Series in GW (daily average)
+        'kerosene_production': kerosene_prod_gw,   # Series in GW (daily average)
+        'h2_summary': h2_summary,                  # Totals in MWh, capacity in GW
+        'kerosene_summary': kerosene_summary,      # Totals in MWh, capacity in GW
         'comparison_table': comparison_table
     }
+
+
+def compute_capacity_factor_electrolysis(
+    networks: dict,
+    p_nom_threshold: float = 1e-3,
+    year_title: bool = True,
+    round_digits: int = 2,
+):
+    """
+    Compute annual capacity factor of H2 electrolysers by grid region.
+
+    - Input electricity (p0) is negative → take absolute value (informative metric only).
+    - Output hydrogen (p1) is negative → take the opposite, clip >= 0.
+    - Capacity factor is based on ANNUAL HYDROGEN OUTPUT relative to installed capacity.
+    - Installed capacity is reported in GW (aggregated by region).
+    """
+
+    # Carrier names for electrolysers
+    h2_carriers = [
+        "Alkaline electrolyzer large",
+        "Alkaline electrolyzer medium",
+        "Alkaline electrolyzer small",
+        "PEM electrolyzer",
+        "SOEC",
+    ]
+
+    results = {}
+
+    for year_key, n in networks.items():
+        scen_year = int(re.search(r"\d{4}", str(year_key)).group())
+
+        # Select H2 links
+        links = n.links[n.links.carrier.isin(h2_carriers)].copy()
+        if links.empty:
+            continue
+
+        # Installed capacity (MW)
+        cap_series = pd.Series(
+            np.where(links.get("p_nom_extendable", False),
+                     links.get("p_nom_opt", 0.0),
+                     links.get("p_nom", 0.0)),
+            index=links.index
+        ).astype(float)
+
+        # Apply minimum threshold
+        links = links[cap_series > p_nom_threshold]
+        cap_series = cap_series.loc[links.index]
+        if links.empty:
+            continue
+
+        # Total hours represented in the snapshots
+        dt_h = (n.snapshots[1] - n.snapshots[0]).total_seconds()/3600.0 if len(n.snapshots) > 1 else 1.0
+        w = n.snapshot_weightings.generators
+        hours = len(n.snapshots) * dt_h
+
+        # Input electricity (MWh)
+        p0 = n.links_t.p0[links.index]
+        energy_in = p0.abs().multiply(w, axis=0).sum(axis=0) * dt_h
+
+        # Output hydrogen (MWh)
+        p1 = -n.links_t.p1[links.index]
+        energy_out = p1.clip(lower=0).multiply(w, axis=0).sum(axis=0) * dt_h
+
+        # Capacity factor (based on hydrogen output)
+        cf_out = (energy_out / (cap_series * hours)).replace([np.inf, -np.inf], np.nan)
+
+        # Add grid region information
+        links["grid_region"] = links["bus1"].map(n.buses["grid_region"])
+        df_links = pd.DataFrame({
+            "Link": links.index,
+            "Grid Region": links["grid_region"],
+            "Capacity (MW)": cap_series,
+            "Electricity input (MWh)": energy_in,
+            "Hydrogen output (MWh)": energy_out,
+            "Capacity factor (%)": cf_out,
+        }).dropna()
+
+        # Aggregate by grid region
+        region_summary = (
+            df_links.groupby("Grid Region")
+            .apply(lambda g: pd.Series({
+                "Capacity (GW)": g["Capacity (MW)"].sum() / 1e3,  # converted to GW
+                "Electricity input (MWh)": g["Electricity input (MWh)"].sum(),
+                "Hydrogen output (MWh)": g["Hydrogen output (MWh)"].sum(),
+                "Capacity factor (%)": (
+                    g["Hydrogen output (MWh)"].sum() /
+                    (g["Capacity (MW)"].sum() * hours)
+                ),
+            }))
+            .reset_index()
+        )
+
+        region_summary = region_summary.round(round_digits)
+        key = str(scen_year) if year_title else year_key
+        results[key] = region_summary
+
+    return results
+

@@ -27,7 +27,7 @@ costs:
     H2_electrolysis: "moderate"
     dac: "moderate"
   financial_case: "market" # only used if `country_specific_data: "US"`; can be "market" or "r&d"
-  discountrate: [0.08] #, 0.086, 0.111]
+  discountrate: [0.07] #, 0.086, 0.111]
   lifetime:
     CCGT: 35
     OCGT: 35

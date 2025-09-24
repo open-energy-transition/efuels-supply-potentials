@@ -9,7 +9,7 @@
 Please list contributions, add reference to PRs if present.
 
 * Remove electrolyzers tax credits from config files, **new discount rate** and **levelized tax credits** [PR #104](https://github.com/open-energy-transition/efuels-supply-potentials/pull/104)
-* 
+
 * Adjust *base year CO2 emissions limit* after changes in [PR #106] [PR #107](https://github.com/open-energy-transition/efuels-supply-potentials/pull/106)
 
 * Modify DAC inputs by **removing heat input** and **setting electricity-input to 1.4 MWh/t_CO2** [PR #105](https://github.com/open-energy-transition/efuels-supply-potentials/pull/105)

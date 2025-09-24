@@ -8,7 +8,7 @@
 
 Please list contributions, add reference to PRs if present.
 
-* Remove electrolyzers tax credits from config files, **new discount rate** and **levelized tax credits** [PR #104](https://github.com/open-energy-transition/efuels-supply-potentials/pull/104)
+* Remove electrolyzers tax credits from config files, adapt **levelized tax credits** to global and technology-specific discount rates [PR #104](https://github.com/open-energy-transition/efuels-supply-potentials/pull/104)
 
 * Adjust *base year CO2 emissions limit* after changes in [PR #106] [PR #107](https://github.com/open-energy-transition/efuels-supply-potentials/pull/106)
 

@@ -488,6 +488,44 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                         if verbose:
                             logger.info(f"[ITC STORAGE] {idx} | year={planning_horizon}, scale={scale:.2f}")
 
+    # -------------------------
+    # Apply Investment Tax Credits to LINKS (battery chargers)
+    # -------------------------
+    if os.path.exists(itc_path):
+        itc_df = pd.read_csv(itc_path, index_col=0)
+
+        if "battery" in itc_df.index and "battery charger" in network.links.carrier.values:
+            credit_factor = -itc_df.loc["battery", "credit"] / 100
+
+            affected = network.links.query("carrier == 'battery charger'")
+            for idx, lk in affected.iterrows():
+                build_year = lk.get("build_year", planning_horizon)
+
+                horizon_limit = 2040 if pre_ob3_tax_credits else build_year + 10
+                full_end = 2040 if pre_ob3_tax_credits else 2033
+
+                if 2030 <= build_year <= 2035 and planning_horizon <= horizon_limit:
+                    scale = 0.0
+                    if planning_horizon <= full_end:
+                        scale = 1.0
+                    elif planning_horizon == full_end + 1:
+                        scale = 0.75
+                    elif planning_horizon == full_end + 2:
+                        scale = 0.5
+
+                    if scale > 0 and lk.capital_cost > 0:
+                        orig = lk.capital_cost
+                        new = orig * (1 - scale * credit_factor)
+                        network.links.at[idx, "capital_cost"] = new
+                        modifications.append({
+                            "component": "link", "name": idx,
+                            "carrier": lk.carrier, "build_year": build_year,
+                            "original": orig, "credit_factor": scale * credit_factor,
+                            "final": new
+                        })
+                        if verbose:
+                            logger.info(f"[ITC LINK BATTERY] {idx} | year={planning_horizon}, scale={scale:.2f}")
+
     # Save modifications log
     if modifications and log_path:
         os.makedirs(os.path.dirname(log_path), exist_ok=True)

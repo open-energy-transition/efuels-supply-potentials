@@ -5966,3 +5966,92 @@ def save_to_excel_with_formatting(df, sheet_name, title, excel_file_path, freeze
 
         # Freeze panes for better navigation
         worksheet.freeze_panes = worksheet[freeze_pane]
+
+
+def compare_h2_kerosene_production(network, plot=True, network_name="Network"):
+    """
+    Compare hydrogen production and e-kerosene production from a PyPSA network.
+    
+    Parameters:
+    -----------
+    network : pypsa.Network
+        The PyPSA network to analyze
+    plot : bool, default True
+        Whether to create a plot comparing the productions
+    network_name : str, default "Network"
+        Name for the network (useful for titles and when looping)
+    
+    Returns:
+    --------
+    dict : Dictionary containing:
+        - 'h2_production': pandas.Series with hydrogen production time series
+        - 'kerosene_production': pandas.Series with e-kerosene production time series
+        - 'h2_summary': dict with hydrogen production statistics
+        - 'kerosene_summary': dict with e-kerosene production statistics
+        - 'comparison_table': pandas.DataFrame comparing both productions
+    """
+    
+    # Define hydrogen carriers
+    h2_carriers = [
+        "Alkaline electrolyzer large",
+        "Alkaline electrolyzer medium", 
+        "Alkaline electrolyzer small",
+        "PEM electrolyzer",
+        "SOEC"
+    ]
+    
+    # Get Fischer-Tropsch (e-kerosene) links
+    ft_links = network.links[
+        network.links['carrier'].str.contains('FT|Fischer|Tropsch', case=False, na=False) |
+        network.links.index.str.contains('FT|Fischer|Tropsch', case=False, na=False)
+    ].copy()
+    
+    # Calculate hydrogen production
+    h2_links = network.links[network.links.carrier.isin(h2_carriers)]
+    h2_production = np.multiply(-1, network.links_t.p1[h2_links.index]).sum(axis=1)
+    h2_production = h2_production.resample("D").mean()
+
+    # Calculate e-kerosene production
+    kerosene_production = np.multiply(-1, network.links_t.p1[ft_links.index]).sum(axis=1)
+    kerosene_production = kerosene_production.resample("D").mean()
+
+    # Create summary statistics
+    h2_summary = {
+        'total_production_MWh': h2_production.sum(),
+        'installed_capacity_MW': h2_links.p_nom_opt.sum(),
+    }
+    
+    kerosene_summary = {
+        'total_production_MWh': kerosene_production.sum(),
+        'installed_capacity_MW': ft_links.p_nom_opt.sum(),
+    }
+    
+    # Create comparison table
+    comparison_data = {
+        'Metric': ['Total Production (MWh)', 'Installed Capacity (MW)',],
+        'Hydrogen': [h2_summary['total_production_MWh'],h2_summary['installed_capacity_MW']],
+        'E-Kerosene': [kerosene_summary['total_production_MWh'], kerosene_summary['installed_capacity_MW']]
+    }
+    
+    comparison_table = pd.DataFrame(comparison_data)
+    
+    # Create plot if requested
+    if plot:
+        plt.figure(figsize=(12, 6))
+        h2_production.plot(label='Hydrogen Production', alpha=0.8)
+        kerosene_production.plot(label='E-Kerosene Production', alpha=0.8)
+        plt.title(f'Hydrogen vs E-Kerosene Production - {network_name}')
+        plt.xlabel('Time')
+        plt.ylabel('Production (MW)')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.show()
+    
+    return {
+        'h2_production': h2_production,
+        'kerosene_production': kerosene_production,
+        'h2_summary': h2_summary,
+        'kerosene_summary': kerosene_summary,
+        'comparison_table': comparison_table
+    }

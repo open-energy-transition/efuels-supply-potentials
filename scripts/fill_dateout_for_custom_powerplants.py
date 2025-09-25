@@ -46,9 +46,9 @@ if __name__ == "__main__":
         'offwind':'offwind-ac',
         'battery storage':'battery'
     }, inplace=True)
-    # set lifetime to CCGT and OCGT manually to 35 years
-    lifetime_series['CCGT'] = 35
-    lifetime_series['OCGT'] = 35
+    # set lifetime to CCGT and OCGT manually to 45 years and nuclear to 60 years
+    lifetime_series['CCGT'] = 45
+    lifetime_series['OCGT'] = 45
     lifetime_series['nuclear'] = 60
     # read lifetime from costs file
     df['lifetime'] = df['Fueltype'].map(lifetime_series)

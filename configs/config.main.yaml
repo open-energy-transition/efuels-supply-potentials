@@ -36,8 +36,8 @@ costs:
     PEM electrolyzer small size: 0.10
     SOEC: 0.10
   lifetime:
-    CCGT: 35
-    OCGT: 35
+    CCGT: 45
+    OCGT: 45
 
 
 # defining the aviation demand scenario

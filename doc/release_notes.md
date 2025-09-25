@@ -8,13 +8,16 @@
 
 Please list contributions, add reference to PRs if present.
 
+
 * Remove electrolyzers tax credits from config files, adapt **levelized tax credits** to global and technology-specific discount rates [PR #104](https://github.com/open-energy-transition/efuels-supply-potentials/pull/104)
+
+* Set **OCGT and CCGT lifetime to 35 years** to be consistent with lifetime in `custom_powerplants.csv` [PR #108](https://github.com/open-energy-transition/efuels-supply-potentials/pull/108)
+
+* Update **geothermal projections** based on new [NREL data](https://docs.nrel.gov/docs/fy23osti/84822.pdf) [PR #102](https://github.com/open-energy-transition/efuels-supply-potentials/pull/102)
 
 * Adjust *base year CO2 emissions limit* after changes in [PR #106] [PR #107](https://github.com/open-energy-transition/efuels-supply-potentials/pull/106)
 
 * Modify DAC inputs by **removing heat input** and **setting electricity-input to 1.4 MWh/t_CO2** [PR #105](https://github.com/open-energy-transition/efuels-supply-potentials/pull/105)
-
-* Set **OCGT and CCGT lifetime to 35 years** to be consistent with lifetime in `custom_powerplants.csv` [PR #103](https://github.com/open-energy-transition/efuels-supply-potentials/pull/103)
 
 * Increase **oil VOM** to prevent overuse of oil over coal [PR #100](https://github.com/open-energy-transition/efuels-supply-potentials/pull/100)
 

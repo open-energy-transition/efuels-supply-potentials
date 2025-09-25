@@ -27,10 +27,18 @@ costs:
     H2_electrolysis: "moderate"
     dac: "moderate"
   financial_case: "market" # only used if `country_specific_data: "US"`; can be "market" or "r&d"
-  discountrate: [0.07] #, 0.086, 0.111]
+  discount rate:
+    direct air capture: 0.10
+    Fischer-Tropsch: 0.10
+    Alkaline electrolyzer large size: 0.10
+    Alkaline electrolyzer medium size: 0.10
+    Alkaline electrolyzer small size: 0.10
+    PEM electrolyzer small size: 0.10
+    SOEC: 0.10
   lifetime:
     CCGT: 35
     OCGT: 35
+
 
 # defining the aviation demand scenario
 aviation_demand_scenario:

@@ -572,9 +572,9 @@ def print_hydrogen_capacity_summary(capacity_data):
             f"{carrier:25s}: {capacity:8.1f} MW ({capacity/total_national*100:5.1f}%)")
 
 
-def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_gw=0.01, year_title=True):
+def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_gw=0.1, year_title=True):
     """
-    Create a geographic map with simple round circles showing FT capacity per state in gigawatts (GW).
+    Create a geographic map with simple round circles showing FT capacity per state in gigawatts (GW input H2).
     """
 
     year_match = re.search(r'\d{4}', network_name)
@@ -650,16 +650,16 @@ def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network"
     ax.set_position([0.05, 0.05, 0.9, 0.9])
 
     ax.set_title(
-        f"Fischer-Tropsch Capacity by State (GW){year_str if year_title else network_name}", fontsize=12)
+        f"Fischer-Tropsch Capacity by State (GW input H2){year_str if year_title else network_name}", fontsize=12)
     ax.axis('off')
     plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
 
     return fig, ax, links_with_state
 
 
-def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_gw=0.01, year_title=True):
+def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_gw=0.1, year_title=True):
     """
-    Create a map showing total FT capacity per grid region (GW) as full circles with linear radius scaling.
+    Create a map showing total FT capacity per grid region (GW input H2) as full circles with linear radius scaling.
     """
 
     # Extract year from network name
@@ -726,7 +726,7 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
 
     ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
     ax.set_title(
-        f"Fischer-Tropsch Capacity by Grid Region (GW){year_str if year_title else network_name}", fontsize=12, pad=20)
+        f"Fischer-Tropsch Capacity by Grid Region (GW input H2){year_str if year_title else network_name}", fontsize=12, pad=20)
     ax.axis('off')
     plt.tight_layout()
 
@@ -6049,8 +6049,8 @@ def compare_h2_kerosene_production(network, plot=True, network_name="Network", p
         avg_kerosene_gw = kerosene_prod_gw.mean()
         if (avg_h2_gw > plot_threshold_gw) or (avg_kerosene_gw > plot_threshold_gw):
             fig, ax = plt.subplots(figsize=(15, 5))
-            h2_prod_gw.plot(ax=ax, label='Hydrogen Production (daily avg)', alpha=0.8)
-            kerosene_prod_gw.plot(ax=ax, label='E-Kerosene Production (daily avg)', alpha=0.8)
+            h2_prod_gw.plot(ax=ax, label='Hydrogen production', alpha=0.8)
+            kerosene_prod_gw.plot(ax=ax, label='E-Kerosene production', alpha=0.8)
 
             ax.set_title(f'Hydrogen vs e-kerosene Production (GW) - {network_name}')
             ax.set_xlabel('')
@@ -6086,8 +6086,8 @@ def compute_capacity_factor_electrolysis(
     """
     Compute annual capacity factor of H2 electrolysers by grid region.
 
-    - Input electricity (p0) is negative → take absolute value (informative metric only).
-    - Output hydrogen (p1) is negative → take the opposite, clip >= 0.
+    - Input electricity (p0) is negative: take absolute value (informative metric only).
+    - Output hydrogen (p1) is negative: take the opposite, clip >= 0.
     - Capacity factor is based on ANNUAL HYDROGEN OUTPUT relative to installed capacity.
     - Installed capacity is reported in GW (aggregated by region).
     """

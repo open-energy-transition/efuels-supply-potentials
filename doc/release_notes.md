@@ -8,7 +8,7 @@
 
 Please list contributions, add reference to PRs if present.
 
-* Apply **pre-OB3 tax credits** for solar, wind, electrolyzers, point-source CO2 and DAC for selected scenarios [PR #99](https://github.com/open-energy-transition/efuels-supply-potentials/pull/99)
+* Apply **pre-OB3 tax credits** for solar, wind, electrolyzers, point-source CO2 and DAC for selected scenarios; extend credit to all battery components [PR #99](https://github.com/open-energy-transition/efuels-supply-potentials/pull/99)
 
 * Remove electrolyzers tax credits from config files, adapt **levelized tax credits** to global and technology-specific discount rates [PR #104](https://github.com/open-energy-transition/efuels-supply-potentials/pull/104)
 

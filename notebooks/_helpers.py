@@ -2179,7 +2179,7 @@ def compute_emissions_grouped(net, carrier_groups):
         sequestered = group_df["co2_sequestered"].sum()
 
         group_results.append({
-            "carrier_group": group_name,
+            "carrier group": group_name,
             "CO2 to Atmosphere (Mt CO2/year)": atm / 1e6,
             "CO2 Captured (Mt CO2/year)": captured / 1e6,
             "CO2 Sequestered (Mt CO2/year)": sequestered / 1e6,

@@ -5343,25 +5343,27 @@ def compute_ekerosene_by_region(
 def compute_ft_capacity_factor(
     networks: dict,
     carrier_regex: str = "Fischer-Tropsch",
-    p_nom_threshold: float = 1,  # MW
+    p_nom_threshold: float = 1.0,   # MW
     year_title: bool = True,
     round_digits: int = 2,
-    output_threshold: float = 1,  # MWh
+    output_threshold: float = 1.0,  # MWh
 ):
     """
     Compute annual capacity factor of Fischer-Tropsch plants by grid region.
 
-    - hydrogen input (p0) is negative → take absolute value (informative only).
-    - e-kerosene output (p1) is negative → take the opposite, clip >= 0 → used for CF.
-    - capacity factor is based ONLY on the output fuel.
-    - installed capacity is reported in GW (aggregated by region).
-    - if all regions produce less than output_threshold, skip result.
+    - Hydrogen input (p0) is negative → take absolute value (informative only).
+    - E-kerosene output (p1) is negative → use -p1, clip >= 0 → used for CF.
+    - Capacity factor is based ONLY on the output fuel.
+    - Installed capacity is reported in GW (aggregated by region).
+    - Snapshot weighting is taken from n.snapshot_weightings.generators (robust to timestep).
+    - If total production < output_threshold (MWh), skip result.
     """
 
     results = {}
 
     for year_key, n in networks.items():
         scen_year = int(re.search(r"\d{4}", str(year_key)).group())
+        key = str(scen_year) if year_title else year_key
 
         # select FT links
         ft = n.links[n.links.carrier.str.contains(carrier_regex, case=False, na=False)].copy()
@@ -5370,10 +5372,12 @@ def compute_ft_capacity_factor(
 
         # capacity series (MW)
         cap_series = pd.Series(
-            np.where(ft.get("p_nom_extendable", False),
-                     ft.get("p_nom_opt", 0.0),
-                     ft.get("p_nom", 0.0)),
-            index=ft.index
+            np.where(
+                ft.get("p_nom_extendable", False),
+                ft.get("p_nom_opt", 0.0),
+                ft.get("p_nom", 0.0),
+            ),
+            index=ft.index,
         ).astype(float)
 
         # apply capacity threshold
@@ -5382,21 +5386,20 @@ def compute_ft_capacity_factor(
         if ft.empty:
             continue
 
-        # snapshot weighting
-        dt_h = (n.snapshots[1] - n.snapshots[0]).total_seconds()/3600.0 if len(n.snapshots) > 1 else 1.0
-        w = n.snapshot_weightings.generators
-        hours = len(n.snapshots) * dt_h
+        # snapshot weighting → ore totali
+        w = n.snapshot_weightings.generators  # hours per snapshot
+        total_hours = float(w.sum())
 
         # hydrogen input (MWh)
         p0 = n.links_t.p0[ft.index]
-        energy_in = p0.abs().multiply(w, axis=0).sum(axis=0) * dt_h
+        energy_in = p0.abs().multiply(w, axis=0).sum(axis=0)  # MWh
 
         # e-kerosene output (MWh)
-        p1 = -n.links_t.p1[ft.index]
-        energy_out = p1.clip(lower=0).multiply(w, axis=0).sum(axis=0) * dt_h
+        p1 = n.links_t.p1[ft.index]
+        energy_out = (-p1).clip(lower=0).multiply(w, axis=0).sum(axis=0)  # MWh
 
-        # capacity factor (based on e-kerosene output)
-        cf_out = (energy_out / (cap_series * hours)).replace([np.inf, -np.inf], np.nan)
+        # capacity factor (fraction)
+        cf_frac = (energy_out / (cap_series * total_hours)).replace([np.inf, -np.inf], np.nan)
 
         # add region info
         ft["grid_region"] = ft["bus1"].map(n.buses["grid_region"])
@@ -5406,10 +5409,10 @@ def compute_ft_capacity_factor(
             "Capacity (MW)": cap_series,
             "Hydrogen input (MWh)": energy_in,
             "E-kerosene output (MWh)": energy_out,
-            "Capacity factor (%)": cf_out,
+            "Capacity factor (fraction)": cf_frac,
         }).dropna()
 
-        # aggregate by region
+        # aggregate by region (CF in %)
         region_summary = (
             df_links.groupby("Grid Region")
             .apply(lambda g: pd.Series({
@@ -5418,7 +5421,7 @@ def compute_ft_capacity_factor(
                 "E-kerosene output (MWh)": g["E-kerosene output (MWh)"].sum(),
                 "Capacity factor (%)": (
                     g["E-kerosene output (MWh)"].sum() /
-                    (g["Capacity (MW)"].sum() * hours)
+                    (g["Capacity (MW)"].sum() * total_hours) * 100
                 ),
             }))
             .reset_index()
@@ -5428,9 +5431,7 @@ def compute_ft_capacity_factor(
         if region_summary["E-kerosene output (MWh)"].sum() < output_threshold:
             continue
 
-        region_summary = region_summary.round(round_digits)
-        key = str(scen_year) if year_title else year_key
-        results[key] = region_summary
+        results[key] = region_summary.round(round_digits)
 
     return results
 
@@ -6086,62 +6087,63 @@ def compute_capacity_factor_electrolysis(
     """
     Compute annual capacity factor of H2 electrolysers by grid region.
 
-    - Input electricity (p0) is negative: take absolute value (informative metric only).
-    - Output hydrogen (p1) is negative: take the opposite, clip >= 0.
-    - Capacity factor is based on ANNUAL HYDROGEN OUTPUT relative to installed capacity.
-    - Installed capacity is reported in GW (aggregated by region).
+    - Input electricity (p0) is positive (MW, consumption).
+    - Output hydrogen (p1) is negative (MW, production) → use (-p1).clip(lower=0).
+    - Energy (MWh) is computed with snapshot_weightings.generators (hours per snapshot).
+    - Total hours = snapshot_weightings.generators.sum().
     """
 
-    # Carrier names for electrolysers
+    # Identify electrolyser carriers automatically
     h2_carriers = [
-        "Alkaline electrolyzer large",
-        "Alkaline electrolyzer medium",
-        "Alkaline electrolyzer small",
-        "PEM electrolyzer",
-        "SOEC",
+        c for c in pd.unique(
+            pd.concat([n.links.carrier for n in networks.values()])
+        )
+        if "electrolyzer" in c.lower() or "soec" in c.lower()
     ]
 
     results = {}
 
     for year_key, n in networks.items():
         scen_year = int(re.search(r"\d{4}", str(year_key)).group())
+        key = str(scen_year) if year_title else year_key
 
-        # Select H2 links
+        # Select electrolysers
         links = n.links[n.links.carrier.isin(h2_carriers)].copy()
         if links.empty:
             continue
 
         # Installed capacity (MW)
         cap_series = pd.Series(
-            np.where(links.get("p_nom_extendable", False),
-                     links.get("p_nom_opt", 0.0),
-                     links.get("p_nom", 0.0)),
-            index=links.index
+            np.where(
+                links.get("p_nom_extendable", False),
+                links.get("p_nom_opt", 0.0),
+                links.get("p_nom", 0.0),
+            ),
+            index=links.index,
         ).astype(float)
 
-        # Apply minimum threshold
+        # Apply threshold
         links = links[cap_series > p_nom_threshold]
         cap_series = cap_series.loc[links.index]
         if links.empty:
             continue
 
-        # Total hours represented in the snapshots
-        dt_h = (n.snapshots[1] - n.snapshots[0]).total_seconds()/3600.0 if len(n.snapshots) > 1 else 1.0
-        w = n.snapshot_weightings.generators
-        hours = len(n.snapshots) * dt_h
+        # Total hours represented (robust to timestep)
+        w = n.snapshot_weightings.generators  # hours per snapshot
+        total_hours = float(w.sum())
 
-        # Input electricity (MWh)
-        p0 = n.links_t.p0[links.index]
-        energy_in = p0.abs().multiply(w, axis=0).sum(axis=0) * dt_h
+        # Electricity input (MWh)
+        p0 = n.links_t.p0[links.index]  # MW
+        energy_in = p0.abs().multiply(w, axis=0).sum(axis=0)  # MWh
 
-        # Output hydrogen (MWh)
-        p1 = -n.links_t.p1[links.index]
-        energy_out = p1.clip(lower=0).multiply(w, axis=0).sum(axis=0) * dt_h
+        # Hydrogen output (MWh)
+        p1 = n.links_t.p1[links.index]  # MW
+        energy_out = (-p1).clip(lower=0).multiply(w, axis=0).sum(axis=0)  # MWh
 
-        # Capacity factor (based on hydrogen output)
-        cf_out = (energy_out / (cap_series * hours)).replace([np.inf, -np.inf], np.nan)
+        # Capacity factor (fraction)
+        cf_frac = (energy_out / (cap_series * total_hours)).replace([np.inf, -np.inf], np.nan)
 
-        # Add grid region information
+        # Add grid region info
         links["grid_region"] = links["bus1"].map(n.buses["grid_region"])
         df_links = pd.DataFrame({
             "Link": links.index,
@@ -6149,26 +6151,24 @@ def compute_capacity_factor_electrolysis(
             "Capacity (MW)": cap_series,
             "Electricity input (MWh)": energy_in,
             "Hydrogen output (MWh)": energy_out,
-            "Capacity factor (%)": cf_out,
+            "Capacity factor (fraction)": cf_frac,
         }).dropna()
 
-        # Aggregate by grid region
+        # Aggregate by region (CF in %)
         region_summary = (
             df_links.groupby("Grid Region")
             .apply(lambda g: pd.Series({
-                "Capacity (GW)": g["Capacity (MW)"].sum() / 1e3,  # converted to GW
+                "Capacity (GW)": g["Capacity (MW)"].sum() / 1e3,
                 "Electricity input (MWh)": g["Electricity input (MWh)"].sum(),
                 "Hydrogen output (MWh)": g["Hydrogen output (MWh)"].sum(),
                 "Capacity factor (%)": (
                     g["Hydrogen output (MWh)"].sum() /
-                    (g["Capacity (MW)"].sum() * hours)
+                    (g["Capacity (MW)"].sum() * total_hours) * 100
                 ),
             }))
             .reset_index()
-        )
+        ).round(round_digits)
 
-        region_summary = region_summary.round(round_digits)
-        key = str(scen_year) if year_title else year_key
         results[key] = region_summary
 
     return results

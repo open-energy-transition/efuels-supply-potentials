@@ -6510,7 +6510,7 @@ def compute_aviation_demand_table(network, level="state"):
 
     label = {
         "state": "State",
-        "grid_region": "Grid region"
+        "grid_region": "Grid Region"
     }.get(level, level.title())
 
     if aggregation.empty:

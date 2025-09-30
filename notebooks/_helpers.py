@@ -279,7 +279,8 @@ def compute_h2_capacities(network):
     ]
 
     # Filter hydrogen-related links
-    hydrogen_links = network.links.query("carrier in @h2_carriers_buses").copy()
+    hydrogen_links = network.links.query(
+        "carrier in @h2_carriers_buses").copy()
 
     # Merge with bus metadata (state and grid_region)
     capacity_data = hydrogen_links.merge(
@@ -303,7 +304,8 @@ def compute_h2_capacities(network):
 
     # Add state and grid_region information
     h2_capacity_data['state'] = h2_capacity_data.index.map(network.buses.state)
-    h2_capacity_data['grid_region'] = h2_capacity_data.index.map(network.buses.grid_region)
+    h2_capacity_data['grid_region'] = h2_capacity_data.index.map(
+        network.buses.grid_region)
 
     return h2_capacity_data
 
@@ -332,7 +334,8 @@ def plot_h2_capacities_by_state(grouped, title, ymax, max_n_states, bar_width=0.
     # Add value labels on top of each stacked bar
     for i, total in enumerate(bottoms):
         if total > 0:
-            ax.text(x[i], total + 0.01 * ymax, f"{total:.0f}", ha='center', va='bottom', fontsize=8)
+            ax.text(x[i], total + 0.01 * ymax,
+                    f"{total:.0f}", ha='center', va='bottom', fontsize=8)
 
     ax.set_xticks(x)
     ax.set_xticklabels(state, rotation=30, ha='center')
@@ -346,7 +349,8 @@ def plot_h2_capacities_by_state(grouped, title, ymax, max_n_states, bar_width=0.
 
     ax.set_xlim(-0.5, max_n_states - 0.5)
 
-    ax.set_title(f"\nHydrogen electrolyzer capacity by State and technology - {title}\n")
+    ax.set_title(
+        f"\nHydrogen electrolyzer capacity by State and technology - {title}\n")
     ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1), frameon=False)
 
     plt.tight_layout()
@@ -368,7 +372,8 @@ def plot_h2_capacities_by_grid_region(grouped, title, ymax, max_n_grid_regions, 
     techs = grouped.columns.tolist()
     bottoms = np.zeros(n)
 
-    fig, ax = plt.subplots(figsize=(max_n_grid_regions * bar_width * 5.5, height))
+    fig, ax = plt.subplots(
+        figsize=(max_n_grid_regions * bar_width * 5.5, height))
 
     for tech in techs:
         ax.bar(x, grouped[tech].values, bar_width, bottom=bottoms, label=tech)
@@ -377,7 +382,8 @@ def plot_h2_capacities_by_grid_region(grouped, title, ymax, max_n_grid_regions, 
     # Add text on top of each stacked bar
     for i in range(n):
         total = grouped.iloc[i].sum()
-        ax.text(x[i], total + 0.01 * ymax, f"{total:.0f}", ha='center', va='bottom', fontsize=8)
+        ax.text(x[i], total + 0.01 * ymax,
+                f"{total:.0f}", ha='center', va='bottom', fontsize=8)
 
     ax.set_xticks(x)
     ax.set_xticklabels(grid_region, rotation=30, ha='center')
@@ -518,8 +524,9 @@ def create_hydrogen_capacity_map(network, path_shapes, distance_crs=4326, min_ca
         if carrier in capacity_data['carrier'].values:
             # Clean up carrier names for legend
             display_name = carrier.replace('_', ' ').title()
-            legend_elements.append(Line2D([0], [0], color='none', label=f'— {group} —'))
-            
+            legend_elements.append(
+                Line2D([0], [0], color='none', label=f'— {group} —'))
+
     ax.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(1, 0.5),
               fontsize=14, title='Electrolyzer Type', title_fontsize=16)
 
@@ -607,7 +614,8 @@ def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network"
     states_to_plot = state_capacity[state_capacity['p_nom_gw']
                                     >= min_capacity_gw]['state'].tolist()
 
-    fig, ax = plt.subplots(figsize=(12, 6), subplot_kw={"projection": ccrs.PlateCarree()})
+    fig, ax = plt.subplots(figsize=(12, 6), subplot_kw={
+                           "projection": ccrs.PlateCarree()})
     bbox = box(-130, 20, -65, 50)
     shapes_clip = shapes.to_crs(epsg=4326).clip(bbox)
     shapes_clip.plot(ax=ax, facecolor='whitesmoke',
@@ -635,12 +643,13 @@ def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network"
         radius = np.clip(total_gw * pie_scale, 0.1, 3.5)
         circle = plt.Circle((x, y), radius, color='#B22222', alpha=0.6,
                             transform=ccrs.PlateCarree(), zorder=4, linewidth=1)
-        
+
         ax.add_patch(circle)
-    
+
         ax.text(x, y - radius - 0.3, f'{total_gw:.2f} GW',
                 ha='center', va='top', fontsize=9, fontweight='normal',
-                bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.2'),
+                bbox=dict(facecolor='white', edgecolor='gray',
+                          boxstyle='round,pad=0.2'),
                 transform=ccrs.PlateCarree())
 
     ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
@@ -695,10 +704,11 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
 
     # Filter small values
     grid_region_capacity_filtered = grid_region_capacity[grid_region_capacity["total_gw"]
-                                                >= min_capacity_gw]
+                                                         >= min_capacity_gw]
 
     # Set up map
-    fig, ax = plt.subplots(figsize=(12, 6), subplot_kw={"projection": ccrs.PlateCarree()})
+    fig, ax = plt.subplots(figsize=(12, 6), subplot_kw={
+                           "projection": ccrs.PlateCarree()})
     bbox = box(-130, 20, -60, 50)
     shapes = gpd.read_file(path_shapes, crs=distance_crs)
     shapes = shapes.to_crs(epsg=4326).clip(bbox)
@@ -721,7 +731,8 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
 
         ax.text(x, y - radius - 0.3, f'{total_gw:.2f} GW',
                 ha='center', va='top', fontsize=9, fontweight='normal',
-                bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.2'),
+                bbox=dict(facecolor='white', edgecolor='gray',
+                          boxstyle='round,pad=0.2'),
                 transform=ccrs.PlateCarree())
 
     ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
@@ -752,7 +763,8 @@ def filter_and_group_small_carriers(df, threshold=0.005):
 
 def calculate_dispatch(n, start_date=None, end_date=None):
     # Select time window
-    snapshots_slice = slice(start_date, end_date) if start_date and end_date else slice(None)
+    snapshots_slice = slice(
+        start_date, end_date) if start_date and end_date else slice(None)
     snapshots = n.snapshots[snapshots_slice]
 
     # Duration of each timestep
@@ -763,7 +775,8 @@ def calculate_dispatch(n, start_date=None, end_date=None):
         'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac', 'nuclear',
         'geothermal', 'ror', 'hydro', 'solar rooftop',
     }
-    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass', "biomass CHP", "gas CHP"]
+    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT',
+                     'biomass', "biomass CHP", "gas CHP"]
     valid_carriers = gen_and_sto_carriers.union(link_carriers)
 
     # Identify electric buses
@@ -944,18 +957,23 @@ def calculate_lcoe_summary_and_map(n, shapes):
 
     # --- Generators ---
     gen = n.generators[n.generators.carrier.isin(gen_carriers)].copy()
-    gen_dispatch = n.generators_t.p[gen.index].multiply(snapshot_weights, axis=0)
+    gen_dispatch = n.generators_t.p[gen.index].multiply(
+        snapshot_weights, axis=0)
     gen['energy'] = gen_dispatch.sum()
     gen = gen[(gen.p_nom_opt > 0) & (gen.energy > 0)]
-    gen['lcoe'] = (gen.capital_cost * gen.p_nom_opt + gen.marginal_cost * gen.energy) / gen.energy
+    gen['lcoe'] = (gen.capital_cost * gen.p_nom_opt +
+                   gen.marginal_cost * gen.energy) / gen.energy
     gen['type'] = 'generator'
 
     # --- Storage units ---
-    sto = n.storage_units[n.storage_units.carrier.isin(storage_carriers)].copy()
-    sto_dispatch = n.storage_units_t.p[sto.index].clip(lower=0).multiply(snapshot_weights, axis=0)
+    sto = n.storage_units[n.storage_units.carrier.isin(
+        storage_carriers)].copy()
+    sto_dispatch = n.storage_units_t.p[sto.index].clip(
+        lower=0).multiply(snapshot_weights, axis=0)
     sto['energy'] = sto_dispatch.sum()
     sto = sto[(sto.p_nom_opt > 0) & (sto.energy > 0)]
-    sto['lcoe'] = (sto.capital_cost * sto.p_nom_opt + sto.marginal_cost * sto.energy) / sto.energy
+    sto['lcoe'] = (sto.capital_cost * sto.p_nom_opt +
+                   sto.marginal_cost * sto.energy) / sto.energy
     sto['type'] = 'storage'
 
     # --- Links ---
@@ -998,10 +1016,12 @@ def calculate_lcoe_summary_and_map(n, shapes):
     # --- Merge data ---
     gen_data = gen[['bus', 'carrier', 'lcoe', 'type', 'energy']]
     sto_data = sto[['bus', 'carrier', 'lcoe', 'type', 'energy']]
-    link_data = link[['bus1', 'carrier', 'lcoe', 'type', 'energy']].rename(columns={'bus1': 'bus'})
+    link_data = link[['bus1', 'carrier', 'lcoe', 'type', 'energy']].rename(columns={
+                                                                           'bus1': 'bus'})
 
     lcoe_data = pd.concat([gen_data, sto_data, link_data], axis=0).dropna()
-    lcoe_data = lcoe_data.merge(n.buses[['x', 'y', 'grid_region']], left_on='bus', right_index=True)
+    lcoe_data = lcoe_data.merge(
+        n.buses[['x', 'y', 'grid_region']], left_on='bus', right_index=True)
 
     lcoe_by_bus = (
         lcoe_data.groupby('bus')
@@ -1018,14 +1038,17 @@ def calculate_lcoe_summary_and_map(n, shapes):
         lcoe_data.groupby(['grid_region', 'carrier'])
         .agg(
             dispatch_mwh=('energy', 'sum'),
-            total_cost=('lcoe', lambda x: (x * lcoe_data.loc[x.index, 'energy']).sum())
+            total_cost=('lcoe', lambda x: (
+                x * lcoe_data.loc[x.index, 'energy']).sum())
         )
         .reset_index()
     )
-    region_summary['lcoe'] = region_summary['total_cost'] / region_summary['dispatch_mwh']
+    region_summary['lcoe'] = region_summary['total_cost'] / \
+        region_summary['dispatch_mwh']
     region_summary['dispatch'] = region_summary['dispatch_mwh'] / 1e6
 
-    table = region_summary.pivot(index='grid_region', columns='carrier', values=['lcoe', 'dispatch'])
+    table = region_summary.pivot(
+        index='grid_region', columns='carrier', values=['lcoe', 'dispatch'])
     table.columns = [
         f"{carrier} {metric} ({'USD/MWh' if metric == 'lcoe' else 'TWh'})"
         for metric, carrier in table.columns
@@ -1042,29 +1065,35 @@ def calculate_lcoe_summary_and_map(n, shapes):
     min_dispatch_threshold = 1  # TWh
     for lcoe_col in lcoe_cols:
         carrier = lcoe_col.split(" ")[0]
-        dispatch_col = next((col for col in dispatch_cols if col.startswith(carrier + " ")), None)
+        dispatch_col = next(
+            (col for col in dispatch_cols if col.startswith(carrier + " ")), None)
         if dispatch_col:
             mask = table[dispatch_col] < min_dispatch_threshold
             table.loc[mask, lcoe_col] = np.nan
 
-    table[lcoe_cols] = table[lcoe_cols].applymap(lambda x: '-' if pd.isna(x) else round(x, 2))
+    table[lcoe_cols] = table[lcoe_cols].applymap(
+        lambda x: '-' if pd.isna(x) else round(x, 2))
 
     grid_region_weighted_lcoe = (
         lcoe_by_bus.merge(lcoe_data[['bus', 'energy']], on='bus', how='left')
         .groupby('grid_region')
         .apply(lambda df: (df['weighted_lcoe'] * df['energy']).sum() / df['energy'].sum())
     )
-    table['Weighted Average LCOE (USD/MWh)'] = table['grid_region'].map(grid_region_weighted_lcoe).round(2)
+    table['Weighted Average LCOE (USD/MWh)'] = table['grid_region'].map(
+        grid_region_weighted_lcoe).round(2)
 
     for col in table.columns:
         if col != 'grid_region':
-            table[col] = table[col].round(2) if table[col].dtype != object else table[col]
+            table[col] = table[col].round(
+                2) if table[col].dtype != object else table[col]
 
     vmin = lcoe_by_bus['weighted_lcoe'].quantile(0.05)
-    vmax = max(vmin, min(grid_region_weighted_lcoe.max() * 1.1, lcoe_by_bus['weighted_lcoe'].max()))
+    vmax = max(vmin, min(grid_region_weighted_lcoe.max()
+               * 1.1, lcoe_by_bus['weighted_lcoe'].max()))
 
     geometry = [Point(xy) for xy in zip(lcoe_by_bus['x'], lcoe_by_bus['y'])]
-    lcoe_gdf = gpd.GeoDataFrame(lcoe_by_bus, geometry=geometry, crs=shapes.crs).to_crs(shapes.crs)
+    lcoe_gdf = gpd.GeoDataFrame(
+        lcoe_by_bus, geometry=geometry, crs=shapes.crs).to_crs(shapes.crs)
 
     return lcoe_gdf, table, lcoe_by_bus, lcoe_data, vmin, vmax
 
@@ -1101,7 +1130,8 @@ def plot_lcoe_map_by_grid_region(lcoe_by_bus, lcoe_data, shapes, title=None, key
     if title:
         ax.set_title(title)
     else:
-        ax.set_title("Weighted average (plant level) LCOE per Grid Region (USD/MWh)")
+        ax.set_title(
+            "Weighted average (plant level) LCOE per Grid Region (USD/MWh)")
 
 
 def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onshore):
@@ -1292,8 +1322,8 @@ def plot_lcoh_maps_by_grid_region_lcoe(
         w = net.snapshot_weightings.generators
 
         cons_MWh = (p0).clip(lower=0).multiply(w, axis=0)   # MWh electricity
-        h2_MWh   = (-p1).clip(lower=0).multiply(w, axis=0)  # MWh H2
-        h2_out   = h2_MWh.sum()
+        h2_MWh = (-p1).clip(lower=0).multiply(w, axis=0)  # MWh H2
+        h2_out = h2_MWh.sum()
 
         valid = h2_out > output_threshold
         if valid.sum() == 0:
@@ -1314,12 +1344,15 @@ def plot_lcoh_maps_by_grid_region_lcoe(
         fee_trans = df["EMM"].map(fee_map["Transmission nom USD/MWh"])
 
         # Convert to USD/kg H2 (weighted)
-        elec_rate = cons_MWh.loc[:, valid].sum(axis=0) / h2_out[valid]  # MWh el / MWh H2
+        elec_rate = cons_MWh.loc[:, valid].sum(
+            axis=0) / h2_out[valid]  # MWh el / MWh H2
         fee_trans_kg = (fee_trans * elec_rate / 33).reindex(df.index)
 
         # --- Compute LCOE for renewables built in scen_year ---
-        allowed_carriers = ["csp", "solar", "onwind", "offwind-ac", "offwind-dc", "ror", "hydro", "nuclear"]
-        gens = net.generators[net.generators.carrier.isin(allowed_carriers)].copy()
+        allowed_carriers = ["csp", "solar", "onwind",
+                            "offwind-ac", "offwind-dc", "ror", "hydro", "nuclear"]
+        gens = net.generators[net.generators.carrier.isin(
+            allowed_carriers)].copy()
         gens = gens[gens["build_year"] == scen_year]  # additionality
         if gens.empty:
             continue
@@ -1331,14 +1364,15 @@ def plot_lcoh_maps_by_grid_region_lcoe(
             continue
 
         capex = (gens.capital_cost * gens.p_nom_opt).sum()
-        opex  = (gens.marginal_cost * gen_dispatch).sum()
+        opex = (gens.marginal_cost * gen_dispatch).sum()
         lcoe_val = (capex + opex) / gen_energy  # USD/MWh el
 
         # Assign same LCOE to all buses
         df["LCOE elec"] = lcoe_val
 
         # LCOH incl. transmission
-        df["LCOH incl. Transmission"] = (df["LCOE elec"] * elec_rate / 33) + fee_trans_kg
+        df["LCOH incl. Transmission"] = (
+            df["LCOE elec"] * elec_rate / 33) + fee_trans_kg
         df["year"] = scen_year
 
         all_results.append(df.dropna(subset=["grid_region"]))
@@ -1364,7 +1398,8 @@ def plot_lcoh_maps_by_grid_region_lcoe(
     vmax = plot_df["weighted_lcoh"].quantile(0.95)
 
     for y in sorted(region_lcoh.year.unique()):
-        fig, ax = plt.subplots(figsize=(12, 10), subplot_kw={"projection": ccrs.PlateCarree()})
+        fig, ax = plt.subplots(figsize=(12, 10), subplot_kw={
+                               "projection": ccrs.PlateCarree()})
         year_df = plot_df[plot_df.year == y]
         year_df.plot(
             column="weighted_lcoh",
@@ -1377,9 +1412,9 @@ def plot_lcoh_maps_by_grid_region_lcoe(
         )
         ax.set_extent([-130, -65, 20, 55])
         ax.axis("off")
-        ax.set_title(f"LCOH (incl. Transmission fees, elec. cost = LCOE) – {y}")
+        ax.set_title(
+            f"LCOH (incl. Transmission fees, elec. cost = LCOE) – {y}")
         plt.show()
-
 
 
 def plot_lcoh_maps_by_grid_region_marginal(
@@ -1419,8 +1454,8 @@ def plot_lcoh_maps_by_grid_region_marginal(
         w = net.snapshot_weightings.generators
 
         cons_MWh = p0.clip(lower=0).multiply(w, axis=0)   # MWh el
-        h2_MWh   = (-p1).clip(lower=0).multiply(w, axis=0) # MWh H2
-        h2_out   = h2_MWh.sum()
+        h2_MWh = (-p1).clip(lower=0).multiply(w, axis=0)  # MWh H2
+        h2_out = h2_MWh.sum()
 
         valid = h2_out > output_threshold
         if valid.sum() == 0:
@@ -1441,7 +1476,8 @@ def plot_lcoh_maps_by_grid_region_marginal(
         fee_trans = df["EMM"].map(fee_map["Transmission nom USD/MWh"])
 
         # Electricity consumption rate per H2 output
-        elec_rate = cons_MWh.loc[:, valid].sum(axis=0) / h2_out[valid]  # MWh el / MWh H2
+        elec_rate = cons_MWh.loc[:, valid].sum(
+            axis=0) / h2_out[valid]  # MWh el / MWh H2
 
         # ---- Electricity cost from marginal prices ----
         elec_costs = {}
@@ -1479,7 +1515,8 @@ def plot_lcoh_maps_by_grid_region_marginal(
     vmax = plot_df["weighted_lcoh"].quantile(0.95)
 
     for y in sorted(region_lcoh.year.unique()):
-        fig, ax = plt.subplots(figsize=(12, 10), subplot_kw={"projection": ccrs.PlateCarree()})
+        fig, ax = plt.subplots(figsize=(12, 10), subplot_kw={
+                               "projection": ccrs.PlateCarree()})
         year_df = plot_df[plot_df.year == y]
         year_df.plot(
             column="weighted_lcoh", cmap="RdYlGn_r",
@@ -1489,7 +1526,8 @@ def plot_lcoh_maps_by_grid_region_marginal(
         )
         ax.set_extent([-130, -65, 20, 55])
         ax.axis("off")
-        ax.set_title(f"LCOH (incl. Transmission fees, elec.cost = marginal) – {y}")
+        ax.set_title(
+            f"LCOH (incl. Transmission fees, elec.cost = marginal) – {y}")
         plt.show()
 
 
@@ -1545,15 +1583,17 @@ def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
         p0, p1 = net.links_t.p0[links.index], net.links_t.p1[links.index]
         w = net.snapshot_weightings.generators
         cons = p0.clip(lower=0).multiply(w, axis=0)       # MWh electricity
-        h2   = (-p1).clip(lower=0).multiply(w, axis=0)    # MWh H2
+        h2 = (-p1).clip(lower=0).multiply(w, axis=0)    # MWh H2
         h2_out = h2.sum()
 
         valid = h2_out > output_threshold
         if valid.sum() == 0:
             continue
 
-        capex = links.loc[valid, "capital_cost"] * links.loc[valid, "p_nom_opt"]
-        opex  = links.loc[valid, "marginal_cost"] * cons.loc[:, valid].sum(axis=0)
+        capex = links.loc[valid, "capital_cost"] * \
+            links.loc[valid, "p_nom_opt"]
+        opex = links.loc[valid, "marginal_cost"] * \
+            cons.loc[:, valid].sum(axis=0)
 
         # Electricity cost depending on method
         elec_cost = pd.Series(0.0, index=valid.index[valid])
@@ -1567,26 +1607,30 @@ def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
             # Consumption-weighted average nodal marginal prices
             for l in valid.index[valid]:
                 bus = links.at[l, "bus0"]
-                elec_cost[l] = (cons[l] * net.buses_t.marginal_price[bus]).sum()
+                elec_cost[l] = (
+                    cons[l] * net.buses_t.marginal_price[bus]).sum()
 
         elif electricity_price == "LCOE":
             # Electricity cost is computed as a weighted average LCOE of eligible (renewable + additional) generators
             # in the same grid region, based on their actual generation.
-            
+
             # Select eligible generators
-            gens = net.generators[net.generators.carrier.isin(allowed_carriers)].copy()
+            gens = net.generators[net.generators.carrier.isin(
+                allowed_carriers)].copy()
             if additionality and planning_horizon is not None:
                 gens = gens[gens.build_year == planning_horizon]
             if gens.empty:
                 continue
 
             # Weighted generation
-            gen_dispatch = net.generators_t.p[gens.index].multiply(net.snapshot_weightings.generators, axis=0)
+            gen_dispatch = net.generators_t.p[gens.index].multiply(
+                net.snapshot_weightings.generators, axis=0)
             gen_energy = gen_dispatch.sum()
 
             # Simple generator-level LCOE estimate [USD/MWh]
             # (here capital_cost is already annuitized capex + fixed opex in PyPSA)
-            gen_lcoe = (gens.capital_cost + gens.marginal_cost).reindex(gen_energy.index)
+            gen_lcoe = (gens.capital_cost +
+                        gens.marginal_cost).reindex(gen_energy.index)
 
             # Weighted average per region
             region_lcoe = (
@@ -1608,8 +1652,8 @@ def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
 
         # Normalize to USD/kg H2
         capex_val = capex / out_valid / conv
-        opex_val  = opex  / out_valid / conv
-        elec_val  = elec_cost / out_valid / conv
+        opex_val = opex / out_valid / conv
+        elec_val = elec_cost / out_valid / conv
 
         df = pd.DataFrame({
             f"Electrolysis CAPEX ({suffix})": capex_val,
@@ -1628,10 +1672,11 @@ def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
         df["EMM"] = df["grid_region"].map(emm_mapping)
 
         fee_trans = df["EMM"].map(fee_map["Transmission nom USD/MWh"])
-        fee_dist  = df["EMM"].map(fee_map["Distribution nom USD/MWh"])
-        elec_rate = cons.loc[:, valid].sum(axis=0) / out_valid   # MWh el / MWh H2
+        fee_dist = df["EMM"].map(fee_map["Distribution nom USD/MWh"])
+        elec_rate = cons.loc[:, valid].sum(
+            axis=0) / out_valid   # MWh el / MWh H2
         fee_trans_val = (fee_trans * elec_rate / conv).reindex(df.index)
-        fee_dist_val  = (fee_dist  * elec_rate / conv).reindex(df.index)
+        fee_dist_val = (fee_dist * elec_rate / conv).reindex(df.index)
 
         # LCOH breakdown
         df[f"LCOH (excl. T&D fees) ({suffix})"] = (
@@ -1639,7 +1684,8 @@ def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
             df[f"Electrolysis OPEX ({suffix})"] +
             df[f"Electricity ({suffix})"]
         )
-        df[f"LCOH + Transmission fees ({suffix})"] = df[f"LCOH (excl. T&D fees) ({suffix})"] + fee_trans_val
+        df[f"LCOH + Transmission fees ({suffix})"] = df[f"LCOH (excl. T&D fees) ({suffix})"] + \
+            fee_trans_val
         df[f"LCOH + T&D fees ({suffix})"] = df[f"LCOH + Transmission fees ({suffix})"] + fee_dist_val
 
         # Dispatch label
@@ -1698,7 +1744,8 @@ def calculate_total_generation_by_carrier(network, start_date=None, end_date=Non
         'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac', 'nuclear',
         'geothermal', 'ror', 'hydro', 'solar rooftop'
     }
-    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass', 'lignite', "urban central solid biomass CHP", "urban central gas CHP"]
+    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass', 'lignite',
+                     "urban central solid biomass CHP", "urban central gas CHP"]
 
     # Identify electric buses
     electric_buses = set(
@@ -1810,9 +1857,8 @@ def plot_hydrogen_dispatch(networks, h2_carriers, output_threshold=1.0, year_tit
     if not dispatch_series_by_network:
         print("No valid hydrogen dispatch data found.")
         return pd.DataFrame()
-    
-    merged_dispatch_df = pd.concat(dispatch_series_by_network, axis=1)
 
+    merged_dispatch_df = pd.concat(dispatch_series_by_network, axis=1)
 
     # Second pass: generate plots with fixed y-axis
     for key, df in dispatch_series_by_network.items():
@@ -1820,7 +1866,8 @@ def plot_hydrogen_dispatch(networks, h2_carriers, output_threshold=1.0, year_tit
         df.plot.area(ax=ax, linewidth=0)
         year = key[-4:]  # Extract the year
         ax.set_title(f"Electricity Dispatch – {year if year_title else key}")
-        ax.set_title(f"Hydrogen Dispatch by technology – {year if year_title else key}", fontsize=14)
+        ax.set_title(
+            f"Hydrogen Dispatch by technology – {year if year_title else key}", fontsize=14)
         ax.set_ylabel("Hydrogen Dispatch (tons/hour)")
         ax.set_xlabel("Time")
         ax.set_ylim(0, global_max * 1.05)  # add 5% headroom
@@ -1844,9 +1891,8 @@ def plot_hydrogen_dispatch(networks, h2_carriers, output_threshold=1.0, year_tit
 
         plt.tight_layout(rect=[0, 0, 0.85, 1])
         plt.show()
-    
-    return merged_dispatch_df
 
+    return merged_dispatch_df
 
 
 def analyze_ft_costs_by_region(networks: dict, year_title=True):
@@ -1860,20 +1906,21 @@ def analyze_ft_costs_by_region(networks: dict, year_title=True):
             (n.links.carrier.str.contains("Fischer", case=False, na=False)) &
             (
                 (n.links.get("p_nom_opt", 0) > 0) |
-                ((n.links.get("p_nom", 0) > 0) & (n.links.get("p_nom_extendable", False) == False))
+                ((n.links.get("p_nom", 0) > 0) &
+                 (n.links.get("p_nom_extendable", False) == False))
             )
         ].copy()
-        
+
         if ft_links.empty:
             print(f"\n{name}: No active Fischer-Tropsch links found.")
             continue
-        
+
         # Filter out links that don't appear in all links_t.p* time series
         ft_link_ids = [
             link for link in ft_links.index
             if all(link in getattr(n.links_t, attr).columns for attr in ["p0", "p1", "p2", "p3"])
         ]
-        
+
         if not ft_link_ids:
             print(f"\n{name}: No Fischer-Tropsch links with time series data.")
             continue
@@ -1961,10 +2008,11 @@ def analyze_ft_costs_by_region(networks: dict, year_title=True):
         print(f"\nYear: {year if year_title else name}\n")
         display(styled)
 
+
 def compute_aviation_fuel_demand(networks,
-                                      include_scenario: bool = False,
-                                      scenario_as_index: bool = False,
-                                      wide: bool = False):
+                                 include_scenario: bool = False,
+                                 scenario_as_index: bool = False,
+                                 wide: bool = False):
     """
     Compute kerosene / e-kerosene demand per scenario.
 
@@ -1995,8 +2043,10 @@ def compute_aviation_fuel_demand(networks,
             digits = ''.join(filter(str.isdigit, name[-4:]))
             year = int(digits) if digits.isdigit() else None
 
-        kerosene_idx = n.loads.index[n.loads.carrier == "kerosene for aviation"]
-        ekerosene_idx = n.loads.index[n.loads.carrier == "e-kerosene for aviation"]
+        kerosene_idx = n.loads.index[n.loads.carrier ==
+                                     "kerosene for aviation"]
+        ekerosene_idx = n.loads.index[n.loads.carrier ==
+                                      "e-kerosene for aviation"]
 
         if kerosene_idx.empty and ekerosene_idx.empty:
             kerosene_twh = 0.0
@@ -2021,7 +2071,8 @@ def compute_aviation_fuel_demand(networks,
 
     df["Total (TWh)"] = df["Kerosene (TWh)"] + df["e-Kerosene (TWh)"]
     df["e-Kerosene Share (%)"] = df.apply(
-        lambda r: 0.0 if r["Total (TWh)"] == 0 else 100 * r["e-Kerosene (TWh)"] / r["Total (TWh)"],
+        lambda r: 0.0 if r["Total (TWh)"] == 0 else 100 *
+        r["e-Kerosene (TWh)"] / r["Total (TWh)"],
         axis=1
     )
 
@@ -2034,12 +2085,15 @@ def compute_aviation_fuel_demand(networks,
         else:
             if scenario_as_index:
                 df = df.set_index("Scenario")
-        df = df.sort_values(["Year"] + (["Scenario"] if include_scenario and not scenario_as_index else []))
+        df = df.sort_values(
+            ["Year"] + (["Scenario"] if include_scenario and not scenario_as_index else []))
         return df.reset_index(drop=not scenario_as_index)
 
     # Wide: columns (Scenario, Metric), single Year column
-    metrics = ["Kerosene (TWh)", "e-Kerosene (TWh)", "Total (TWh)", "e-Kerosene Share (%)"]
-    wide_df = df.pivot_table(index="Year", columns="Scenario", values=metrics, aggfunc="first")
+    metrics = ["Kerosene (TWh)", "e-Kerosene (TWh)",
+               "Total (TWh)", "e-Kerosene Share (%)"]
+    wide_df = df.pivot_table(
+        index="Year", columns="Scenario", values=metrics, aggfunc="first")
 
     # Current pivot gives (Metric, Scenario); swap to (Scenario, Metric)
     wide_df.columns = wide_df.columns.swaplevel(0, 1)
@@ -2129,7 +2183,8 @@ def compute_emissions_grouped(net, carrier_groups):
     """
 
     results = []
-    bus_cols = [col for col in net.links.columns if re.fullmatch(r"bus\d+", col)]
+    bus_cols = [
+        col for col in net.links.columns if re.fullmatch(r"bus\d+", col)]
 
     for link_name, row in net.links.iterrows():
         carrier = row["carrier"]
@@ -2197,7 +2252,8 @@ def compute_emissions_by_state(net, carrier_groups):
     """
 
     results = []
-    bus_cols = [col for col in net.links.columns if re.fullmatch(r"bus\d+", col)]
+    bus_cols = [
+        col for col in net.links.columns if re.fullmatch(r"bus\d+", col)]
 
     for link_name, row in net.links.iterrows():
         carrier = row["carrier"]
@@ -2253,9 +2309,9 @@ def compute_emissions_by_state(net, carrier_groups):
 
     summary = (
         df.groupby(["State", "group"])
-          [["CO2 to Atmosphere (Mt CO2/year)", "CO2 Sequestered (Mt CO2/year)"]]
-          .sum()
-          .reset_index()
+        [["CO2 to Atmosphere (Mt CO2/year)", "CO2 Sequestered (Mt CO2/year)"]]
+        .sum()
+        .reset_index()
     )
 
     summary["Net CO2 Emissions (Mt CO2/year)"] = (
@@ -2311,12 +2367,14 @@ def plot_emissions_maps_by_group(
     ncols = 2
     nrows = int(np.ceil(n / ncols))
 
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8 * ncols, 6 * nrows))
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols,
+                             figsize=(8 * ncols, 6 * nrows))
     axes = axes.flat if n > 1 else [axes]
 
     for i, group in enumerate(groups):
         ax = axes[i]
-        df_group = all_state_emissions[all_state_emissions["group"] == group].copy()
+        df_group = all_state_emissions[all_state_emissions["group"] == group].copy(
+        )
 
         merged = gdf_states.merge(df_group, on="State", how="left")
 
@@ -2326,12 +2384,14 @@ def plot_emissions_maps_by_group(
 
         merged.plot(
             column=plot_col,
-            cmap="RdYlGn_r",  # red = positive (emissions), green = negative (removals)
+            # red = positive (emissions), green = negative (removals)
+            cmap="RdYlGn_r",
             legend=True,
             ax=ax,
             vmin=vmin,
             vmax=vmax,
-            missing_kwds={"color": "white", "label": "0 or no data"},  # white = 0 or missing
+            # white = 0 or missing
+            missing_kwds={"color": "white", "label": "0 or no data"},
             edgecolor="black"
         )
 
@@ -2360,7 +2420,7 @@ def plot_emissions_maps_by_group(
     plt.subplots_adjust(top=0.9, right=0.85)
     plt.show()
 
-                                    
+
 def evaluate_res_ces_by_state(networks, ces, res, ces_carriers, res_carriers, multiple_scenarios=False):
 
     results = {}
@@ -2381,27 +2441,32 @@ def evaluate_res_ces_by_state(networks, ces, res, ces_carriers, res_carriers, mu
 
         electric_buses = set(
             network.buses.index[
-                ~network.buses.carrier.str.contains("heat|gas|H2|oil|coal", case=False, na=False)
+                ~network.buses.carrier.str.contains(
+                    "heat|gas|H2|oil|coal", case=False, na=False)
             ]
         )
 
         # Generators
-        gen = network.generators[network.generators.carrier.isin(gen_and_sto_carriers)].copy()
+        gen = network.generators[network.generators.carrier.isin(
+            gen_and_sto_carriers)].copy()
         gen["state"] = gen["bus"].map(network.buses["state"])
         gen = gen[gen["state"].notna()]
 
-        gen_p = network.generators_t.p.loc[snapshots_slice, gen.index].clip(lower=0)
+        gen_p = network.generators_t.p.loc[snapshots_slice, gen.index].clip(
+            lower=0)
         gen_energy = gen_p.multiply(timestep_h).sum()  # MWh per generator
         gen_energy = gen_energy.to_frame(name="energy_mwh")
         gen_energy["carrier"] = gen.loc[gen_energy.index, "carrier"]
         gen_energy["state"] = gen.loc[gen_energy.index, "state"]
 
         # Storage
-        sto = network.storage_units[network.storage_units.carrier.isin(gen_and_sto_carriers)].copy()
+        sto = network.storage_units[network.storage_units.carrier.isin(
+            gen_and_sto_carriers)].copy()
         sto["state"] = sto["bus"].map(network.buses["state"])
         sto = sto[sto["state"].notna()]
 
-        sto_p = network.storage_units_t.p.loc[snapshots_slice, sto.index].clip(lower=0)
+        sto_p = network.storage_units_t.p.loc[snapshots_slice, sto.index].clip(
+            lower=0)
         sto_energy = sto_p.multiply(timestep_h).sum()
         sto_energy = sto_energy.to_frame(name="energy_mwh")
         sto_energy["carrier"] = sto.loc[sto_energy.index, "carrier"]
@@ -2432,10 +2497,12 @@ def evaluate_res_ces_by_state(networks, ces, res, ces_carriers, res_carriers, mu
             link_energy[["carrier", "state", "energy_mwh"]]
         ])
 
-        # Aggregate by State 
+        # Aggregate by State
         state_totals = all_energy.groupby("state")["energy_mwh"].sum()
-        state_ces = all_energy[all_energy["carrier"].isin(ces_carriers)].groupby("state")["energy_mwh"].sum()
-        state_res = all_energy[all_energy["carrier"].isin(res_carriers)].groupby("state")["energy_mwh"].sum()
+        state_ces = all_energy[all_energy["carrier"].isin(
+            ces_carriers)].groupby("state")["energy_mwh"].sum()
+        state_res = all_energy[all_energy["carrier"].isin(
+            res_carriers)].groupby("state")["energy_mwh"].sum()
 
         df = pd.DataFrame({
             "Total (MWh)": state_totals,
@@ -2448,17 +2515,21 @@ def evaluate_res_ces_by_state(networks, ces, res, ces_carriers, res_carriers, mu
 
         # Targets
         if year_str in ces.columns:
-            df["% CES target"] = df.index.map(lambda state: ces[year_str].get(state, float("nan")))
+            df["% CES target"] = df.index.map(
+                lambda state: ces[year_str].get(state, float("nan")))
         else:
             df["% CES target"] = float("nan")
 
         if year_str in res.columns:
-            df["% RES target"] = df.index.map(lambda state: res[year_str].get(state, float("nan")))
+            df["% RES target"] = df.index.map(
+                lambda state: res[year_str].get(state, float("nan")))
         else:
             df["% RES target"] = float("nan")
 
-        df["% RES target"] = df["% RES target"].apply(lambda x: "N/A" if pd.isna(x) else round(x * 100, 2))
-        df["% CES target"] = df["% CES target"].apply(lambda x: "N/A" if pd.isna(x) else round(x * 100, 2))
+        df["% RES target"] = df["% RES target"].apply(
+            lambda x: "N/A" if pd.isna(x) else round(x * 100, 2))
+        df["% CES target"] = df["% CES target"].apply(
+            lambda x: "N/A" if pd.isna(x) else round(x * 100, 2))
 
         df = df[["% RES", "% RES target", "% CES", "% CES target"]].round(2)
         if multiple_scenarios:
@@ -2493,12 +2564,15 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
         & n.links.carrier.isin(link_carriers)
     )
     electricity_links = n.links[link_mask].copy()
-    electricity_links["electric_output"] = electricity_links.p_nom_opt * electricity_links.efficiency
-    link_p_nom_opt = electricity_links.groupby(["bus1", "carrier"]).electric_output.sum()
+    electricity_links["electric_output"] = electricity_links.p_nom_opt * \
+        electricity_links.efficiency
+    link_p_nom_opt = electricity_links.groupby(
+        ["bus1", "carrier"]).electric_output.sum()
     link_p_nom_opt.index = link_p_nom_opt.index.set_names(["bus", "carrier"])
 
     # Combine all
-    bus_carrier_capacity = pd.concat([gen_p_nom_opt, sto_p_nom_opt, link_p_nom_opt])
+    bus_carrier_capacity = pd.concat(
+        [gen_p_nom_opt, sto_p_nom_opt, link_p_nom_opt])
     bus_carrier_capacity = bus_carrier_capacity.groupby(level=[0, 1]).sum()
     bus_carrier_capacity = bus_carrier_capacity[bus_carrier_capacity > 0]
 
@@ -2513,18 +2587,23 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
         return bus_name.replace(" low voltage", "")
 
     bus_carrier_capacity = bus_carrier_capacity.reset_index()
-    bus_carrier_capacity['bus'] = bus_carrier_capacity['bus'].apply(normalize_bus_name)
+    bus_carrier_capacity['bus'] = bus_carrier_capacity['bus'].apply(
+        normalize_bus_name)
     bus_carrier_capacity['carrier'] = bus_carrier_capacity['carrier'].replace({
         'offwind-ac': 'offwind',
         'offwind-dc': 'offwind'
     })
-    bus_carrier_capacity = bus_carrier_capacity.groupby(['bus', 'carrier'], as_index=False).sum()
-    bus_carrier_capacity = bus_carrier_capacity.set_index(['bus', 'carrier']).squeeze()
+    bus_carrier_capacity = bus_carrier_capacity.groupby(
+        ['bus', 'carrier'], as_index=False).sum()
+    bus_carrier_capacity = bus_carrier_capacity.set_index(
+        ['bus', 'carrier']).squeeze()
     capacity_df = bus_carrier_capacity.unstack(fill_value=0)
-    capacity_df = capacity_df.loc[capacity_df.index.intersection(valid_buses.index)]
+    capacity_df = capacity_df.loc[capacity_df.index.intersection(
+        valid_buses.index)]
 
     # Setup map
-    fig, ax = plt.subplots(figsize=(28, 10), subplot_kw={"projection": ccrs.PlateCarree()})
+    fig, ax = plt.subplots(figsize=(28, 10), subplot_kw={
+                           "projection": ccrs.PlateCarree()})
     bbox = box(-130, 20, -60, 50)
     regions_onshore_clipped = regions_onshore.to_crs(epsg=4326).clip(bbox)
 
@@ -2539,7 +2618,7 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
 
     # Store original links and apply filter
     original_links = n.links.copy()
-    n.links = n.links[n.links.carrier=="DC"]
+    n.links = n.links[n.links.carrier == "DC"]
 
     # Plot network
     line_scale = 5e3
@@ -2611,7 +2690,8 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
 
     ac_caps = [5e3, 20e3, 50e3]
     ac_patches = [
-        mlines.Line2D([], [], color='teal', linewidth=cap / line_scale, label=f"{int(cap/1e3)} GW")
+        mlines.Line2D([], [], color='teal', linewidth=cap /
+                      line_scale, label=f"{int(cap/1e3)} GW")
         for cap in ac_caps
     ]
     ac_legend = ax.legend(
@@ -2627,7 +2707,8 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
 
     dc_caps = [2e3, 5e3, 10e3]
     dc_patches = [
-        mlines.Line2D([], [], color='turquoise', linewidth=cap / line_scale, label=f"{int(cap/1e3)} GW")
+        mlines.Line2D([], [], color='turquoise', linewidth=cap /
+                      line_scale, label=f"{int(cap/1e3)} GW")
         for cap in dc_caps
     ]
     dc_legend = ax.legend(
@@ -2642,7 +2723,8 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
     )
 
     carrier_handles = [
-        mpatches.Patch(color=tech_colors.get(c, 'gray'), label=nice_names.get(c, c))
+        mpatches.Patch(color=tech_colors.get(
+            c, 'gray'), label=nice_names.get(c, c))
         for c in sorted(capacity_df.columns) if capacity_df[c].sum() > 0
     ]
     carrier_legend = ax.legend(
@@ -2661,12 +2743,13 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
     ax.add_artist(ac_legend)
     ax.add_artist(dc_legend)
     ax.add_artist(carrier_legend)
-    
+
     ax.set_extent([-125, -65, 20, 55], crs=ccrs.PlateCarree())
     ax.autoscale(False)
 
     year = key[-4:]
-    ax.set_title(f"Installed electricity generation and transmission capacity – {year if title_year else key}", fontsize=14)
+    ax.set_title(
+        f"Installed electricity generation and transmission capacity – {year if title_year else key}", fontsize=14)
 
     plt.tight_layout()
     plt.show()
@@ -2687,7 +2770,8 @@ def compute_installed_capacity_by_carrier(networks, nice_names=None, display_res
 
         # Generators
         gen = net.generators.copy()
-        gen['carrier'] = gen['carrier'].replace({'offwind-ac': 'offwind', 'offwind-dc': 'offwind'})
+        gen['carrier'] = gen['carrier'].replace(
+            {'offwind-ac': 'offwind', 'offwind-dc': 'offwind'})
         gen = gen[gen.carrier.isin(gen_carriers)]
         gen_totals = gen.groupby('carrier')['p_nom_opt'].sum()
 
@@ -2719,15 +2803,18 @@ def compute_installed_capacity_by_carrier(networks, nice_names=None, display_res
 
     # Extract years and sort
     if column_year == True:
-        carrier_capacity_df.columns = [int(name[-4:]) for name in carrier_capacity_df.columns]
-    carrier_capacity_df = carrier_capacity_df[sorted(carrier_capacity_df.columns)]
+        carrier_capacity_df.columns = [
+            int(name[-4:]) for name in carrier_capacity_df.columns]
+    carrier_capacity_df = carrier_capacity_df[sorted(
+        carrier_capacity_df.columns)]
 
     # Convert to GW
     carrier_capacity_df = carrier_capacity_df / 1000
     carrier_capacity_df = carrier_capacity_df.round(2)
 
     # Filter rows with any nonzero value
-    carrier_capacity_df = carrier_capacity_df.loc[carrier_capacity_df.sum(axis=1) > 0]
+    carrier_capacity_df = carrier_capacity_df.loc[carrier_capacity_df.sum(
+        axis=1) > 0]
 
     # Rename index if nice_names is provided
     if nice_names:
@@ -2742,12 +2829,14 @@ def compute_installed_capacity_by_carrier(networks, nice_names=None, display_res
 
 def compute_system_costs(network, rename_capex, rename_opex, name_tag):
 
-    costs_raw = network.statistics()[['Capital Expenditure', 'Operational Expenditure']]
+    costs_raw = network.statistics(
+    )[['Capital Expenditure', 'Operational Expenditure']]
     year_str = name_tag[-4:]
 
     # CAPEX
     capex_raw = costs_raw[['Capital Expenditure']].reset_index()
-    capex_raw['tech_label'] = capex_raw['carrier'].map(rename_capex).fillna(capex_raw['carrier'])
+    capex_raw['tech_label'] = capex_raw['carrier'].map(
+        rename_capex).fillna(capex_raw['carrier'])
     capex_raw['main_category'] = capex_raw['tech_label']
 
     capex_grouped = capex_raw.groupby('tech_label', as_index=False).agg({
@@ -2755,14 +2844,16 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
         'main_category': 'first'
     })
     capex_grouped['cost_type'] = 'Capital expenditure'
-    capex_grouped.rename(columns={'Capital Expenditure': 'cost_billion'}, inplace=True)
+    capex_grouped.rename(
+        columns={'Capital Expenditure': 'cost_billion'}, inplace=True)
     capex_grouped['cost_billion'] /= 1e9
     capex_grouped['year'] = year_str
     capex_grouped['scenario'] = name_tag
 
     # OPEX
     opex_raw = costs_raw[['Operational Expenditure']].reset_index()
-    opex_raw['tech_label'] = opex_raw['carrier'].map(rename_opex).fillna(opex_raw['carrier'])
+    opex_raw['tech_label'] = opex_raw['carrier'].map(
+        rename_opex).fillna(opex_raw['carrier'])
     opex_raw['main_category'] = opex_raw['tech_label']
 
     opex_grouped = opex_raw.groupby('tech_label', as_index=False).agg({
@@ -2770,7 +2861,8 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
         'main_category': 'first'
     })
     opex_grouped['cost_type'] = 'Operational expenditure'
-    opex_grouped.rename(columns={'Operational Expenditure': 'cost_billion'}, inplace=True)
+    opex_grouped.rename(
+        columns={'Operational Expenditure': 'cost_billion'}, inplace=True)
     opex_grouped['cost_billion'] /= 1e9
     opex_grouped['year'] = year_str
     opex_grouped['scenario'] = name_tag
@@ -2810,7 +2902,8 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     link_opex_df = pd.DataFrame(results)
 
     # Apply renaming also to link-based OPEX
-    link_opex_df['tech_label'] = link_opex_df['tech_label'].replace(rename_opex)
+    link_opex_df['tech_label'] = link_opex_df['tech_label'].replace(
+        rename_opex)
     link_opex_df['main_category'] = link_opex_df['tech_label']
 
     return pd.concat([capex_grouped, opex_grouped, link_opex_df], ignore_index=True)
@@ -2883,8 +2976,10 @@ def calculate_total_inputs_outputs_ft(
 
     for name, net in networks.items():
         # Extract scenario
-        scenario_match = re.search(scenario_regex, name) if include_scenario else None
-        scenario = scenario_match.group(1) if (scenario_match and include_scenario) else ("Base" if include_scenario else None)
+        scenario_match = re.search(
+            scenario_regex, name) if include_scenario else None
+        scenario = scenario_match.group(1) if (
+            scenario_match and include_scenario) else ("Base" if include_scenario else None)
 
         ft_links = net.links[net.links.carrier == ft_carrier]
         if ft_links.empty:
@@ -2993,7 +3088,8 @@ def calculate_total_inputs_outputs_ft(
             # Columns: Scenario -> Metric
             pivot_index = "Year" if year_index else None
             if pivot_index:
-                wide_df = df.pivot(index=pivot_index, columns="Scenario", values=value_cols)
+                wide_df = df.pivot(index=pivot_index,
+                                   columns="Scenario", values=value_cols)
                 # Reorder to Scenario first => (Scenario, Metric)
                 wide_df = wide_df.swaplevel(0, 1, axis=1).sort_index(axis=1)
             else:
@@ -3003,7 +3099,8 @@ def calculate_total_inputs_outputs_ft(
             # Columns: Metric -> Scenario
             pivot_index = "Year" if year_index else None
             if pivot_index:
-                wide_df = df.pivot(index=pivot_index, columns="Scenario", values=value_cols)
+                wide_df = df.pivot(index=pivot_index,
+                                   columns="Scenario", values=value_cols)
             else:
                 wide_df = df.groupby("Scenario")[value_cols].sum().T
         return wide_df
@@ -3012,7 +3109,8 @@ def calculate_total_inputs_outputs_ft(
     if year_index:
         wide_df = df.set_index("Year")[value_cols]
     else:
-        wide_df = df.set_index("Year")[value_cols]  # 'Year' holds original name when year_index=False
+        # 'Year' holds original name when year_index=False
+        wide_df = df.set_index("Year")[value_cols]
     return wide_df
 
 
@@ -3066,7 +3164,8 @@ def compute_ekerosene_production_cost_by_region(
         inferred_years.add(yr)
 
     if expected_scenarios is None:
-        expected_scenarios = sorted(inferred_scenarios, key=lambda x: (x != "Base", x))
+        expected_scenarios = sorted(
+            inferred_scenarios, key=lambda x: (x != "Base", x))
     if expected_years is None:
         expected_years = sorted(inferred_years)
 
@@ -3076,7 +3175,7 @@ def compute_ekerosene_production_cost_by_region(
     # 1 US gallon = 3.78541 L
     # Energy per liter = 34 / 3600 = 0.009444... MWh/L
     # Energy per gallon = 0.009444... × 3.78541 ≈ 0.0357 MWh/gallon
-    MWH_PER_GALLON = 34.0 / 3600.0 * 3.78541  
+    MWH_PER_GALLON = 34.0 / 3600.0 * 3.78541
 
     cost_cols = [
         "Electricity cost (USD/MWh e-kerosene)",
@@ -3114,7 +3213,8 @@ def compute_ekerosene_production_cost_by_region(
         ft_link_ids = [
             l for l in ft_links.index
             if all(
-                hasattr(net.links_t, p) and (l in getattr(net.links_t, p).columns)
+                hasattr(net.links_t, p) and (
+                    l in getattr(net.links_t, p).columns)
                 for p in ["p0", "p1", "p2", "p3"]
             )
         ]
@@ -3136,15 +3236,16 @@ def compute_ekerosene_production_cost_by_region(
 
             try:
                 elec_price = net.buses_t.marginal_price[ft_links.at[link, "bus3"]]
-                h2_price   = net.buses_t.marginal_price[ft_links.at[link, "bus0"]]
-                co2_price  = net.buses_t.marginal_price[ft_links.at[link, "bus2"]]
+                h2_price = net.buses_t.marginal_price[ft_links.at[link, "bus0"]]
+                co2_price = net.buses_t.marginal_price[ft_links.at[link, "bus2"]]
             except KeyError:
                 continue
 
             p1 = -net.links_t.p1[link] * timestep_hours  # product out (MWh)
-            p3 =  net.links_t.p3[link] * timestep_hours  # elec in
-            p0 =  net.links_t.p0[link] * timestep_hours  # H2 in
-            p2 =  net.links_t.p2[link].clip(upper=0) * timestep_hours  # CO2 (t, negative)
+            p3 = net.links_t.p3[link] * timestep_hours  # elec in
+            p0 = net.links_t.p0[link] * timestep_hours  # H2 in
+            p2 = net.links_t.p2[link].clip(
+                upper=0) * timestep_hours  # CO2 (t, negative)
 
             prod_twh = p1.sum() / 1e6
             if prod_twh < min_production_twh:
@@ -3154,8 +3255,8 @@ def compute_ekerosene_production_cost_by_region(
                 continue
 
             elec_cost = (p3 * elec_price).sum() / fuel_output_safe
-            h2_cost   = (p0 * h2_price).sum() / fuel_output_safe
-            co2_cost  = (-p2 * co2_price).sum() / fuel_output_safe
+            h2_cost = (p0 * h2_price).sum() / fuel_output_safe
+            co2_cost = (-p2 * co2_price).sum() / fuel_output_safe
             total_cost = elec_cost + h2_cost + co2_cost
             total_cost_gallon = total_cost * MWH_PER_GALLON
 
@@ -3187,7 +3288,8 @@ def compute_ekerosene_production_cost_by_region(
                     **{c: wavg(g, c) for c in cost_cols}
                 })
             )
-            grouped = grouped[grouped["Production (TWh)"] >= min_production_twh]
+            grouped = grouped[grouped["Production (TWh)"]
+                              >= min_production_twh]
             if grouped.empty:
                 continue
             print(f"\n{yr if year_title else scen+'_'+str(yr)}:\n")
@@ -3202,7 +3304,8 @@ def compute_ekerosene_production_cost_by_region(
                 w_cost = (grouped["Total production cost (USD/MWh e-kerosene)"] *
                           grouped["Production (TWh)"]).sum()/total_prod
                 w_cost_gallon = w_cost * MWH_PER_GALLON
-                print(f"Weighted average production cost: {w_cost:.2f} USD/MWh ({w_cost_gallon:.2f} USD/gallon)")
+                print(
+                    f"Weighted average production cost: {w_cost:.2f} USD/MWh ({w_cost_gallon:.2f} USD/gallon)")
         return
 
     # ---------------- aggregated (long) ----------------
@@ -3239,7 +3342,8 @@ def compute_ekerosene_production_cost_by_region(
     grid_regions_all = sorted(grouped["Grid Region"].unique())
 
     # Insert missing scenario-year-region combinations
-    existing_keys = set(zip(grouped.Scenario, grouped.Year, grouped["Grid Region"]))
+    existing_keys = set(
+        zip(grouped.Scenario, grouped.Year, grouped["Grid Region"]))
     missing_rows = []
     for scen, yr, reg in product(expected_scenarios, expected_years, grid_regions_all):
         if (scen, yr, reg) not in existing_keys:
@@ -3251,7 +3355,8 @@ def compute_ekerosene_production_cost_by_region(
                 **{c: (fill_cost_with if fill_cost_with is not None else float('nan')) for c in cost_cols}
             })
     if missing_rows:
-        grouped = pd.concat([grouped, pd.DataFrame(missing_rows)], ignore_index=True)
+        grouped = pd.concat(
+            [grouped, pd.DataFrame(missing_rows)], ignore_index=True)
 
     # Sort
     grouped = grouped.sort_values(["Scenario", "Year", "Grid Region"])
@@ -3358,7 +3463,7 @@ def get_country_name(country_code):
         return country.name, country.alpha_3 if country else None
     except KeyError:
         return None
-    
+
 
 def get_data_EIA(data_path, country_code, year):
     """
@@ -3466,7 +3571,7 @@ def preprocess_eia_data_detail(data):
                      "Solar, tide, wave, fuel cell", "Tide and wave"], inplace=True)
 
     # Filter the DataFrame to only include relevant energy sources
-    data = data.loc[["Nuclear", "Coal", "Natural gas", "Oil", "Geothermal", 
+    data = data.loc[["Nuclear", "Coal", "Natural gas", "Oil", "Geothermal",
                      "Hydro", "PHS", "Solar", "Wind", "Biomass"], :]
     return data
 
@@ -3540,7 +3645,7 @@ def get_installed_capacity_ember(data, three_country_code, year):
         "Bioenergy": "Biomass",
         # "Coal": "Fossil fuels",
         "Other Fossil": "Fossil fuels"
-        })
+    })
 
     capacity_ember = capacity_ember.groupby("Variable").sum()
     capacity_ember.columns = ["Ember data"]
@@ -3605,7 +3710,7 @@ def preprocess_eia_demand(path, horizon):
 
     demand_df = statewise_df.loc[statewise_df['MSN'] == 'ESTXP']
     demand_df.set_index('State', inplace=True)
-    
+
     # data is in million kWh (GWh) - hence dividing by 1e3 to get the data in TWh
     demand_df = demand_df[int(horizon)] / 1e3
     demand_df = demand_df.to_frame()
@@ -3635,8 +3740,10 @@ def plot_stacked_costs_by_year_plotly(cost_data, cost_type_label, tech_colors=No
     ).fillna(0)
 
     # Mapping: tech_label → macro category / main category
-    label_to_macro = data_filtered.set_index('tech_label')['macro_category'].to_dict()
-    label_to_category = data_filtered.set_index('tech_label')['main_category'].to_dict()
+    label_to_macro = data_filtered.set_index(
+        'tech_label')['macro_category'].to_dict()
+    label_to_category = data_filtered.set_index(
+        'tech_label')['main_category'].to_dict()
 
     # Desired macro-category order
     desired_macro_order = [
@@ -3650,7 +3757,8 @@ def plot_stacked_costs_by_year_plotly(cost_data, cost_type_label, tech_colors=No
     all_labels = data_filtered['tech_label'].drop_duplicates().tolist()
     ordered_labels = sorted(
         all_labels,
-        key=lambda lbl: (macro_order_map.get(label_to_macro.get(lbl, 'Other'), 999), all_labels.index(lbl))
+        key=lambda lbl: (macro_order_map.get(
+            label_to_macro.get(lbl, 'Other'), 999), all_labels.index(lbl))
     )
 
     # Reorder pivot table
@@ -3725,7 +3833,8 @@ def plot_stacked_costs_by_year_plotly(cost_data, cost_type_label, tech_colors=No
             tickfont=dict(size=12)
         ),
         yaxis=dict(
-            title=dict(text=f"{cost_type_label} (Billion USD)", font=dict(size=12)),
+            title=dict(text=f"{cost_type_label} (Billion USD)",
+                       font=dict(size=12)),
             tickfont=dict(size=12)
         ),
         template="plotly_white",
@@ -3736,11 +3845,13 @@ def plot_stacked_costs_by_year_plotly(cost_data, cost_type_label, tech_colors=No
         legend=dict(font=dict(size=12), traceorder='reversed'),
         showlegend=False,
     )
-    
+
     fig.show()
 
+
 def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names, use_scenario_names=False):
-    import re, math
+    import re
+    import math
     import numpy as np
     import matplotlib.pyplot as plt
 
@@ -3751,17 +3862,17 @@ def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names, use_scenario_
     carrier_list = [
         'CCGT lcoe (USD/MWh)', 'OCGT lcoe (USD/MWh)', 'coal lcoe (USD/MWh)', 'nuclear lcoe (USD/MWh)',
         'oil lcoe (USD/MWh)', 'urban central gas CHP lcoe (USD/MWh)',
-        'urban central solid biomass CHP lcoe (USD/MWh)', 'biomass lcoe (USD/MWh)', 'geothermal lcoe (USD/MWh)', 
+        'urban central solid biomass CHP lcoe (USD/MWh)', 'biomass lcoe (USD/MWh)', 'geothermal lcoe (USD/MWh)',
         'hydro lcoe (USD/MWh)', 'onwind lcoe (USD/MWh)', 'ror lcoe (USD/MWh)', 'solar lcoe (USD/MWh)',
         'solar rooftop lcoe (USD/MWh)',
     ]
 
     buffer_left = 100
     buffer_right = 20
-    
+
     global_min = table_df.xs('min', axis=1, level=1).min().min()
     global_max = table_df.xs('max', axis=1, level=1).max().max()
-    
+
     x_min = min(-50, global_min - buffer_left)
     x_max = global_max + buffer_right
 
@@ -3771,22 +3882,25 @@ def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names, use_scenario_
     # Subplot grid size (2 columns)
     ncols = 2
     nrows = math.ceil(n_regions / ncols)
-    
-    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(16, nrows * 5), constrained_layout=True)
+
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(
+        16, nrows * 5), constrained_layout=True)
     axs = axs.flatten()
 
     for idx, region in enumerate(regions):
         ax = axs[idx]
 
         # Filter only available carriers
-        available_carriers = [c for c in carrier_list if c in table_df.columns.get_level_values(0)]
+        available_carriers = [
+            c for c in carrier_list if c in table_df.columns.get_level_values(0)]
         if not available_carriers:
             ax.set_title(f"{region} - No carriers available", fontsize=12)
             ax.axis("off")
             continue
 
         table_lcoe_df = table_df[
-            table_df.columns[table_df.columns.get_level_values(0).str.contains('lcoe')]
+            table_df.columns[table_df.columns.get_level_values(
+                0).str.contains('lcoe')]
         ][available_carriers]
 
         table_lcoe_df_region = table_lcoe_df.loc[region, :]
@@ -3799,20 +3913,25 @@ def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names, use_scenario_
         )):
             str_attach = any(np.abs([start, end]) > 1e-3)
             width = end - start
-            ax.broken_barh([(start, width)], (i - 0.4, 0.8), hatch='///', edgecolor='white')
+            ax.broken_barh([(start, width)], (i - 0.4, 0.8),
+                           hatch='///', edgecolor='white')
             start_label = f"${round(start, 2)}" if str_attach else ""
             end_label = f"${round(start + width, 2)}" if str_attach else ""
-            ax.text(start - .7, i, start_label, va='center', ha='right', fontsize=9)
-            ax.text(start + width + .7, i, end_label, va='center', ha='left', fontsize=9)
+            ax.text(start - .7, i, start_label,
+                    va='center', ha='right', fontsize=9)
+            ax.text(start + width + .7, i, end_label,
+                    va='center', ha='left', fontsize=9)
 
-        raw_labels = [label.replace(" lcoe", "").replace(" (USD/MWh)", "") for label in lcoe_tech_list]
+        raw_labels = [label.replace(" lcoe", "").replace(
+            " (USD/MWh)", "") for label in lcoe_tech_list]
         clean_labels = [nice_names.get(lbl, lbl) for lbl in raw_labels]
-        
+
         ax.set_yticks(range(len(lcoe_tech_list)))
         ax.set_yticklabels(clean_labels, fontsize=10)
         ax.set_xlabel("LCOE (USD/MWh)", fontsize=10)
         ax.set_xlim(x_min, x_max)
-        ax.set_title(f"\n{region} - {key if use_scenario_names else year_str}", fontsize=12)
+        ax.set_title(
+            f"\n{region} - {key if use_scenario_names else year_str}", fontsize=12)
         ax.grid(linestyle='--', alpha=0.5)
         ax.tick_params(axis='both', labelsize=9)
 
@@ -3826,10 +3945,10 @@ def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names, use_scenario_
 def compute_line_expansion_capacity(n):
     """
     Computes the line expansion capacity grouped by grid region.
-    
+
     Parameters:
     n (pypsa.Network): The PyPSA network object.
-    
+
     Returns:
     pd.DataFrame: DataFrame with line expansion capacity by grid region.
     """
@@ -3840,10 +3959,12 @@ def compute_line_expansion_capacity(n):
     # Ensure 'state' is present in lines
     if "state" not in n.lines.columns:
         n.lines["state"] = n.lines.bus0.map(n.buses.state)
-    
+
     # Group by 'grid_region' and 'state' then sum the capacities
-    line_exp_cap_grid = n.lines.groupby("grid_region")[["s_nom", 's_nom_opt']].sum() / 1e3  # Convert to GW
-    line_exp_cap_state = n.lines.groupby("state")[["s_nom", 's_nom_opt']].sum() / 1e3  # Convert to GW
+    line_exp_cap_grid = n.lines.groupby(
+        "grid_region")[["s_nom", 's_nom_opt']].sum() / 1e3  # Convert to GW
+    line_exp_cap_state = n.lines.groupby(
+        "state")[["s_nom", 's_nom_opt']].sum() / 1e3  # Convert to GW
 
     return line_exp_cap_grid, line_exp_cap_state
 
@@ -3851,34 +3972,37 @@ def compute_line_expansion_capacity(n):
 def preprocess_res_ces_share_eia(eia_gen_data):
     eia_gen_data = eia_gen_data[eia_gen_data["YEAR"] == 2023]
     eia_gen_data = eia_gen_data[eia_gen_data["STATE"] != "US-Total"]
-    eia_gen_data = eia_gen_data[eia_gen_data['TYPE OF PRODUCER'] == 'Total Electric Power Industry']
+    eia_gen_data = eia_gen_data[eia_gen_data['TYPE OF PRODUCER']
+                                == 'Total Electric Power Industry']
     eia_gen_data = eia_gen_data[(eia_gen_data["ENERGY SOURCE"] != "Total")
-                                                        & (eia_gen_data["ENERGY SOURCE"] != "Other")]
-    eia_gen_data.replace({"ENERGY SOURCE":{"Coal": "coal",
-        "Hydroelectric Conventional": "hydro", 
-        "Pumped Storage": "PHS" , 
-        "Solar Thermal and Photovoltaic": "solar", 
-        "Natural Gas": "gas", 
-        "Petroleum": "oil", 
-        "Wind": "wind", 
-        "Nuclear": "nuclear", 
-        "Geothermal": "geothermal",
-        "Pumped Storage": "PHS",
-        "Wood and Wood Derived Fuels": "biomass",
-        "Other Biomass": "biomass",
-        "Other Gases": "gas"}}, inplace=True)
+                                & (eia_gen_data["ENERGY SOURCE"] != "Other")]
+    eia_gen_data.replace({"ENERGY SOURCE": {"Coal": "coal",
+                                            "Hydroelectric Conventional": "hydro",
+                                            "Pumped Storage": "PHS",
+                                            "Solar Thermal and Photovoltaic": "solar",
+                                            "Natural Gas": "gas",
+                                            "Petroleum": "oil",
+                                            "Wind": "wind",
+                                            "Nuclear": "nuclear",
+                                            "Geothermal": "geothermal",
+                                            "Pumped Storage": "PHS",
+                                            "Wood and Wood Derived Fuels": "biomass",
+                                            "Other Biomass": "biomass",
+                                            "Other Gases": "gas"}}, inplace=True)
 
     eia_gen_data["GENERATION (TWh)"] = eia_gen_data["GENERATION (Megawatthours)"] / 1e6
-    eia_gen_data_df = eia_gen_data.groupby(["STATE", "ENERGY SOURCE"])[["GENERATION (TWh)"]].sum().unstack(fill_value=0)
+    eia_gen_data_df = eia_gen_data.groupby(["STATE", "ENERGY SOURCE"])[
+        ["GENERATION (TWh)"]].sum().unstack(fill_value=0)
     eia_gen_data_df.columns = eia_gen_data_df.columns.droplevel(0)
 
-    eia_res_carriers = ["solar", "wind", "hydro", "geothermal", "biomass", "PHS"]
+    eia_res_carriers = ["solar", "wind",
+                        "hydro", "geothermal", "biomass", "PHS"]
     eia_ces_carriers = eia_res_carriers + ["nuclear"]
 
     res_total = eia_gen_data_df[eia_res_carriers].sum(axis=1)
     ces_total = eia_gen_data_df[eia_ces_carriers].sum(axis=1)
     all_total = eia_gen_data_df[['PHS', 'biomass', 'coal', 'gas', 'geothermal', 'hydro', 'nuclear',
-        'oil', 'solar', 'wind']].sum(axis=1)
+                                 'oil', 'solar', 'wind']].sum(axis=1)
 
     eia_gen_data_df["% Actual RES"] = (res_total / all_total) * 100
     eia_gen_data_df["% Actual CES"] = (ces_total / all_total) * 100
@@ -3895,18 +4019,19 @@ def compute_links_only_costs(network, name_tag):
     year_str = name_tag[-4:]
 
     # Get statistics separated by component type
-    costs_detailed = network.statistics(groupby=None)[['Capital Expenditure', 'Operational Expenditure']]
-    
+    costs_detailed = network.statistics(
+        groupby=None)[['Capital Expenditure', 'Operational Expenditure']]
+
     fossil_carriers = ["coal", "gas", "oil", "biomass"]
-    
+
     # Build the final dataset by combining the right components
     final_results = []
-    
+
     # 1. Add ALL Link costs (including fossil links for power generation)
     try:
         link_costs = costs_detailed.loc['Link'].reset_index()
         link_costs['tech_label'] = link_costs['carrier']
-        
+
         # CAPEX from links
         link_capex = link_costs.groupby('tech_label', as_index=False).agg({
             'Capital Expenditure': 'sum'
@@ -3919,7 +4044,7 @@ def compute_links_only_costs(network, name_tag):
                 'year': year_str,
                 'scenario': name_tag
             })
-        
+
         # OPEX from links
         link_opex = link_costs.groupby('tech_label', as_index=False).agg({
             'Operational Expenditure': 'sum'
@@ -3927,23 +4052,24 @@ def compute_links_only_costs(network, name_tag):
         for _, row in link_opex.iterrows():
             final_results.append({
                 'tech_label': row['tech_label'],
-                'cost_type': 'Operational expenditure', 
+                'cost_type': 'Operational expenditure',
                 'cost_billion': row['Operational Expenditure'] / 1e9,
                 'year': year_str,
                 'scenario': name_tag
             })
-            
+
     except KeyError:
         pass  # No links found
-    
+
     # 2. Add NON-FOSSIL Generator costs (solar, wind, nuclear, etc.)
     try:
         gen_costs = costs_detailed.loc['Generator'].reset_index()
         gen_costs['tech_label'] = gen_costs['carrier']
-        
+
         # Filter out fossil generators (keep only non-fossil generators)
-        non_fossil_gen = gen_costs[~gen_costs['tech_label'].isin(fossil_carriers)]
-        
+        non_fossil_gen = gen_costs[~gen_costs['tech_label'].isin(
+            fossil_carriers)]
+
         if len(non_fossil_gen) > 0:
             # CAPEX from non-fossil generators
             gen_capex = non_fossil_gen.groupby('tech_label', as_index=False).agg({
@@ -3957,7 +4083,7 @@ def compute_links_only_costs(network, name_tag):
                     'year': year_str,
                     'scenario': name_tag
                 })
-            
+
             # OPEX from non-fossil generators
             gen_opex = non_fossil_gen.groupby('tech_label', as_index=False).agg({
                 'Operational Expenditure': 'sum'
@@ -3970,28 +4096,28 @@ def compute_links_only_costs(network, name_tag):
                     'year': year_str,
                     'scenario': name_tag
                 })
-                
+
     except KeyError:
         pass  # No generators found
 
     # 3. Calculate and add FUEL COSTS for fossil fuel links
     fuel_cost_adjustments = {}
-    
+
     for carrier in fossil_carriers:
         links = network.links[network.links.carrier == carrier]
         total_fuel_cost = 0
-        
+
         for link_id in links.index:
             try:
                 p0 = network.links_t.p0[link_id]
-                fuel_bus = links.loc[link_id, 'bus0']  
+                fuel_bus = links.loc[link_id, 'bus0']
                 fuel_price = network.buses_t.marginal_price[fuel_bus]
                 weightings = network.snapshot_weightings['objective']
 
                 # Calculate fuel cost (positive)
                 fuel_cost = (p0 * fuel_price * weightings).sum()
                 total_fuel_cost += fuel_cost
-                
+
             except KeyError:
                 continue
 
@@ -4000,15 +4126,17 @@ def compute_links_only_costs(network, name_tag):
 
     # 4. Modify fossil fuel link OPEX to add fuel costs and rename to (power)
     df_results = pd.DataFrame(final_results)
-    
+
     # Find fossil link OPEX entries and modify them
     for carrier in fossil_carriers:
         if carrier in fuel_cost_adjustments:
             # Find the OPEX entry for this fossil carrier
-            mask = (df_results['tech_label'] == carrier) & (df_results['cost_type'] == 'Operational expenditure')
+            mask = (df_results['tech_label'] == carrier) & (
+                df_results['cost_type'] == 'Operational expenditure')
             if mask.any():
                 # Add fuel costs to existing OPEX
-                df_results.loc[mask, 'cost_billion'] += fuel_cost_adjustments[carrier]
+                df_results.loc[mask,
+                               'cost_billion'] += fuel_cost_adjustments[carrier]
                 # Rename to (power) version
                 df_results.loc[mask, 'tech_label'] = f'{carrier} (power)'
 
@@ -4020,7 +4148,7 @@ def identify_power_generation_technologies(rename_techs_capex, rename_techs_opex
     Identify technologies for power generation only (including (power) versions of conventional fuels)
     """
     power_gen_techs = set()
-    
+
     # Check CAPEX mappings
     for original_tech, intermediate_category in rename_techs_capex.items():
         if categories_capex.get(intermediate_category) == 'Power & heat generation':
@@ -4030,8 +4158,8 @@ def identify_power_generation_technologies(rename_techs_capex, rename_techs_opex
                     power_gen_techs.add(f'{original_tech} (power)')
                 else:
                     power_gen_techs.add(original_tech)
-    
-    # Check OPEX mappings  
+
+    # Check OPEX mappings
     for original_tech, intermediate_category in rename_techs_opex.items():
         if categories_opex.get(intermediate_category) == 'Power & heat generation':
             if intermediate_category != 'Heating':  # Exclude heating
@@ -4040,15 +4168,15 @@ def identify_power_generation_technologies(rename_techs_capex, rename_techs_opex
                     power_gen_techs.add(f'{original_tech} (power)')
                 else:
                     power_gen_techs.add(original_tech)
-    
+
     return power_gen_techs
 
 
-def plot_power_generation_details(cost_data, cost_type_label, power_techs, 
-                                     tech_colors=None, nice_names=None, tech_order=None, index='year'):
+def plot_power_generation_details(cost_data, cost_type_label, power_techs,
+                                  tech_colors=None, nice_names=None, tech_order=None, index='year'):
     """
     Plot interactive detailed breakdown of Power & heat generation technologies showing original tech_labels
-    
+
     Parameters:
     - cost_data: DataFrame with cost data containing original tech_labels
     - cost_type_label: str, "Capital expenditure" or "Operational expenditure"  
@@ -4056,7 +4184,7 @@ def plot_power_generation_details(cost_data, cost_type_label, power_techs,
     - tech_colors: dict, mapping from original tech_labels to colors
     - nice_names: dict, mapping from original tech_labels to display names
     """
-    
+
     # Filter for Power & heat generation technologies
     power_data = cost_data[
         cost_data['tech_label'].isin(power_techs) &
@@ -4066,7 +4194,7 @@ def plot_power_generation_details(cost_data, cost_type_label, power_techs,
 
     # Aggregate technologies with the same name (e.g., Offshore Wind AC + DC)
     power_data = power_data.groupby(
-        ['tech_label', 'cost_type', 'year', 'scenario'], 
+        ['tech_label', 'cost_type', 'year', 'scenario'],
         as_index=False
     ).agg({
         'cost_billion': 'sum'
@@ -4078,21 +4206,22 @@ def plot_power_generation_details(cost_data, cost_type_label, power_techs,
     # Create pivot table: years x technologies
     pivot_table = power_data.pivot_table(
         index=index,
-        columns='tech_label', 
+        columns='tech_label',
         values='cost_billion',
         aggfunc='sum'
     ).fillna(0)
-    
+
     # Sort technologies by total cost (largest first)
     if tech_order:
         available_techs = set(pivot_table.columns)
-        ordered_techs = [tech for tech in tech_order if tech in available_techs]
+        ordered_techs = [
+            tech for tech in tech_order if tech in available_techs]
         remaining_techs = available_techs - set(ordered_techs)
         ordered_techs.extend(sorted(remaining_techs))
     else:
         tech_totals = pivot_table.sum().sort_values(ascending=False)
         ordered_techs = tech_totals.index.tolist()
-    
+
     # Get colors for each technology
     def get_tech_color(original_tech_label):
         if tech_colors and original_tech_label in tech_colors:
@@ -4106,12 +4235,12 @@ def plot_power_generation_details(cost_data, cost_type_label, power_techs,
         import matplotlib.colors as mcolors
         colors = list(mcolors.TABLEAU_COLORS.values())
         return colors[hash(original_tech_label) % len(colors)]
-    
+
     # Create interactive plotly chart
     import plotly.graph_objects as go
-    
+
     fig = go.Figure()
-    
+
     # Add traces for each technology (in order of importance)
     # Only exclude technologies that are ALL zeros
     for tech in ordered_techs:
@@ -4119,10 +4248,10 @@ def plot_power_generation_details(cost_data, cost_type_label, power_techs,
         # Skip only if ALL values are exactly zero
         if (y_values == 0).all():
             continue
-            
+
         display_name = nice_names.get(tech, tech) if nice_names else tech
         color = get_tech_color(tech)
-        
+
         fig.add_trace(go.Bar(
             name=display_name,
             x=pivot_table.index.astype(str),
@@ -4130,7 +4259,7 @@ def plot_power_generation_details(cost_data, cost_type_label, power_techs,
             marker_color=color,
             hovertemplate=f"%{{x}}<br>{display_name}: %{{y:.2f}}B USD<extra></extra>"
         ))
-    
+
     # Update layout for interactivity
     fig.update_layout(
         barmode='relative',  # Handle negative values correctly
@@ -4143,7 +4272,8 @@ def plot_power_generation_details(cost_data, cost_type_label, power_techs,
             tickfont=dict(size=12)
         ),
         yaxis=dict(
-            title=dict(text=f"{cost_type_label} (Billion USD)", font=dict(size=12)),
+            title=dict(text=f"{cost_type_label} (Billion USD)",
+                       font=dict(size=12)),
             tickfont=dict(size=12)
         ),
         template="plotly_white",
@@ -4154,40 +4284,44 @@ def plot_power_generation_details(cost_data, cost_type_label, power_techs,
             orientation="v",
             yanchor="top",
             y=1,
-            xanchor="left", 
+            xanchor="left",
             x=1.02,
             font=dict(size=12),
             traceorder='reversed'
         )
     )
-    
+
     # Add horizontal line at zero
     fig.add_hline(y=0, line_width=1, line_color="black")
-    
+
     return fig
+
 
 def compute_h2_efuels_costs(network, name_tag):
     """
     Compute costs for H2 and e-fuels technologies (links only)
     """
     year_str = name_tag[-4:]
-    
+
     # Define H2 and e-fuels technologies
-    h2_efuels_carriers = ["Alkaline electrolyzer large", "Fischer-Tropsch", "PEM electrolyzer", "SOEC"]
-    
+    h2_efuels_carriers = ["Alkaline electrolyzer large",
+                          "Fischer-Tropsch", "PEM electrolyzer", "SOEC"]
+
     # Get statistics separated by component type
-    costs_detailed = network.statistics(groupby=None)[['Capital Expenditure', 'Operational Expenditure']]
-    
+    costs_detailed = network.statistics(
+        groupby=None)[['Capital Expenditure', 'Operational Expenditure']]
+
     final_results = []
-    
+
     # Get ONLY Link costs for H2/e-fuels technologies
     try:
         link_costs = costs_detailed.loc['Link'].reset_index()
         link_costs['tech_label'] = link_costs['carrier']
-        
+
         # Filter for H2/e-fuels technologies only
-        h2_efuels_links = link_costs[link_costs['tech_label'].isin(h2_efuels_carriers)]
-        
+        h2_efuels_links = link_costs[link_costs['tech_label'].isin(
+            h2_efuels_carriers)]
+
         if len(h2_efuels_links) > 0:
             # CAPEX from H2/e-fuels links
             link_capex = h2_efuels_links.groupby('tech_label', as_index=False).agg({
@@ -4201,7 +4335,7 @@ def compute_h2_efuels_costs(network, name_tag):
                     'year': year_str,
                     'scenario': name_tag
                 })
-            
+
             # OPEX from H2/e-fuels links
             link_opex = h2_efuels_links.groupby('tech_label', as_index=False).agg({
                 'Operational Expenditure': 'sum'
@@ -4209,16 +4343,17 @@ def compute_h2_efuels_costs(network, name_tag):
             for _, row in link_opex.iterrows():
                 final_results.append({
                     'tech_label': row['tech_label'],
-                    'cost_type': 'Operational expenditure', 
+                    'cost_type': 'Operational expenditure',
                     'cost_billion': row['Operational Expenditure'] / 1e9,
                     'year': year_str,
                     'scenario': name_tag
                 })
-                
+
     except KeyError:
         pass  # No links found
-    
+
     return pd.DataFrame(final_results)
+
 
 def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
                              output_threshold=1.0, year_title=True,
@@ -4253,25 +4388,29 @@ def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
         p0, p1 = net.links_t.p0[links.index], net.links_t.p1[links.index]
         w = net.snapshot_weightings.generators
         cons = p0.clip(lower=0).multiply(w, axis=0)       # MWh electricity
-        h2   = (-p1).clip(lower=0).multiply(w, axis=0)    # MWh H2
+        h2 = (-p1).clip(lower=0).multiply(w, axis=0)    # MWh H2
         h2_out = h2.sum()
 
         valid = h2_out > output_threshold
         if valid.sum() == 0:
             continue
 
-        capex = links.loc[valid, "capital_cost"] * links.loc[valid, "p_nom_opt"]
-        opex  = links.loc[valid, "marginal_cost"] * cons.loc[:, valid].sum(axis=0)
+        capex = links.loc[valid, "capital_cost"] * \
+            links.loc[valid, "p_nom_opt"]
+        opex = links.loc[valid, "marginal_cost"] * \
+            cons.loc[:, valid].sum(axis=0)
 
         # Electricity cost depending on method
         elec_cost = pd.Series(0.0, index=valid.index[valid])
         if electricity_price == "marginal":
             for l in valid.index[valid]:
                 bus = links.at[l, "bus0"]
-                elec_cost[l] = (cons[l] * net.buses_t.marginal_price[bus]).sum()
+                elec_cost[l] = (
+                    cons[l] * net.buses_t.marginal_price[bus]).sum()
         elif electricity_price == "LCOE":
             if grid_region_lcoe is None:
-                raise ValueError("grid_region_lcoe must be provided when electricity_price='LCOE'")
+                raise ValueError(
+                    "grid_region_lcoe must be provided when electricity_price='LCOE'")
             for l in valid.index[valid]:
                 bus = links.at[l, "bus0"]
                 region = net.buses.at[bus, "grid_region"]
@@ -4284,8 +4423,8 @@ def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
 
         # Normalize to USD/kg H2
         capex_val = capex / out_valid / conv
-        opex_val  = opex  / out_valid / conv
-        elec_val  = elec_cost / out_valid / conv
+        opex_val = opex / out_valid / conv
+        elec_val = elec_cost / out_valid / conv
 
         df = pd.DataFrame({
             f"Electrolysis CAPEX ({suffix})": capex_val,
@@ -4304,10 +4443,11 @@ def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
         df["EMM"] = df["grid_region"].map(emm_mapping)
 
         fee_trans = df["EMM"].map(fee_map["Transmission nom USD/MWh"])
-        fee_dist  = df["EMM"].map(fee_map["Distribution nom USD/MWh"])
-        elec_rate = cons.loc[:, valid].sum(axis=0) / out_valid   # MWh el / MWh H2
+        fee_dist = df["EMM"].map(fee_map["Distribution nom USD/MWh"])
+        elec_rate = cons.loc[:, valid].sum(
+            axis=0) / out_valid   # MWh el / MWh H2
         fee_trans_val = (fee_trans * elec_rate / conv).reindex(df.index)
-        fee_dist_val  = (fee_dist  * elec_rate / conv).reindex(df.index)
+        fee_dist_val = (fee_dist * elec_rate / conv).reindex(df.index)
 
         # LCOH breakdown
         df[f"LCOH (excl. T&D fees) ({suffix})"] = (
@@ -4315,7 +4455,8 @@ def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
             df[f"Electrolysis OPEX ({suffix})"] +
             df[f"Electricity ({suffix})"]
         )
-        df[f"LCOH + Transmission fees ({suffix})"] = df[f"LCOH (excl. T&D fees) ({suffix})"] + fee_trans_val
+        df[f"LCOH + Transmission fees ({suffix})"] = df[f"LCOH (excl. T&D fees) ({suffix})"] + \
+            fee_trans_val
         df[f"LCOH + T&D fees ({suffix})"] = df[f"LCOH + Transmission fees ({suffix})"] + fee_dist_val
 
         # Dispatch label per regione
@@ -4333,7 +4474,8 @@ def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
                 f"LCOH + Transmission fees ({suffix})": (g[f"LCOH + Transmission fees ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
                 f"Distribution fees ({suffix})":   (fee_dist_val.loc[g.index] * g["h2_out"]).sum() / g["h2_out"].sum(),
                 f"LCOH + T&D fees ({suffix})": (g[f"LCOH + T&D fees ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
-                dispatch_label: g["h2_out"].sum() * conv / 1000   # tons per regione
+                dispatch_label: g["h2_out"].sum() * conv /
+                1000   # tons per regione
             }))
             .reset_index().rename(columns={"grid_region": "Grid Region"})
         )
@@ -4350,13 +4492,14 @@ def plot_h2_efuels_details(cost_data, cost_type_label, tech_colors=None, tech_or
     """
     Plot interactive detailed breakdown of H2 and e-fuels technologies
     """
-    
+
     # Filter for H2/e-fuels technologies
     h2_efuels_data = cost_data[
         (cost_data['cost_type'] == cost_type_label) &
-        (cost_data['cost_billion'].abs() > 0.001)  # Only values > 1 million USD
+        # Only values > 1 million USD
+        (cost_data['cost_billion'].abs() > 0.001)
     ].copy()
-    
+
     if h2_efuels_data.empty:
         print(f"No data for {cost_type_label}")
         return
@@ -4364,21 +4507,22 @@ def plot_h2_efuels_details(cost_data, cost_type_label, tech_colors=None, tech_or
     # Create pivot table: years x technologies
     pivot_table = h2_efuels_data.pivot_table(
         index=index,
-        columns='tech_label', 
+        columns='tech_label',
         values='cost_billion',
         aggfunc='sum'
     ).fillna(0)
-    
+
     # Order technologies
     if tech_order:
         available_techs = set(pivot_table.columns)
-        ordered_techs = [tech for tech in tech_order if tech in available_techs]
+        ordered_techs = [
+            tech for tech in tech_order if tech in available_techs]
         remaining_techs = available_techs - set(ordered_techs)
         ordered_techs.extend(sorted(remaining_techs))
     else:
         tech_totals = pivot_table.sum().sort_values(ascending=False)
         ordered_techs = tech_totals.index.tolist()
-    
+
     # Get colors for each technology
     def get_tech_color(tech_label):
         if tech_colors and tech_label in tech_colors:
@@ -4391,21 +4535,21 @@ def plot_h2_efuels_details(cost_data, cost_type_label, tech_colors=None, tech_or
             "Fischer-Tropsch": "#e81cd0"               # Magenta
         }
         return default_colors.get(tech_label, "#999999")
-    
+
     # Create interactive plotly chart
     import plotly.graph_objects as go
-    
+
     fig = go.Figure()
-    
+
     # Add traces for each technology
     for tech in ordered_techs:
         y_values = pivot_table[tech]
         # Skip if all values are zero
         if (y_values == 0).all():
             continue
-            
+
         color = get_tech_color(tech)
-        
+
         fig.add_trace(go.Bar(
             name=tech,
             x=pivot_table.index.astype(str),
@@ -4413,7 +4557,7 @@ def plot_h2_efuels_details(cost_data, cost_type_label, tech_colors=None, tech_or
             marker_color=color,
             hovertemplate=f"%{{x}}<br>{tech}: %{{y:.2f}}B USD<extra></extra>"
         ))
-    
+
     # Update layout
     fig.update_layout(
         barmode='relative',
@@ -4426,7 +4570,8 @@ def plot_h2_efuels_details(cost_data, cost_type_label, tech_colors=None, tech_or
             tickfont=dict(size=12)
         ),
         yaxis=dict(
-            title=dict(text=f"{cost_type_label} (Billion USD)", font=dict(size=14)),
+            title=dict(text=f"{cost_type_label} (Billion USD)",
+                       font=dict(size=14)),
             tickfont=dict(size=12),
             tickformat=".2f"  # Force decimal format, no scientific notation
         ),
@@ -4438,16 +4583,16 @@ def plot_h2_efuels_details(cost_data, cost_type_label, tech_colors=None, tech_or
             orientation="v",
             yanchor="top",
             y=1,
-            xanchor="left", 
+            xanchor="left",
             x=1.02,
             font=dict(size=12),
             traceorder='reversed'
         )
     )
-    
+
     # Add horizontal line at zero
     fig.add_hline(y=0, line_width=1, line_color="black")
-    
+
     return fig
 
 
@@ -4455,7 +4600,7 @@ def create_h2_efuels_analysis(networks, index='year'):
     """
     Create complete analysis for H2 and e-fuels
     """
-    
+
     # Compute costs for all networks
     all_h2_efuels_costs = []
     for name_tag, network in networks.items():
@@ -4463,7 +4608,7 @@ def create_h2_efuels_analysis(networks, index='year'):
         all_h2_efuels_costs.append(df_costs)
 
     df_h2_efuels_costs = pd.concat(all_h2_efuels_costs, ignore_index=True)
-    
+
     # Define technology order (H2 first, then e-fuels)
     h2_efuels_order = [
         "Alkaline electrolyzer large",  # H2
@@ -4471,7 +4616,7 @@ def create_h2_efuels_analysis(networks, index='year'):
         "SOEC",                         # H2
         "Fischer-Tropsch"               # e-fuels
     ]
-    
+
     # Define colors matching your figure + magenta for Fischer-Tropsch
     h2_efuels_colors = {
         "Alkaline electrolyzer large": "#1f77b4",  # Blue (from your figure)
@@ -4479,7 +4624,7 @@ def create_h2_efuels_analysis(networks, index='year'):
         "SOEC": "#d62728",                         # Red (from your figure)
         "Fischer-Tropsch": "#e81cd0"               # Magenta
     }
-    
+
     # Create CAPEX plot
     fig1 = plot_h2_efuels_details(
         df_h2_efuels_costs,
@@ -4488,7 +4633,7 @@ def create_h2_efuels_analysis(networks, index='year'):
         tech_order=h2_efuels_order,
         index=index
     )
-    
+
     # Create OPEX plot
     fig2 = plot_h2_efuels_details(
         df_h2_efuels_costs,
@@ -4497,18 +4642,18 @@ def create_h2_efuels_analysis(networks, index='year'):
         tech_order=h2_efuels_order,
         index=index
     )
-    
+
     # Show plots
     if fig1:
         fig1.show()
     if fig2:
         fig2.show()
-    
+
     return df_h2_efuels_costs
 
 
 def hourly_matching_plot(networks, year_title=True):
-    for idx, (network_name, network) in enumerate(networks.items()):    
+    for idx, (network_name, network) in enumerate(networks.items()):
         year_str = network_name.split("_")[-1]
         # define additionality
         additionality = True
@@ -4523,7 +4668,8 @@ def hourly_matching_plot(networks, year_title=True):
             'SOEC'
         ]
 
-        electrolyzers = network.links[network.links.carrier.isin(electrolysis_carrier)].index
+        electrolyzers = network.links[network.links.carrier.isin(
+            electrolysis_carrier)].index
         electrolyzers_consumption = network.links_t.p0[electrolyzers].multiply(
             network.snapshot_weightings.objective, axis=0
         ).sum(axis=1)
@@ -4541,7 +4687,8 @@ def hourly_matching_plot(networks, year_title=True):
 
         # get RES generators and storage units
         res_gens = network.generators.query("carrier in @res_carriers").index
-        res_storages = network.storage_units.query("carrier in @res_stor_techs").index
+        res_storages = network.storage_units.query(
+            "carrier in @res_stor_techs").index
 
         if additionality:
             # get new generators and storage_units
@@ -4564,10 +4711,11 @@ def hourly_matching_plot(networks, year_title=True):
         ).sum(axis=1)
         res_generation_total = res_generation + res_storages_dispatch
 
-        compare_df = pd.concat([res_generation_total, electrolyzers_consumption], axis=1)
-        compare_df.rename(columns={0: "RES generation", 1: "Electrolyzer consumption"}, inplace=True)
+        compare_df = pd.concat(
+            [res_generation_total, electrolyzers_consumption], axis=1)
+        compare_df.rename(
+            columns={0: "RES generation", 1: "Electrolyzer consumption"}, inplace=True)
         # compare_df = compare_df.resample("D").mean()
-
 
         fig, ax = plt.subplots(figsize=(10, 2.5))
         (
@@ -4581,6 +4729,7 @@ def hourly_matching_plot(networks, year_title=True):
         ax.set_title(year_str if year_title else network_name)
         ax.legend(loc="lower left")
 
+
 def preprocess_res_ces_share_eia_region(eia_gen_data, grid_regions):
     """
     Aggregate EIA 2023 generation data by grid region.
@@ -4591,7 +4740,8 @@ def preprocess_res_ces_share_eia_region(eia_gen_data, grid_regions):
     # Filter EIA data
     eia_gen_data = eia_gen_data[eia_gen_data["YEAR"] == 2023]
     eia_gen_data = eia_gen_data[eia_gen_data["STATE"] != "US-Total"]
-    eia_gen_data = eia_gen_data[eia_gen_data['TYPE OF PRODUCER'] == 'Total Electric Power Industry']
+    eia_gen_data = eia_gen_data[eia_gen_data['TYPE OF PRODUCER']
+                                == 'Total Electric Power Industry']
     eia_gen_data = eia_gen_data[
         (eia_gen_data["ENERGY SOURCE"] != "Total") &
         (eia_gen_data["ENERGY SOURCE"] != "Other")
@@ -4600,13 +4750,13 @@ def preprocess_res_ces_share_eia_region(eia_gen_data, grid_regions):
     # Normalize energy source names
     eia_gen_data.replace({"ENERGY SOURCE": {
         "Coal": "coal",
-        "Hydroelectric Conventional": "hydro", 
-        "Pumped Storage": "PHS", 
-        "Solar Thermal and Photovoltaic": "solar", 
-        "Natural Gas": "gas", 
-        "Petroleum": "oil", 
-        "Wind": "wind", 
-        "Nuclear": "nuclear", 
+        "Hydroelectric Conventional": "hydro",
+        "Pumped Storage": "PHS",
+        "Solar Thermal and Photovoltaic": "solar",
+        "Natural Gas": "gas",
+        "Petroleum": "oil",
+        "Wind": "wind",
+        "Nuclear": "nuclear",
         "Geothermal": "geothermal",
         "Wood and Wood Derived Fuels": "biomass",
         "Other Biomass": "biomass",
@@ -4625,16 +4775,19 @@ def preprocess_res_ces_share_eia_region(eia_gen_data, grid_regions):
     eia_state_df.columns = eia_state_df.columns.droplevel(0)
 
     # Merge with grid region mapping
-    eia_with_region = eia_state_df.reset_index().rename(columns={"STATE": "State"})
+    eia_with_region = eia_state_df.reset_index().rename(columns={
+        "STATE": "State"})
     grid_regions = grid_regions.copy()
     grid_regions["States"] = grid_regions["States"].str.strip().str.upper()
-    eia_with_region = eia_with_region.merge(grid_regions, left_on="State", right_on="States")
+    eia_with_region = eia_with_region.merge(
+        grid_regions, left_on="State", right_on="States")
 
     # Aggregate by grid region
     region_agg = eia_with_region.groupby("Grid region").sum(numeric_only=True)
 
     # Compute % RES and % CES
-    eia_res_carriers = ["solar", "wind", "hydro", "geothermal", "biomass", "PHS"]
+    eia_res_carriers = ["solar", "wind",
+                        "hydro", "geothermal", "biomass", "PHS"]
     eia_ces_carriers = eia_res_carriers + ["nuclear"]
 
     total = region_agg.sum(axis=1)
@@ -4645,6 +4798,7 @@ def preprocess_res_ces_share_eia_region(eia_gen_data, grid_regions):
     region_agg["% Actual CES"] = (ces_total / total) * 100
 
     return region_agg[["% Actual RES", "% Actual CES"]]
+
 
 def evaluate_res_ces_by_region(networks, ces_carriers, res_carriers):
     """
@@ -4665,7 +4819,8 @@ def evaluate_res_ces_by_region(networks, ces_carriers, res_carriers):
                 scenario = "Base"
             year = int(match.group(2))
         else:
-            print(f"Warning: Skipping network '{name}' - does not match expected format (e.g., 'scenario_01_2030' or 'Base_2023').")
+            print(
+                f"Warning: Skipping network '{name}' - does not match expected format (e.g., 'scenario_01_2030' or 'Base_2023').")
             continue
 
         snapshots = network.snapshots
@@ -4679,22 +4834,26 @@ def evaluate_res_ces_by_region(networks, ces_carriers, res_carriers):
         link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass', 'lignite']
 
         # Generators
-        gen = network.generators[network.generators.carrier.isin(gen_and_sto_carriers)].copy()
+        gen = network.generators[network.generators.carrier.isin(
+            gen_and_sto_carriers)].copy()
         gen["grid_region"] = gen["bus"].map(network.buses["grid_region"])
         gen = gen[gen["grid_region"].notna()]
 
-        gen_p = network.generators_t.p.loc[snapshots_slice, gen.index].clip(lower=0)
+        gen_p = network.generators_t.p.loc[snapshots_slice, gen.index].clip(
+            lower=0)
         gen_energy = gen_p.multiply(timestep_h).sum()
         gen_energy = gen_energy.to_frame(name="energy_mwh")
         gen_energy["carrier"] = gen.loc[gen_energy.index, "carrier"]
         gen_energy["grid_region"] = gen.loc[gen_energy.index, "grid_region"]
 
         # Storage
-        sto = network.storage_units[network.storage_units.carrier.isin(gen_and_sto_carriers)].copy()
+        sto = network.storage_units[network.storage_units.carrier.isin(
+            gen_and_sto_carriers)].copy()
         sto["grid_region"] = sto["bus"].map(network.buses["grid_region"])
         sto = sto[sto["grid_region"].notna()]
 
-        sto_p = network.storage_units_t.p.loc[snapshots_slice, sto.index].clip(lower=0)
+        sto_p = network.storage_units_t.p.loc[snapshots_slice, sto.index].clip(
+            lower=0)
         sto_energy = sto_p.multiply(timestep_h).sum()
         sto_energy = sto_energy.to_frame(name="energy_mwh")
         sto_energy["carrier"] = sto.loc[sto_energy.index, "carrier"]
@@ -4726,8 +4885,10 @@ def evaluate_res_ces_by_region(networks, ces_carriers, res_carriers):
 
         # Aggregate by grid region
         region_totals = all_energy.groupby("grid_region")["energy_mwh"].sum()
-        region_ces = all_energy[all_energy["carrier"].isin(ces_carriers)].groupby("grid_region")["energy_mwh"].sum()
-        region_res = all_energy[all_energy["carrier"].isin(res_carriers)].groupby("grid_region")["energy_mwh"].sum()
+        region_ces = all_energy[all_energy["carrier"].isin(
+            ces_carriers)].groupby("grid_region")["energy_mwh"].sum()
+        region_res = all_energy[all_energy["carrier"].isin(
+            res_carriers)].groupby("grid_region")["energy_mwh"].sum()
 
         df = pd.DataFrame({
             "Total (MWh)": region_totals,
@@ -4757,6 +4918,8 @@ def fmt_2dp_or_na(v):
         return v
 
 # Function for deviation-based coloring (2023 only)
+
+
 def deviation_color(a, b):
     """
     Color by absolute percent deviation |a - b| / b:
@@ -4796,6 +4959,7 @@ def simple_color(a, b):
     except:
         return ''
 
+
 def get_us_from_eia(eia_generation_data):
     """
     Compute national (US) RES and CES shares from EIA data (2023).
@@ -4807,14 +4971,17 @@ def get_us_from_eia(eia_generation_data):
     eia_gen_data = eia_generation_data[
         (eia_generation_data["YEAR"] == 2023) &
         (eia_generation_data["STATE"] != "US-Total") &
-        (eia_generation_data['TYPE OF PRODUCER'] == 'Total Electric Power Industry')
+        (eia_generation_data['TYPE OF PRODUCER']
+         == 'Total Electric Power Industry')
     ].copy()
     eia_gen_data["GENERATION (TWh)"] = eia_gen_data["GENERATION (Megawatthours)"] / 1e6
     total_by_state = eia_gen_data.groupby("STATE")["GENERATION (TWh)"].sum()
 
     # Weighted average
-    us_res = (eia_state["% Actual RES"] * total_by_state).sum() / total_by_state.sum()
-    us_ces = (eia_state["% Actual CES"] * total_by_state).sum() / total_by_state.sum()
+    us_res = (eia_state["% Actual RES"] *
+              total_by_state).sum() / total_by_state.sum()
+    us_ces = (eia_state["% Actual CES"] *
+              total_by_state).sum() / total_by_state.sum()
 
     return round(us_res, 2), round(us_ces, 2)
 
@@ -4837,7 +5004,8 @@ def preprocess_res_ces_share_grid_region(eia_gen_data=None, grid_regions=None,
     res_carriers = ["Solar", "Wind", "Hydro", "Geothermal", "Biomass"]
     ces_carriers = res_carriers + ["Nuclear"]
 
-    total = df[["Coal", "Gas", "Oil", "Nuclear", "Other"] + res_carriers].sum(axis=1)
+    total = df[["Coal", "Gas", "Oil", "Nuclear",
+                "Other"] + res_carriers].sum(axis=1)
     res_total = df[res_carriers].sum(axis=1)
     ces_total = df[ces_carriers].sum(axis=1)
 
@@ -4846,6 +5014,7 @@ def preprocess_res_ces_share_grid_region(eia_gen_data=None, grid_regions=None,
     result["% Actual CES"] = (ces_total / total) * 100
 
     return result.set_index("Grid Region")
+
 
 def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
     """
@@ -4896,15 +5065,19 @@ def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
             df_year["Model generation (TWh)"] = df_year["Total (MWh)"] / 1e6
 
             # Merge with stats
-            df_year = df_year.merge(eia_region, left_index=True, right_index=True)
-            df_year = df_year.rename(columns={"Net generation (TWh)": "Stats generation (TWh)"})
+            df_year = df_year.merge(
+                eia_region, left_index=True, right_index=True)
+            df_year = df_year.rename(
+                columns={"Net generation (TWh)": "Stats generation (TWh)"})
 
             # Regional shares
             df_year["% Model generation share"] = (
-                df_year["Model generation (TWh)"] / df_year["Model generation (TWh)"].sum() * 100
+                df_year["Model generation (TWh)"] /
+                df_year["Model generation (TWh)"].sum() * 100
             )
             df_year["% Stats generation share"] = (
-                df_year["Stats generation (TWh)"] / df_year["Stats generation (TWh)"].sum() * 100
+                df_year["Stats generation (TWh)"] /
+                df_year["Stats generation (TWh)"].sum() * 100
             )
 
             # Add national total row (U.S.)
@@ -4927,17 +5100,21 @@ def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
                 "% Model generation share", "% Stats generation share"
             ]].round(2)
 
-            df_disp = df_disp.reset_index().rename(columns={"index": "Grid Region"}).set_index("Grid Region")
+            df_disp = df_disp.reset_index().rename(
+                columns={"index": "Grid Region"}).set_index("Grid Region")
 
             def style_row(row):
                 styles = []
                 for col in df_disp.columns:
                     if "RES" in col:
-                        styles.append(deviation_color(row.get("% RES"), row.get("% Actual RES")))
+                        styles.append(deviation_color(
+                            row.get("% RES"), row.get("% Actual RES")))
                     elif "CES" in col:
-                        styles.append(deviation_color(row.get("% CES"), row.get("% Actual CES")))
+                        styles.append(deviation_color(
+                            row.get("% CES"), row.get("% Actual CES")))
                     elif "generation" in col or "share" in col:
-                        styles.append(deviation_color(row.get("Model generation (TWh)"), row.get("Stats generation (TWh)")))
+                        styles.append(deviation_color(
+                            row.get("Model generation (TWh)"), row.get("Stats generation (TWh)")))
                     else:
                         styles.append("")
                 return styles
@@ -4962,21 +5139,26 @@ def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
             if "Total (MWh)" in df_year.columns:
                 df_year["Model generation (TWh)"] = df_year["Total (MWh)"] / 1e6
                 df_year["% Model generation share"] = (
-                    df_year["Model generation (TWh)"] / df_year["Model generation (TWh)"].sum() * 100
+                    df_year["Model generation (TWh)"] /
+                    df_year["Model generation (TWh)"].sum() * 100
                 )
 
-            totals = pd.Series({c: df_year[c].mean() for c in df_year.columns}, name="U.S.")
+            totals = pd.Series({c: df_year[c].mean()
+                               for c in df_year.columns}, name="U.S.")
             df_year = pd.concat([df_year, totals.to_frame().T])
 
-            df_disp = df_year.reset_index().rename(columns={"index": "Grid Region"}).set_index("Grid Region")
+            df_disp = df_year.reset_index().rename(
+                columns={"index": "Grid Region"}).set_index("Grid Region")
 
             def style_row(row):
                 styles = []
                 for col in df_disp.columns:
                     if col.startswith('% RES'):
-                        styles.append(simple_color(row.get('% RES'), row.get('% RES target')))
+                        styles.append(simple_color(
+                            row.get('% RES'), row.get('% RES target')))
                     elif col.startswith('% CES'):
-                        styles.append(simple_color(row.get('% CES'), row.get('% CES target')))
+                        styles.append(simple_color(
+                            row.get('% CES'), row.get('% CES target')))
                     else:
                         styles.append("")
                 return styles
@@ -5038,6 +5220,7 @@ def attach_emm_region_to_buses(network, path_shape, distance_crs):
 
     network.buses["emm_region"] = st_buses["subregion"]
 
+
 def compute_ekerosene_by_region(
     networks: dict,
     regional_fees: pd.DataFrame,
@@ -5049,7 +5232,7 @@ def compute_ekerosene_by_region(
     Compute input rates, input prices, T&D fees and total unit cost for
     Fischer-Tropsch e-kerosene plants by grid region.
     """
-    
+
     MWH_PER_GAL = (34.0 / 3600.0) * 3.78541  # MWh per gallon
     conv = 1.0 if unit == "MWh" else MWH_PER_GAL
     suffix = f"USD/{unit} e-ker"
@@ -5060,7 +5243,8 @@ def compute_ekerosene_by_region(
 
         emm_mapping = dict(zip(net.buses.grid_region, net.buses.emm_region))
 
-        ft = net.links[net.links.carrier.str.contains("Fischer-Tropsch", case=False, na=False)].copy()
+        ft = net.links[net.links.carrier.str.contains(
+            "Fischer-Tropsch", case=False, na=False)].copy()
         if ft.empty:
             continue
 
@@ -5074,12 +5258,14 @@ def compute_ekerosene_by_region(
             continue
 
         needed_cols = ("p0", "p1", "p2", "p3")
-        ft_ids = [l for l in ft.index if all(l in getattr(net.links_t, c).columns for c in needed_cols)]
+        ft_ids = [l for l in ft.index if all(l in getattr(
+            net.links_t, c).columns for c in needed_cols)]
         if not ft_ids:
             continue
         ft = ft.loc[ft_ids]
 
-        dt_h = (net.snapshots[1] - net.snapshots[0]).total_seconds()/3600.0 if len(net.snapshots) > 1 else 1.0
+        dt_h = (net.snapshots[1] - net.snapshots[0]).total_seconds() / \
+            3600.0 if len(net.snapshots) > 1 else 1.0
         rows = []
 
         for link in ft.index:
@@ -5109,23 +5295,26 @@ def compute_ekerosene_by_region(
                 return flow, price
 
             elec_in, p_elec = get_flow_and_price("AC")
-            h2_in,   p_h2   = get_flow_and_price("grid H2")
-            co2_in,  p_co2  = get_flow_and_price("co2 stored")
+            h2_in,   p_h2 = get_flow_and_price("grid H2")
+            co2_in,  p_co2 = get_flow_and_price("co2 stored")
 
             r_elec = elec_in / out_MWh if out_MWh > 0 else 0.0
-            r_h2   = h2_in   / out_MWh if out_MWh > 0 else 0.0
-            r_co2  = co2_in  / out_MWh if out_MWh > 0 else 0.0
+            r_h2 = h2_in / out_MWh if out_MWh > 0 else 0.0
+            r_co2 = co2_in / out_MWh if out_MWh > 0 else 0.0
 
             def avg_price(flow_series, price_series, total_flow):
                 return (flow_series * price_series * dt_h).sum() / total_flow if total_flow > 0 else 0.0
 
-            avg_p_elec = avg_price(net.links_t[f"p{bus_map['AC']}"][link], p_elec, elec_in) if "AC" in bus_map else 0.0
-            avg_p_h2   = avg_price(net.links_t[f"p{bus_map['grid H2']}"][link], p_h2, h2_in) if "grid H2" in bus_map else 0.0
-            avg_p_co2  = avg_price(net.links_t[f"p{bus_map['co2 stored']}"][link], p_co2, co2_in) if "co2 stored" in bus_map else 0.0
+            avg_p_elec = avg_price(
+                net.links_t[f"p{bus_map['AC']}"][link], p_elec, elec_in) if "AC" in bus_map else 0.0
+            avg_p_h2 = avg_price(
+                net.links_t[f"p{bus_map['grid H2']}"][link], p_h2, h2_in) if "grid H2" in bus_map else 0.0
+            avg_p_co2 = avg_price(
+                net.links_t[f"p{bus_map['co2 stored']}"][link], p_co2, co2_in) if "co2 stored" in bus_map else 0.0
 
             c_elec = avg_p_elec * r_elec / conv
-            c_h2   = avg_p_h2   * r_h2   / conv
-            c_co2  = avg_p_co2  * r_co2  / conv
+            c_h2 = avg_p_h2 * r_h2 / conv
+            c_co2 = avg_p_co2 * r_co2 / conv
 
             rows.append({
                 "Grid Region": region,
@@ -5157,7 +5346,7 @@ def compute_ekerosene_by_region(
                   f"Hydrogen cost ({suffix})":              wavg(x, f"Hydrogen cost ({suffix})"),
                   f"CO2 cost ({suffix})":                   wavg(x, f"CO2 cost ({suffix})"),
               }))
-              .reset_index()   # keep Grid Region, drop numeric index
+            .reset_index()   # keep Grid Region, drop numeric index
         )
 
         g["EMM Region"] = g["Grid Region"].map(emm_mapping)
@@ -5184,7 +5373,8 @@ def compute_ekerosene_by_region(
             + g[f"Distribution fees ({suffix})"]
         )
 
-        title = re.search(r"\d{4}", str(name)).group() if year_title and re.search(r"\d{4}", str(name)) else str(name)
+        title = re.search(r"\d{4}", str(name)).group() if year_title and re.search(
+            r"\d{4}", str(name)) else str(name)
         print(f"\n{title} ({unit} view):")
         display(g.round(3))
 
@@ -5200,7 +5390,7 @@ def compute_ekerosene_by_region(
     Compute input rates, input prices, T&D fees and total unit cost for
     Fischer-Tropsch e-kerosene plants by grid region.
     """
-    
+
     MWH_PER_GAL = (34.0 / 3600.0) * 3.78541  # MWh per gallon
     conv = 1.0 if unit == "MWh" else MWH_PER_GAL
     suffix = f"USD/{unit} e-ker"
@@ -5211,7 +5401,8 @@ def compute_ekerosene_by_region(
 
         emm_mapping = dict(zip(net.buses.grid_region, net.buses.emm_region))
 
-        ft = net.links[net.links.carrier.str.contains("Fischer-Tropsch", case=False, na=False)].copy()
+        ft = net.links[net.links.carrier.str.contains(
+            "Fischer-Tropsch", case=False, na=False)].copy()
         if ft.empty:
             continue
 
@@ -5225,12 +5416,14 @@ def compute_ekerosene_by_region(
             continue
 
         needed_cols = ("p0", "p1", "p2", "p3")
-        ft_ids = [l for l in ft.index if all(l in getattr(net.links_t, c).columns for c in needed_cols)]
+        ft_ids = [l for l in ft.index if all(l in getattr(
+            net.links_t, c).columns for c in needed_cols)]
         if not ft_ids:
             continue
         ft = ft.loc[ft_ids]
 
-        dt_h = (net.snapshots[1] - net.snapshots[0]).total_seconds()/3600.0 if len(net.snapshots) > 1 else 1.0
+        dt_h = (net.snapshots[1] - net.snapshots[0]).total_seconds() / \
+            3600.0 if len(net.snapshots) > 1 else 1.0
         rows = []
 
         for link in ft.index:
@@ -5260,23 +5453,26 @@ def compute_ekerosene_by_region(
                 return flow, price
 
             elec_in, p_elec = get_flow_and_price("AC")
-            h2_in,   p_h2   = get_flow_and_price("grid H2")
-            co2_in,  p_co2  = get_flow_and_price("co2 stored")
+            h2_in,   p_h2 = get_flow_and_price("grid H2")
+            co2_in,  p_co2 = get_flow_and_price("co2 stored")
 
             r_elec = elec_in / out_MWh if out_MWh > 0 else 0.0
-            r_h2   = h2_in   / out_MWh if out_MWh > 0 else 0.0
-            r_co2  = co2_in  / out_MWh if out_MWh > 0 else 0.0
+            r_h2 = h2_in / out_MWh if out_MWh > 0 else 0.0
+            r_co2 = co2_in / out_MWh if out_MWh > 0 else 0.0
 
             def avg_price(flow_series, price_series, total_flow):
                 return (flow_series * price_series * dt_h).sum() / total_flow if total_flow > 0 else 0.0
 
-            avg_p_elec = avg_price(net.links_t[f"p{bus_map['AC']}"][link], p_elec, elec_in) if "AC" in bus_map else 0.0
-            avg_p_h2   = avg_price(net.links_t[f"p{bus_map['grid H2']}"][link], p_h2, h2_in) if "grid H2" in bus_map else 0.0
-            avg_p_co2  = avg_price(net.links_t[f"p{bus_map['co2 stored']}"][link], p_co2, co2_in) if "co2 stored" in bus_map else 0.0
+            avg_p_elec = avg_price(
+                net.links_t[f"p{bus_map['AC']}"][link], p_elec, elec_in) if "AC" in bus_map else 0.0
+            avg_p_h2 = avg_price(
+                net.links_t[f"p{bus_map['grid H2']}"][link], p_h2, h2_in) if "grid H2" in bus_map else 0.0
+            avg_p_co2 = avg_price(
+                net.links_t[f"p{bus_map['co2 stored']}"][link], p_co2, co2_in) if "co2 stored" in bus_map else 0.0
 
             c_elec = avg_p_elec * r_elec / conv
-            c_h2   = avg_p_h2   * r_h2   / conv
-            c_co2  = avg_p_co2  * r_co2  / conv
+            c_h2 = avg_p_h2 * r_h2 / conv
+            c_co2 = avg_p_co2 * r_co2 / conv
 
             rows.append({
                 "Grid Region": region,
@@ -5308,7 +5504,7 @@ def compute_ekerosene_by_region(
                   f"Hydrogen cost ({suffix})":              wavg(x, f"Hydrogen cost ({suffix})"),
                   f"CO2 cost ({suffix})":                   wavg(x, f"CO2 cost ({suffix})"),
               }))
-              .reset_index()   # keep Grid Region, drop numeric index
+            .reset_index()   # keep Grid Region, drop numeric index
         )
 
         g["EMM Region"] = g["Grid Region"].map(emm_mapping)
@@ -5335,7 +5531,8 @@ def compute_ekerosene_by_region(
             + g[f"Distribution fees ({suffix})"]
         )
 
-        title = re.search(r"\d{4}", str(name)).group() if year_title and re.search(r"\d{4}", str(name)) else str(name)
+        title = re.search(r"\d{4}", str(name)).group() if year_title and re.search(
+            r"\d{4}", str(name)) else str(name)
         print(f"\n{title} ({unit} view):")
         display(g.round(3))
 
@@ -5372,7 +5569,8 @@ def compute_ft_capacity_factor(
         key = str(scen_year) if year_title else year_key
 
         # select FT links
-        ft = n.links[n.links.carrier.str.contains(carrier_regex, case=False, na=False)].copy()
+        ft = n.links[n.links.carrier.str.contains(
+            carrier_regex, case=False, na=False)].copy()
         if ft.empty:
             continue
 
@@ -5471,7 +5669,8 @@ def compute_LCO_ekerosene_by_region(
         if scen_year == 2023 and "2020" in data_dict:
             print("Year 2023 not found in dataset, using 2020 instead.")
             return "2020"
-        raise KeyError(f"Year {scen_year} not found and no fallback available. Keys: {list(data_dict.keys())}")
+        raise KeyError(
+            f"Year {scen_year} not found and no fallback available. Keys: {list(data_dict.keys())}")
 
     # Conversion MWh ↔ gallon
     MWH_PER_GALLON = (34.0 / 3600.0) * 3.78541
@@ -5481,7 +5680,8 @@ def compute_LCO_ekerosene_by_region(
     results = {}
 
     # VOM trajectory (EUR)
-    vom_eur_points = {2020: 5.6360, 2025: 5.0512, 2030: 4.4663, 2035: 3.9346, 2040: 3.4029}
+    vom_eur_points = {2020: 5.6360, 2025: 5.0512,
+                      2030: 4.4663, 2035: 3.9346, 2040: 3.4029}
     years_sorted = np.array(sorted(vom_eur_points.keys()))
     values_sorted = np.array([vom_eur_points[y] for y in years_sorted])
 
@@ -5494,7 +5694,8 @@ def compute_LCO_ekerosene_by_region(
         scen_year = int(re.search(r"\d{4}", str(name)).group())
 
         # Select Fischer-Tropsch links
-        ft = net.links[net.links.carrier.str.contains("Fischer-Tropsch", case=False, na=False)].copy()
+        ft = net.links[net.links.carrier.str.contains(
+            "Fischer-Tropsch", case=False, na=False)].copy()
         if ft.empty:
             continue
 
@@ -5506,7 +5707,8 @@ def compute_LCO_ekerosene_by_region(
             continue
 
         # Snapshot duration [h]
-        dt_h = (net.snapshots[1] - net.snapshots[0]).total_seconds()/3600.0 if len(net.snapshots) > 1 else 1.0
+        dt_h = (net.snapshots[1] - net.snapshots[0]).total_seconds() / \
+            3600.0 if len(net.snapshots) > 1 else 1.0
 
         def energy_in(series):
             """MWh consumed at that port."""
@@ -5532,17 +5734,18 @@ def compute_LCO_ekerosene_by_region(
                 continue
 
             elec_cons = energy_in(net.links_t.p3[link])  # AC
-            h2_cons   = energy_in(net.links_t.p0[link])  # H2
-            co2_cons  = energy_in(net.links_t.p2[link])  # CO2
+            h2_cons = energy_in(net.links_t.p0[link])  # H2
+            co2_cons = energy_in(net.links_t.p2[link])  # CO2
 
             r_elec = elec_cons.sum() / out_MWh
-            r_h2   = h2_cons.sum()   / out_MWh
-            r_co2  = co2_cons.sum()  / out_MWh
+            r_h2 = h2_cons.sum() / out_MWh
+            r_co2 = co2_cons.sum() / out_MWh
 
             # --- electricity price ---
             if electricity_price == "marginal":
                 p_elec = net.buses_t.marginal_price[ft.at[link, "bus3"]]
-                avg_p_elec = (elec_cons * p_elec).sum() / elec_cons.sum() if elec_cons.sum() > 0 else 0.0
+                avg_p_elec = (elec_cons * p_elec).sum() / \
+                    elec_cons.sum() if elec_cons.sum() > 0 else 0.0
             elif electricity_price == "lcoe":
                 if isinstance(lcoe_by_region, dict):
                     if not lcoe_by_region:
@@ -5553,12 +5756,14 @@ def compute_LCO_ekerosene_by_region(
                 else:
                     avg_p_elec = lcoe_by_region.loc[region]
             else:
-                raise ValueError("electricity_price must be 'marginal' or 'lcoe'")
+                raise ValueError(
+                    "electricity_price must be 'marginal' or 'lcoe'")
 
             # --- hydrogen price ---
             if hydrogen_price == "marginal":
                 p_h2 = net.buses_t.marginal_price[ft.at[link, "bus0"]]
-                avg_p_h2 = (h2_cons * p_h2).sum() / h2_cons.sum() if h2_cons.sum() > 0 else 0.0
+                avg_p_h2 = (h2_cons * p_h2).sum() / \
+                    h2_cons.sum() if h2_cons.sum() > 0 else 0.0
             elif hydrogen_price == "lcoh":
                 if not lcoh_by_region:
                     avg_p_h2 = 0.0
@@ -5576,7 +5781,8 @@ def compute_LCO_ekerosene_by_region(
             # --- CO2 price ---
             if co2_price == "marginal":
                 p_co2 = net.buses_t.marginal_price[ft.at[link, "bus2"]]
-                avg_p_co2 = (co2_cons * p_co2).sum() / co2_cons.sum() if co2_cons.sum() > 0 else 0.0
+                avg_p_co2 = (co2_cons * p_co2).sum() / \
+                    co2_cons.sum() if co2_cons.sum() > 0 else 0.0
             elif co2_price == "lcoc":
                 if not lcoc_by_region:
                     avg_p_co2 = 0.0
@@ -5584,20 +5790,24 @@ def compute_LCO_ekerosene_by_region(
                     # Special case: no CO₂ captured in 2023
                     avg_p_co2 = 0.0
                 elif str(scen_year) in lcoc_by_region:
-                    lcoc_df = lcoc_by_region[str(scen_year)].set_index("Grid Region")
-                    avg_p_co2 = lcoc_df.at[region, "LCOC incl. T&D fees (USD/tCO2)"] if region in lcoc_df.index else 0.0
+                    lcoc_df = lcoc_by_region[str(
+                        scen_year)].set_index("Grid Region")
+                    avg_p_co2 = lcoc_df.at[region,
+                                           "LCOC incl. T&D fees (USD/tCO2)"] if region in lcoc_df.index else 0.0
                 else:
-                    raise KeyError(f"LCOC dataset does not contain year {scen_year}. Available: {list(lcoc_by_region.keys())}")
+                    raise KeyError(
+                        f"LCOC dataset does not contain year {scen_year}. Available: {list(lcoc_by_region.keys())}")
             else:
                 raise ValueError("co2_price must be 'marginal' or 'lcoc'")
 
             # --- cost components ---
             c_elec = avg_p_elec * r_elec * conv
-            c_h2   = avg_p_h2   * r_h2   * conv
-            c_co2  = avg_p_co2  * r_co2  * conv
+            c_h2 = avg_p_h2 * r_h2 * conv
+            c_co2 = avg_p_co2 * r_co2 * conv
 
             cap_cost = float(ft.at[link, "capital_cost"])
-            cap_MW = float(ft.at[link, "p_nom_opt"] if ft.at[link, "p_nom_extendable"] else ft.at[link, "p_nom"])
+            cap_MW = float(ft.at[link, "p_nom_opt"] if ft.at[link,
+                           "p_nom_extendable"] else ft.at[link, "p_nom"])
             c_capex = ((cap_cost * cap_MW) / out_MWh) * conv
 
             c_vom = vom_usd_for_year(scen_year) * conv
@@ -5622,13 +5832,13 @@ def compute_LCO_ekerosene_by_region(
 
         if not rows:
             continue
-        
+
         df = pd.DataFrame(rows)
-        
+
         # Skip scenario if total production is zero
         if df["Production (TWh)"].sum() <= 1e-3:
             continue
-    
+
         def wavg(group, col):
             return (group[col] * group["Production (TWh)"]).sum() / group["Production (TWh)"].sum()
 
@@ -5649,7 +5859,7 @@ def compute_LCO_ekerosene_by_region(
                   f"VOM ({suffix})":                       wavg(x, f"VOM ({suffix})"),
                   f"LCO e-kerosene (excl. T&D fees) ({suffix})": wavg(x, f"LCO e-kerosene (excl. T&D fees) ({suffix})"),
               }))
-              .reset_index()
+            .reset_index()
         )
 
         g["EMM Region"] = g["Grid Region"].map(emm_mapping)
@@ -5673,18 +5883,22 @@ def compute_LCO_ekerosene_by_region(
             g[f"Transmission fees ({suffix})"] +
             g[f"Distribution fees ({suffix})"]
         )
-        
+
         results[f"{scen_year if year_title else str(name)}"] = g
 
         if verbose:
             tot_prod = g["Production (TWh)"].sum()
-            wavg_cost = (g[f"LCO e-kerosene (incl. T&D fees) ({suffix})"] * g["Production (TWh)"]).sum() / tot_prod
-        
-            title = re.search(r"\d{4}", str(name)).group() if year_title else str(name)
+            wavg_cost = (
+                g[f"LCO e-kerosene (incl. T&D fees) ({suffix})"] * g["Production (TWh)"]).sum() / tot_prod
+
+            title = re.search(r"\d{4}", str(
+                name)).group() if year_title else str(name)
             print(f"\n{title}:")
-            print(f"Weighted average LCO e-kerosene (incl. T&D): {wavg_cost:.2f} {suffix}")
-            print(f"Total production: {tot_prod:.2f} TWh\n")  # scientific notation
-        
+            print(
+                f"Weighted average LCO e-kerosene (incl. T&D): {wavg_cost:.2f} {suffix}")
+            # scientific notation
+            print(f"Total production: {tot_prod:.2f} TWh\n")
+
             numeric_cols = g.select_dtypes(include="number").columns
             fmt = {col: "{:.2f}" for col in numeric_cols}
             display(g.style.format(fmt).hide(axis="index"))
@@ -5718,7 +5932,8 @@ def compute_LCOC_by_region(
         scen_year = int(re.search(r"\d{4}", str(name)).group())
 
         # --- detect CCS/DAC links ---
-        mask = net.links.carrier.str.contains(r"(DAC|CC(?!GT))", case=False, na=False)
+        mask = net.links.carrier.str.contains(
+            r"(DAC|CC(?!GT))", case=False, na=False)
         ccs = net.links[mask].copy()
         if ccs.empty:
             continue
@@ -5776,11 +5991,13 @@ def compute_LCOC_by_region(
                 elec_rate = elec_series.sum() / captured
                 if electricity_price == "marginal":
                     p_elec = net.buses_t.marginal_price[elec_bus]
-                    avg_p_elec = (elec_series * p_elec).sum() / elec_series.sum()
+                    avg_p_elec = (elec_series * p_elec).sum() / \
+                        elec_series.sum()
                 elif electricity_price == "lcoe":
                     avg_p_elec = lcoe_by_region.loc[region]
                 else:
-                    raise ValueError("electricity_price must be 'marginal' or 'lcoe'")
+                    raise ValueError(
+                        "electricity_price must be 'marginal' or 'lcoe'")
                 c_elec = avg_p_elec * elec_rate
             else:
                 elec_rate, avg_p_elec, c_elec = 0.0, 0.0, 0.0
@@ -5817,7 +6034,7 @@ def compute_LCOC_by_region(
                   "Electricity cost (USD/tCO2)": wavg(x, "Electricity cost (USD/tCO2)"),
                   "LCOC excl. T&D fees (USD/tCO2)": wavg(x, "LCOC excl. T&D fees (USD/tCO2)"),
               }))
-              .reset_index()
+            .reset_index()
         )
 
         g = g[g["Captured CO2 (Mt)"] > captured_threshold_mt]
@@ -5830,11 +6047,15 @@ def compute_LCOC_by_region(
             ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"]
         ].set_index("region")
 
-        g["Transmission fee (USD/MWh)"] = g["EMM Region"].map(fee_map["Transmission nom USD/MWh"])
-        g["Distribution fee (USD/MWh)"] = g["EMM Region"].map(fee_map["Distribution nom USD/MWh"])
+        g["Transmission fee (USD/MWh)"] = g["EMM Region"].map(
+            fee_map["Transmission nom USD/MWh"])
+        g["Distribution fee (USD/MWh)"] = g["EMM Region"].map(
+            fee_map["Distribution nom USD/MWh"])
 
-        g["Transmission cost (USD/tCO2)"] = g["Transmission fee (USD/MWh)"] * g["Electricity rate (MWh el / tCO2)"]
-        g["Distribution cost (USD/tCO2)"] = g["Distribution fee (USD/MWh)"] * g["Electricity rate (MWh el / tCO2)"]
+        g["Transmission cost (USD/tCO2)"] = g["Transmission fee (USD/MWh)"] * \
+            g["Electricity rate (MWh el / tCO2)"]
+        g["Distribution cost (USD/tCO2)"] = g["Distribution fee (USD/MWh)"] * \
+            g["Electricity rate (MWh el / tCO2)"]
 
         g["LCOC incl. T&D fees (USD/tCO2)"] = (
             g["LCOC excl. T&D fees (USD/tCO2)"] +
@@ -5847,17 +6068,20 @@ def compute_LCOC_by_region(
 
         if verbose:
             tot_captured = g["Captured CO2 (Mt)"].sum()
-            wavg_cost = (g["LCOC incl. T&D fees (USD/tCO2)"] * g["Captured CO2 (Mt)"]).sum() / tot_captured
-            title = re.search(r"\d{4}", str(name)).group() if year_title else str(name)
+            wavg_cost = (g["LCOC incl. T&D fees (USD/tCO2)"] *
+                         g["Captured CO2 (Mt)"]).sum() / tot_captured
+            title = re.search(r"\d{4}", str(
+                name)).group() if year_title else str(name)
             print(f"\nYear: {title}")
             print(f"Total captured CO2: {tot_captured:.2f} Mt")
-            print(f"Weighted average LCOC (incl. T&D fees): {wavg_cost:.2f} USD/tCO2\n")
+            print(
+                f"Weighted average LCOC (incl. T&D fees): {wavg_cost:.2f} USD/tCO2\n")
             numeric_cols = g.select_dtypes(include="number").columns
             fmt = {col: "{:.2f}" for col in numeric_cols}
             display(g.style.format(fmt).hide(axis="index"))
 
-
     return results
+
 
 def calculate_LCOC_by_region(
     networks: dict,
@@ -5887,53 +6111,58 @@ def calculate_LCOC_by_region(
     )
 
 
-
 def save_to_excel_with_formatting(df, sheet_name, title, excel_file_path, freeze_pane="B3"):
-    from openpyxl.utils import column_index_from_string  # local import to parse column letters
+    # local import to parse column letters
+    from openpyxl.utils import column_index_from_string
 
     with pd.ExcelWriter(excel_file_path, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
         df.to_excel(writer, sheet_name=sheet_name, startrow=1)
 
         # Get the worksheet for formatting
         worksheet = writer.sheets[sheet_name]
-        
+
         # Add a title for df summary
         worksheet['A1'] = title
         worksheet['A1'].font = Font(bold=True, size=14, color="2F4F4F")
-        worksheet['A1'].alignment = Alignment(horizontal="center", vertical="center")
+        worksheet['A1'].alignment = Alignment(
+            horizontal="center", vertical="center")
 
         extra_col = df.index.nlevels
         max_col = len(df.columns) + extra_col  # include index columns
 
         if max_col > 1:
-            worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=max_col)
+            worksheet.merge_cells(
+                start_row=1, start_column=1, end_row=1, end_column=max_col)
 
         # Format headers (row 2: MultiIndex headers)
-        header_fill = PatternFill(start_color="2F4F4F", end_color="2F4F4F", fill_type="solid")
+        header_fill = PatternFill(
+            start_color="2F4F4F", end_color="2F4F4F", fill_type="solid")
         header_font = Font(color="FFFFFF", bold=True, size=10)
-        header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        border_thin = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-  
+        header_alignment = Alignment(
+            horizontal="center", vertical="center", wrap_text=True)
+        border_thin = Border(left=Side(style='thin'), right=Side(
+            style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+
         for col in range(1, max_col + 1):
             cell = worksheet.cell(row=2, column=col)
             cell.fill = header_fill
             cell.font = header_font
             cell.alignment = header_alignment
             cell.border = border_thin
-        
+
         # Format data cells
         extra_row = getattr(df.columns, "nlevels", 1)
         max_row = len(df) + extra_row + 2  # +2 for title and headers
         data_font = Font(size=10)
         data_alignment = Alignment(horizontal="center", vertical="center")
-        
+
         for row in range(3, max_row + 1):
             for col in range(1, max_col + 1):
                 cell = worksheet.cell(row=row, column=col)
                 cell.font = data_font
                 cell.alignment = data_alignment
                 cell.border = border_thin
-        
+
         # Auto-adjust column widths
         for col in range(1, max_col + 1):
             column_letter = get_column_letter(col)
@@ -5962,7 +6191,8 @@ def save_to_excel_with_formatting(df, sheet_name, title, excel_file_path, freeze
                 try:
                     cell.font = cell.font.copy(bold=True)
                 except Exception:
-                    cell.font = Font(bold=True, size=(cell.font.sz if cell.font else 10))
+                    cell.font = Font(bold=True, size=(
+                        cell.font.sz if cell.font else 10))
 
         # Bold the frozen index columns (to the left of the vertical split) for data rows
         for r in range(3, max_row + 1):  # data area; header rows already bold
@@ -5999,7 +6229,8 @@ def compare_h2_kerosene_production(network, plot=True, network_name="Network", p
     # FT (e-kerosene) links
     ft_links = network.links[
         network.links['carrier'].str.contains('FT|Fischer|Tropsch', case=False, na=False) |
-        network.links.index.str.contains('FT|Fischer|Tropsch', case=False, na=False)
+        network.links.index.str.contains(
+            'FT|Fischer|Tropsch', case=False, na=False)
     ].copy()
 
     # H2 links
@@ -6052,9 +6283,11 @@ def compare_h2_kerosene_production(network, plot=True, network_name="Network", p
         if (avg_h2_gw > plot_threshold_gw) or (avg_kerosene_gw > plot_threshold_gw):
             fig, ax = plt.subplots(figsize=(15, 5))
             h2_prod_gw.plot(ax=ax, label='Hydrogen production', alpha=0.8)
-            kerosene_prod_gw.plot(ax=ax, label='E-Kerosene production', alpha=0.8)
+            kerosene_prod_gw.plot(
+                ax=ax, label='E-Kerosene production', alpha=0.8)
 
-            ax.set_title(f'Hydrogen vs e-kerosene Production (GW) - {network_name}')
+            ax.set_title(
+                f'Hydrogen vs e-kerosene Production (GW) - {network_name}')
             ax.set_xlabel('')
             ax.set_ylabel('Production (GW)')
 
@@ -6063,16 +6296,20 @@ def compare_h2_kerosene_production(network, plot=True, network_name="Network", p
             ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
 
             # legend outside
-            ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0.)
+            ax.legend(bbox_to_anchor=(1.02, 1),
+                      loc='upper left', borderaxespad=0.)
             ax.grid(True, alpha=0.3)
             plt.tight_layout(rect=[0, 0, 0.85, 1])  # leave space for legend
             plt.show()
         else:
-            print(f"\nSkipped {network_name}: both daily-average productions are below {plot_threshold_gw*1000:.1f} MW.\n")
+            print(
+                f"\nSkipped {network_name}: both daily-average productions are below {plot_threshold_gw*1000:.1f} MW.\n")
 
     return {
-        'h2_production': h2_prod_gw,               # Series in GW (daily average)
-        'kerosene_production': kerosene_prod_gw,   # Series in GW (daily average)
+        # Series in GW (daily average)
+        'h2_production': h2_prod_gw,
+        # Series in GW (daily average)
+        'kerosene_production': kerosene_prod_gw,
         'h2_summary': h2_summary,                  # Totals in MWh, capacity in GW
         'kerosene_summary': kerosene_summary,      # Totals in MWh, capacity in GW
         'comparison_table': comparison_table
@@ -6183,3 +6420,268 @@ def compute_capacity_factor_electrolysis(
         results[key] = region_summary.round(round_digits)
 
     return results
+
+def _get_snapshot_weighting_series(network):
+    """Return a snapshot weighting series aligned with the network snapshots."""
+
+    weightings = getattr(network, "snapshot_weightings", None)
+    if weightings is None:
+        return pd.Series(1.0, index=network.snapshots)
+
+    if isinstance(weightings, pd.Series):
+        return weightings.reindex(network.snapshots, fill_value=0.0)
+
+    for column in ["objective", "generators", "stores", "weights"]:
+        if column in weightings.columns:
+            return weightings[column].reindex(network.snapshots, fill_value=0.0)
+
+    return weightings.iloc[:, 0].reindex(network.snapshots, fill_value=0.0)
+
+
+def _get_aviation_loads_with_energy(network):
+    """Collect aviation loads enriched with geographic metadata and annual energy (TWh)."""
+
+    if "carrier" not in network.loads:
+        return pd.DataFrame()
+
+    aviation_mask = network.loads["carrier"].str.contains(
+        "kerosene for aviation", case=False, na=False
+    )
+    aviation_loads = network.loads[aviation_mask].copy()
+
+    if aviation_loads.empty:
+        return pd.DataFrame()
+
+    weights = _get_snapshot_weighting_series(network)
+    loads_p = network.loads_t.p[aviation_loads.index]
+    loads_p = loads_p.reindex(weights.index).fillna(0.0)
+
+    energy_mwh = loads_p.mul(weights, axis=0).sum()
+    average_mw = energy_mwh / weights.sum() if weights.sum() else energy_mwh
+    peak_mw = loads_p.max()
+
+    buses_info = network.buses[["state", "grid_region", "x", "y"]]
+    aviation_loads = aviation_loads.join(buses_info, on="bus", how="left")
+    aviation_loads["energy_MWh"] = energy_mwh
+    aviation_loads["energy_TWh"] = aviation_loads["energy_MWh"] / 1e6
+    aviation_loads["average_MW"] = average_mw
+    aviation_loads["peak_MW"] = peak_mw
+
+    return aviation_loads
+
+
+def _aggregate_aviation_demand(network, level):
+    """Aggregate aviation demand by the requested spatial level (state or grid_region)."""
+
+    loads = _get_aviation_loads_with_energy(network)
+    if loads.empty or level not in loads.columns:
+        return pd.DataFrame(columns=[level, "energy_TWh", "average_MW", "peak_MW", "lon", "lat", "share_pct"])
+
+    loads = loads.dropna(subset=[level])
+    if loads.empty:
+        return pd.DataFrame(columns=[level, "energy_TWh", "average_MW", "peak_MW", "lon", "lat", "share_pct"])
+
+    aggregated = (
+        loads.groupby(level)
+        .agg(
+            energy_TWh=("energy_TWh", "sum"),
+            average_MW=("average_MW", "sum"),
+            peak_MW=("peak_MW", "max"),
+            lon=("x", "mean"),
+            lat=("y", "mean"),
+        )
+        .reset_index()
+    )
+
+    total_twh = aggregated["energy_TWh"].sum()
+    if total_twh:
+        aggregated["share_pct"] = aggregated["energy_TWh"] / total_twh * 100
+    else:
+        aggregated["share_pct"] = 0.0
+
+    aggregated = aggregated.sort_values("energy_TWh", ascending=False)
+    return aggregated
+
+
+def compute_aviation_demand_table(network, level="state"):
+    """Return a tidy aviation demand table for the requested aggregation level."""
+
+    aggregation = _aggregate_aviation_demand(network, level)
+
+    label = {
+        "state": "State",
+        "grid_region": "Grid region"
+    }.get(level, level.title())
+
+    if aggregation.empty:
+        return pd.DataFrame(columns=[label, "Demand (TWh)", "Share (%)", "Average Load (MW)", "Peak Load (MW)"])
+
+    table = aggregation[[level, "energy_TWh",
+                         "share_pct", "average_MW", "peak_MW"]].copy()
+    table = table.rename(columns={
+        level: label,
+        "energy_TWh": "Demand (TWh)",
+        "share_pct": "Share (%)",
+        "average_MW": "Average Load (MW)",
+        "peak_MW": "Peak Load (MW)",
+    })
+
+    return table
+
+
+def create_aviation_demand_by_state_map(network, path_shapes, network_name="Network", distance_crs=4326, min_demand_twh=1.0, year_title=True):
+    """Plot aviation demand aggregated by state (TWh/year) as scaled circles.
+
+    Alaska and Hawaii remain in the returned tables, but they are omitted from the map.
+    """
+
+    state_df = _aggregate_aviation_demand(network, "state")
+    if state_df.empty:
+        print(f"No aviation loads found in the network: {network_name}")
+        return None, None, state_df
+
+    states_to_plot = state_df[state_df["energy_TWh"] >= min_demand_twh]
+    if states_to_plot.empty:
+        print(
+            f"Aviation demand below {min_demand_twh} TWh for all states in {network_name}.")
+        return None, None, state_df
+
+    contiguous_mask = (
+        states_to_plot["lon"].between(-130, -65, inclusive="both")
+        & states_to_plot["lat"].between(20, 50, inclusive="both")
+    )
+    states_to_plot_contiguous = states_to_plot[contiguous_mask]
+    if states_to_plot_contiguous.empty:
+        print("No contiguous US states meet the plotting threshold; tables still include all states.")
+        return None, None, state_df
+
+    shapes = gpd.read_file(path_shapes, crs=distance_crs)
+    shapes = shapes.to_crs(epsg=4326)
+    bbox = box(-130, 20, -65, 50)
+    shapes_clip = shapes.clip(bbox)
+
+    fig, ax = plt.subplots(figsize=(12, 6), subplot_kw={
+                           "projection": ccrs.PlateCarree()})
+    shapes_clip.plot(ax=ax, facecolor="whitesmoke",
+                     edgecolor="gray", alpha=0.7, linewidth=0.5)
+
+    pie_scale = 0.02
+    min_radius = 0.1
+    max_radius = 3.5
+
+    for _, row in states_to_plot_contiguous.iterrows():
+        x, y = row["lon"], row["lat"]
+        if pd.isna(x) or pd.isna(y):
+            continue
+
+        radius = np.clip(row["energy_TWh"] * pie_scale, min_radius, max_radius)
+        circle = plt.Circle(
+            (x, y), radius,
+            facecolor="#1f77b4", edgecolor="gray", alpha=0.65,
+            linewidth=1, transform=ccrs.PlateCarree(), zorder=4
+        )
+        ax.add_patch(circle)
+
+        ax.text(
+            x,
+            y - radius - 0.3,
+            f"{row['energy_TWh']:.1f} TWh",
+            ha="center",
+            va="top",
+            fontsize=9,
+            bbox=dict(facecolor="white", edgecolor="gray",
+                      boxstyle="round,pad=0.2"),
+            transform=ccrs.PlateCarree(),
+        )
+
+    year_match = re.search(r"\d{4}", network_name)
+    year_str = f" – {year_match.group()}" if year_match else ""
+
+    ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
+    ax.set_title(
+        f"Aviation Demand by State (TWh/year){year_str if year_title else f' – {network_name}'}",
+        fontsize=12,
+        pad=20,
+    )
+    ax.axis("off")
+    plt.tight_layout()
+
+    return fig, ax, state_df
+
+
+def create_aviation_demand_by_grid_region_map(network, path_shapes, network_name="Network", distance_crs=4326, min_demand_twh=5.0, year_title=True):
+    """Plot aviation demand aggregated by grid region (TWh/year) as scaled circles."""
+
+    region_df = _aggregate_aviation_demand(network, "grid_region")
+    if region_df.empty:
+        print(
+            f"No aviation loads with grid region found in the network: {network_name}")
+        return None, None, region_df
+
+    regions_to_plot = region_df[region_df["energy_TWh"] >= min_demand_twh]
+    if regions_to_plot.empty:
+        print(
+            f"Aviation demand below {min_demand_twh} TWh for all regions in {network_name}.")
+        return None, None, region_df
+
+    contiguous_mask = (
+        regions_to_plot["lon"].between(-130, -65, inclusive="both")
+        & regions_to_plot["lat"].between(20, 50, inclusive="both")
+    )
+    regions_to_plot_contiguous = regions_to_plot[contiguous_mask]
+    if regions_to_plot_contiguous.empty:
+        print("No contiguous US grid regions meet the plotting threshold; tables still include all regions.")
+        return None, None, region_df
+
+    shapes = gpd.read_file(path_shapes, crs=distance_crs)
+    shapes = shapes.to_crs(epsg=4326)
+    bbox = box(-130, 20, -60, 50)
+    shapes_clip = shapes.clip(bbox)
+
+    fig, ax = plt.subplots(figsize=(12, 6), subplot_kw={
+                           "projection": ccrs.PlateCarree()})
+    shapes_clip.plot(ax=ax, facecolor="whitesmoke",
+                     edgecolor="gray", alpha=0.7, linewidth=0.5)
+
+    pie_scale = 0.03
+    min_radius = 0.15
+    max_radius = 3.8
+
+    for _, row in regions_to_plot_contiguous.iterrows():
+        x, y = row["lon"], row["lat"]
+        if pd.isna(x) or pd.isna(y):
+            continue
+
+        radius = np.clip(row["energy_TWh"] * pie_scale, min_radius, max_radius)
+        circle = plt.Circle(
+            (x, y), radius,
+            facecolor="#1f77b4", edgecolor="gray", alpha=0.65,
+            linewidth=1, transform=ccrs.PlateCarree(), zorder=4
+        )
+        ax.add_patch(circle)
+
+        ax.text(
+            x,
+            y - radius - 0.3,
+            f"{row['energy_TWh']:.1f} TWh",
+            ha="center",
+            va="top",
+            fontsize=9,
+            bbox=dict(facecolor="white", edgecolor="gray",
+                      boxstyle="round,pad=0.2"),
+            transform=ccrs.PlateCarree(),
+        )
+
+    year_match = re.search(r"\d{4}", network_name)
+    year_str = f" – {year_match.group()}" if year_match else ""
+
+    ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
+    ax.set_title(
+        f"Aviation Demand by Grid Region (TWh/year){year_str if year_title else f' – {network_name}'}",
+        fontsize=12,
+        pad=20,
+    )
+    ax.axis("off")
+    plt.tight_layout()
+
+    return fig, ax, region_df

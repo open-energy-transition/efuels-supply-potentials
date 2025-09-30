@@ -757,6 +757,19 @@ def define_grid_H2(n):
     n.links.loc[ft_links, "bus0"] = n.links.loc[ft_links, "bus0"].str.replace("H2", "grid H2")
     logger.info(f"Rerouted input of {ft_carrier} from 'H2' buses to 'grid H2' buses")
 
+    # add H2 Store Tank for grid H2
+    h2_store_tanks = n.stores.query("carrier in 'H2 Store Tank'")
+    n.madd(
+        "Store",
+        h2_store_tanks.index.str.replace("H2", "grid H2"),
+        bus=h2_store_tanks.bus.str.replace("H2", "grid H2").values,
+        e_nom_extendable=True,
+        e_cyclic=True,
+        carrier="grid H2 Store Tank",
+        capital_cost=h2_store_tanks.capital_cost.values,
+    )
+    logger.info("Added grid H2 Store Tank for grid H2")
+
     # connect grid H2 buses to H2 buses so H2 can be supplied
     n.madd(
         "Link",

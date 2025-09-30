@@ -337,7 +337,7 @@ def plot_h2_capacities_by_state(grouped, title, ymax, max_n_states, bar_width=0.
     ax.set_xticks(x)
     ax.set_xticklabels(state, rotation=30, ha='center')
     ax.set_xlabel("State")
-    ax.set_ylabel("Capacity (MW)")
+    ax.set_ylabel("Capacity (MW input electricity)")
 
     if ymax > 0:
         ax.set_ylim(0, ymax * 1.05)
@@ -382,7 +382,7 @@ def plot_h2_capacities_by_grid_region(grouped, title, ymax, max_n_grid_regions, 
     ax.set_xticks(x)
     ax.set_xticklabels(grid_region, rotation=30, ha='center')
     ax.set_xlabel("Grid Region")
-    ax.set_ylabel("Capacity (MW)")
+    ax.set_ylabel("Capacity (MW input electricity)")
 
     if ymax > 0:
         ax.set_ylim(0, ymax * 1.05)
@@ -391,7 +391,7 @@ def plot_h2_capacities_by_grid_region(grouped, title, ymax, max_n_grid_regions, 
 
     ax.set_xlim(-0.5, max_n_grid_regions - 0.5)
 
-    ax.set_title(f"\nHydrogen electrolyzer capacity by Grid Region and technology - {title}\n")
+    ax.set_title(f"\nElectrolyzer capacity by Grid Region and technology - {title}\n")
     ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1), frameon=False)
 
     plt.tight_layout()
@@ -400,7 +400,7 @@ def plot_h2_capacities_by_grid_region(grouped, title, ymax, max_n_grid_regions, 
 
 def create_hydrogen_capacity_map(network, path_shapes, distance_crs=4326, min_capacity_mw=10):
     """
-    Create a map with pie charts showing hydrogen electrolyzer capacity breakdown by type for each state
+    Create a map with pie charts showing electrolyzer capacity breakdown by type for each state
     """
     if hasattr(network, 'links') and len(network.links) > 0:
         # Filter for hydrogen-related links (electrolyzers)
@@ -475,7 +475,7 @@ def create_hydrogen_capacity_map(network, path_shapes, distance_crs=4326, min_ca
     states_to_plot = state_capacity['state'].tolist()
 
     print(
-        f"Plotting {len(states_to_plot)} states with ≥{min_capacity_mw} MW hydrogen capacity")
+        f"Plotting {len(states_to_plot)} states with ≥{min_capacity_mw} MW input electricity")
 
     # Create pie charts for each state
     for state in states_to_plot:
@@ -532,7 +532,7 @@ def create_hydrogen_capacity_map(network, path_shapes, distance_crs=4326, min_ca
     ax.set_aspect('equal')
     ax.axis('off')
 
-    ax.set_title('Installed Hydrogen Electrolyzer Capacity by State and Type',
+    ax.set_title('Installed Electrolyzer Capacity by State and Type',
                  fontsize=24, pad=30)
 
     # Add subtitle
@@ -1250,7 +1250,7 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
 
     ax.set_extent([-130, -65, 20, 55], crs=ccrs.PlateCarree())
 
-    ax.set_title(f'Installed electrolyzer capacity - {title} (only nodes ≥ 10 MW)\n')
+    ax.set_title(f'Installed electrolyzer capacity (MW input electricity) - {title} (only nodes ≥ 10 MW)\n')
     plt.tight_layout()
     plt.show()
 
@@ -5351,18 +5351,24 @@ def compute_ft_capacity_factor(
     """
     Compute annual capacity factor of Fischer-Tropsch plants by grid region.
 
-    - Hydrogen input (p0) is negative → take absolute value (informative only).
-    - E-kerosene output (p1) is negative → use -p1, clip >= 0 → used for CF.
-    - Capacity factor is based ONLY on the output fuel.
-    - Installed capacity is reported in GW (aggregated by region).
-    - Snapshot weighting is taken from n.snapshot_weightings.generators (robust to timestep).
-    - If total production < output_threshold (MWh), skip result.
+    Definition:
+    - Capacity factor (%) = H2 input at bus0 (MWh) /
+                            (Installed capacity at bus0 (MW) * total weighted hours)
+
+    Notes:
+    - p_nom / p_nom_opt always refer to bus0 (PyPSA convention).
+    - p0 (bus0) = H2 input (MWh).
+    - p1 (bus1) = fuel output (MWh).
     """
 
     results = {}
 
     for year_key, n in networks.items():
-        scen_year = int(re.search(r"\d{4}", str(year_key)).group())
+        # extract year
+        m = re.search(r"\d{4}", str(year_key))
+        if not m:
+            continue
+        scen_year = int(m.group())
         key = str(scen_year) if year_title else year_key
 
         # select FT links
@@ -5370,7 +5376,7 @@ def compute_ft_capacity_factor(
         if ft.empty:
             continue
 
-        # capacity series (MW)
+        # capacity series (MW, bus0 reference)
         cap_series = pd.Series(
             np.where(
                 ft.get("p_nom_extendable", False),
@@ -5380,26 +5386,23 @@ def compute_ft_capacity_factor(
             index=ft.index,
         ).astype(float)
 
-        # apply capacity threshold
+        # filter by capacity threshold
         ft = ft[cap_series > p_nom_threshold]
         cap_series = cap_series.loc[ft.index]
         if ft.empty:
             continue
 
-        # snapshot weighting → ore totali
-        w = n.snapshot_weightings.generators  # hours per snapshot
+        # snapshot weighting (hours per snapshot)
+        w = n.snapshot_weightings.generators
         total_hours = float(w.sum())
 
-        # hydrogen input (MWh)
+        # H2 input (bus0, MWh)
         p0 = n.links_t.p0[ft.index]
-        energy_in = p0.abs().multiply(w, axis=0).sum(axis=0)  # MWh
+        energy_h2_in = (p0).clip(lower=0).multiply(w, axis=0).sum(axis=0)
 
-        # e-kerosene output (MWh)
+        # Fuel output (bus1, MWh, for reporting only)
         p1 = n.links_t.p1[ft.index]
-        energy_out = (-p1).clip(lower=0).multiply(w, axis=0).sum(axis=0)  # MWh
-
-        # capacity factor (fraction)
-        cf_frac = (energy_out / (cap_series * total_hours)).replace([np.inf, -np.inf], np.nan)
+        energy_out = (-p1).clip(lower=0).multiply(w, axis=0).sum(axis=0)
 
         # add region info
         ft["grid_region"] = ft["bus1"].map(n.buses["grid_region"])
@@ -5407,34 +5410,32 @@ def compute_ft_capacity_factor(
             "Link": ft.index,
             "Grid Region": ft["grid_region"],
             "Capacity (MW)": cap_series,
-            "Hydrogen input (MWh)": energy_in,
-            "E-kerosene output (MWh)": energy_out,
-            "Capacity factor (fraction)": cf_frac,
+            "Hydrogen input (MWh)": energy_h2_in,
+            "Fuel output (MWh)": energy_out,
         }).dropna()
 
-        # aggregate by region (CF in %)
+        # aggregate by region
         region_summary = (
             df_links.groupby("Grid Region")
             .apply(lambda g: pd.Series({
-                "Capacity (GW)": g["Capacity (MW)"].sum() / 1e3,
+                "Capacity (GW input H2)": g["Capacity (MW)"].sum() / 1e3,
                 "Hydrogen input (MWh)": g["Hydrogen input (MWh)"].sum(),
-                "E-kerosene output (MWh)": g["E-kerosene output (MWh)"].sum(),
+                "Fuel output (MWh)": g["Fuel output (MWh)"].sum(),
                 "Capacity factor (%)": (
-                    g["E-kerosene output (MWh)"].sum() /
-                    (g["Capacity (MW)"].sum() * total_hours) * 100
+                    g["Hydrogen input (MWh)"].sum()
+                    / (g["Capacity (MW)"].sum() * total_hours) * 100
                 ),
             }))
             .reset_index()
         )
 
-        # skip if total production is below threshold
-        if region_summary["E-kerosene output (MWh)"].sum() < output_threshold:
+        # skip if negligible production
+        if region_summary["Fuel output (MWh)"].sum() < output_threshold:
             continue
 
         results[key] = region_summary.round(round_digits)
 
     return results
-
 
 
 def compute_LCO_ekerosene_by_region(
@@ -6078,19 +6079,25 @@ def compare_h2_kerosene_production(network, plot=True, network_name="Network", p
     }
 
 
+
 def compute_capacity_factor_electrolysis(
     networks: dict,
-    p_nom_threshold: float = 1e-3,
+    p_nom_threshold: float = 1.0,   # MW
     year_title: bool = True,
     round_digits: int = 2,
+    output_threshold: float = 1.0,  # MWh
 ):
     """
     Compute annual capacity factor of H2 electrolysers by grid region.
 
-    - Input electricity (p0) is positive (MW, consumption).
-    - Output hydrogen (p1) is negative (MW, production) → use (-p1).clip(lower=0).
-    - Energy (MWh) is computed with snapshot_weightings.generators (hours per snapshot).
-    - Total hours = snapshot_weightings.generators.sum().
+    Definition:
+    - Capacity factor (%) = Electricity input at bus0 (MWh) /
+                            (Installed capacity at bus0 (MW) * total weighted hours)
+
+    Notes:
+    - p_nom / p_nom_opt always refer to bus0 (PyPSA convention).
+    - p0 (bus0) = electricity input (MW, positive).
+    - p1 (bus1) = hydrogen output (MW, negative) → reported only.
     """
 
     # Identify electrolyser carriers automatically
@@ -6104,15 +6111,19 @@ def compute_capacity_factor_electrolysis(
     results = {}
 
     for year_key, n in networks.items():
-        scen_year = int(re.search(r"\d{4}", str(year_key)).group())
+        # extract year
+        m = re.search(r"\d{4}", str(year_key))
+        if not m:
+            continue
+        scen_year = int(m.group())
         key = str(scen_year) if year_title else year_key
 
-        # Select electrolysers
+        # select electrolysers
         links = n.links[n.links.carrier.isin(h2_carriers)].copy()
         if links.empty:
             continue
 
-        # Installed capacity (MW)
+        # installed capacity (MW, bus0 reference)
         cap_series = pd.Series(
             np.where(
                 links.get("p_nom_extendable", False),
@@ -6122,28 +6133,25 @@ def compute_capacity_factor_electrolysis(
             index=links.index,
         ).astype(float)
 
-        # Apply threshold
+        # filter by capacity threshold
         links = links[cap_series > p_nom_threshold]
         cap_series = cap_series.loc[links.index]
         if links.empty:
             continue
 
-        # Total hours represented (robust to timestep)
-        w = n.snapshot_weightings.generators  # hours per snapshot
+        # snapshot weighting
+        w = n.snapshot_weightings.generators
         total_hours = float(w.sum())
 
-        # Electricity input (MWh)
-        p0 = n.links_t.p0[links.index]  # MW
-        energy_in = p0.abs().multiply(w, axis=0).sum(axis=0)  # MWh
+        # electricity input (MWh, bus0)
+        p0 = n.links_t.p0[links.index]
+        energy_in = (p0).clip(lower=0).multiply(w, axis=0).sum(axis=0)
 
-        # Hydrogen output (MWh)
-        p1 = n.links_t.p1[links.index]  # MW
-        energy_out = (-p1).clip(lower=0).multiply(w, axis=0).sum(axis=0)  # MWh
+        # hydrogen output (MWh, bus1, for reporting only)
+        p1 = n.links_t.p1[links.index]
+        energy_out = (-p1).clip(lower=0).multiply(w, axis=0).sum(axis=0)
 
-        # Capacity factor (fraction)
-        cf_frac = (energy_out / (cap_series * total_hours)).replace([np.inf, -np.inf], np.nan)
-
-        # Add grid region info
+        # add grid region info
         links["grid_region"] = links["bus1"].map(n.buses["grid_region"])
         df_links = pd.DataFrame({
             "Link": links.index,
@@ -6151,25 +6159,27 @@ def compute_capacity_factor_electrolysis(
             "Capacity (MW)": cap_series,
             "Electricity input (MWh)": energy_in,
             "Hydrogen output (MWh)": energy_out,
-            "Capacity factor (fraction)": cf_frac,
         }).dropna()
 
-        # Aggregate by region (CF in %)
+        # aggregate by region
         region_summary = (
             df_links.groupby("Grid Region")
             .apply(lambda g: pd.Series({
-                "Capacity (GW)": g["Capacity (MW)"].sum() / 1e3,
+                "Capacity (GW input electricity)": g["Capacity (MW)"].sum() / 1e3,
                 "Electricity input (MWh)": g["Electricity input (MWh)"].sum(),
                 "Hydrogen output (MWh)": g["Hydrogen output (MWh)"].sum(),
                 "Capacity factor (%)": (
-                    g["Hydrogen output (MWh)"].sum() /
-                    (g["Capacity (MW)"].sum() * total_hours) * 100
+                    g["Electricity input (MWh)"].sum()
+                    / (g["Capacity (MW)"].sum() * total_hours) * 100
                 ),
             }))
             .reset_index()
-        ).round(round_digits)
+        )
 
-        results[key] = region_summary
+        # skip if negligible production
+        if region_summary["Hydrogen output (MWh)"].sum() < output_threshold:
+            continue
+
+        results[key] = region_summary.round(round_digits)
 
     return results
-

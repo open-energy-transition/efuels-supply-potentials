@@ -6464,8 +6464,6 @@ def _get_aviation_loads_with_energy(network):
     aviation_loads = aviation_loads.join(buses_info, on="bus", how="left")
     aviation_loads["energy_MWh"] = energy_mwh
     aviation_loads["energy_TWh"] = aviation_loads["energy_MWh"] / 1e6
-    aviation_loads["average_MW"] = average_mw
-    aviation_loads["peak_MW"] = peak_mw
 
     return aviation_loads
 
@@ -6475,18 +6473,16 @@ def _aggregate_aviation_demand(network, level):
 
     loads = _get_aviation_loads_with_energy(network)
     if loads.empty or level not in loads.columns:
-        return pd.DataFrame(columns=[level, "energy_TWh", "average_MW", "peak_MW", "lon", "lat", "share_pct"])
+        return pd.DataFrame(columns=[level, "energy_TWh", "lon", "lat", "share_pct"])
 
     loads = loads.dropna(subset=[level])
     if loads.empty:
-        return pd.DataFrame(columns=[level, "energy_TWh", "average_MW", "peak_MW", "lon", "lat", "share_pct"])
+        return pd.DataFrame(columns=[level, "energy_TWh", "lon", "lat", "share_pct"])
 
     aggregated = (
         loads.groupby(level)
         .agg(
             energy_TWh=("energy_TWh", "sum"),
-            average_MW=("average_MW", "sum"),
-            peak_MW=("peak_MW", "max"),
             lon=("x", "mean"),
             lat=("y", "mean"),
         )
@@ -6514,16 +6510,14 @@ def compute_aviation_demand_table(network, level="state"):
     }.get(level, level.title())
 
     if aggregation.empty:
-        return pd.DataFrame(columns=[label, "Demand (TWh)", "Share (%)", "Average Load (MW)", "Peak Load (MW)"])
+        return pd.DataFrame(columns=[label, "Demand (TWh)", "Share (%)"])
 
     table = aggregation[[level, "energy_TWh",
-                         "share_pct", "average_MW", "peak_MW"]].copy()
+                         "share_pct"]].copy()
     table = table.rename(columns={
         level: label,
         "energy_TWh": "Demand (TWh)",
         "share_pct": "Share (%)",
-        "average_MW": "Average Load (MW)",
-        "peak_MW": "Peak Load (MW)",
     })
 
     return table

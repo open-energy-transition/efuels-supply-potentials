@@ -6510,13 +6510,13 @@ def compute_aviation_demand_table(network, level="state"):
     }.get(level, level.title())
 
     if aggregation.empty:
-        return pd.DataFrame(columns=[label, "Demand (TWh)", "Share (%)"])
+        return pd.DataFrame(columns=[label, "Fuel demand (TWh)", "Share (%)"])
 
     table = aggregation[[level, "energy_TWh",
                          "share_pct"]].copy()
     table = table.rename(columns={
         level: label,
-        "energy_TWh": "Demand (TWh)",
+        "energy_TWh": "Fuel demand (TWh)",
         "share_pct": "Share (%)",
     })
 
@@ -6593,7 +6593,7 @@ def create_aviation_demand_by_state_map(network, path_shapes, network_name="Netw
 
     ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
     ax.set_title(
-        f"Aviation Demand by State (TWh/year){year_str if year_title else f' – {network_name}'}",
+        f"Aviation fuel demand by State (TWh/year){year_str if year_title else f' – {network_name}'}",
         fontsize=12,
         pad=20,
     )
@@ -6671,7 +6671,7 @@ def create_aviation_demand_by_grid_region_map(network, path_shapes, network_name
 
     ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
     ax.set_title(
-        f"Aviation Demand by Grid Region (TWh/year){year_str if year_title else f' – {network_name}'}",
+        f"Aviation fuel demand by Grid Region (TWh/year){year_str if year_title else f' – {network_name}'}",
         fontsize=12,
         pad=20,
     )

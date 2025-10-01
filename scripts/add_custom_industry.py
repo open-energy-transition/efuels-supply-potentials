@@ -767,6 +767,7 @@ def define_grid_H2(n):
         e_cyclic=True,
         carrier="grid H2 Store Tank",
         capital_cost=h2_store_tanks.capital_cost.values,
+        lifetime=h2_store_tanks.lifetime.values,
     )
     logger.info("Added grid H2 Store Tank for grid H2")
 

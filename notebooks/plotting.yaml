@@ -118,7 +118,7 @@ tech_colors:
   battery: '#ace37f'
   battery storage: '#ace37f'
   battery charger: '#88a75b'
-  battery discharger: '#5d4e29'
+  battery discharger: '#b88300'
   home battery: '#80c944'
   home battery storage: '#80c944'
   home battery charger: '#5e8032'
@@ -403,6 +403,7 @@ nice_names:
   clinker: Clinker
   cement: Cement
   biogenic co2: Biogenic Carbon Dioxide
+  battery discharger: Battery
 
 rename_tech_capex:
   # Wind
@@ -470,7 +471,7 @@ rename_tech_capex:
   # Storage
   battery: Electricity Storage
   battery charger: Electricity Storage
-  battery discharger: Electricity Storage
+  Battery: Electricity Storage
   home battery: Electricity Storage
   home battery charger: Electricity Storage
   home battery discharger: Electricity Storage

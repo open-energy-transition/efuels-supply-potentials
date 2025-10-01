@@ -763,27 +763,21 @@ def filter_and_group_small_carriers(df, threshold=0.005):
 
 def calculate_dispatch(n, start_date=None, end_date=None):
     # Select time window
-    snapshots_slice = slice(
-        start_date, end_date) if start_date and end_date else slice(None)
+    snapshots_slice = slice(start_date, end_date) if start_date and end_date else slice(None)
     snapshots = n.snapshots[snapshots_slice]
 
-    # Duration of each timestep
     timestep_hours = (snapshots[1] - snapshots[0]).total_seconds() / 3600
 
-    # Define valid carriers
     gen_and_sto_carriers = {
-        'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac', 'nuclear',
-        'geothermal', 'ror', 'hydro', 'solar rooftop',
+        'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac',
+        'nuclear', 'geothermal', 'ror', 'hydro', 'solar rooftop',
     }
-    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT',
-                     'biomass', "biomass CHP", "gas CHP"]
-    valid_carriers = gen_and_sto_carriers.union(link_carriers)
+    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass', "biomass CHP", "gas CHP"]
 
-    # Identify electric buses
+    # identify electric buses
     electric_buses = set(
         n.buses.index[
-            ~n.buses.carrier.str.contains(
-                "heat|gas|H2|oil|coal", case=False, na=False)
+            ~n.buses.carrier.str.contains("heat|gas|H2|oil|coal", case=False, na=False)
         ]
     )
 
@@ -792,18 +786,15 @@ def calculate_dispatch(n, start_date=None, end_date=None):
     gen_p = n.generators_t.p.loc[snapshots_slice, gen.index].clip(lower=0)
     gen_dispatch = gen_p.groupby(gen['carrier'], axis=1).sum()
 
-    # Storage
+    # Storage units
     sto = n.storage_units[n.storage_units.carrier.isin(gen_and_sto_carriers)]
     sto_p = n.storage_units_t.p.loc[snapshots_slice, sto.index].clip(lower=0)
     sto_dispatch = sto_p.groupby(sto['carrier'], axis=1).sum()
 
-    # Links: only from conventional carriers and to electric buses
+    # Links: conventional generation
     link_frames = []
     for carrier in link_carriers:
-        links = n.links[
-            (n.links.carrier == carrier) &
-            (n.links.bus1.isin(electric_buses))
-        ]
+        links = n.links[(n.links.carrier == carrier) & (n.links.bus1.isin(electric_buses))]
         if links.empty:
             continue
         p1 = n.links_t.p1.loc[snapshots_slice, links.index].clip(upper=0)
@@ -811,18 +802,24 @@ def calculate_dispatch(n, start_date=None, end_date=None):
         df = p1_positive.groupby(links['carrier'], axis=1).sum()
         link_frames.append(df)
 
-    link_dispatch = pd.concat(
-        link_frames, axis=1) if link_frames else pd.DataFrame(index=snapshots)
+    # Battery
+    battery_links = n.links[n.links.carrier == "battery discharger"]
+    if not battery_links.empty:
+        p1 = n.links_t.p1.loc[snapshots_slice, battery_links.index].clip(upper=0)
+        battery_dispatch = -p1.groupby(battery_links['carrier'], axis=1).sum()
+        battery_dispatch.columns = ["battery discharger"]
+        link_frames.append(battery_dispatch)
 
-    # Combine all sources
+    link_dispatch = pd.concat(link_frames, axis=1) if link_frames else pd.DataFrame(index=snapshots)
+
+    # Combine everything
     supply = pd.concat([gen_dispatch, sto_dispatch, link_dispatch], axis=1)
-    supply = supply.groupby(supply.columns, axis=1).sum()
-    supply = supply.clip(lower=0)
+    supply = supply.groupby(supply.columns, axis=1).sum().clip(lower=0)
 
-    # Convert to GW and GWh
-    supply_gw = supply / 1e3  # MW → GW
+    # Convert
+    supply_gw = supply / 1e3
     energy_mwh = supply.sum(axis=1) * timestep_hours
-    total_gwh = energy_mwh.sum() / 1e3  # → GWh
+    total_gwh = energy_mwh.sum() / 1e3
 
     return total_gwh, supply_gw
 
@@ -831,26 +828,46 @@ def plot_electricity_dispatch(networks, carrier_colors, start_date=None, end_dat
     summary_list = []
     max_y = 0
 
+    # First pass: calculate ymax (for plot scaling) and total GWh
     for key, n in networks.items():
         print(f"Processing network: {key}")
         total_gwh, supply_gw = calculate_dispatch(n, start_date, end_date)
-        summary_list.append(
-            {"Network": key, "Total Dispatch (GWh)": total_gwh})
+        summary_list.append({"Network": key, "Total Dispatch (GWh)": total_gwh})
         max_y = max(max_y, supply_gw.sum(axis=1).max())
 
+    # Use provided ymax or max across all networks
     y_max_plot = ymax if ymax is not None else max_y
 
-    fig, axes = plt.subplots(len(networks), 1, figsize=(
-        22, 5 * len(networks)), sharex=True)
-
+    # Create one subplot per network
+    fig, axes = plt.subplots(len(networks), 1, figsize=(22, 5 * len(networks)), sharex=True)
     if len(networks) == 1:
         axes = [axes]
 
+    # Order of technologies in the stacked plot
+    ordered_columns = [
+        'nuclear',
+        'coal',
+        'biomass', 'biomass CHP', 'gas CHP',
+        'CCGT', 'OCGT', 'oil',
+        'hydro', 'ror',
+        'geothermal',
+        'solar', 'solar rooftop', 'csp',
+        'onwind', 'offwind-ac', 'offwind-dc',
+        'battery discharger'
+    ]
+
+    # Loop through networks and plot each one
     for ax, (key, n) in zip(axes, networks.items()):
         _, supply_gw = calculate_dispatch(n, start_date, end_date)
-        supply_gw.index = pd.to_datetime(supply_gw.index)
-        supply_gw = supply_gw.resample('24H').mean()
 
+        # Convert index to datetime and resample daily averages
+        supply_gw.index = pd.to_datetime(supply_gw.index)
+        supply_gw = supply_gw.resample("24H").mean()
+
+        # Keep only carriers present in both ordered_columns and supply_gw
+        supply_gw = supply_gw[[c for c in ordered_columns if c in supply_gw.columns]]
+
+        # Stacked area plot
         supply_gw.plot.area(
             ax=ax,
             stacked=True,
@@ -858,26 +875,37 @@ def plot_electricity_dispatch(networks, carrier_colors, start_date=None, end_dat
             color=[carrier_colors.get(c, 'gray') for c in supply_gw.columns],
             legend=False
         )
+
+        # Title and axes formatting
         ax.set_title(f"Electricity dispatch – {key}")
         ax.set_ylabel("Power (GW)")
         ax.set_ylim(0, y_max_plot)
         ax.grid(True)
 
+        # Legend: only keep carriers with nonzero total generation
         handles, labels = ax.get_legend_handles_labels()
-        ax.legend(
-            handles, labels,
-            loc='center left',
-            bbox_to_anchor=(1.02, 0.5),
-            title='Carrier',
-            fontsize='small',
-            title_fontsize='medium'
-        )
+        sums = supply_gw.sum()
+        filtered = [(h, l) for h, l in zip(handles, labels) if sums.get(l, 0) > 0]
 
+        if filtered:
+            handles, labels = zip(*filtered)
+            ax.legend(
+                handles, labels,
+                loc='center left',
+                bbox_to_anchor=(1.02, 0.5),
+                title='Technology',
+                fontsize='small',
+                title_fontsize='medium'
+            )
+
+    # Label x-axis for the bottom plot
     axes[-1].set_xlabel("Time")
     plt.tight_layout(rect=[0, 0, 0.80, 1])
     plt.show()
 
     return summary_list
+
+
 
 
 def compute_and_plot_load(n, key="", ymax=None, start_date=None, end_date=None):
@@ -1745,7 +1773,9 @@ def calculate_total_generation_by_carrier(network, start_date=None, end_date=Non
         'geothermal', 'ror', 'hydro', 'solar rooftop'
     }
     link_carriers = ['coal', 'oil', 'OCGT', 'CCGT', 'biomass', 'lignite',
-                     "urban central solid biomass CHP", "urban central gas CHP"]
+                     "urban central solid biomass CHP", "urban central gas CHP",
+                    "battery discharger"
+                    ]
 
     # Identify electric buses
     electric_buses = set(
@@ -2541,13 +2571,14 @@ def evaluate_res_ces_by_state(networks, ces, res, ces_carriers, res_carriers, mu
 
 def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, regions_onshore, title_year=True):
 
-    # Define generation/link carriers
+    # Define generation and link carriers
     gen_carriers = {
         "onwind", "offwind-ac", "offwind-dc", "solar", "solar rooftop",
-        "csp", "nuclear", "geothermal", "ror", "PHS",
+        "csp", "nuclear", "geothermal", "ror", "PHS", "battery discharger"
     }
     link_carriers = {
-        "OCGT", "CCGT", "coal", "oil", "biomass", "biomass CHP", "gas CHP"
+        "OCGT", "CCGT", "coal", "oil", "biomass", "urban central solid biomass CHP",
+        "urban central gas CHP", "battery discharger"
     }
 
     # Generator and storage capacity
@@ -2557,53 +2588,46 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
     sto_p_nom_opt = n.storage_units[n.storage_units.carrier.isin(gen_carriers)]
     sto_p_nom_opt = sto_p_nom_opt.groupby(["bus", "carrier"]).p_nom_opt.sum()
 
-    # Link capacity
+    # Link capacity (scaled by efficiency)
     link_mask = (
         n.links.efficiency.notnull()
         & (n.links.p_nom_opt > 0)
         & n.links.carrier.isin(link_carriers)
     )
     electricity_links = n.links[link_mask].copy()
-    electricity_links["electric_output"] = electricity_links.p_nom_opt * \
-        electricity_links.efficiency
-    link_p_nom_opt = electricity_links.groupby(
-        ["bus1", "carrier"]).electric_output.sum()
+    electricity_links["electric_output"] = electricity_links.p_nom_opt * electricity_links.efficiency
+    link_p_nom_opt = electricity_links.groupby(["bus1", "carrier"]).electric_output.sum()
     link_p_nom_opt.index = link_p_nom_opt.index.set_names(["bus", "carrier"])
 
-    # Combine all
-    bus_carrier_capacity = pd.concat(
-        [gen_p_nom_opt, sto_p_nom_opt, link_p_nom_opt])
+    # Combine all sources
+    bus_carrier_capacity = pd.concat([gen_p_nom_opt, sto_p_nom_opt, link_p_nom_opt])
     bus_carrier_capacity = bus_carrier_capacity.groupby(level=[0, 1]).sum()
     bus_carrier_capacity = bus_carrier_capacity[bus_carrier_capacity > 0]
 
-    # Valid buses with coordinates
+    # Keep only buses with valid coordinates
     valid_buses = n.buses.dropna(subset=["x", "y"])
     valid_buses = valid_buses[
         (valid_buses["x"] > -200) & (valid_buses["x"] < 200) &
         (valid_buses["y"] > -90) & (valid_buses["y"] < 90)
     ]
 
+    # Normalize bus names (remove " low voltage")
     def normalize_bus_name(bus_name):
         return bus_name.replace(" low voltage", "")
 
     bus_carrier_capacity = bus_carrier_capacity.reset_index()
-    bus_carrier_capacity['bus'] = bus_carrier_capacity['bus'].apply(
-        normalize_bus_name)
+    bus_carrier_capacity['bus'] = bus_carrier_capacity['bus'].apply(normalize_bus_name)
     bus_carrier_capacity['carrier'] = bus_carrier_capacity['carrier'].replace({
         'offwind-ac': 'offwind',
         'offwind-dc': 'offwind'
     })
-    bus_carrier_capacity = bus_carrier_capacity.groupby(
-        ['bus', 'carrier'], as_index=False).sum()
-    bus_carrier_capacity = bus_carrier_capacity.set_index(
-        ['bus', 'carrier']).squeeze()
+    bus_carrier_capacity = bus_carrier_capacity.groupby(['bus', 'carrier'], as_index=False).sum()
+    bus_carrier_capacity = bus_carrier_capacity.set_index(['bus', 'carrier']).squeeze()
     capacity_df = bus_carrier_capacity.unstack(fill_value=0)
-    capacity_df = capacity_df.loc[capacity_df.index.intersection(
-        valid_buses.index)]
+    capacity_df = capacity_df.loc[capacity_df.index.intersection(valid_buses.index)]
 
-    # Setup map
-    fig, ax = plt.subplots(figsize=(28, 10), subplot_kw={
-                           "projection": ccrs.PlateCarree()})
+    # Setup map background
+    fig, ax = plt.subplots(figsize=(28, 10), subplot_kw={"projection": ccrs.PlateCarree()})
     bbox = box(-130, 20, -60, 50)
     regions_onshore_clipped = regions_onshore.to_crs(epsg=4326).clip(bbox)
 
@@ -2616,11 +2640,10 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
         zorder=0,
     )
 
-    # Store original links and apply filter
+    # Plot only DC links 
     original_links = n.links.copy()
     n.links = n.links[n.links.carrier == "DC"]
 
-    # Plot network
     line_scale = 5e3
     n.plot(
         ax=ax,
@@ -2635,7 +2658,7 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
     )
     n.links = original_links
 
-    # Draw pie charts for buses
+    # Draw pie charts at bus locations 
     pie_scale = 0.003
     for bus_id, capacities in capacity_df.iterrows():
         x, y = valid_buses.loc[bus_id, ['x', 'y']]
@@ -2666,9 +2689,9 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
             ax.add_patch(wedge)
             start_angle += angle
 
-    # Legends
+    # Legends 
 
-    # Bus Capacity Legend using Line2D markers
+    # Bus capacity (marker size legend)
     bus_caps = [5, 10, 50]
     bus_marker_sizes = [np.sqrt(cap) * pie_scale * 1000 for cap in bus_caps]
     bus_patches = [
@@ -2688,10 +2711,10 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
         labelspacing=1.4,
     )
 
+    # AC line capacity
     ac_caps = [5e3, 20e3, 50e3]
     ac_patches = [
-        mlines.Line2D([], [], color='teal', linewidth=cap /
-                      line_scale, label=f"{int(cap/1e3)} GW")
+        mlines.Line2D([], [], color='teal', linewidth=cap / line_scale, label=f"{int(cap/1e3)} GW")
         for cap in ac_caps
     ]
     ac_legend = ax.legend(
@@ -2705,10 +2728,10 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
         labelspacing=1.1
     )
 
+    # DC link capacity
     dc_caps = [2e3, 5e3, 10e3]
     dc_patches = [
-        mlines.Line2D([], [], color='turquoise', linewidth=cap /
-                      line_scale, label=f"{int(cap/1e3)} GW")
+        mlines.Line2D([], [], color='turquoise', linewidth=cap / line_scale, label=f"{int(cap/1e3)} GW")
         for cap in dc_caps
     ]
     dc_legend = ax.legend(
@@ -2722,18 +2745,44 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
         labelspacing=1.1
     )
 
-    carrier_handles = [
-        mpatches.Patch(color=tech_colors.get(
-            c, 'gray'), label=nice_names.get(c, c))
-        for c in sorted(capacity_df.columns) if capacity_df[c].sum() > 0
+        # Carrier legend (force preferred order with nice_names)
+    preferred_order = [
+        "Coal", "Gas CCGT", "Gas OCGT", "Gas CHP",
+        "Oil", "Nuclear",
+        "Biomass", "Biomass CHP",
+        "Conventional hydro", "Run-of-River hydro", "Pumped hydro storage",
+        "Utility-scale solar", "Rooftop solar", "CSP",
+        "Onshore wind", "Offshore wind",
+        "Battery"
     ]
+
+    # Map raw carriers to pretty names
+    carriers_present = {
+        nice_names.get(c, c): c
+        for c in capacity_df.columns if capacity_df[c].sum() > 0
+    }
+
+    # Keep only the carriers that are in the preferred order and present in data
+    ordered_carriers = [
+        c for c in preferred_order if c in carriers_present.keys()
+    ]
+
+    # Build handles with the correct color from the raw key
+    carrier_handles = [
+        mpatches.Patch(
+            color=tech_colors.get(carriers_present[c], "gray"),
+            label=c
+        )
+        for c in ordered_carriers
+    ]
+
     carrier_legend = ax.legend(
         handles=carrier_handles,
         title="Technology",
         title_fontsize=13,
         fontsize=11,
         frameon=False,
-        loc='upper right',
+        loc="upper right",
         bbox_to_anchor=(1.125, 0.54),
         ncol=2,
         labelspacing=1.05,
@@ -2744,41 +2793,51 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
     ax.add_artist(dc_legend)
     ax.add_artist(carrier_legend)
 
+    # Set map extent
     ax.set_extent([-125, -65, 20, 55], crs=ccrs.PlateCarree())
     ax.autoscale(False)
 
+    # Title
     year = key[-4:]
     ax.set_title(
-        f"Installed electricity generation and transmission capacity – {year if title_year else key}", fontsize=14)
+        f"Installed electricity generation and transmission capacity – {year if title_year else key}", 
+        fontsize=14
+    )
 
     plt.tight_layout()
     plt.show()
 
 
-def compute_installed_capacity_by_carrier(networks, nice_names=None, display_result=True, column_year=True):
 
+def compute_installed_capacity_by_carrier(
+    networks,
+    nice_names=None,
+    display_result=True,
+    column_year=True
+):
     totals_by_carrier = {}
 
     for name, net in networks.items():
+        # Conventional generator and storage carriers
         gen_carriers = {
-            "onwind", "offwind-ac", "offwind-dc", "solar", "solar rooftop",
+            "onwind", "offwind", "solar", "solar rooftop",
             "csp", "nuclear", "geothermal", "ror", "PHS", "hydro",
         }
         link_carriers = {
-            "OCGT", "CCGT", "coal", "oil", "biomass", "biomass CHP", "gas CHP"
+            "OCGT", "CCGT", "coal", "oil", "biomass",
+            "urban central solid biomass CHP", "urban central gas CHP",
+            "battery discharger"
         }
 
         # Generators
         gen = net.generators.copy()
-        gen['carrier'] = gen['carrier'].replace(
-            {'offwind-ac': 'offwind', 'offwind-dc': 'offwind'})
         gen = gen[gen.carrier.isin(gen_carriers)]
-        gen_totals = gen.groupby('carrier')['p_nom_opt'].sum()
+        gen_totals = gen.groupby("carrier")["p_nom_opt"].sum()
 
-        # Storage
+        # Storage units
         sto = net.storage_units.copy()
         sto = sto[sto.carrier.isin(gen_carriers)]
-        sto_totals = sto.groupby('carrier')['p_nom_opt'].sum()
+        sto_totals = sto.groupby("carrier")["p_nom_opt"].sum()
 
         # Links (efficiency-scaled output)
         links = net.links.copy()
@@ -2788,11 +2847,12 @@ def compute_installed_capacity_by_carrier(networks, nice_names=None, display_res
             & links.carrier.isin(link_carriers)
         )
         links = links[mask]
-        links_totals = links.groupby('carrier').apply(
-            lambda df: (df['p_nom_opt'] * df['efficiency']).sum()
+
+        links_totals = links.groupby("carrier").apply(
+            lambda df: (df["p_nom_opt"] * df["efficiency"]).sum()
         )
 
-        # Combine and store
+        # Combine all contributions
         all_totals = pd.concat([gen_totals, sto_totals, links_totals])
         all_totals = all_totals.groupby(all_totals.index).sum()
         all_totals = all_totals[all_totals > 0]
@@ -2802,29 +2862,38 @@ def compute_installed_capacity_by_carrier(networks, nice_names=None, display_res
     carrier_capacity_df = pd.DataFrame(totals_by_carrier).fillna(0)
 
     # Extract years and sort
-    if column_year == True:
-        carrier_capacity_df.columns = [
-            int(name[-4:]) for name in carrier_capacity_df.columns]
-    carrier_capacity_df = carrier_capacity_df[sorted(
-        carrier_capacity_df.columns)]
+    if column_year:
+        carrier_capacity_df.columns = [int(name[-4:]) for name in carrier_capacity_df.columns]
+    carrier_capacity_df = carrier_capacity_df[sorted(carrier_capacity_df.columns)]
 
     # Convert to GW
-    carrier_capacity_df = carrier_capacity_df / 1000
-    carrier_capacity_df = carrier_capacity_df.round(2)
-
-    # Filter rows with any nonzero value
-    carrier_capacity_df = carrier_capacity_df.loc[carrier_capacity_df.sum(
-        axis=1) > 0]
+    carrier_capacity_df = (carrier_capacity_df / 1000).round(2)
 
     # Rename index if nice_names is provided
     if nice_names:
         carrier_capacity_df = carrier_capacity_df.rename(index=nice_names)
+
+    # Apply preferred order
+    preferred_order = [
+        "Coal", "Gas CCGT", "Gas OCGT", "Gas CHP",
+        "Oil", "Nuclear",
+        "Biomass", "Biomass CHP", "Geothermal",        
+        "Conventional hydro", "Run-of-River hydro", "Pumped hydro storage",
+        "Onshore wind", "Offshore wind",
+        "Utility-scale solar", "Rooftop solar", "CSP",
+        "Battery"
+    ]
+    available = carrier_capacity_df.index.tolist()
+    ordered_index = [c for c in preferred_order if c in available] + \
+                    [c for c in available if c not in preferred_order]
+    carrier_capacity_df = carrier_capacity_df.loc[ordered_index]
 
     if display_result:
         print("\nInstalled capacity by technology (GW)\n")
         display(carrier_capacity_df)
 
     return carrier_capacity_df
+
 
 
 def compute_system_costs(network, rename_capex, rename_opex, name_tag):

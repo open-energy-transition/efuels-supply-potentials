@@ -91,8 +91,8 @@ tech_colors:
   solid biomass for industry CC: '#47411c'
   solid biomass for industry co2 from atmosphere: '#736412'
   solid biomass for industry co2 to stored: '#47411c'
-  urban central solid biomass CHP: '#9d9042'
-  urban central solid biomass CHP CC: '#6c5d28'
+  urban central solid biomass CHP: '#60bd6a'
+  urban central solid biomass CHP CC: '#58bd00'
   biomass boiler: '#8A9A5B'
   residential rural biomass boiler: '#a1a066'
   residential urban decentral biomass boiler: '#b0b87b'
@@ -116,6 +116,7 @@ tech_colors:
   industry new electricity: '#2d2a66'
   agriculture electricity: '#494778'
   battery: '#ace37f'
+  Battery: '#ace37f'
   battery storage: '#ace37f'
   battery charger: '#88a75b'
   battery discharger: '#b88300'
@@ -368,7 +369,8 @@ nice_names:
   co2: CO2
   h2: Hydrogen
   H2: Hydrogen
-  battery: Battery Storage
+  battery: Battery
+  Battery: Battery
   home battery: Home Battery
   water tanks: Water Tanks
   solar rooftop: Rooftop solar
@@ -469,9 +471,10 @@ rename_tech_capex:
   Reservoir & Dam: Hydropower
 
   # Storage
+  Battery: Electricity storage
   battery: Electricity Storage
   battery charger: Electricity Storage
-  Battery: Electricity Storage
+  battery discharger: Electricity Storage
   home battery: Electricity Storage
   home battery charger: Electricity Storage
   home battery discharger: Electricity Storage
@@ -642,6 +645,7 @@ rename_tech_opex:
 
   # Storage
   battery: Electricity Storage
+  Battery: Electricity Storage
   battery charger: Electricity Storage
   battery discharger: Electricity Storage
   home battery: Electricity Storage
@@ -859,7 +863,7 @@ tech_power_color:
   "Run-of-River hydro": "#3dbfb0"
   "Biomass": "#4fba41"
   "Gas CHP": "#a61945"
-  "Biomass CHP": "#405c43"
+  "Biomass CHP": "#60bd6a"
   "Gas OCGT": "#db6a00"
   "Gas CCGT": "#db0000"
   "Nuclear": "#e81cd0"

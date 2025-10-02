@@ -134,6 +134,7 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 11. [PR #71](https://github.com/open-energy-transition/pypsa-earth/pull/71): Enable selection of custom busmap.
 12. [PR #76](https://github.com/open-energy-transition/pypsa-earth/pull/76): Add functionality to overwrite cost attributes in sector model.
 13. [PR #84](https://github.com/open-energy-transition/pypsa-earth/pull/84): Add possibility to overwrite discount rate.
+14. [PR #86](https://github.com/open-energy-transition/pypsa-earth/pull/86): Use H2 Store Tank costs without compressor and add lifetime.
  
 ## 5. Validation
 

@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Add **H2 Store Tank for grid H2** [PR #111](https://github.com/open-energy-transition/efuels-supply-potentials/pull/111)
+
 * Set `h2_export` value to 0 and change `discountrate` for sector model wildcard to 0.07 in agreement with the values from `fill_values` [PR #110](https://github.com/open-energy-transition/efuels-supply-potentials/pull/110)
 
 * Apply **pre-OB3 tax credits** for solar, wind, electrolyzers, point-source CO2 and DAC for selected scenarios; extend credit to all battery components [PR #99](https://github.com/open-energy-transition/efuels-supply-potentials/pull/99)

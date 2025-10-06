@@ -6748,3 +6748,227 @@ def create_aviation_demand_by_grid_region_map(network, path_shapes, network_name
     plt.tight_layout()
 
     return fig, ax, region_df
+
+
+def calculate_demand_profile(network):
+        """Calculate total electricity demand profile from network."""
+        # Industrial processes consuming AC electricity
+        target_processes = [
+            "SMR CC", "Haber-Bosch", "ethanol from starch", "ethanol from starch CC",
+            "DRI", "DRI CC", "DRI H2", "BF-BOF", "BF-BOF CC", "EAF",
+            "dry clinker", "cement finishing", "dry clinker CC"
+        ]
+        
+        # Static and dynamic loads
+        static_load_carriers = ["rail transport electricity", "agriculture electricity", "industry electricity"]
+        
+        # Static loads (constant profile)
+        static_totals = (
+            network.loads.groupby("carrier").sum().p_set
+            .reindex(static_load_carriers)
+            .fillna(0)
+        )
+        static_sum = static_totals.sum()  # MW
+        static_profile = pd.Series(static_sum, index=network.snapshots)
+        
+        # Industrial AC consumption
+        process_links = network.links[network.links.carrier.isin(target_processes)]
+        ac_input_links = process_links[process_links.bus0.map(network.buses.carrier) == "AC"].index
+        ind_ac_profile = network.links_t.p0[ac_input_links].sum(axis=1) if len(ac_input_links) > 0 else 0
+        
+        # Non-industrial AC loads
+        ac_loads = network.loads[network.loads.carrier == "AC"]
+        industrial_ac_buses = network.links.loc[ac_input_links, "bus0"].unique() if len(ac_input_links) > 0 else []
+        ac_non_ind_idx = ac_loads[~ac_loads.bus.isin(industrial_ac_buses)].index
+        ac_profile = network.loads_t.p_set[ac_non_ind_idx.intersection(network.loads_t.p_set.columns)].sum(axis=1)
+        
+        # Services and EVs
+        serv_idx = [i for i in network.loads[network.loads.carrier == "services electricity"].index
+                    if i in network.loads_t.p_set.columns]
+        ev_idx = [i for i in network.loads[network.loads.carrier == "land transport EV"].index
+                  if i in network.loads_t.p_set.columns]
+        serv_profile = network.loads_t.p_set[serv_idx].sum(axis=1) if serv_idx else 0
+        ev_profile = network.loads_t.p_set[ev_idx].sum(axis=1) if ev_idx else 0
+        
+        # Data centers (constant profile)
+        data_center_sum = network.loads.loc[network.loads.carrier == "data center", "p_set"].sum()
+        dc_profile = pd.Series(data_center_sum, index=network.snapshots)
+        
+        # Other electricity
+        other_idx = [i for i in network.loads[network.loads.carrier == "other electricity"].index
+                     if i in network.loads_t.p_set.columns]
+        other_profile = network.loads_t.p_set[other_idx].sum(axis=1) if other_idx else 0
+        
+        # Total demand profile (convert to GW, keep positive for plotting)
+        total_demand = (
+            static_profile + abs(ind_ac_profile) + ac_profile + 
+            serv_profile + ev_profile + dc_profile + other_profile
+        ) / 1000
+        
+        return total_demand
+
+
+def plot_electricity_dispatch(networks, tech_colors, nice_names, 
+                                        title_year=True, return_data=False):
+    """
+    Plot electricity dispatch with demand for multiple networks with stacked area charts.
+    
+    Parameters:
+    -----------
+    networks : dict
+        Dictionary of network names to PyPSA network objects
+    tech_colors : dict
+        Technology color mapping
+    nice_names : dict
+        Technology name mapping for legend
+    title_year : bool, default True
+        If True, extract year from key for title. If False, use full key name
+    return_data : bool, default False
+        Whether to return the collected dispatch tables and demand data
+    
+    Returns:
+    --------
+    dict or None
+        If return_data=True, returns dict with 'dispatch' and 'demand' keys
+    """
+    
+    
+    collected_dispatch_tables = {}
+    collected_demand_tables = {}
+    summary_list = []
+    max_y = 0
+    
+    # Calculate dispatch and demand for all networks and find global max
+    for key, n in networks.items():
+        total_gwh, supply_gw = calculate_dispatch(n)
+        demand_profile = calculate_demand_profile(n)
+        
+        summary_list.append({"Network": key, "Total Dispatch (GWh)": total_gwh})
+        max_y = max(max_y, supply_gw.sum(axis=1).max(), demand_profile.max())
+    
+    # Add some margin
+    ymax = max_y * 1.05
+    
+    # Create subplots
+    fig, axes = plt.subplots(len(networks), 1, figsize=(22, 5 * len(networks)))
+    
+    # Handle single network case
+    if len(networks) == 1:
+        axes = [axes]
+    
+    # Define technology order
+    ordered_columns = [
+        'nuclear',
+        'coal',
+        'biomass',
+        'CCGT',
+        'OCGT',
+        'oil',
+        'hydro',
+        'ror',
+        'geothermal',
+        'gas CHP',
+        'biomass CHP',
+        'solar',
+        'solar rooftop',
+        'csp',
+        'onwind',
+        'offwind-ac',
+        'offwind-dc',
+        'battery discharger'
+    ]
+    
+    # Plot each network
+    for ax, (key, n) in zip(axes, networks.items()):
+        # Calculate dispatch
+        _, supply_gw = calculate_dispatch(n)
+        supply_gw.index = pd.to_datetime(supply_gw.index)
+        supply_gw = supply_gw.resample('24H').mean()
+        
+        # Calculate demand
+        demand_profile = calculate_demand_profile(n)
+        demand_profile.index = pd.to_datetime(demand_profile.index)
+        demand_daily = demand_profile.resample('24H').mean()
+        
+        # Filter and order columns
+        supply_gw = supply_gw[[c for c in ordered_columns if c in supply_gw.columns]]
+        collected_dispatch_tables[key] = supply_gw
+        collected_demand_tables[key] = demand_daily
+        
+        # Create stacked area plot for generation
+        supply_gw.plot.area(
+            ax=ax,
+            stacked=True,
+            linewidth=0,
+            color=[tech_colors.get(c, 'gray') for c in supply_gw.columns],
+            legend=False
+        )
+        
+        # Plot demand as line (positive values)
+        demand_daily.plot(
+            ax=ax,
+            color='red',
+            linewidth=2,
+            linestyle='-',
+            label='Total Demand',
+            alpha=0.8
+        )
+        
+        # Add horizontal line at zero
+        ax.axhline(y=0, color='black', linewidth=1.5, linestyle='-', alpha=0.8)
+        
+        # Set title based on title_year parameter
+        if title_year:
+            year = key[-4:]  # Extract the year
+            title = f"Electricity Dispatch & Demand – {year}"
+        else:
+            title = f"Electricity Dispatch & Demand – {key}"
+        
+        ax.set_title(title)
+        ax.set_ylabel("Power (GW)")
+        ax.set_ylim(0, ymax)
+        ax.grid(True, alpha=0.3)
+        
+        # Set x-axis formatting
+        start = supply_gw.index.min().replace(day=1)
+        end = supply_gw.index.max()
+        month_starts = pd.date_range(start=start, end=end, freq='MS')
+        
+        ax.set_xlim(start, end)
+        ax.set_xticks(month_starts)
+        ax.set_xticklabels(month_starts.strftime('%b'))
+        ax.tick_params(axis='x', which='both', labelbottom=True)
+        
+        # Create legend for technologies with non-zero values + demand
+        handles, labels = ax.get_legend_handles_labels()
+        sums = supply_gw.sum()
+        
+        # Filter out zero generation technologies but keep demand
+        filtered = [(h, l) for h, l in zip(handles, labels) 
+                   if sums.get(l, 0) > 0 or l == 'Total Demand']
+        
+        if filtered:
+            handles, labels = zip(*filtered)
+            pretty_labels = [nice_names.get(label, label) if label != 'Total Demand' 
+                           else label for label in labels]
+            
+            ax.legend(
+                handles, pretty_labels,
+                loc='center left',
+                bbox_to_anchor=(1.02, 0.5),
+                title='Technology',
+                fontsize='small',
+                title_fontsize='medium'
+            )
+    
+    # Set x-label for bottom subplot
+    axes[-1].set_xlabel("Time (months)")
+    plt.tight_layout(rect=[0, 0.05, 0.80, 1])
+    plt.show()
+    
+    # Return data if requested
+    if return_data:
+        return {
+            'dispatch': collected_dispatch_tables,
+            'demand': collected_demand_tables
+        }

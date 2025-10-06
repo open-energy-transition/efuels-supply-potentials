@@ -668,80 +668,102 @@ def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network"
 
 def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_gw=0.1, year_title=True):
     """
-    Create a map showing total FT capacity per grid region (GW input H2) as full circles with linear radius scaling.
+    Create a map showing total FT capacity per grid region in GW input H2,
+    using circles with linear radius scaling, limited to the contiguous US.
     """
 
-    # Extract year from network name
+    # extract year from network name
     year_match = re.search(r'\d{4}', network_name)
     year_str = f" – {year_match.group()}" if year_match else ""
 
-    # Filter FT-related links
+    # filter Fischer-Tropsch links
     ft_links = network.links[
         network.links['carrier'].str.contains('FT|Fischer|Tropsch', case=False, na=False) |
-        network.links.index.str.contains(
-            'FT|Fischer|Tropsch', case=False, na=False)
+        network.links.index.str.contains('FT|Fischer|Tropsch', case=False, na=False)
     ].copy()
-
     if ft_links.empty:
-        print(f"No FT links found in the network: {network_name}")
+        print(f"No FT links found in network {network_name}")
         return None, None, None
 
-    # Merge link data with grid_region, x, y from bus0
-    links_with_grid_region = ft_links.merge(
+    # merge link data with bus coordinates and region info
+    links = ft_links.merge(
         network.buses[["grid_region", "x", "y"]],
-        left_on="bus0",
-        right_index=True,
-        how="left"
+        left_on="bus0", right_index=True, how="left"
     )
-    links_with_grid_region["p_nom_gw"] = links_with_grid_region["p_nom_opt"] / 1000
+    links["p_nom_gw"] = links["p_nom_opt"] / 1000
 
-    # Aggregate capacity per grid region
-    grid_region_capacity = links_with_grid_region.groupby("grid_region").agg(
+    # aggregate capacity by grid region
+    grid_capacity = links.groupby("grid_region").agg(
         total_gw=("p_nom_gw", "sum"),
         x=("x", "mean"),
         y=("y", "mean")
     ).reset_index()
+    grid_capacity = grid_capacity[grid_capacity["total_gw"] >= min_capacity_gw]
 
-    # Filter small values
-    grid_region_capacity_filtered = grid_region_capacity[grid_region_capacity["total_gw"]
-                                                         >= min_capacity_gw]
+    # prepare figure and axes with PlateCarree projection
+    fig, ax = plt.subplots(figsize=(12, 6), subplot_kw={"projection": ccrs.PlateCarree()})
 
-    # Set up map
-    fig, ax = plt.subplots(figsize=(12, 6), subplot_kw={
-                           "projection": ccrs.PlateCarree()})
-    bbox = box(-130, 20, -60, 50)
+    # define geographic boundary for contiguous US
+    lon_min, lon_max = -130, -65
+    lat_min, lat_max = 20, 50
+
+    # enforce map extent before drawing any shapes or circles
+    ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+    ax.set_xlim(lon_min, lon_max)
+    ax.set_ylim(lat_min, lat_max)
+
+    # load state boundaries, convert CRS, and clip to boundary
     shapes = gpd.read_file(path_shapes, crs=distance_crs)
-    shapes = shapes.to_crs(epsg=4326).clip(bbox)
-    shapes.plot(ax=ax, facecolor='whitesmoke',
-                edgecolor='gray', alpha=0.7, linewidth=0.5)
+    shapes = shapes.to_crs(epsg=4326).clip(box(lon_min, lat_min, lon_max, lat_max))
+    shapes.plot(
+        ax=ax,
+        facecolor='whitesmoke',
+        edgecolor='gray',
+        alpha=0.7,
+        linewidth=0.5
+    )
 
-    # Plot circles with linear scaling
-    pie_scale = 0.2  # degrees per GW
+    # define scaling and radius limits for circles
+    pie_scale = 0.2
     min_radius = 0.1
     max_radius = 3.5
 
-    for _, row in grid_region_capacity_filtered.iterrows():
-        x, y, total_gw = row["x"], row["y"], row["total_gw"]
-        radius = np.clip(total_gw * pie_scale, min_radius, max_radius)
-
-        circle = plt.Circle((x, y), radius,
-                            facecolor='#B22222', edgecolor='gray', alpha=0.6,
-                            linewidth=1, transform=ccrs.PlateCarree(), zorder=4)
+    # draw a circle at each region centroid, skipping any outside the boundary
+    for _, row in grid_capacity.iterrows():
+        x, y, total = row["x"], row["y"], row["total_gw"]
+        if not (lon_min < x < lon_max and lat_min < y < lat_max):
+            continue
+        radius = np.clip(total * pie_scale, min_radius, max_radius)
+        circle = plt.Circle(
+            (x, y),
+            radius,
+            facecolor='#B22222',
+            edgecolor='gray',
+            alpha=0.6,
+            linewidth=1,
+            transform=ccrs.PlateCarree(),
+            clip_on=True,
+            zorder=4
+        )
         ax.add_patch(circle)
+        ax.text(
+            x,
+            y - radius - 0.3,
+            f'{total:.2f} GW',
+            ha='center',
+            va='top',
+            fontsize=9,
+            bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.2'),
+            transform=ccrs.PlateCarree()
+        )
 
-        ax.text(x, y - radius - 0.3, f'{total_gw:.2f} GW',
-                ha='center', va='top', fontsize=9, fontweight='normal',
-                bbox=dict(facecolor='white', edgecolor='gray',
-                          boxstyle='round,pad=0.2'),
-                transform=ccrs.PlateCarree())
-
-    ax.set_extent([-130, -65, 20, 50], crs=ccrs.PlateCarree())
-    ax.set_title(
-        f"Fischer-Tropsch Capacity by Grid Region (GW input H2){year_str if year_title else network_name}", fontsize=12, pad=20)
+    # set the title and hide axes
+    ax.set_title(f"Fischer-Tropsch Capacity by Grid Region (GW input H2){year_str}", fontsize=12, pad=20)
     ax.axis('off')
     plt.tight_layout()
 
-    return fig, ax, grid_region_capacity
+    return fig, ax, grid_capacity
+
 
 
 def filter_and_group_small_carriers(df, threshold=0.005):
@@ -6972,3 +6994,107 @@ def plot_electricity_dispatch(networks, tech_colors, nice_names,
             'dispatch': collected_dispatch_tables,
             'demand': collected_demand_tables
         }
+
+def extract_marginal_price_by_grid_region_weighted(n):
+    """
+    Extract load-weighted marginal prices per grid_region for electricity buses.
+    """
+    # 1. Filter electricity buses
+    elec_buses = n.buses[n.buses.carrier == 'AC'].index
+
+    # 2. Pre‐extract DataFrames
+    prices = n.buses_t.marginal_price[elec_buses]
+    loads  = n.loads_t.p[elec_buses]
+    bus2region = n.buses.loc[elec_buses, 'grid_region']
+
+    # 3. Prepare output
+    snapshots = prices.index
+    regions   = bus2region.unique()
+    df = pd.DataFrame(index=snapshots, columns=regions, dtype=float)
+
+    # 4. Loop snapshots × region and compute weighted mean
+    for snap in snapshots:
+        p = prices.loc[snap]
+        l = loads.loc[snap].fillna(0.0)
+        for region in regions:
+            buses = bus2region[bus2region == region].index
+            pr = p[buses]
+            ld = l[buses]
+            if ld.sum() > 0:
+                df.at[snap, region] = (pr * ld).sum() / ld.sum()
+            else:
+                df.at[snap, region] = pr.mean()
+    return df
+
+
+def plot_marginal_prices_by_region_weighted(
+    region_prices_df,
+    network,
+    plot=True,
+    network_name="Network",
+    demand_threshold=0.01
+):
+    """
+    Plot load-weighted marginal prices by grid region (daily averages),
+    excluding regions whose total annual demand is below threshold.
+    """
+    if plot:
+        # Compute total annual demand per region
+        elec_buses = network.buses[network.buses.carrier=='AC'].index
+        loads = network.loads_t.p[elec_buses]
+        bus2region = network.buses.loc[elec_buses, 'grid_region']
+        demand_by_region = (
+            loads
+            .groupby(bus2region, axis=1).sum()  # snapshots×regions
+            .sum()                              # annual total per region
+        )
+        system_demand = demand_by_region.sum()
+        keep = demand_by_region >= demand_threshold * system_demand
+        df = region_prices_df.loc[:, keep.index[keep]]
+
+        # Resample to daily mean
+        df_daily = df.resample('D').mean()
+
+        # Plot
+        fig, ax = plt.subplots(figsize=(18, 6))
+        colors = [
+            '#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd',
+            '#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf',
+            '#aec7e8','#ffbb78','#98df8a'
+        ]
+        for i, region in enumerate(df_daily.columns):
+            ax.plot(
+                df_daily.index, df_daily[region],
+                label=region,
+                color=colors[i % len(colors)],
+                alpha=0.6,
+                linewidth=1.2
+            )
+
+        # Title with year
+        year_match = re.search(r'\d{4}', network_name)
+        year = year_match.group() if year_match else network_name
+        ax.set_title(f'Electricity Marginal Prices by Grid Region (USD/MWh) - {year}')
+        ax.set_ylabel('Marginal Price (USD/MWh)')
+        ax.set_xlabel('')
+
+        # One tick per month
+        locator = mdates.MonthLocator(bymonthday=1)
+        formatter = mdates.DateFormatter('%b')
+        ax.xaxis.set_major_locator(locator)
+        ax.xaxis.set_major_formatter(formatter)
+        plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
+
+        # Limit axes
+        ax.set_xlim(df_daily.index[0], df_daily.index[-1])
+        y0 = df_daily.min().min() * 0.95
+        y1 = df_daily.max().max() * 1.05
+        ax.set_ylim(y0, y1)
+
+        # Legend & grid
+        ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=10)
+        ax.grid(alpha=0.3)
+        plt.tight_layout(rect=[0, 0, 0.85, 1])
+        plt.show()
+
+    return df_daily

@@ -585,7 +585,7 @@ def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network"
     """
 
     year_match = re.search(r'\d{4}', network_name)
-    year_str = f" – {year_match.group()}" if year_match else ""
+    year_str = f"{year_match.group()}" if year_match else ""
 
     ft_links = network.links[
         network.links['carrier'].str.contains('FT|Fischer|Tropsch', case=False, na=False) |
@@ -659,7 +659,7 @@ def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network"
     ax.set_position([0.05, 0.05, 0.9, 0.9])
 
     ax.set_title(
-        f"Fischer-Tropsch Capacity by State (GW input H2){year_str if year_title else network_name}", fontsize=12)
+        f"Fischer-Tropsch Capacity by State (GW input H2) - {year_str if year_title else network_name}", fontsize=12)
     ax.axis('off')
     plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
 
@@ -674,7 +674,7 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
 
     # extract year from network name
     year_match = re.search(r'\d{4}', network_name)
-    year_str = f" – {year_match.group()}" if year_match else ""
+    year_str = f"{year_match.group()}" if year_match else ""
 
     # filter Fischer-Tropsch links
     ft_links = network.links[
@@ -758,7 +758,7 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
         )
 
     # set the title and hide axes
-    ax.set_title(f"Fischer-Tropsch Capacity by Grid Region (GW input H2){year_str}", fontsize=12, pad=20)
+    ax.set_title(f"Fischer-Tropsch Capacity by Grid Region (GW input H2) - {year_str if year_title else network_name}", fontsize=12, pad=20)
     ax.axis('off')
     plt.tight_layout()
 

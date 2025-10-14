@@ -5872,25 +5872,25 @@ def compute_LCO_ekerosene_by_region(
             # --- CO2 price ---
             if co2_price == "marginal":
                 p_co2 = net.buses_t.marginal_price[ft.at[link, "bus2"]]
-                avg_p_co2 = (co2_cons * p_co2).sum() / \
-                    co2_cons.sum() if co2_cons.sum() > 0 else 0.0
+                avg_p_co2 = (co2_cons * p_co2).sum() / co2_cons.sum() if co2_cons.sum() > 0 else 0.0
             elif co2_price == "lcoc":
                 if not lcoc_by_region:
                     avg_p_co2 = 0.0
                 elif scen_year == 2023:
-                    # Special case: no CO₂ captured in 2023
                     avg_p_co2 = 0.0
-                elif str(scen_year) in lcoc_by_region:
-                    lcoc_df = lcoc_by_region[str(
-                        scen_year)].set_index("Grid Region")
-                    avg_p_co2 = lcoc_df.at[region,
-                                           "LCOC incl. T&D fees (USD/tCO2)"] if region in lcoc_df.index else 0.0
                 else:
-                    raise KeyError(
-                        f"LCOC dataset does not contain year {scen_year}. Available: {list(lcoc_by_region.keys())}")
+                    try:
+                        lcoc_df = lcoc_by_region[str(scen_year)].set_index("Grid Region")
+                    except KeyError:
+                        if verbose:
+                            print(f"Skipping scenario")
+                        # skip
+                        rows = []
+                        break 
+                    avg_p_co2 = lcoc_df.at[region, "LCOC incl. T&D fees (USD/tCO2)"] if region in lcoc_df.index else 0.0
             else:
                 raise ValueError("co2_price must be 'marginal' or 'lcoc'")
-
+                
             # --- cost components ---
             c_elec = avg_p_elec * r_elec * conv
             c_h2 = avg_p_h2 * r_h2 * conv

@@ -256,7 +256,10 @@ tech_colors:
   co2 storage steel tank: '#f2385a'
   co2 storage steel tank geological sequestration: '#f2385a'
   buffer co2 storage steel tank geological sequestration: '#f2385a'
+  biogenic co2 storage steel tank geological sequestration: '#f2385a'
+  buffer biogenic co2 storage steel tank geological sequestration: '#f2385a'
   buffer co2 storage steel tank to tank: '#f2385a'  
+  buffer biogenic co2 storage steel tank to tank: '#f2385a'  
   process emissions CC: '#000000'
   process emissions: '#222222'
   process emissions to stored: '#444444'
@@ -307,6 +310,7 @@ tech_colors:
   DRI: '#8B4513'
   DRI CC: '#A0522D'
   EAF: '#2F4F4F'
+  grid H2 Store Tank: '#bf13a0'
   H2 Store Tank: '#bf13a0'
   H2 pipeline repurposed: '#ba99b5'
   grid H2: '#f073da'
@@ -480,8 +484,9 @@ rename_tech_capex:
   home battery discharger: Electricity Storage
   Li ion: Electricity Storage
   battery storage: Electricity Storage
-  H2 Store Tank: Electricity Storage
   BEV charger: Electricity Storage
+  grid H2 Store Tank: Hydrogen Storage
+  H2 Store Tank: Hydrogen Storage
 
   # Carbon capture
   DAC: DAC
@@ -549,7 +554,10 @@ rename_tech_capex:
   co2 storage steel tank: CO2 Storage
   co2 storage steel tank geological sequestration: CO2 Storage
   buffer co2 storage steel tank geological sequestration: CO2 Storage
+  biogenic co2 storage steel tank geological sequestration: CO2 Storage
+  buffer biogenic co2 storage steel tank geological sequestration: CO2 Storage
   buffer co2 storage steel tank to tank: CO2 Storage
+  buffer biogenic co2 storage steel tank to tank: CO2 Storage
   
   # Hydrogen & Electrolyzers
   SOEC: Hydrogen
@@ -654,16 +662,20 @@ rename_tech_opex:
   Li ion: Electricity Storage
   co2 stored: CO2 Storage
   battery storage: Electricity Storage
-  H2 Store Tank: Hydrogen Storage
   BEV charger: Electricity Storage
+  grid H2 Store Tank: Hydrogen Storage
+  H2 Store Tank: Hydrogen Storage
   buffer co2 storage steel tank: CO2 Storage
   buffer biogenic co2 storage steel tank: CO2 Storage
   biogenic co2 storage steel tank: CO2 Storage
   co2 geological sequestration: CO2 Storage
   co2 storage steel tank: CO2 Storage
   co2 storage steel tank geological sequestration: CO2 Storage
-  buffer co2 storage steel tank geological sequestration: CO2 Storage
+  buffer co2 storage steel tank geological sequestration: CO2 Storage  
+  biogenic co2 storage steel tank geological sequestration: CO2 Storage
+  buffer biogenic co2 storage steel tank geological sequestration: CO2 Storage
   buffer co2 storage steel tank to tank: CO2 Storage
+  buffer biogenic co2 storage steel tank to tank: CO2 Storage
 
   # Carbon capture
   DAC: DAC

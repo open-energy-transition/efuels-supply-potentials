@@ -22564,7 +22564,7 @@ index,Name,Fueltype,Technology,Set,Country,Capacity,Efficiency,Duration,Volume_M
 22562,Mililani South Solar Farm 1,solar,,PP,US,39,,,,,,2022,,,,21.427916,-158.01985,,,,1
 22563,Mililani South Solar Farm 2,battery,,Store,US,39,,,,,,2022,,,,21.427916,-158.01985,,,,2
 22564,East Campus Utility Plant 3,oil,,PP,US,2.5,,,,,,2022,,,,39.137935,-84.504948,,,,1
-22565,McKinley Paper Co. - Washington Mill 1,waste,,PP,US,12.6,,,,,,2022,,,,48.134722,-123.465556,,,,1
+22565,McKinley Paper Co. - Washington Mill 1,biomass,,PP,US,12.6,,,,,,2022,,,,48.134722,-123.465556,,,,1
 22566,Princeton University Cogeneration 4,solar,,PP,US,10.5,,,,,,2022,,,,40.341389,-74.657222,,,,1
 22567,Princeton University Cogeneration 5,solar,,PP,US,0.4,,,,,,2022,,,,40.341389,-74.657222,,,,2
 22568,"Hidden View Dairy, LLC 1",OCGT,OCGT,PP,US,1,,,,,,2022,,,,41.032778,-87.0725,,,,1
@@ -22971,7 +22971,7 @@ index,Name,Fueltype,Technology,Set,Country,Capacity,Efficiency,Duration,Volume_M
 22969,Sierra Pacific Chinese Camp 1,solar,,PP,US,3.6,,,,,,2022,,,,37.883393,-120.454433,,,,1
 22970,Dodge Renewables 1 1,solar,,PP,US,1,,,,,,2022,,,,44.01862,-92.86606,,,,1
 22971,Dodge Renewables 2 1,solar,,PP,US,1,,,,,,2022,,,,44.02037,-92.86973,,,,1
-22972,Abel Road Bioenergy 1,waste,,PP,US,4,,,,,,2022,,,,39.145608,-122.118591,,,,1
+22972,Abel Road Bioenergy 1,biomass,,PP,US,4,,,,,,2022,,,,39.145608,-122.118591,,,,1
 22973,"Longbow Solar, LLC 1",solar,,PP,US,78.1,,,,,,2022,,,,29.289809,-95.298609,,,,1
 22974,CA - Fresno County - Juvenile Hall 1,solar,,PP,US,2.8,,,,,,2022,,,,36.661113,-119.725975,,,,1
 22975,Portage Industrial Battery 1,battery,,Store,US,5,,,,,,2022,,,,43.552111,-89.487731,,,,1

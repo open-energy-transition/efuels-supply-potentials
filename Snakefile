@@ -703,6 +703,8 @@ if config["foresight"] == "myopic":
 
 if config["demand_distribution"]["set_custom_distribution_fees"]:
     use rule prepare_sector_network from pypsa_earth with:
+        input:
+            powerplants = PYPSA_EARTH_DIR + "resources/" + RDIR + "powerplants.csv",
         output:
             PYPSA_EARTH_DIR + RESDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_distribution_fees.nc",

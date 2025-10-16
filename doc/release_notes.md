@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Update **tax credit values** based on actual technology-specific discount rates [PR #116](https://github.com/open-energy-transition/efuels-supply-potentials/pull/116)
+
 * Add **H2 Store Tank for grid H2** [PR #111](https://github.com/open-energy-transition/efuels-supply-potentials/pull/111)
 
 * Set `h2_export` value to 0 and change `discountrate` for sector model wildcard to 0.07 in agreement with the values from `fill_values` [PR #110](https://github.com/open-energy-transition/efuels-supply-potentials/pull/110)

@@ -1,18 +1,18 @@
 carrier,credit
-nuclear_existing,-9.33
-nuclear_new,-18.42
-geothermal,-19.97
-biomass,-19.97
-solar,-19.43
-onwind,-20.41
-offwind-ac,-20.41
-offwind-dc,-20.41
-ethanol from starch CC,-75.68
-SMR CC,-75.68
-DRI CC,-75.68
-BF-BOF CC,-75.68
-dry clinker CC,-75.68
-DAC,-170.10
+nuclear_existing,-5.73
+nuclear_new,-16.09
+geothermal,-17.53
+biomass,-17.84
+solar,-15.64
+onwind,-18.15
+offwind-ac,-18.1
+offwind-dc,-18.1
+ethanol from starch CC,-75.69
+SMR CC,-75.69
+DRI CC,-75.69
+BF-BOF CC,-75.69
+dry clinker CC,-75.69
+DAC,-170.1
 Alkaline electrolyzer large,-76.98
 PEM electrolyzer,-76.98
 SOEC,-76.98

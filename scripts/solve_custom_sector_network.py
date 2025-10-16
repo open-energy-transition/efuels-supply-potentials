@@ -1072,15 +1072,18 @@ def add_battery_constraints(n):
     chargers_bool = link_p_nom.index.str.contains(f"battery charger{name_suffix}")
     dischargers_bool = link_p_nom.index.str.contains(f"battery discharger{name_suffix}")
 
+    # Align charger/discharger sets to the same names
+    ch_names = link_p_nom.index[chargers_bool]
+    dc_names = link_p_nom.index[dischargers_bool]
+
+    # Map chargers to expected dischargers and take intersection
+    map_to_dc = ch_names.str.replace("battery charger", "battery discharger", regex=False)
+    common_dc = dc_names.intersection(map_to_dc)
+    common_ch = common_dc.str.replace("battery discharger", "battery charger", regex=False)
+
     lhs = linexpr(
-        (1, link_p_nom[chargers_bool]),
-        (
-            -n.links.loc[
-                n.links.index.str.contains(f"battery discharger{name_suffix}"),
-                "efficiency",
-            ].values,
-            link_p_nom[dischargers_bool].values,
-        ),
+        (1.0, link_p_nom.reindex(common_ch).values),
+        (-n.links.loc[common_dc, "efficiency"].values, link_p_nom.reindex(common_dc).values),
     )
     define_constraints(n, lhs, "=", 0, "Link", "charger_ratio")
 

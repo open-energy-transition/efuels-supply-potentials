@@ -105,10 +105,10 @@ def add_existing_battery_storage(n, costs, options, spatial, capacity, lifetime_
     if capacity.empty:
         return
 
-    logger.info(f"Adding existing battery storage for {grouping_year}")
-
-    # Standard battery duration assumption (4 hours)
-    battery_duration = 4.0
+    # Use configured max_hours for battery duration
+    elec_config = snakemake.config["electricity"]
+    max_hours = elec_config["max_hours"]
+    battery_duration = max_hours["battery"]
 
     # Ensure battery carrier exists
     if "battery" not in n.carriers.index:

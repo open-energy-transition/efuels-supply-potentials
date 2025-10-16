@@ -1064,13 +1064,13 @@ def add_battery_constraints(n):
         return
     link_p_nom = get_var(n, "Link", "p_nom")
 
-    chargers_bool = link_p_nom.index.str.contains("battery charger")
-    dischargers_bool = link_p_nom.index.str.contains("battery discharger")
-
     if snakemake.config["foresight"] == "myopic":
         name_suffix = f"-{snakemake.wildcards.planning_horizons}"
     else:
         name_suffix = ""
+
+    chargers_bool = link_p_nom.index.str.contains(f"battery charger{name_suffix}")
+    dischargers_bool = link_p_nom.index.str.contains(f"battery discharger{name_suffix}")
 
     lhs = linexpr(
         (1, link_p_nom[chargers_bool]),

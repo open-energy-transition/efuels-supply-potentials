@@ -321,7 +321,19 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
 
         # Handle existing battery storage
         if generator == "battery":
-            lifetime_assets = lifetime.loc[grouping_year, generator][capacity.index].fillna(25)
+            # Avoid KeyError if some clustered buses are missing in lifetime
+            raw_lt = lifetime.loc[grouping_year, "battery"] if (
+                        "battery" in lifetime.index.get_level_values(1)) else pd.Series(dtype=float)
+            present = raw_lt.index.intersection(capacity.index)
+            if len(present) != len(capacity.index):
+                missing = capacity.index.difference(raw_lt.index)
+                logger.warning(
+                    f"[battery {grouping_year}] missing lifetime for {len(missing)} nodes, e.g. {missing[:5].tolist()}")
+            # fallback default lifetime for missing nodes
+            default_lifetime = int(costs.at["battery storage", "lifetime"]) if "battery storage" in costs.index else 25
+            lifetime_assets = pd.Series(default_lifetime, index=capacity.index)
+            lifetime_assets.loc[present] = raw_lt.loc[present].fillna(default_lifetime)
+
             add_existing_battery_storage(
                 n=n,
                 costs=costs,

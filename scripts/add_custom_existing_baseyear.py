@@ -14,7 +14,6 @@ from scripts._helper import mock_snakemake, update_config_from_wildcards, create
 from _helpers import prepare_costs
 from prepare_sector_network import define_spatial
 
-
 logger = create_logger(__name__)
 spatial = SimpleNamespace()
 
@@ -87,6 +86,153 @@ def remove_extra_powerplants(n):
 
             logger.info(f"Reduced p_nom_max and p_nom_min by p_nom and set p_nom = 0 for {len(assets_to_zero)} assets in {c.name} with carriers {c.df.loc[assets_to_zero, 'carrier'].unique()}.")
 
+def add_existing_battery_storage(n, costs, options, spatial, capacity, lifetime_assets, grouping_year):
+    """
+    Add existing battery storage as Store + Link components with minimum capacities.
+    This function replicates the structure used in add_storage() from prepare_sector_network.py
+    but sets minimum capacities based on existing powerplants.csv data.
+
+    Parameters
+    ----------
+    n : pypsa.Network
+    costs : pd.DataFrame
+    options : dict
+    spatial : object with nodes information
+    capacity : pd.Series with capacity by node
+    lifetime_assets : pd.Series with lifetime by node
+    grouping_year : int
+    """
+    if capacity.empty:
+        return
+
+    # Use configured max_hours for battery duration
+    elec_config = snakemake.config["electricity"]
+    max_hours = elec_config["max_hours"]
+    battery_duration = max_hours["battery"]
+
+    # Ensure battery carrier exists
+    if "battery" not in n.carriers.index:
+        n.add("Carrier", "battery")
+
+    # Add battery buses for nodes that have existing batteries
+    battery_buses_to_add = []
+    for node in capacity.index:
+        battery_bus_name = node + " battery"
+        if battery_bus_name not in n.buses.index:
+            battery_buses_to_add.append(node)
+
+    if battery_buses_to_add:
+        n.madd(
+            "Bus",
+            [node + " battery" for node in battery_buses_to_add],
+            location=battery_buses_to_add,
+            carrier="battery",
+            x=n.buses.loc[battery_buses_to_add].x.values,
+            y=n.buses.loc[battery_buses_to_add].y.values,
+        )
+
+    # Add Store with existing energy capacity as minimum
+    stores_to_add = []
+    store_data = {
+        'bus': [],
+        'e_cyclic': [],
+        'e_nom_extendable': [],
+        'e_nom_min': [],
+        'e_nom': [],
+        'carrier': [],
+        'capital_cost': [],
+        'lifetime': [],
+        'build_year': []
+    }
+
+    for node in capacity.index:
+        power_capacity = capacity[node]
+        energy_capacity = power_capacity * battery_duration
+        store_name = f"{node} battery-{grouping_year}"
+
+        stores_to_add.append(store_name)
+        store_data['bus'].append(node + " battery")
+        store_data['e_cyclic'].append(True)
+        store_data['e_nom_extendable'].append(True)
+        store_data['e_nom_min'].append(energy_capacity)
+        store_data['e_nom'].append(energy_capacity)
+        store_data['carrier'].append("battery")
+        store_data['capital_cost'].append(costs.at["battery storage", "fixed"])
+        store_data['lifetime'].append(lifetime_assets.get(node, 25))
+        store_data['build_year'].append(grouping_year)
+
+    n.madd("Store", stores_to_add, **store_data)
+
+    # Add Link Charger with existing power capacity as minimum
+    chargers_to_add = []
+    charger_data = {
+        'bus0': [],
+        'bus1': [],
+        'carrier': [],
+        'efficiency': [],
+        'capital_cost': [],
+        'p_nom_extendable': [],
+        'p_nom_min': [],
+        'p_nom': [],
+        'lifetime': [],
+        'build_year': []
+    }
+
+    for node in capacity.index:
+        power_capacity = capacity[node]
+        charger_name = f"{node} battery charger-{grouping_year}"
+
+        chargers_to_add.append(charger_name)
+        charger_data['bus0'].append(node)
+        charger_data['bus1'].append(node + " battery")
+        charger_data['carrier'].append("battery charger")
+        charger_data['efficiency'].append(costs.at["battery inverter", "efficiency"] ** 0.5)
+        charger_data['capital_cost'].append(costs.at["battery inverter", "fixed"])
+        charger_data['p_nom_extendable'].append(True)
+        charger_data['p_nom_min'].append(power_capacity)
+        charger_data['p_nom'].append(power_capacity)
+        charger_data['lifetime'].append(costs.at["battery inverter", "lifetime"])
+        charger_data['build_year'].append(grouping_year)
+
+    n.madd("Link", chargers_to_add, **charger_data)
+
+    # Add Link Discharger with existing power capacity as minimum
+    dischargers_to_add = []
+    discharger_data = {
+        'bus0': [],
+        'bus1': [],
+        'carrier': [],
+        'efficiency': [],
+        'marginal_cost': [],
+        'p_nom_extendable': [],
+        'p_nom_min': [],
+        'p_nom': [],
+        'lifetime': [],
+        'build_year': []
+    }
+
+    for node in capacity.index:
+        power_capacity = capacity[node]
+        discharger_name = f"{node} battery discharger-{grouping_year}"
+
+        dischargers_to_add.append(discharger_name)
+        discharger_data['bus0'].append(node + " battery")
+        discharger_data['bus1'].append(node)
+        discharger_data['carrier'].append("battery discharger")
+        discharger_data['efficiency'].append(costs.at["battery inverter", "efficiency"] ** 0.5)
+        discharger_data['marginal_cost'].append(options.get("marginal_cost_storage", 0.01))
+        discharger_data['p_nom_extendable'].append(True)
+        discharger_data['p_nom_min'].append(power_capacity)
+        discharger_data['p_nom'].append(power_capacity)
+        discharger_data['lifetime'].append(costs.at["battery inverter", "lifetime"])
+        discharger_data['build_year'].append(grouping_year)
+
+    n.madd("Link", dischargers_to_add, **discharger_data)
+
+    total_power = capacity.sum()
+    total_energy = total_power * battery_duration
+    logger.info(
+        f"Added existing battery storage for {grouping_year}: {total_power:.1f} MW / {total_energy:.1f} MWh with {len(capacity)} assets")
 
 def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, baseyear):
     """
@@ -114,9 +260,9 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
     df_agg.drop(drop_hydro_storages, inplace=True)
     df_agg.Fueltype.replace({"hydro": "ror"}, inplace=True)
 
-    # drop battery
-    drop_battery = df_agg[df_agg.Fueltype == "battery"].index
-    df_agg.drop(drop_battery, inplace=True)
+    # NOTE: battery exclusion removed to allow processing existing battery storage
+    # drop_battery = df_agg[df_agg.Fueltype == "battery"].index
+    # df_agg.drop(drop_battery, inplace=True)
 
     # assign clustered bus
     busmap_s = pd.read_csv(snakemake.input.busmap_s, index_col=0).squeeze()
@@ -172,7 +318,33 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
         suffix = "-ac" if generator == "offwind" else ""
         name_suffix = f" {generator}{suffix}-{grouping_year}"
         asset_i = capacity.index + name_suffix
-        if generator in ["solar", "onwind", "offwind-ac", "offwind-ac", "ror", "geothermal", "nuclear"]:
+
+        # Handle existing battery storage
+        if generator == "battery":
+            # Avoid KeyError if some clustered buses are missing in lifetime
+            raw_lt = lifetime.loc[grouping_year, "battery"] if (
+                        "battery" in lifetime.index.get_level_values(1)) else pd.Series(dtype=float)
+            present = raw_lt.index.intersection(capacity.index)
+            if len(present) != len(capacity.index):
+                missing = capacity.index.difference(raw_lt.index)
+                logger.warning(
+                    f"[battery {grouping_year}] missing lifetime for {len(missing)} nodes, e.g. {missing[:5].tolist()}")
+            # fallback default lifetime for missing nodes
+            default_lifetime = int(costs.at["battery storage", "lifetime"]) if "battery storage" in costs.index else 25
+            lifetime_assets = pd.Series(default_lifetime, index=capacity.index)
+            lifetime_assets.loc[present] = raw_lt.loc[present].fillna(default_lifetime)
+
+            add_existing_battery_storage(
+                n=n,
+                costs=costs,
+                options=options,
+                spatial=spatial,
+                capacity=capacity,
+                lifetime_assets=lifetime_assets,
+                grouping_year=grouping_year
+            )
+
+        elif generator in ["solar", "onwind", "offwind-ac", "offwind-ac", "ror", "geothermal", "nuclear"]:
             # to consider electricity grid connection costs or a split between
             # solar utility and rooftop as well, rather take cost assumptions
             # from existing network than from the cost database
@@ -244,7 +416,7 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                         # get p_max_pu from the existing network
                         p_max_pu = n.generators_t.p_max_pu[
                             capacity.index + f" {generator}{suffix}"
-                        ]
+                            ]
                     p_max_pu.rename(columns=n.generators.bus, inplace=True)
 
                 if not new_build.empty:
@@ -321,14 +493,17 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                         bus2="co2 atmosphere",
                         carrier=generator,
                         marginal_cost=costs.at[generator, "efficiency"]
-                        * costs.at[generator, "VOM"],  # NB: VOM is per MWel
+                                      * costs.at[generator, "VOM"],  # NB: VOM is per MWel
                         capital_cost=costs.at[generator, "efficiency"]
-                        * costs.at[generator, "fixed"],  # NB: fixed cost is per MWel
+                                     * costs.at[generator, "fixed"],  # NB: fixed cost is per MWel
                         p_nom=new_capacity / costs.at[generator, "efficiency"],
                         efficiency=costs.at[generator, "efficiency"],
                         efficiency2=costs.at[carrier[generator], "CO2 intensity"],
                         build_year=grouping_year,
-                        lifetime=lifetime_assets.loc[new_capacity.index],
+                        # Avoid KeyError if some indices are missing
+                        lifetime=lifetime_assets.reindex(new_capacity.index).fillna(
+                            int(costs.at[generator, "lifetime"]) if generator in costs.index else 25
+                        ),
                     )
                 else:
                     key = "central solid biomass CHP"
@@ -347,7 +522,10 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                         efficiency=costs.at[key, "efficiency"],
                         build_year=grouping_year,
                         efficiency2=costs.at[key, "efficiency-heat"],
-                        lifetime=lifetime_assets.loc[new_capacity.index],
+                        # Avoid KeyError if some indices are missing
+                        lifetime=lifetime_assets.reindex(new_capacity.index).fillna(
+                            int(costs.at[generator, "lifetime"]) if generator in costs.index else 25
+                        ),
                     )
                 logger.info(
                     f"Added {sum(new_capacity)} MW {generator} capacities for {grouping_year} with {len(new_capacity)} assets"

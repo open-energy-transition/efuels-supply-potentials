@@ -376,6 +376,10 @@ nice_names:
   battery: Battery
   Battery: Battery
   home battery: Home Battery
+  battery storage: Battery
+  battery inverter: Battery
+  battery discharger: Battery
+  battery charger: Battery
   water tanks: Water Tanks
   solar rooftop: Rooftop solar
   solar thermal: Solar thermal
@@ -409,8 +413,6 @@ nice_names:
   clinker: Clinker
   cement: Cement
   biogenic co2: Biogenic Carbon Dioxide
-  battery discharger: Battery
-
 rename_tech_capex:
   # Wind
   Onshore Wind: Wind
@@ -479,11 +481,12 @@ rename_tech_capex:
   battery: Electricity Storage
   battery charger: Electricity Storage
   battery discharger: Electricity Storage
+  battery inverter: Electricity Storage
+  battery storage: Electricity Storage
   home battery: Electricity Storage
   home battery charger: Electricity Storage
   home battery discharger: Electricity Storage
   Li ion: Electricity Storage
-  battery storage: Electricity Storage
   BEV charger: Electricity Storage
   grid H2 Store Tank: Hydrogen Storage
   H2 Store Tank: Hydrogen Storage
@@ -659,10 +662,11 @@ rename_tech_opex:
   home battery: Electricity Storage
   home battery charger: Electricity Storage
   home battery discharger: Electricity Storage
-  Li ion: Electricity Storage
-  co2 stored: CO2 Storage
+  battery inverter: Electricity Storage
   battery storage: Electricity Storage
   BEV charger: Electricity Storage
+  Li ion: Electricity Storage
+  co2 stored: CO2 Storage
   grid H2 Store Tank: Hydrogen Storage
   H2 Store Tank: Hydrogen Storage
   buffer co2 storage steel tank: CO2 Storage
@@ -881,6 +885,7 @@ tech_power_color:
   "Nuclear": "#e81cd0"
   "Coal": "#000000"
   "Oil": "#8B4513"
+  "Battery": "#b88300"
 
 nice_names_power:
   "coal": "Coal"
@@ -906,6 +911,10 @@ nice_names_power:
   "OCGT": "Gas OCGT"
   "CCGT": "Gas CCGT"
   "Nuclear": "Nuclear"
+  "battery storage": "Battery"
+  "battery inverter": "Battery"
+  "battery charger": "Battery"
+  "battery discharger": "Battery"
 
 tech_power_order:
   - "Gas CCGT"
@@ -925,6 +934,7 @@ tech_power_order:
   - "Utility-scale solar"
   - "Solar rooftop"
   - "CSP"
+  - "Battery"
 
 emm_mapping:
   Alaska: WECC/Northwest Power Pool

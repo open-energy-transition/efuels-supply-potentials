@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Include **existing batteries** from `powerplants.csv`. [PR #115](https://github.com/open-energy-transition/efuels-supply-potentials/pull/115)
+
 * Update **tax credit values** based on actual technology-specific discount rates [PR #116](https://github.com/open-energy-transition/efuels-supply-potentials/pull/116)
 
 * Add **H2 Store Tank for grid H2** [PR #111](https://github.com/open-energy-transition/efuels-supply-potentials/pull/111)

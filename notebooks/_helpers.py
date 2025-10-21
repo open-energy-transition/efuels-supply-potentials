@@ -7163,3 +7163,254 @@ def calculate_baseload_charge(
                 print(f"  • Total annual baseload charges: ${df.total_annual_charge.sum():,.0f}")
     
     return results
+
+
+def compute_power_opex_with_tax_credits(network, name_tag):
+    """
+    Compute power generation OPEX broken down by:
+    - OPEX without tax credits
+    - Tax credits amount
+    - OPEX with tax credits (actual)
+    
+    Returns a DataFrame with columns:
+    - tech_label: Technology carrier name
+    - opex_without_tax_credits: OPEX using original marginal costs (billion USD)
+    - tax_credits: Tax credit amount (billion USD, negative means subsidy)
+    - opex_with_tax_credits: OPEX with tax credits applied (billion USD)
+    - year: Year
+    - scenario: Scenario name
+    """
+    year_str = name_tag[-4:]
+    fossil_carriers = ["coal", "gas", "oil", "biomass"]
+    
+    results = []
+    
+    # Process GENERATORS (solar, wind, nuclear, geothermal, etc.)
+    for carrier in network.generators.carrier.unique():
+        # Skip fossil fuel generators (they're end-uses)
+        if carrier in fossil_carriers:
+            continue
+            
+        gens = network.generators[network.generators.carrier == carrier]
+        
+        # Calculate OPEX with original costs (without tax credits)
+        opex_without_tc = 0
+        opex_with_tc = 0
+        
+        for gen_name in gens.index:
+            gen = network.generators.loc[gen_name]
+            
+            # Get generation
+            if gen_name in network.generators_t.p.columns:
+                generation = network.generators_t.p[gen_name]
+                weightings = network.snapshot_weightings['objective']
+                
+                # Original marginal cost (without tax credits)
+                if '_marginal_cost_original' in network.generators.columns:
+                    mc_original = gen['_marginal_cost_original']
+                else:
+                    mc_original = gen['marginal_cost']
+                
+                # Current marginal cost (with tax credits)
+                mc_current = gen['marginal_cost']
+                
+                # Calculate costs
+                opex_without_tc += (generation * mc_original * weightings).sum()
+                opex_with_tc += (generation * mc_current * weightings).sum()
+        
+        if opex_without_tc != 0 or opex_with_tc != 0:
+            tax_credit = opex_with_tc - opex_without_tc
+            
+            results.append({
+                'tech_label': carrier,
+                'opex_without_tax_credits_billion': opex_without_tc / 1e9,
+                'tax_credits_billion': tax_credit / 1e9,
+                'opex_with_tax_credits_billion': opex_with_tc / 1e9,
+                'year': year_str,
+                'scenario': name_tag
+            })
+    
+    # Process LINKS (fossil fuel power, biomass, etc.)
+    for carrier in network.links.carrier.unique():
+        links = network.links[network.links.carrier == carrier]
+        
+        # Calculate OPEX with original costs (without tax credits)
+        opex_without_tc = 0
+        opex_with_tc = 0
+        fuel_cost = 0
+        
+        for link_name in links.index:
+            link = network.links.loc[link_name]
+            
+            # Get dispatch
+            if link_name in network.links_t.p0.columns:
+                dispatch = network.links_t.p0[link_name]
+                weightings = network.snapshot_weightings['objective']
+                
+                # Original marginal cost (without tax credits)
+                if '_marginal_cost_original' in network.links.columns:
+                    mc_original = link['_marginal_cost_original']
+                else:
+                    mc_original = link['marginal_cost']
+                
+                # Current marginal cost (with tax credits)
+                mc_current = link['marginal_cost']
+                
+                # Calculate costs from marginal cost
+                opex_without_tc += (dispatch * mc_original * weightings).sum()
+                opex_with_tc += (dispatch * mc_current * weightings).sum()
+                
+                # For fossil fuels, also add fuel costs
+                if carrier in fossil_carriers:
+                    try:
+                        fuel_bus = link['bus0']
+                        fuel_price = network.buses_t.marginal_price[fuel_bus]
+                        fuel_cost += (dispatch * fuel_price * weightings).sum()
+                    except KeyError:
+                        pass
+        
+        # Add fuel costs to both (fuel costs are not affected by tax credits)
+        opex_without_tc += fuel_cost
+        opex_with_tc += fuel_cost
+        
+        if opex_without_tc != 0 or opex_with_tc != 0:
+            tax_credit = opex_with_tc - opex_without_tc
+            
+            # For fossil carriers, rename to (power)
+            tech_name = f"{carrier} (power)" if carrier in fossil_carriers else carrier
+            
+            results.append({
+                'tech_label': tech_name,
+                'opex_without_tax_credits_billion': opex_without_tc / 1e9,
+                'tax_credits_billion': tax_credit / 1e9,
+                'opex_with_tax_credits_billion': opex_with_tc / 1e9,
+                'year': year_str,
+                'scenario': name_tag
+            })
+    
+    return pd.DataFrame(results)
+
+def plot_tax_credit_cluster_bars(
+    total_tax_credit_df,
+    tech_power_color,
+    nice_names_power,
+    title="OPEX With vs. Without Tax Credits by Technology",
+    width=1400,
+    height=700,
+    right_margin=260,
+):
+    if total_tax_credit_df.empty:
+        raise ValueError("total_tax_credit_df is empty; nothing to plot.")
+
+    df_plot = total_tax_credit_df.pivot_table(
+        index="year",
+        columns="tech_label",
+        values=[
+            "opex_without_tax_credits_billion",
+            "opex_with_tax_credits_billion",
+            "tax_credits_billion",
+        ],
+    )
+
+    years = df_plot.index.tolist()
+    if not years:
+        raise ValueError("No years found in total_tax_credit_df.")
+
+    year_positions = np.arange(len(years), dtype=float)
+    tech_labels = total_tax_credit_df["tech_label"].unique()
+
+    color_lookup = {
+        nice_names_power.get(raw_name, raw_name): hex_color
+        for raw_name, hex_color in tech_power_color.items()
+    }
+
+    cluster_specs = [
+        ("opex_without_tax_credits_billion", "OPEX Without Tax Credits", -0.28, 1.0, ""),
+        ("opex_with_tax_credits_billion", "OPEX With Tax Credits", 0.0, 0.85, "/"),
+        ("tax_credits_billion", "Tax Credits", 0.28, 0.7, "x"),
+    ]
+
+    fig = go.Figure()
+
+    for column, label, offset, opacity, pattern_shape in cluster_specs:
+        scenario_df = df_plot[column]
+        x_vals = year_positions + offset
+        for tech in tech_labels:
+            if tech in scenario_df.columns:
+                values = scenario_df[tech].fillna(0).values
+                color = color_lookup.get(tech, tech_power_color.get(tech, "#9E9E9E"))
+                marker_kwargs = {"color": color}
+                if pattern_shape:
+                    marker_kwargs["pattern"] = dict(
+                        shape=pattern_shape,
+                        fgcolor="#424242",
+                        size=6,
+                        solidity=0.35,
+                    )
+                fig.add_bar(
+                    x=x_vals,
+                    y=values,
+                    name=tech if offset == cluster_specs[0][2] else None,
+                    legendgroup=tech,
+                    showlegend=(offset == cluster_specs[0][2]),
+                    marker=marker_kwargs,
+                    opacity=opacity,
+                    width=0.25,
+                    customdata=np.array(years),
+                    hovertemplate=(
+                        f"<b>{tech}</b><br>{label}<br>"
+                        "Year: %{customdata}<br>"
+                        "Value: %{y:.3f} Billion USD<extra></extra>"
+                    ),
+                )
+
+    style_legend_specs = [
+        ("OPEX With Tax Credits", "/", 0.85),
+        ("Tax Credits", "x", 0.7),
+    ]
+    for legend_label, pattern_shape, opacity in style_legend_specs:
+        fig.add_bar(
+            x=[years[0]],
+            y=[0],
+            name=legend_label,
+            marker=dict(
+                color="#BDBDBD",
+                pattern=dict(shape=pattern_shape, fgcolor="#424242", size=6, solidity=0.35),
+            ),
+            opacity=opacity,
+            legendgroup=f"style_{pattern_shape}",
+            showlegend=True,
+            hoverinfo="skip",
+            visible="legendonly",
+        )
+
+    padding = 0.35 if len(years) > 1 else 0.5
+    fig.update_layout(
+        title=title,
+        barmode="stack",
+        bargap=0.15,
+        xaxis=dict(
+            title="Year",
+            tickmode="array",
+            tickvals=year_positions,
+            ticktext=years,
+            range=[year_positions.min() - padding, year_positions.max() + padding],
+        ),
+        yaxis=dict(title="OPEX (Billion USD)"),
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=1,
+            xanchor="left",
+            x=1.02,
+            font=dict(size=12),
+            traceorder="normal",
+        ),
+        template="plotly_white",
+        width=width,
+        height=height,
+        margin=dict(l=40, r=right_margin, t=50, b=50),
+    )
+
+    fig.add_hline(y=0, line_width=1, line_color="black")
+    return fig

@@ -4260,27 +4260,64 @@ def compute_h2_efuels_costs(network, name_tag):
     return pd.DataFrame(final_results)
 
 
-def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
-                             output_threshold=1.0, year_title=True,
-                             electricity_price="marginal", grid_region_lcoe=None):
+def calculate_lcoh_by_region(
+    networks, 
+    h2_carriers, 
+    regional_fees, 
+    emm_mapping,
+    output_threshold=1.0, 
+    year_title=True,
+    electricity_price="marginal", 
+    grid_region_lcoe=None,
+    include_baseload=False,
+    baseload_charge_path="energy_charge_rate.csv",
+    customer_charge_mw=400.0,
+    demand_charge_rate=9.0,
+    baseload_percentages=None
+):
     """
     Compute weighted average LCOH by grid region and year, including CAPEX, OPEX,
-    electricity cost (marginal or LCOE), and T&D fees.
+    electricity cost (marginal or LCOE), T&D fees, and optional baseload charges.
 
     Parameters
     ----------
     electricity_price : {"marginal", "LCOE"}
         Method for electricity cost:
         - "marginal": use nodal marginal price of electricity
-        - "LCOE":     use weighted average LCOE per grid region (requires grid_region_lcoe)
+        - "LCOE": use weighted average LCOE per grid region (requires grid_region_lcoe)
     grid_region_lcoe : pd.Series
         Weighted average LCOE (USD/MWh el) per grid region, indexed by "grid_region".
         Required if electricity_price="LCOE".
+    include_baseload : bool, optional
+        If True, include baseload charges in LCOH calculation (default: False)
+    baseload_charge_path : str, optional
+        Path to energy charge rate CSV file (default: "energy_charge_rate.csv")
+    customer_charge_mw : float, optional
+        Representative plant capacity in MW (default: 400.0)
+    demand_charge_rate : float, optional
+        Demand charge rate in $/kW (default: 9.0)
+    baseload_percentages : dict, optional
+        Baseload percentages by electrolyzer type. If None, uses default values.
     """
     results = {}
-
+    
     conv = 33.0   # MWh H2 per ton
     suffix = "USD/kg H2"
+    
+    # Calculate baseload charges if requested
+    baseload_charges = {}
+    if include_baseload:
+        baseload_charges = calculate_baseload_charge(
+            networks=networks,
+            h2_carriers=h2_carriers,
+            emm_mapping=emm_mapping,
+            energy_charge_path=baseload_charge_path,
+            customer_charge_mw=customer_charge_mw,
+            demand_charge_rate=demand_charge_rate,
+            baseload_percentages=baseload_percentages,
+            output_threshold=output_threshold,
+            verbose=False
+        )
 
     for year_key, net in networks.items():
         scen_year = int(re.search(r"\d{4}", str(year_key)).group())
@@ -4364,24 +4401,49 @@ def calculate_lcoh_by_region(networks, h2_carriers, regional_fees, emm_mapping,
             fee_trans_val
         df[f"LCOH + T&D fees ({suffix})"] = df[f"LCOH + Transmission fees ({suffix})"] + fee_dist_val
 
+        # Add baseload charges per link if requested
+        if include_baseload and scen_year in baseload_charges:
+            baseload_df = baseload_charges[scen_year]
+            # Map baseload cost (USD/MWh H2) to each link based on its grid region
+            baseload_map = baseload_df.set_index('grid_region')['baseload_cost_per_mwh_h2']
+            # Convert from USD/MWh H2 to USD/kg H2
+            df[f"Baseload charges ({suffix})"] = (
+                df["grid_region"].map(baseload_map).fillna(0) / conv
+            )
+            df[f"LCOH + T&D + Baseload ({suffix})"] = (
+                df[f"LCOH + T&D fees ({suffix})"] + df[f"Baseload charges ({suffix})"]
+            )
+        else:
+            df[f"Baseload charges ({suffix})"] = 0.0
+            df[f"LCOH + T&D + Baseload ({suffix})"] = df[f"LCOH + T&D fees ({suffix})"]
+
         # Dispatch label per regione
         dispatch_label = "Hydrogen Dispatch (tons per region)"
 
-        # Weighted averages by grid region + dispatch per regione
+        # Prepare aggregation dictionary
+        agg_dict = {
+            f"Electrolysis CAPEX ({suffix})": lambda g: (g[f"Electrolysis CAPEX ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
+            f"Electrolysis OPEX ({suffix})": lambda g: (g[f"Electrolysis OPEX ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
+            f"Electricity ({suffix})": lambda g: (g[f"Electricity ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
+            f"LCOH (excl. T&D fees) ({suffix})": lambda g: (g[f"LCOH (excl. T&D fees) ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
+            f"Transmission fees ({suffix})": lambda g: (fee_trans_val.loc[g.index] * g["h2_out"]).sum() / g["h2_out"].sum(),
+            f"LCOH + Transmission fees ({suffix})": lambda g: (g[f"LCOH + Transmission fees ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
+            f"Distribution fees ({suffix})": lambda g: (fee_dist_val.loc[g.index] * g["h2_out"]).sum() / g["h2_out"].sum(),
+            f"LCOH + T&D fees ({suffix})": lambda g: (g[f"LCOH + T&D fees ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
+        }
+        
+        # Add baseload aggregation if included
+        if include_baseload:
+            agg_dict[f"Baseload charges ({suffix})"] = lambda g: (g[f"Baseload charges ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum()
+            agg_dict[f"LCOH + T&D + Baseload ({suffix})"] = lambda g: (g[f"LCOH + T&D + Baseload ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum()
+        
+        # Add dispatch
+        agg_dict[dispatch_label] = lambda g: g["h2_out"].sum() * conv / 1000
+
+        # Weighted averages by grid region
         region_summary = (
             df.groupby("grid_region")
-            .apply(lambda g: pd.Series({
-                f"Electrolysis CAPEX ({suffix})": (g[f"Electrolysis CAPEX ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
-                f"Electrolysis OPEX ({suffix})":  (g[f"Electrolysis OPEX ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
-                f"Electricity ({suffix})":        (g[f"Electricity ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
-                f"LCOH (excl. T&D fees) ({suffix})": (g[f"LCOH (excl. T&D fees) ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
-                f"Transmission fees ({suffix})":   (fee_trans_val.loc[g.index] * g["h2_out"]).sum() / g["h2_out"].sum(),
-                f"LCOH + Transmission fees ({suffix})": (g[f"LCOH + Transmission fees ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
-                f"Distribution fees ({suffix})":   (fee_dist_val.loc[g.index] * g["h2_out"]).sum() / g["h2_out"].sum(),
-                f"LCOH + T&D fees ({suffix})": (g[f"LCOH + T&D fees ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
-                dispatch_label: g["h2_out"].sum() * conv /
-                1000   # tons per regione
-            }))
+            .apply(lambda g: pd.Series({k: v(g) for k, v in agg_dict.items()}))
             .reset_index().rename(columns={"grid_region": "Grid Region"})
         )
 
@@ -6912,3 +6974,192 @@ def plot_marginal_prices_by_region_weighted(
         plt.show()
 
     return df_daily
+
+
+def calculate_baseload_charge(
+    networks: dict,
+    h2_carriers: list,
+    emm_mapping: dict,
+    energy_charge_path: str = "energy_charge_rate.csv",
+    customer_charge_mw: float = 400.0,
+    demand_charge_rate: float = 9.0,
+    baseload_percentages: dict = None,
+    output_threshold: float = 0.01,
+    verbose: bool = True
+):
+    """
+    Calculate baseload charges for hydrogen production by aggregating all carriers at regional level.
+    
+    Parameters
+    ----------
+    networks : dict
+        Dictionary of PyPSA networks
+    h2_carriers : list
+        List of hydrogen production carrier names
+    emm_mapping : dict
+        Mapping from grid regions to EMM regions
+    energy_charge_path : str
+        Path to CSV with energy rates
+    customer_charge_mw : float
+        Representative plant capacity (MW)
+    demand_charge_rate : float
+        Demand charge rate ($/kW)
+    baseload_percentages : dict
+        Baseload % by electrolyzer type
+    output_threshold : float
+        Minimum H2 output (TWh) to include
+    verbose : bool
+        Print progress information
+    """
+    
+    if baseload_percentages is None:
+        baseload_percentages = {
+            "Alkaline electrolyzer large": 10.0,
+            "Alkaline electrolyzer medium": 10.0,
+            "Alkaline electrolyzer small": 10.0,
+            "PEM electrolyzer": 10.0,
+            "SOEC": 3.0
+        }
+    
+    # Convert cents/kWh to $/MWh and adjust for inflation (2021 to 2020)
+    # 2021 cents/kWh * 10 = 2021 $/MWh
+    # Divide by 1.053 to adjust from 2021 to 2020 (5.3% inflation)
+    energy_rates = pd.read_csv(energy_charge_path)
+    energy_rates['Year'] = pd.to_numeric(energy_rates['Year'], errors='coerce')
+    energy_rates['Generation USD/MWh 2020'] = (
+        energy_rates['Generation 2021 cents/kWh'] * 10 / 1.053
+    )
+    
+    results = {}
+    
+    for net_key, net in networks.items():
+        year_match = re.search(r'\d{4}', net_key)
+        if not year_match:
+            continue
+        year = int(year_match.group())
+        
+        if verbose:
+            print(f"\nProcessing {net_key} (Year: {year})")
+        
+        w = net.snapshot_weightings.generators
+        hours_per_month = 730
+        
+        # Filter H2 production links
+        h2_links = net.links[net.links.carrier.isin(h2_carriers)].copy()
+        
+        if h2_links.empty:
+            continue
+        
+        h2_links['grid_region'] = h2_links.bus0.map(net.buses.grid_region)
+        h2_links['emm_region'] = h2_links.grid_region.map(emm_mapping)
+        
+        # Calculate electricity input and H2 output
+        p0 = net.links_t.p0[h2_links.index].clip(lower=0)
+        p1 = -net.links_t.p1[h2_links.index].clip(upper=0)
+        
+        elec_in_mwh = p0.multiply(w, axis=0).sum()
+        h2_out_mwh = p1.multiply(w, axis=0).sum()
+        h2_out_twh = h2_out_mwh / 1e6
+        
+        region_results = []
+        
+        # Process each region
+        for region in h2_links.grid_region.unique():
+            region_links = h2_links[h2_links.grid_region == region]
+            
+            # Validate EMM mapping
+            emm_region = emm_mapping.get(region, None)
+            if emm_region is None:
+                if verbose:
+                    print(f"❌ {region}: No EMM mapping")
+                continue
+            
+            # Get energy rate
+            rate_row = energy_rates[
+                (energy_rates['Year'] == year) &
+                (energy_rates['region'] == emm_region)
+            ]
+            
+            if rate_row.empty:
+                if verbose:
+                    print(f"❌ {region}: No energy rate for {emm_region}")
+                continue
+            
+            energy_rate_usd_mwh = rate_row['Generation USD/MWh 2020'].iloc[0]
+            
+            # Aggregate all carriers in the region
+            total_capacity_mw = region_links.p_nom_opt.sum()
+            annual_h2_twh = h2_out_twh[region_links.index].sum()
+            
+            # Apply thresholds
+            if annual_h2_twh < output_threshold:
+                if verbose:
+                    print(f"⚠️  {region}: H2 output {annual_h2_twh:.3f} TWh < {output_threshold} TWh")
+                continue
+            
+            n_plants = int(np.floor(total_capacity_mw / customer_charge_mw))
+            
+            if n_plants == 0:
+                if verbose:
+                    print(f"⚠️  {region}: Total capacity {total_capacity_mw:.1f} MW < {customer_charge_mw} MW")
+                continue
+            
+            # Calculate weighted average baseload percentage
+            carrier_capacities = region_links.groupby('carrier').p_nom_opt.sum()
+            weighted_baseload_pct = sum(
+                baseload_percentages.get(c, 10.0) * carrier_capacities[c]
+                for c in carrier_capacities.index
+            ) / total_capacity_mw / 100.0
+            
+            baseload_power_mw = total_capacity_mw * weighted_baseload_pct
+            baseload_power_kw = baseload_power_mw * 1000
+            
+            # Calculate charges
+            customer_charge_monthly = 1000 * n_plants
+            demand_charge_monthly = demand_charge_rate * baseload_power_kw
+            monthly_baseload_consumption_mwh = baseload_power_mw * hours_per_month
+            energy_charge_monthly = monthly_baseload_consumption_mwh * energy_rate_usd_mwh
+            
+            total_monthly_charge = (
+                customer_charge_monthly +
+                demand_charge_monthly +
+                energy_charge_monthly
+            )
+            
+            total_annual_charge = total_monthly_charge * 12
+            baseload_cost_per_mwh_h2 = total_annual_charge / (annual_h2_twh * 1e6)
+            
+            if verbose:
+                print(f"✅ {region}: {n_plants} plants, "
+                      f"{annual_h2_twh:.2f} TWh H2, "
+                      f"${baseload_cost_per_mwh_h2:.2f}/MWh H2")
+            
+            region_results.append({
+                'grid_region': region,
+                'emm_region': emm_region,
+                'carrier': 'All carriers (aggregated)',
+                'capacity_mw': total_capacity_mw,
+                'n_plants': n_plants,
+                'baseload_pct': weighted_baseload_pct * 100,
+                'baseload_power_mw': baseload_power_mw,
+                'annual_h2_output_twh': annual_h2_twh,
+                'energy_rate_usd_mwh': energy_rate_usd_mwh,
+                'customer_charge_monthly': customer_charge_monthly,
+                'demand_charge_monthly': demand_charge_monthly,
+                'energy_charge_monthly': energy_charge_monthly,
+                'total_monthly_charge': total_monthly_charge,
+                'total_annual_charge': total_annual_charge,
+                'baseload_cost_per_mwh_h2': baseload_cost_per_mwh_h2
+            })
+        
+        if region_results:
+            df = pd.DataFrame(region_results)
+            results[year] = df
+            
+            if verbose:
+                print(f"\nYear {year} Summary:")
+                print(f"  • Total regions included: {df.grid_region.nunique()}")
+                print(f"  • Total plants: {df.n_plants.sum():.0f}")
+                print(f"  • Total annual baseload charges: ${df.total_annual_charge.sum():,.0f}")
+    
+    return results

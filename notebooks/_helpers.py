@@ -7220,6 +7220,7 @@ def calculate_baseload_charge(
     return results
 
 
+
 def compute_power_opex_with_tax_credits(network, name_tag):
     """
     Compute power generation OPEX broken down by:
@@ -7278,9 +7279,9 @@ def compute_power_opex_with_tax_credits(network, name_tag):
             
             results.append({
                 'tech_label': carrier,
-                'opex_without_tax_credits_billion': opex_without_tc / 1e9,
+                'without_tax_credits_billion': opex_without_tc / 1e9,
                 'tax_credits_billion': tax_credit / 1e9,
-                'opex_with_tax_credits_billion': opex_with_tc / 1e9,
+                'with_tax_credits_billion': opex_with_tc / 1e9,
                 'year': year_str,
                 'scenario': name_tag
             })
@@ -7336,15 +7337,159 @@ def compute_power_opex_with_tax_credits(network, name_tag):
             
             results.append({
                 'tech_label': tech_name,
-                'opex_without_tax_credits_billion': opex_without_tc / 1e9,
+                'without_tax_credits_billion': opex_without_tc / 1e9,
                 'tax_credits_billion': tax_credit / 1e9,
-                'opex_with_tax_credits_billion': opex_with_tc / 1e9,
+                'with_tax_credits_billion': opex_with_tc / 1e9,
                 'year': year_str,
                 'scenario': name_tag
             })
     
     return pd.DataFrame(results)
 
+
+def compute_power_capex_with_tax_credits(network, name_tag):
+    """
+    Compute power generation CAPEX broken down by:
+    - CAPEX without tax credits (original capital cost)
+    - Tax credits amount (ITC for batteries)
+    - CAPEX with tax credits (actual)
+    
+    Returns a DataFrame with columns:
+    - tech_label: Technology carrier name
+    - capex_without_tax_credits: CAPEX using original capital costs (billion USD)
+    - tax_credits: Tax credit amount (billion USD, negative means subsidy)
+    - capex_with_tax_credits: CAPEX with tax credits applied (billion USD)
+    - year: Year
+    - scenario: Scenario name
+    
+    Note: ITC (Investment Tax Credit) is only applied to battery storage (-30%).
+    For other components, capital_cost remains unchanged, so tax_credits = 0.
+    """
+    year_str = name_tag[-4:]
+    fossil_carriers = ["coal", "gas", "oil", "biomass"]
+    
+    results = []
+    
+    # Process GENERATORS (solar, wind, nuclear, etc.)
+    for carrier in network.generators.carrier.unique():
+        # Skip fossil fuel generators (they're end-uses, not power generation)
+        if carrier in fossil_carriers:
+            continue
+            
+        gens = network.generators[network.generators.carrier == carrier]
+        
+        # Calculate CAPEX (no tax credits for generators)
+        capex_total = 0
+        
+        for gen_name in gens.index:
+            gen = network.generators.loc[gen_name]
+            
+            # Get optimal capacity
+            if gen.p_nom_extendable:
+                capacity = gen.p_nom_opt
+            else:
+                capacity = gen.p_nom
+            
+            # Capital cost (no tax credit for generators)
+            capital_cost = gen.capital_cost
+            
+            # Calculate CAPEX
+            capex_total += capacity * capital_cost
+        
+        if capex_total != 0:
+            # No tax credits for generators
+            results.append({
+                'tech_label': carrier,
+                'without_tax_credits_billion': capex_total / 1e9,
+                'tax_credits_billion': 0.0,
+                'with_tax_credits_billion': capex_total / 1e9,
+                'year': year_str,
+                'scenario': name_tag
+            })
+    
+    # Process LINKS (fossil fuel power, biomass, etc.)
+    for carrier in network.links.carrier.unique():
+        links = network.links[network.links.carrier == carrier]
+        
+        # Calculate CAPEX (no tax credits for links)
+        capex_total = 0
+        
+        for link_name in links.index:
+            link = network.links.loc[link_name]
+            
+            # Get optimal capacity
+            if link.p_nom_extendable:
+                capacity = link.p_nom_opt
+            else:
+                capacity = link.p_nom
+            
+            # Capital cost (no tax credit for links)
+            capital_cost = link.capital_cost
+            
+            # Calculate CAPEX
+            capex_total += capacity * capital_cost
+        
+        if capex_total != 0:
+            # For fossil carriers, rename to (power)
+            tech_name = f"{carrier} (power)" if carrier in fossil_carriers else carrier
+            
+            # No tax credits for links
+            results.append({
+                'tech_label': tech_name,
+                'without_tax_credits_billion': capex_total / 1e9,
+                'tax_credits_billion': 0.0,
+                'with_tax_credits_billion': capex_total / 1e9,
+                'year': year_str,
+                'scenario': name_tag
+            })
+    
+    # Process STORES (batteries - these get ITC tax credits)
+    for carrier in network.stores.carrier.unique():
+        stores = network.stores[network.stores.carrier == carrier]
+        
+        # Calculate CAPEX with and without tax credits
+        capex_with_tc = 0
+        capex_without_tc = 0
+        
+        for store_name in stores.index:
+            store = network.stores.loc[store_name]
+            
+            # Get optimal capacity
+            if store.e_nom_extendable:
+                capacity = store.e_nom_opt
+            else:
+                capacity = store.e_nom
+            
+            # Current capital cost (with tax credits applied)
+            capital_cost_current = store.capital_cost
+            
+            # Calculate what the original capital cost would have been
+            # ITC for batteries is -30%, so: new_cost = original_cost * (1 - 0.30)
+            # Therefore: original_cost = new_cost / (1 - 0.30) = new_cost / 0.70
+            if 'battery' == carrier.lower():
+                # Only batteries get ITC, apply reverse calculation
+                capital_cost_original = capital_cost_current / 0.70
+            else:
+                # No tax credit for other stores
+                capital_cost_original = capital_cost_current
+            
+            # Calculate CAPEX
+            capex_with_tc += capacity * capital_cost_current
+            capex_without_tc += capacity * capital_cost_original
+        
+        if capex_with_tc != 0 or capex_without_tc != 0:
+            tax_credit = capex_with_tc - capex_without_tc
+            
+            results.append({
+                'tech_label': carrier,
+                'without_tax_credits_billion': capex_without_tc / 1e9,
+                'tax_credits_billion': tax_credit / 1e9,
+                'with_tax_credits_billion': capex_with_tc / 1e9,
+                'year': year_str,
+                'scenario': name_tag
+            })
+    
+    return pd.DataFrame(results)
 
 def plot_tax_credit_cluster_bars(
     total_tax_credit_df,
@@ -7354,77 +7499,106 @@ def plot_tax_credit_cluster_bars(
     width=1400,
     height=700,
     right_margin=260,
-    tech_filter=None,  # optional list of technologies to include
+    unit="billion",  # "billion" or "million"
+    cost_type="OPEX",  # "OPEX" or "CAPEX"
 ):
-    # Validate input
+    """
+    Plot clustered stacked bar chart for tax credit analysis (OPEX or CAPEX).
+    
+    Parameters:
+    -----------
+    total_tax_credit_df : pd.DataFrame
+        DataFrame with tax credit data containing columns:
+        - without_tax_credits_billion
+        - with_tax_credits_billion
+        - tax_credits_billion
+        - tech_label
+        - year
+    tech_power_color : dict
+        Technology color mapping
+    nice_names_power : dict
+        Technology name mapping
+    title : str
+        Chart title
+    width : int
+        Chart width in pixels
+    height : int
+        Chart height in pixels
+    right_margin : int
+        Right margin for legend
+    unit : str
+        Display unit - "billion" or "million" (default: "billion")
+    cost_type : str
+        Type of cost - "OPEX" or "CAPEX" (default: "OPEX")
+    """
     if total_tax_credit_df.empty:
         raise ValueError("total_tax_credit_df is empty; nothing to plot.")
+    
+    # Validate parameters
+    if unit not in ["billion", "million"]:
+        raise ValueError("unit must be either 'billion' or 'million'")
+    
+    if cost_type not in ["OPEX", "CAPEX"]:
+        raise ValueError("cost_type must be either 'OPEX' or 'CAPEX'")
 
-    # Pivot data for relative bar plotting
+    # Determine conversion factor and precision (computed once)
+    if unit == "million":
+        conversion_factor = 1000  # Convert billion to million
+        y_label = f"{cost_type} (Million USD)"
+        precision = ":.2f"  # 2 decimal places for millions
+    else:
+        conversion_factor = 1  # Keep as billion
+        y_label = f"{cost_type} (Billion USD)"
+        precision = ":.3f"  # 3 decimal places for billions
+
+    # Pivot the data (computed once)
     df_plot = total_tax_credit_df.pivot_table(
         index="year",
         columns="tech_label",
         values=[
-            "opex_without_tax_credits_billion",
-            "opex_with_tax_credits_billion",
+            "without_tax_credits_billion",
+            "with_tax_credits_billion",
             "tax_credits_billion",
         ],
     )
+    
+    # Apply conversion factor to entire DataFrame (single operation)
+    df_plot = df_plot * conversion_factor
 
     years = df_plot.index.tolist()
     if not years:
         raise ValueError("No years found in total_tax_credit_df.")
 
     year_positions = np.arange(len(years), dtype=float)
-    all_techs = total_tax_credit_df["tech_label"].unique()
+    tech_labels = total_tax_credit_df["tech_label"].unique()
 
-    # Color lookup dictionary
     color_lookup = {
         nice_names_power.get(raw_name, raw_name): hex_color
         for raw_name, hex_color in tech_power_color.items()
     }
 
-    # Keep only technologies with non-zero values
-    active_techs = []
-    for tech in all_techs:
-        vals = []
-        for col in [
-            "opex_without_tax_credits_billion",
-            "opex_with_tax_credits_billion",
-            "tax_credits_billion",
-        ]:
-            if tech in df_plot[col].columns:
-                vals.append(df_plot[col][tech].fillna(0).values)
-        if vals and np.any(np.abs(np.concatenate(vals)) > 0):
-            active_techs.append(tech)
-
-    # Apply technology filter and preserve order
-    if tech_filter is not None:
-        active_techs = [t for t in tech_filter if t in active_techs]
-        if not active_techs:
-            raise ValueError("No matching technologies found in tech_filter.")
-
-    # Cluster configuration (spacing and style)
     cluster_specs = [
-        ("opex_without_tax_credits_billion", "OPEX Without Tax Credits", -0.25, 1.0, ""),
-        ("opex_with_tax_credits_billion", "OPEX With Tax Credits", 0.0, 0.85, "/"),
-        ("tax_credits_billion", "Tax Credits", 0.25, 0.7, "x"),
+        ("without_tax_credits_billion", f"{cost_type} Without Tax Credits", -0.28, 1.0, ""),
+        ("with_tax_credits_billion", f"{cost_type} With Tax Credits", 0.0, 0.85, "/"),
+        ("tax_credits_billion", "Tax Credits", 0.28, 0.7, "x"),
     ]
 
     fig = go.Figure()
 
-    # Add bars for each scenario and technology in specified order
     for column, label, offset, opacity, pattern_shape in cluster_specs:
         scenario_df = df_plot[column]
         x_vals = year_positions + offset
-        for tech in active_techs:
+        for tech in tech_labels:
             if tech in scenario_df.columns:
                 values = scenario_df[tech].fillna(0).values
                 color = color_lookup.get(tech, tech_power_color.get(tech, "#9E9E9E"))
                 marker_kwargs = {"color": color}
                 if pattern_shape:
                     marker_kwargs["pattern"] = dict(
-                        shape=pattern_shape, fgcolor="#424242", size=6, solidity=0.35
+                        shape=pattern_shape,
+                        fgcolor="#424242",
+                        size=6,
+                        solidity=0.35,
                     )
                 fig.add_bar(
                     x=x_vals,
@@ -7434,42 +7608,40 @@ def plot_tax_credit_cluster_bars(
                     showlegend=(offset == cluster_specs[0][2]),
                     marker=marker_kwargs,
                     opacity=opacity,
-                    width=0.22,
+                    width=0.25,
                     customdata=np.array(years),
                     hovertemplate=(
                         f"<b>{tech}</b><br>{label}<br>"
-                        "Year: %{customdata}<br>"
-                        "Value: %{y:.3f} Billion USD<extra></extra>"
+                        f"Year: %{{customdata}}<br>"
+                        f"Value: %{{y{precision}}} {unit.capitalize()} USD<extra></extra>"
                     ),
                 )
 
-    # Add pattern legend entries (not data)
-    for legend_label, pattern_shape, opacity in [
-        ("OPEX With Tax Credits", "/", 0.85),
-        ("OPEX Without Tax Credits", "", 1.0),
+    style_legend_specs = [
+        (f"{cost_type} With Tax Credits", "/", 0.85),
         ("Tax Credits", "x", 0.7),
-    ]:
+    ]
+    for legend_label, pattern_shape, opacity in style_legend_specs:
         fig.add_bar(
-            x=[None],
-            y=[None],
+            x=[years[0]],
+            y=[0],
             name=legend_label,
             marker=dict(
                 color="#BDBDBD",
-                pattern=dict(shape=pattern_shape, fgcolor="#424242", size=6, solidity=0.35)
-                if pattern_shape
-                else None,
+                pattern=dict(shape=pattern_shape, fgcolor="#424242", size=6, solidity=0.35),
             ),
             opacity=opacity,
+            legendgroup=f"style_{pattern_shape}",
             showlegend=True,
             hoverinfo="skip",
+            visible="legendonly",
         )
 
-    # Layout adjustments
-    padding = 0.5 if len(years) > 1 else 0.6
+    padding = 0.35 if len(years) > 1 else 0.5
     fig.update_layout(
         title=title,
-        barmode="relative",  # correct stacking for positive and negative values
-        bargap=0.18,
+        barmode="stack",
+        bargap=0.15,
         xaxis=dict(
             title="Year",
             tickmode="array",
@@ -7477,7 +7649,7 @@ def plot_tax_credit_cluster_bars(
             ticktext=years,
             range=[year_positions.min() - padding, year_positions.max() + padding],
         ),
-        yaxis=dict(title="Operational expenditure (Billion USD)"),
+        yaxis=dict(title=y_label),
         legend=dict(
             orientation="v",
             yanchor="top",
@@ -7493,7 +7665,5 @@ def plot_tax_credit_cluster_bars(
         margin=dict(l=40, r=right_margin, t=50, b=50),
     )
 
-    # Add horizontal line at zero
     fig.add_hline(y=0, line_width=1, line_color="black")
-
     return fig

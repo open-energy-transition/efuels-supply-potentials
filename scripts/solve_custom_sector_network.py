@@ -489,15 +489,15 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                             logger.info(f"[ITC STORAGE] {idx} | year={planning_horizon}, scale={scale:.2f}")
 
     # -------------------------
-    # Apply Investment Tax Credits to LINKS (battery)
+    # Apply Investment Tax Credits to LINKS (battery chargers)
     # -------------------------
     if os.path.exists(itc_path):
         itc_df = pd.read_csv(itc_path, index_col=0)
 
-        if "battery" in itc_df.index and network.links.carrier.str.contains("battery").any():
+        if "battery" in itc_df.index and "battery charger" in network.links.carrier.values:
             credit_factor = -itc_df.loc["battery", "credit"] / 100
 
-            affected = network.links[network.links.carrier.str.contains("battery")]
+            affected = network.links.query("carrier == 'battery charger'")
             for idx, lk in affected.iterrows():
                 build_year = lk.get("build_year", planning_horizon)
 
@@ -524,10 +524,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                             "final": new
                         })
                         if verbose:
-                            logger.info(
-                                f"[ITC LINK BATTERY] {idx} | carrier={lk.carrier}, "
-                                f"year={planning_horizon}, scale={scale:.2f}"
-                            )
+                            logger.info(f"[ITC LINK BATTERY] {idx} | year={planning_horizon}, scale={scale:.2f}")
 
     # Save modifications log
     if modifications and log_path:

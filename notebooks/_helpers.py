@@ -4345,12 +4345,16 @@ def calculate_lcoh_by_region(
     """
     Compute weighted average LCOH by grid region and year, including CAPEX, OPEX,
     electricity cost (marginal or LCOE), T&D fees, and optional baseload charges.
+    Baseload correction:
+      - Removes the electricity cost portion corresponding to baseload consumption
+        only when electrolyzers are active.
+      - Adds the annual baseload charge as a fixed cost.
     """
     results = {}
     conv = 33.0  # MWh H2 per ton
     suffix = "USD/kg H2"
 
-    # Calculate baseload charges if requested
+    # Baseload charge computation
     baseload_charges = {}
     if include_baseload:
         baseload_charges = calculate_baseload_charge(
@@ -4371,13 +4375,12 @@ def calculate_lcoh_by_region(
         if links.empty:
             continue
 
-        # Electricity consumption and H2 output
+        # Power flows
         p0, p1 = net.links_t.p0[links.index], net.links_t.p1[links.index]
         w = net.snapshot_weightings.generators
         cons = p0.clip(lower=0).multiply(w, axis=0)
         h2 = (-p1).clip(lower=0).multiply(w, axis=0)
         h2_out = h2.sum()
-
         valid = h2_out > output_threshold
         if valid.sum() == 0:
             continue
@@ -4385,7 +4388,7 @@ def calculate_lcoh_by_region(
         capex = links.loc[valid, "capital_cost"] * links.loc[valid, "p_nom_opt"]
         opex = links.loc[valid, "marginal_cost"] * cons.loc[:, valid].sum(axis=0)
 
-        # Electricity cost depending on method
+        # Electricity cost
         elec_cost = pd.Series(0.0, index=valid.index[valid])
         if electricity_price == "marginal":
             for l in valid.index[valid]:
@@ -4393,9 +4396,7 @@ def calculate_lcoh_by_region(
                 elec_cost[l] = (cons[l] * net.buses_t.marginal_price[bus]).sum()
         elif electricity_price == "LCOE":
             if grid_region_lcoe is None:
-                raise ValueError(
-                    "grid_region_lcoe must be provided when electricity_price='LCOE'"
-                )
+                raise ValueError("grid_region_lcoe must be provided when electricity_price='LCOE'")
             for l in valid.index[valid]:
                 bus = links.at[l, "bus0"]
                 region = net.buses.at[bus, "grid_region"]
@@ -4405,8 +4406,6 @@ def calculate_lcoh_by_region(
             raise ValueError("electricity_price must be 'marginal' or 'LCOE'")
 
         out_valid = h2_out[valid]
-
-        # Normalize to USD/kg H2
         capex_val = capex / out_valid / conv
         opex_val = opex / out_valid / conv
         elec_val = elec_cost / out_valid / conv
@@ -4420,7 +4419,7 @@ def calculate_lcoh_by_region(
         })
         df["grid_region"] = df["bus"].map(net.buses["grid_region"])
 
-        # Transmission & distribution fees
+        # Transmission & Distribution fees
         fee_map = regional_fees.loc[
             regional_fees["Year"] == scen_year,
             ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"]
@@ -4432,7 +4431,7 @@ def calculate_lcoh_by_region(
         fee_trans_val = (fee_trans * elec_rate / conv).reindex(df.index)
         fee_dist_val = (fee_dist * elec_rate / conv).reindex(df.index)
 
-        # LCOH breakdown
+        # Base LCOH
         df[f"LCOH (excl. T&D fees) ({suffix})"] = (
             df[f"Electrolysis CAPEX ({suffix})"]
             + df[f"Electrolysis OPEX ({suffix})"]
@@ -4445,38 +4444,51 @@ def calculate_lcoh_by_region(
             df[f"LCOH + Transmission fees ({suffix})"] + fee_dist_val
         )
 
-        # Baseload charges
+        # Baseload correction
         if include_baseload and scen_year in baseload_charges:
             baseload_df = baseload_charges[scen_year]
-            baseload_map = baseload_df.set_index("grid_region")["baseload_cost_per_mwh_h2"]
-            df[f"Baseload charges ({suffix})"] = (
-                df["grid_region"].map(baseload_map).fillna(0) / conv
-            )
+            baseload_frac_map = baseload_df.set_index("grid_region")["baseload_pct"] / 100.0
+            baseload_cost_map = baseload_df.set_index("grid_region")["baseload_cost_per_mwh_h2"]
+
+            # Compute activity factor: share of hours with positive production
+            activity_factor = {}
+            for l in valid.index[valid]:
+                p_prod = (-net.links_t.p1[l]).clip(lower=0)
+                active_hours = (p_prod > 0).sum()
+                activity_factor[l] = active_hours / len(p_prod)
+
+            df["activity_factor"] = df.index.map(activity_factor)
+            df["baseload_frac"] = df["grid_region"].map(baseload_frac_map).fillna(0)
+
+            # Remove duplicated baseload electricity cost only during active operation
+            df[f"Electricity ({suffix})"] = df[f"Electricity ({suffix})"] * (1 - df["baseload_frac"] * df["activity_factor"])
+
+            # Add the constant annual baseload charge
+            df[f"Baseload charges ({suffix})"] = df["grid_region"].map(baseload_cost_map).fillna(0) / conv
+
+            # Add combined columns
             df[f"LCOH + Transmission fees + Baseload charges ({suffix})"] = (
-                df[f"LCOH + Transmission fees ({suffix})"]
-                + df[f"Baseload charges ({suffix})"]
+                df[f"LCOH + Transmission fees ({suffix})"] + df[f"Baseload charges ({suffix})"]
             )
-            df[f"LCOH + T&D + Baseload ({suffix})"] = (
-                df[f"LCOH + T&D fees ({suffix})"]
-                + df[f"Baseload charges ({suffix})"]
+            df[f"LCOH + T&D fees + Baseload charges ({suffix})"] = (
+                df[f"LCOH + T&D fees ({suffix})"] + df[f"Baseload charges ({suffix})"]
             )
         else:
             df[f"Baseload charges ({suffix})"] = 0.0
-            df[f"LCOH + Transmission fees + Baseload charges ({suffix})"] = (
-                df[f"LCOH + Transmission fees ({suffix})"]
-            )
-            df[f"LCOH + T&D + Baseload ({suffix})"] = df[f"LCOH + T&D fees ({suffix})"]
+            df[f"LCOH + Transmission fees + Baseload charges ({suffix})"] = df[f"LCOH + Transmission fees ({suffix})"]
+            df[f"LCOH + T&D fees + Baseload charges ({suffix})"] = df[f"LCOH + T&D fees ({suffix})"]
 
-        ordered_cols = list(df.columns)
+        # Reorder columns: Baseload charges immediately after LCOH + Transmission fees
+        cols = list(df.columns)
         base_col = f"Baseload charges ({suffix})"
         after_col = f"LCOH + Transmission fees ({suffix})"
-        if base_col in ordered_cols and after_col in ordered_cols:
-            ordered_cols.remove(base_col)
-            insert_pos = ordered_cols.index(after_col) + 1
-            ordered_cols.insert(insert_pos, base_col)
-            df = df[ordered_cols]
+        if base_col in cols and after_col in cols:
+            cols.remove(base_col)
+            idx = cols.index(after_col) + 1
+            cols.insert(idx, base_col)
+            df = df[cols]
 
-        # Aggregation
+        # Weighted aggregation by region
         dispatch_label = "Hydrogen Dispatch (tons per region)"
         agg_dict = {
             f"Electrolysis CAPEX ({suffix})": lambda g: (g[f"Electrolysis CAPEX ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
@@ -4485,16 +4497,13 @@ def calculate_lcoh_by_region(
             f"LCOH (excl. T&D fees) ({suffix})": lambda g: (g[f"LCOH (excl. T&D fees) ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
             f"Transmission fees ({suffix})": lambda g: (fee_trans_val.loc[g.index] * g["h2_out"]).sum() / g["h2_out"].sum(),
             f"LCOH + Transmission fees ({suffix})": lambda g: (g[f"LCOH + Transmission fees ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
+            f"Baseload charges ({suffix})": lambda g: (g[f"Baseload charges ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
             f"LCOH + Transmission fees + Baseload charges ({suffix})": lambda g: (g[f"LCOH + Transmission fees + Baseload charges ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
             f"Distribution fees ({suffix})": lambda g: (fee_dist_val.loc[g.index] * g["h2_out"]).sum() / g["h2_out"].sum(),
             f"LCOH + T&D fees ({suffix})": lambda g: (g[f"LCOH + T&D fees ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
+            f"LCOH + T&D fees + Baseload charges ({suffix})": lambda g: (g[f"LCOH + T&D fees + Baseload charges ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
+            dispatch_label: lambda g: g["h2_out"].sum() * conv / 1000
         }
-
-        if include_baseload:
-            agg_dict[f"Baseload charges ({suffix})"] = lambda g: (g[f"Baseload charges ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum()
-            agg_dict[f"LCOH + T&D + Baseload ({suffix})"] = lambda g: (g[f"LCOH + T&D + Baseload ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum()
-
-        agg_dict[dispatch_label] = lambda g: g["h2_out"].sum() * conv / 1000
 
         region_summary = (
             df.groupby("grid_region")
@@ -4504,8 +4513,7 @@ def calculate_lcoh_by_region(
         )
 
         region_summary = region_summary.round(2)
-        key = str(scen_year) if year_title else year_key
-        results[key] = region_summary
+        results[str(scen_year) if year_title else year_key] = region_summary
 
     return results
 
@@ -7504,54 +7512,24 @@ def plot_tax_credit_cluster_bars(
 ):
     """
     Plot clustered stacked bar chart for tax credit analysis (OPEX or CAPEX).
-    
-    Parameters:
-    -----------
-    total_tax_credit_df : pd.DataFrame
-        DataFrame with tax credit data containing columns:
-        - without_tax_credits_billion
-        - with_tax_credits_billion
-        - tax_credits_billion
-        - tech_label
-        - year
-    tech_power_color : dict
-        Technology color mapping
-    nice_names_power : dict
-        Technology name mapping
-    title : str
-        Chart title
-    width : int
-        Chart width in pixels
-    height : int
-        Chart height in pixels
-    right_margin : int
-        Right margin for legend
-    unit : str
-        Display unit - "billion" or "million" (default: "billion")
-    cost_type : str
-        Type of cost - "OPEX" or "CAPEX" (default: "OPEX")
     """
     if total_tax_credit_df.empty:
         raise ValueError("total_tax_credit_df is empty; nothing to plot.")
     
-    # Validate parameters
     if unit not in ["billion", "million"]:
         raise ValueError("unit must be either 'billion' or 'million'")
-    
     if cost_type not in ["OPEX", "CAPEX"]:
         raise ValueError("cost_type must be either 'OPEX' or 'CAPEX'")
 
-    # Determine conversion factor and precision (computed once)
     if unit == "million":
-        conversion_factor = 1000  # Convert billion to million
+        conversion_factor = 1000
         y_label = f"{cost_type} (Million USD)"
-        precision = ":.2f"  # 2 decimal places for millions
+        precision = ":.2f"
     else:
-        conversion_factor = 1  # Keep as billion
+        conversion_factor = 1
         y_label = f"{cost_type} (Billion USD)"
-        precision = ":.3f"  # 3 decimal places for billions
+        precision = ":.3f"
 
-    # Pivot the data (computed once)
     df_plot = total_tax_credit_df.pivot_table(
         index="year",
         columns="tech_label",
@@ -7561,8 +7539,6 @@ def plot_tax_credit_cluster_bars(
             "tax_credits_billion",
         ],
     )
-    
-    # Apply conversion factor to entire DataFrame (single operation)
     df_plot = df_plot * conversion_factor
 
     years = df_plot.index.tolist()
@@ -7637,17 +7613,18 @@ def plot_tax_credit_cluster_bars(
             visible="legendonly",
         )
 
-    padding = 0.35 if len(years) > 1 else 0.5
+    # Increased padding on the left
+    padding = 0.5 if len(years) > 1 else 0.6
     fig.update_layout(
         title=title,
-        barmode="stack",
+        barmode="relative",  # now negatives appear below zero
         bargap=0.15,
         xaxis=dict(
             title="Year",
             tickmode="array",
             tickvals=year_positions,
             ticktext=years,
-            range=[year_positions.min() - padding, year_positions.max() + padding],
+            range=[year_positions.min() - (padding + 0.2), year_positions.max() + padding],
         ),
         yaxis=dict(title=y_label),
         legend=dict(
@@ -7662,7 +7639,7 @@ def plot_tax_credit_cluster_bars(
         template="plotly_white",
         width=width,
         height=height,
-        margin=dict(l=40, r=right_margin, t=50, b=50),
+        margin=dict(l=80, r=right_margin, t=50, b=50),  # more left margin
     )
 
     fig.add_hline(y=0, line_width=1, line_color="black")

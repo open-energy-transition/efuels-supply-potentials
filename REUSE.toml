@@ -38,10 +38,58 @@ SPDX-FileCopyrightText = "National Renewable Energy Laboratory (Alliance), U.S. 
 SPDX-License-Identifier = "LicenseRef-NREL-Standard"
 
 [[annotations]]
+path = "data/EV_share/*"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "National Renewable Energy Laboratory (Alliance), U.S. Department of Energy"
+SPDX-License-Identifier = "LicenseRef-NREL-Standard"
+
+[[annotations]]
+path = "data/icct/*"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/current_electricity_state_policies/*"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
 path = "data/industry_data/ethanolcapacity.xlsx"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "U.S. Energy Information Administration"
 SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = "data/industry_data/uscities.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Simplemaps creators"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/original_custom_powerplants/original_custom_powerplants.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/saf_blending_rates/saf_scenarios.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/tax_credits/tax_credits_calculations.xlsx"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/tax_credits/*_tax_credits.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
 
 [[annotations]]
 path = ".github/**"

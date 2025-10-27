@@ -10,6 +10,32 @@ Please list contributions, add reference to PRs if present.
 
 * Implemented **pre-commit hooks** in the repository: [PR #47](https://github.com/open-energy-transition/efuels-supply-potentials/pull/47)
 
+* Include **existing batteries** from `powerplants.csv`. [PR #115](https://github.com/open-energy-transition/efuels-supply-potentials/pull/115)
+
+* Update **tax credit values** based on actual technology-specific discount rates [PR #116](https://github.com/open-energy-transition/efuels-supply-potentials/pull/116)
+
+* Add **H2 Store Tank for grid H2** [PR #111](https://github.com/open-energy-transition/efuels-supply-potentials/pull/111)
+
+* Set `h2_export` value to 0 and change `discountrate` for sector model wildcard to 0.07 in agreement with the values from `fill_values` [PR #110](https://github.com/open-energy-transition/efuels-supply-potentials/pull/110)
+
+* Apply **pre-OB3 tax credits** for solar, wind, electrolyzers, point-source CO2 and DAC for selected scenarios; extend credit to all battery components [PR #99](https://github.com/open-energy-transition/efuels-supply-potentials/pull/99)
+
+* Remove electrolyzers tax credits from config files, adapt **levelized tax credits** to global and technology-specific discount rates [PR #104](https://github.com/open-energy-transition/efuels-supply-potentials/pull/104)
+
+* Set **OCGT and CCGT lifetime to 35 years** to be consistent with lifetime in `custom_powerplants.csv` [PR #108](https://github.com/open-energy-transition/efuels-supply-potentials/pull/108)
+
+* Update **geothermal projections** based on new [NREL data](https://docs.nrel.gov/docs/fy23osti/84822.pdf) [PR #102](https://github.com/open-energy-transition/efuels-supply-potentials/pull/102)
+
+* Adjust *base year CO2 emissions limit* after changes in [PR #106] [PR #107](https://github.com/open-energy-transition/efuels-supply-potentials/pull/106)
+
+* Modify DAC inputs by **removing heat input** and **setting electricity-input to 1.4 MWh/t_CO2** [PR #105](https://github.com/open-energy-transition/efuels-supply-potentials/pull/105)
+
+* Increase **oil VOM** to prevent overuse of oil over coal [PR #100](https://github.com/open-energy-transition/efuels-supply-potentials/pull/100)
+
+* Correct **data center loads** for 2023 [PR #98](https://github.com/open-energy-transition/efuels-supply-potentials/pull/98)
+
+* Enable **efficiency transfer** for already existing powerplants [PR #97](https://github.com/open-energy-transition/efuels-supply-potentials/pull/97)
+
 * Enable **custom busmap** to have the same clustering for all horizons and scenarios [PR #96](https://github.com/open-energy-transition/efuels-supply-potentials/pull/96)
 
 * Implement **maximum capacity constraint for geothermal** electricity generation plants [PR #95](https://github.com/open-energy-transition/efuels-supply-potentials/pull/95)

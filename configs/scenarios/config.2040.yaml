@@ -74,6 +74,8 @@ renewable:
 
 costs:
   year: 2040
+  VOM:
+    oil: 100.0
 
 policy_config:
   hydrogen:

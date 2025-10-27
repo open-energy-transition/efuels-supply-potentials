@@ -110,6 +110,12 @@ SPDX-FileCopyrightText = "EIA"
 SPDX-License-Identifier = "CC-BY-4.0"
 
 [[annotations]]
+path = "data/validation/EIA_*"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "EIA"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
 path = ".github/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Open Energy Transition gGmbH"

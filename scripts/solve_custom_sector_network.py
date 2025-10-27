@@ -162,6 +162,7 @@ def prepare_network(n, solve_opts):
 
     return n
 
+
 def propagate_base_year_efficiencies(network, base_year=2020, cutoff_year=2025):
     """
     Set efficiency values for all generators and links built in or before `cutoff_year`
@@ -184,15 +185,31 @@ def propagate_base_year_efficiencies(network, base_year=2020, cutoff_year=2025):
 
     # Apply efficiencies to existing links
     for name, link in network.links.iterrows():
-        if link.carrier in base_efficiencies and getattr(link, "build_year", float("inf")) <= cutoff_year:
+        if (
+            link.carrier in base_efficiencies
+            and getattr(link, "build_year", float("inf")) <= cutoff_year
+        ):
             network.links.at[name, "efficiency"] = base_efficiencies[link.carrier]
 
     # Apply efficiencies to existing nuclear generators
     for name, gen in network.generators.iterrows():
-        if gen.carrier == "nuclear" and getattr(gen, "build_year", float("inf")) <= cutoff_year:
+        if (
+            gen.carrier == "nuclear"
+            and getattr(gen, "build_year", float("inf")) <= cutoff_year
+        ):
             network.generators.at[name, "efficiency"] = base_efficiencies["nuclear"]
 
-def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, costs, config_file=None, log_path=None, verbose=False):
+
+def apply_tax_credits_to_network(
+    network,
+    ptc_path,
+    itc_path,
+    planning_horizon,
+    costs,
+    config_file=None,
+    log_path=None,
+    verbose=False,
+):
     """
     Apply production and investment tax credits to the network.
 
@@ -214,7 +231,6 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
     ptc_credits = dict(zip(ptc_df["carrier"], ptc_df["credit"]))
 
     itc_df = pd.read_csv(itc_path)
-    itc_credits = dict(zip(itc_df["carrier"], itc_df["credit"]))
 
     # Pre-OB3 tax credits option
     pre_ob3_tax_credits = None
@@ -239,7 +255,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
 
     cc_credit_on_co2_atmosphere = {"DAC"}
 
-    # electrolyzer_carriers = {"Alkaline electrolyzer large", "PEM electrolyzer", "SOEC"}
+    electrolyzer_carriers = {"Alkaline electrolyzer large", "PEM electrolyzer", "SOEC"}
 
     # -------------------------
     # Apply Production Tax Credits to GENERATORS
@@ -299,7 +315,10 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                     apply = True
 
         # Solar and wind (only with pre-OB3 tax credits)
-        elif carrier_key in {"solar", "onwind", "offwind-ac", "offwind-dc"} and pre_ob3_tax_credits:
+        elif (
+            carrier_key in {"solar", "onwind", "offwind-ac", "offwind-dc"}
+            and pre_ob3_tax_credits
+        ):
             horizon_limit = build_year + 10
             full_end = 2033
 
@@ -393,11 +412,17 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                     credit = credit_per_mwh_h2 * h2_efficiency
                     new_cost = base_cost + credit
                     network.links.at[name, "marginal_cost"] = new_cost
-                    modifications.append({
-                        "component": "link", "name": name,
-                        "carrier": carrier, "build_year": build_year,
-                        "original": base_cost, "credit": credit, "final": new_cost
-                    })
+                    modifications.append(
+                        {
+                            "component": "link",
+                            "name": name,
+                            "carrier": carrier,
+                            "build_year": build_year,
+                            "original": base_cost,
+                            "credit": credit,
+                            "final": new_cost,
+                        }
+                    )
                     if verbose:
                         logger.info(
                             f"[PTC LINK ELECTROLYZER] {name} | eff={h2_efficiency:.3f}, credit={credit:.2f}"
@@ -440,7 +465,9 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                         }
                     )
                     if verbose:
-                        logger.info(f"[PTC LINK CC-stored] {name} | CO2={tco2:.3f}, credit={credit:.2f}")
+                        logger.info(
+                            f"[PTC LINK CC-stored] {name} | CO2={tco2:.3f}, credit={credit:.2f}"
+                        )
 
         # DAC - CO2 atmosphere
         elif carrier in cc_credit_on_co2_atmosphere:
@@ -467,7 +494,9 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                         }
                     )
                     if verbose:
-                        logger.info(f"[PTC LINK DAC] {name} | CO2={tco2:.3f}, credit={credit:.2f}")
+                        logger.info(
+                            f"[PTC LINK DAC] {name} | CO2={tco2:.3f}, credit={credit:.2f}"
+                        )
 
     # -------------------------
     # Apply Investment Tax Credits to STORAGE UNITS (batteries)
@@ -513,7 +542,9 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                             }
                         )
                         if verbose:
-                            logger.info(f"[ITC STORAGE] {idx} | year={planning_horizon}, scale={scale:.2f}")
+                            logger.info(
+                                f"[ITC STORAGE] {idx} | year={planning_horizon}, scale={scale:.2f}"
+                            )
 
     # -------------------------
     # Apply Investment Tax Credits to LINKS (battery chargers)
@@ -521,7 +552,10 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
     if os.path.exists(itc_path):
         itc_df = pd.read_csv(itc_path, index_col=0)
 
-        if "battery" in itc_df.index and "battery charger" in network.links.carrier.values:
+        if (
+            "battery" in itc_df.index
+            and "battery charger" in network.links.carrier.values
+        ):
             credit_factor = -itc_df.loc["battery", "credit"] / 100
 
             affected = network.links.query("carrier == 'battery charger'")
@@ -544,14 +578,21 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                         orig = lk.capital_cost
                         new = orig * (1 - scale * credit_factor)
                         network.links.at[idx, "capital_cost"] = new
-                        modifications.append({
-                            "component": "link", "name": idx,
-                            "carrier": lk.carrier, "build_year": build_year,
-                            "original": orig, "credit_factor": scale * credit_factor,
-                            "final": new
-                        })
+                        modifications.append(
+                            {
+                                "component": "link",
+                                "name": idx,
+                                "carrier": lk.carrier,
+                                "build_year": build_year,
+                                "original": orig,
+                                "credit_factor": scale * credit_factor,
+                                "final": new,
+                            }
+                        )
                         if verbose:
-                            logger.info(f"[ITC LINK BATTERY] {idx} | year={planning_horizon}, scale={scale:.2f}")
+                            logger.info(
+                                f"[ITC LINK BATTERY] {idx} | year={planning_horizon}, scale={scale:.2f}"
+                            )
 
     # Save modifications log
     if modifications and log_path:
@@ -1168,13 +1209,20 @@ def add_battery_constraints(n):
     dc_names = link_p_nom.index[dischargers_bool]
 
     # Map chargers to expected dischargers and take intersection
-    map_to_dc = ch_names.str.replace("battery charger", "battery discharger", regex=False)
+    map_to_dc = ch_names.str.replace(
+        "battery charger", "battery discharger", regex=False
+    )
     common_dc = dc_names.intersection(map_to_dc)
-    common_ch = common_dc.str.replace("battery discharger", "battery charger", regex=False)
+    common_ch = common_dc.str.replace(
+        "battery discharger", "battery charger", regex=False
+    )
 
     lhs = linexpr(
         (1.0, link_p_nom.reindex(common_ch).values),
-        (-n.links.loc[common_dc, "efficiency"].values, link_p_nom.reindex(common_dc).values),
+        (
+            -n.links.loc[common_dc, "efficiency"].values,
+            link_p_nom.reindex(common_dc).values,
+        ),
     )
     define_constraints(n, lhs, "=", 0, "Link", "charger_ratio")
 

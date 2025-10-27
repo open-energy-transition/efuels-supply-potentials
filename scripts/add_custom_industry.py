@@ -992,10 +992,9 @@ def add_data_centers_load(n):
     logger.info("Added data center loads")
 
 
-
 def modify_dac_inputs(n):
     """
-        Modifies DAC inputs
+    Modifies DAC inputs
     """
     # get DAC links
     dac_links = n.links.query("carrier in 'DAC'").index
@@ -1003,16 +1002,21 @@ def modify_dac_inputs(n):
     # remove or keep heat input based on config
     if not snakemake.params.dac_inputs["heat"] and not dac_links.empty:
         n.links.loc[dac_links, ["bus3", "efficiency3"]] = np.nan
-        logger.info(f"Removed heat input from Direct air capture technologies")
+        logger.info("Removed heat input from Direct air capture technologies")
 
     # set electricity input efficiency based on config
     if snakemake.params.dac_inputs["electricity"] and not dac_links.empty:
-        n.links.loc[dac_links, "efficiency2"] = -snakemake.params.dac_inputs["electricity"]
-        logger.info(f"Set electricity input efficiency of Direct air capture technologies to {snakemake.params.dac_inputs['electricity']}")
+        n.links.loc[dac_links, "efficiency2"] = -snakemake.params.dac_inputs[
+            "electricity"
+        ]
+        logger.info(
+            f"Set electricity input efficiency of Direct air capture technologies to {snakemake.params.dac_inputs['electricity']}"
+        )
+
 
 def add_co2_storage_tanks(n):
     """
-        Adds CO2 storage steel tanks to the network
+    Adds CO2 storage steel tanks to the network
     """
     # repurpose co2 stored to co2 storage steel tanks
     carriers_to_process = ["co2 stored"]
@@ -1028,10 +1032,14 @@ def add_co2_storage_tanks(n):
 
         # repurpose stores
         n.stores.index = n.stores.index.str.replace(c, f"{c[:-7]} storage steel tank")
-        n.stores.loc[n.stores.carrier == c, "bus"] = n.stores.loc[n.stores.carrier == c, "bus"].str.replace(c, f"{c[:-7]} storage steel tank")
+        n.stores.loc[n.stores.carrier == c, "bus"] = n.stores.loc[
+            n.stores.carrier == c, "bus"
+        ].str.replace(c, f"{c[:-7]} storage steel tank")
 
         # set capital costs and e_cyclic for storage steel tanks
-        n.stores.loc[n.stores.carrier == c, "capital_cost"] = costs.at["CO2 storage tank", "fixed"]
+        n.stores.loc[n.stores.carrier == c, "capital_cost"] = costs.at[
+            "CO2 storage tank", "fixed"
+        ]
         n.stores.loc[n.stores.carrier == c, "e_cyclic"] = True
 
         # rename carriers for stores
@@ -1042,10 +1050,12 @@ def add_co2_storage_tanks(n):
     ft_links = n.links[n.links.carrier == "Fischer-Tropsch"]
     if not ft_links.empty and "bus2" in n.links.columns:
         ft_co2_mask = ft_links["bus2"].str.contains("co2 stored", na=False)
-        n.links.loc[ft_links.index[ft_co2_mask], "bus2"] = (
-            ft_links.loc[ft_co2_mask, "bus2"].str.replace("co2 stored", "co2 storage steel tank", regex=False)
-        )
-    logger.info("Updated Fischer-Tropsch bus2 connections from 'co2 stored' to 'co2 storage steel tank'")
+        n.links.loc[ft_links.index[ft_co2_mask], "bus2"] = ft_links.loc[
+            ft_co2_mask, "bus2"
+        ].str.replace("co2 stored", "co2 storage steel tank", regex=False)
+    logger.info(
+        "Updated Fischer-Tropsch bus2 connections from 'co2 stored' to 'co2 storage steel tank'"
+    )
 
     # connect links to buffer co2 stored
     bus_cols = ["bus0", "bus1", "bus2", "bus3", "bus4", "bus5"]
@@ -1053,11 +1063,23 @@ def add_co2_storage_tanks(n):
         if col in n.links.columns:
             # Handle biogenic CO2 only if enabled
             if snakemake.params.biogenic_co2:
-                mask_biogenic = n.links[col].notna() & n.links[col].str.contains("biogenic co2 stored", na=False)
-                n.links.loc[mask_biogenic, col] = n.links.loc[mask_biogenic, col].str.replace("biogenic co2 stored", "buffer biogenic co2 storage steel tank", regex=False)
+                mask_biogenic = n.links[col].notna() & n.links[col].str.contains(
+                    "biogenic co2 stored", na=False
+                )
+                n.links.loc[mask_biogenic, col] = n.links.loc[
+                    mask_biogenic, col
+                ].str.replace(
+                    "biogenic co2 stored",
+                    "buffer biogenic co2 storage steel tank",
+                    regex=False,
+                )
 
-            mask = n.links[col].notna() & n.links[col].str.contains("co2 stored", na=False)
-            n.links.loc[mask, col] = n.links.loc[mask, col].str.replace("co2 stored", "buffer co2 storage steel tank", regex=False)
+            mask = n.links[col].notna() & n.links[col].str.contains(
+                "co2 stored", na=False
+            )
+            n.links.loc[mask, col] = n.links.loc[mask, col].str.replace(
+                "co2 stored", "buffer co2 storage steel tank", regex=False
+            )
 
     # create buffer co2 storage steel tank and buffer biogenic co2 storage steel tank buses
     carriers_for_buffer = ["co2 storage steel tank"]
@@ -1095,7 +1117,9 @@ def add_co2_storage_tanks(n):
     co2_storage_tank_buses = n.buses[n.buses.carrier == "co2 storage steel tank"]
     n.madd(
         "Bus",
-        co2_storage_tank_buses.index.str.replace("storage steel tank", "geological sequestration"),
+        co2_storage_tank_buses.index.str.replace(
+            "storage steel tank", "geological sequestration"
+        ),
         location=co2_storage_tank_buses.location.values,
         carrier="co2 geological sequestration",
         x=co2_storage_tank_buses.x.values,
@@ -1106,8 +1130,12 @@ def add_co2_storage_tanks(n):
     co2_storage_tank_stores = n.stores[n.stores.carrier == "co2 storage steel tank"]
     n.madd(
         "Store",
-        co2_storage_tank_stores.index.str.replace("storage steel tank", "geological sequestration"),
-        bus=co2_storage_tank_stores.index.str.replace("storage steel tank", "geological sequestration"),
+        co2_storage_tank_stores.index.str.replace(
+            "storage steel tank", "geological sequestration"
+        ),
+        bus=co2_storage_tank_stores.index.str.replace(
+            "storage steel tank", "geological sequestration"
+        ),
         e_nom_extendable=True,
         e_nom_max=np.inf,
         capital_cost=config["sector"]["co2_sequestration_cost"],
@@ -1127,7 +1155,9 @@ def add_co2_storage_tanks(n):
             "Link",
             co2_storage_tank_buses.index + " geological sequestration",
             bus0=co2_storage_tank_buses.index,
-            bus1=co2_storage_tank_buses.index.str.replace("biogenic ", "").str.replace("storage steel tank", "geological sequestration"),
+            bus1=co2_storage_tank_buses.index.str.replace("biogenic ", "").str.replace(
+                "storage steel tank", "geological sequestration"
+            ),
             p_nom_extendable=True,
             carrier=f"{c} geological sequestration",
             efficiency=1,
@@ -1146,7 +1176,10 @@ def add_co2_storage_tanks(n):
             "Link",
             buffer_co2_storage_tank_buses.index + " geological sequestration",
             bus0=buffer_co2_storage_tank_buses.index,
-            bus1=buffer_co2_storage_tank_buses.index.str.split("buffer").str[0].str.strip() + " co2 geological sequestration",
+            bus1=buffer_co2_storage_tank_buses.index.str.split("buffer")
+            .str[0]
+            .str.strip()
+            + " co2 geological sequestration",
             p_nom_extendable=True,
             carrier=f"{c} geological sequestration",
             efficiency=1,

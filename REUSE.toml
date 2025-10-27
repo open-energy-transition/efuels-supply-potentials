@@ -38,6 +38,18 @@ SPDX-FileCopyrightText = "National Renewable Energy Laboratory (Alliance), U.S. 
 SPDX-License-Identifier = "LicenseRef-NREL-Standard"
 
 [[annotations]]
+path = "data/EIA_market_module_regions/EMM_regions.geojson"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "NETL_Admin"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/EIA_market_module_regions/regional_fees.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "EIA"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
 path = "data/EV_share/*"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "National Renewable Energy Laboratory (Alliance), U.S. Department of Energy"
@@ -89,6 +101,12 @@ SPDX-License-Identifier = "CC-BY-4.0"
 path = "data/tax_credits/*_tax_credits.csv"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/US_growth_rates/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "EIA"
 SPDX-License-Identifier = "CC-BY-4.0"
 
 [[annotations]]

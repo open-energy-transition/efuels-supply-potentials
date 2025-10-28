@@ -1430,11 +1430,11 @@ def plot_lcoh_maps_by_grid_region_lcoe(
             emm_mapping=emm_mapping,
             output_threshold=output_threshold,
             verbose=False,
-            year_title=False,
+            year_title=year_title,
         )
 
         if key in baseload_charges:
-            baseload_df = baseload_charges[scen_year]
+            baseload_df = baseload_charges[key]
             baseload_map = baseload_df.set_index("grid_region")["baseload_cost_per_mwh_h2"]
             df["Baseload charges (USD/kg H2)"] = (
                 df["grid_region"].map(baseload_map).fillna(0) / 33.0

@@ -1342,6 +1342,7 @@ def plot_lcoh_maps_by_grid_region_lcoe(
     regional_fees,
     emm_mapping,
     output_threshold=1.0,
+    year_title=True,
 ):
     """
     Plot weighted average LCOH incl. Transmission fees + Baseload charges (USD/kg),
@@ -1366,6 +1367,7 @@ def plot_lcoh_maps_by_grid_region_lcoe(
 
     for year, net in networks.items():
         scen_year = int(re.search(r"\d{4}", str(year)).group())
+        key = scen_year if year_title else year
 
         # Select electrolyzers
         links = net.links[net.links.carrier.isin(h2_carriers)]
@@ -1427,10 +1429,11 @@ def plot_lcoh_maps_by_grid_region_lcoe(
             h2_carriers=h2_carriers,
             emm_mapping=emm_mapping,
             output_threshold=output_threshold,
-            verbose=False
+            verbose=False,
+            year_title=False,
         )
 
-        if scen_year in baseload_charges:
+        if key in baseload_charges:
             baseload_df = baseload_charges[scen_year]
             baseload_map = baseload_df.set_index("grid_region")["baseload_cost_per_mwh_h2"]
             df["Baseload charges (USD/kg H2)"] = (
@@ -1444,7 +1447,7 @@ def plot_lcoh_maps_by_grid_region_lcoe(
             df["LCOE elec"] * elec_rate / 33
         ) + fee_trans_kg + df["Baseload charges (USD/kg H2)"]
 
-        df["year"] = scen_year
+        df["year"] = key
         all_results.append(df.dropna(subset=["grid_region"]))
 
     if not all_results:
@@ -1487,7 +1490,13 @@ def plot_lcoh_maps_by_grid_region_lcoe(
 
 def plot_lcoh_maps_by_grid_region_marginal(
     networks, shapes, h2_carriers, regional_fees, emm_mapping,
-    output_threshold=1.0
+    output_threshold=1.0, 
+    include_baseload=True,
+    baseload_charge_path="energy_charge_rate.csv",
+    customer_charge_mw=400.0,
+    demand_charge_rate=9.0,
+    baseload_percentages=None,
+    year_title=True,
 ):
     """
     Plot weighted average LCOH incl. Transmission fees + Baseload charges (USD/kg),
@@ -1497,6 +1506,7 @@ def plot_lcoh_maps_by_grid_region_marginal(
     -----
     - Electricity cost is computed from nodal marginal prices at the electrolyzer bus,
       weighted by electricity consumption and normalized per kg H2.
+    - Baseload charges are optional and can be included if include_baseload=True.
     """
 
     all_results = []
@@ -1511,6 +1521,9 @@ def plot_lcoh_maps_by_grid_region_marginal(
 
     for year, net in networks.items():
         scen_year = int(re.search(r"\d{4}", str(year)).group())
+        
+        # Determine the key for results based on year_title
+        key = scen_year if year_title else year
 
         links = net.links[net.links.carrier.isin(h2_carriers)]
         if links.empty:
@@ -1558,27 +1571,35 @@ def plot_lcoh_maps_by_grid_region_marginal(
         elec_val = elec_cost_series / h2_out[valid] / 33.0  # USD/kg H2
 
         # ---- Baseload charges ----
-        baseload_charges = calculate_baseload_charge(
-            networks={year: net},
-            h2_carriers=h2_carriers,
-            emm_mapping=emm_mapping,
-            output_threshold=output_threshold,
-            verbose=False
-        )
-
-        if scen_year in baseload_charges:
-            baseload_df = baseload_charges[scen_year]
-            baseload_map = baseload_df.set_index("grid_region")["baseload_cost_per_mwh_h2"]
-            df["Baseload charges (USD/kg H2)"] = (
-                df["grid_region"].map(baseload_map).fillna(0) / 33.0
+        if include_baseload:
+            baseload_charges = calculate_baseload_charge(
+                networks={year: net},
+                h2_carriers=h2_carriers,
+                emm_mapping=emm_mapping,
+                energy_charge_path=baseload_charge_path,
+                customer_charge_mw=customer_charge_mw,
+                demand_charge_rate=demand_charge_rate,
+                baseload_percentages=baseload_percentages,
+                output_threshold=output_threshold,
+                verbose=False,
+                year_title=year_title
             )
+
+            if key in baseload_charges:
+                baseload_df = baseload_charges[key]
+                baseload_map = baseload_df.set_index("grid_region")["baseload_cost_per_mwh_h2"]
+                df["Baseload charges (USD/kg H2)"] = (
+                    df["grid_region"].map(baseload_map).fillna(0) / 33.0
+                )
+            else:
+                df["Baseload charges (USD/kg H2)"] = 0.0
         else:
             df["Baseload charges (USD/kg H2)"] = 0.0
 
         # ---- Combine components ----
         fee_trans_kg = (fee_trans * elec_rate / 33).reindex(df.index)
         df["LCOH incl. Transmission + Baseload"] = elec_val + fee_trans_kg + df["Baseload charges (USD/kg H2)"]
-        df["year"] = scen_year
+        df["year"] = key
 
         all_results.append(df.dropna(subset=["grid_region"]))
 
@@ -6971,7 +6992,8 @@ def plot_marginal_prices_by_region_weighted(
     network,
     plot=True,
     network_name="Network",
-    demand_threshold=0.01
+    demand_threshold=0.01,
+    year_title=True,
 ):
     """
     Plot load-weighted marginal prices by grid region (daily averages),
@@ -7013,7 +7035,7 @@ def plot_marginal_prices_by_region_weighted(
         # Title with year
         year_match = re.search(r'\d{4}', network_name)
         year = year_match.group() if year_match else network_name
-        ax.set_title(f'Electricity Marginal Prices by Grid Region (USD/MWh) - {year}')
+        ax.set_title(f'Electricity Marginal Prices by Grid Region (USD/MWh) - {year if year_title else network_name}')
         ax.set_ylabel('Marginal Price (USD/MWh)')
         ax.set_xlabel('')
 
@@ -7048,7 +7070,8 @@ def calculate_baseload_charge(
     demand_charge_rate: float = 9.0,
     baseload_percentages: dict = None,
     output_threshold: float = 0.01,
-    verbose: bool = True
+    verbose: bool = True,
+    year_title: bool = True  # New parameter: defaults to True
 ):
     """
     Calculate baseload charges for hydrogen production by aggregating all carriers at regional level.
@@ -7073,6 +7096,9 @@ def calculate_baseload_charge(
         Minimum H2 output (TWh) to include
     verbose : bool
         Print progress information
+    year_title : bool, default True
+        If True, group results by extracted year (e.g., 2030).
+        If False, group results by full network key name.
     """
     
     if baseload_percentages is None:
@@ -7100,6 +7126,9 @@ def calculate_baseload_charge(
         if not year_match:
             continue
         year = int(year_match.group())
+        
+        # Determine the key for results based on year_title
+        key = year if year_title else net_key
         
         if verbose:
             print(f"\nProcessing {net_key} (Year: {year})")
@@ -7217,16 +7246,15 @@ def calculate_baseload_charge(
         
         if region_results:
             df = pd.DataFrame(region_results)
-            results[year] = df
+            results[key] = df
             
             if verbose:
-                print(f"\nYear {year} Summary:")
+                print(f"\n{key} Summary:")
                 print(f"  • Total regions included: {df.grid_region.nunique()}")
                 print(f"  • Total plants: {df.n_plants.sum():.0f}")
                 print(f"  • Total annual baseload charges: ${df.total_annual_charge.sum():,.0f}")
     
     return results
-
 
 
 def compute_power_opex_with_tax_credits(network, name_tag):
@@ -7509,6 +7537,7 @@ def plot_tax_credit_cluster_bars(
     right_margin=260,
     unit="billion",  # "billion" or "million"
     cost_type="OPEX",  # "OPEX" or "CAPEX"
+    index="year",
 ):
     """
     Plot clustered stacked bar chart for tax credit analysis (OPEX or CAPEX).
@@ -7531,7 +7560,7 @@ def plot_tax_credit_cluster_bars(
         precision = ":.3f"
 
     df_plot = total_tax_credit_df.pivot_table(
-        index="year",
+        index=index,
         columns="tech_label",
         values=[
             "without_tax_credits_billion",
@@ -7644,3 +7673,495 @@ def plot_tax_credit_cluster_bars(
 
     fig.add_hline(y=0, line_width=1, line_color="black")
     return fig
+
+
+def plot_geostorage_daily(networks, plot=True, year_title=True):
+    """
+    For each network extract daily-mean CO2 flows and stock for stores with carrier == "co2 stored".
+    Returns:
+      combined_df: pd.DataFrame with MultiIndex columns (scenario -> ['flows_MtCO2','stock_MtCO2'])
+      scenario_tables: dict mapping scenario -> per-day DataFrame
+    If plot=True the original two-panel plot per scenario is shown.
+    """
+
+    scenario_tables = {}
+
+    for key, n in networks.items():
+        geo_mask = n.stores.carrier == "co2 stored"
+        geo_stores = n.stores.index[geo_mask]
+        if len(geo_stores) == 0:
+            print(f"No permanent CO2 storage in {key}")
+            continue
+
+        # time series (MtCO2)
+        flows = n.stores_t.p[geo_stores].sum(axis=1) / 1e6
+        stock = n.stores_t.e[geo_stores].sum(axis=1) / 1e6
+
+        # ensure DatetimeIndex
+        if not isinstance(flows.index, pd.DatetimeIndex):
+            flows.index = pd.to_datetime(flows.index)
+            stock.index = pd.to_datetime(stock.index)
+
+        # daily mean
+        flows_daily = flows.resample("D").mean()
+        stock_daily = stock.resample("D").mean()
+
+        # per-scenario table
+        df = pd.DataFrame({
+            "flows_MtCO2": flows_daily,
+            "stock_MtCO2": stock_daily
+        })
+        scenario_tables[key] = df
+
+        if plot:
+            year = key[-4:]
+            fig, axes = plt.subplots(2, 1, figsize=(15, 8), sharex=True)
+            df["flows_MtCO2"].plot(ax=axes[0], color="tab:blue", lw=1.2)
+            axes[0].axhline(0, color="k", lw=0.8)
+            axes[0].set_ylabel("Flusso CO₂ [Mt]")
+            axes[0].set_title(f"CO2 permanent storage – {year if year_title else key}")
+
+            df["stock_MtCO2"].plot(ax=axes[1], color="tab:green", lw=1.5)
+            axes[1].set_ylabel("Stock CO2 (Mt)")
+            axes[1].set_xlabel("Time")
+
+            start = df.index.min().replace(day=1)
+            end = df.index.max()
+            month_starts = pd.date_range(start=start, end=end, freq="MS")
+            axes[1].set_xlim(start, end)
+            axes[1].set_xticks(month_starts)
+            axes[1].set_xticklabels(month_starts.strftime("%b"))
+
+            for ax in axes:
+                ax.grid(True)
+
+            plt.tight_layout()
+            plt.show()
+
+    if not scenario_tables:
+        print("No CO2 geostorage data collected from networks.")
+        return pd.DataFrame(), {}
+
+    # concat into MultiColumn DataFrame with scenarios as top-level keys
+    combined_df = pd.concat(scenario_tables, axis=1, sort=False)
+    # ensure column order subcolumns consistent
+    # (some scenarios might miss one of the two columns)
+    # reorder subcolumns for each top-level scenario to ['flows_MtCO2','stock_MtCO2'] when present
+    top_keys = combined_df.columns.levels[0]
+    new_cols = []
+    for tk in top_keys:
+        for sub in ["flows_MtCO2", "stock_MtCO2"]:
+            if (tk, sub) in combined_df.columns:
+                new_cols.append((tk, sub))
+    combined_df = combined_df.reindex(columns=pd.MultiIndex.from_tuples(new_cols))
+
+    return combined_df, scenario_tables
+
+
+def compute_h2_balance_tables(networks,
+                              energy_carriers=None,
+                              unit='MWh',
+                              plot=False):
+    """
+    For each scenario/network create:
+      - a per-scenario summary DataFrame (index = carriers, columns = [production, consumption, net])
+      - a per-scenario details dict (per carrier a DataFrame of per-process values and direction)
+    Then collect all per-scenario summaries into a single MultiColumn DataFrame with
+    scenarios as the top-level columns.
+
+    Returns:
+      combined_summary: pd.DataFrame with MultiIndex columns (scenario -> [production_MWh, consumption_MWh, net_MWh])
+                        index = carriers
+      per_scenario_tables: dict mapping scenario_name -> {"summary": DataFrame, "details": {carrier: DataFrame}}
+    """
+    import pandas as pd
+    import numpy as np
+
+    if energy_carriers is None:
+        energy_carriers = ["H2", "grid H2", "e-kerosene", "NH3"]
+
+    per_scenario_tables = {}
+
+    for scen_name, net in networks.items():
+        # attempt to read the full energy_balance table once
+        try:
+            eb_all = net.statistics.energy_balance()
+        except Exception:
+            eb_all = pd.DataFrame()
+
+        # Prepare summary table for this scenario
+        summary = pd.DataFrame(index=energy_carriers,
+                               columns=["production_" + unit, "consumption_" + unit, "net_" + unit],
+                               dtype=float).fillna(0.0)
+
+        details = {}  # per-carrier detailed breakdown (process -> value)
+
+        for carrier in energy_carriers:
+            # default if carrier not present
+            if eb_all.empty:
+                details[carrier] = pd.DataFrame(columns=["value_" + unit, "direction"])
+                continue
+
+            try:
+                part = eb_all.xs(carrier, level=2)
+            except (KeyError, IndexError):
+                # carrier not present in this network
+                details[carrier] = pd.DataFrame(columns=["value_" + unit, "direction"])
+                continue
+
+            # normalize to a Series of values per process
+            if isinstance(part, pd.DataFrame):
+                if part.shape[1] == 1:
+                    s = part.iloc[:, 0].astype(float)
+                else:
+                    # if multiple columns aggregate by sum across columns
+                    s = part.sum(axis=1).astype(float)
+            else:
+                s = pd.Series(part).astype(float)
+
+            # convert MultiIndex index entries to readable labels
+            def label(idx):
+                if isinstance(idx, tuple):
+                    return ": ".join([str(x) for x in idx if pd.notna(x) and x != ""])
+                return str(idx)
+
+            s.index = s.index.map(label)
+
+            production = s[s > 0].sum()
+            consumption = -s[s < 0].sum()  # make positive
+            net_val = production - consumption
+
+            summary.loc[carrier, "production_" + unit] = production
+            summary.loc[carrier, "consumption_" + unit] = consumption
+            summary.loc[carrier, "net_" + unit] = net_val
+
+            # detail DataFrame with direction label
+            detail_df = pd.DataFrame({
+                "value_" + unit: s,
+                "direction": np.where(s > 0, "production", np.where(s < 0, "consumption", "zero"))
+            }).sort_values(by="value_" + unit, ascending=False)
+            details[carrier] = detail_df
+
+        per_scenario_tables[scen_name] = {"summary": summary, "details": details}
+
+        # Optional plotting (replicates previous visual style but only if requested)
+        if plot:
+            import matplotlib.pyplot as plt
+            import matplotlib.gridspec as gridspec
+
+            height_ratios = [max(1, len(details[c])) for c in energy_carriers]
+            fig = plt.figure(figsize=(10, sum(height_ratios) * 0.25 + 2))
+            gs = gridspec.GridSpec(len(energy_carriers), 1, height_ratios=height_ratios, hspace=0.35)
+
+            for i, carrier in enumerate(energy_carriers):
+                ax = fig.add_subplot(gs[i])
+                d = details[carrier]
+                if d.empty:
+                    ax.text(0.5, 0.5, f"No data for {carrier}", ha="center", va="center", transform=ax.transAxes)
+                    ax.set_title(f"{carrier}: {scen_name}")
+                    ax.set_ylabel(None)
+                    ax.set_yticks([])
+                    continue
+
+                # plot horizontal bar for absolute values, color by direction
+                colors = d["direction"].map({"production": "tab:blue", "consumption": "tab:orange", "zero": "grey"}).tolist()
+                d["value_abs"] = d["value_" + unit].abs()
+                d["value_abs"].plot(kind="barh", ax=ax, color=colors, edgecolor="k")
+                ax.set_title(f"{carrier}: {scen_name}")
+                ax.set_ylabel(None)
+                ax.grid(True, axis="x")
+
+            plt.tight_layout()
+            plt.show()
+
+    # Build combined DataFrame: top-level = scenario, second-level = metrics (production, consumption, net)
+    summaries = [per_scenario_tables[s]["summary"] for s in per_scenario_tables.keys()]
+    combined_summary = pd.concat(summaries, axis=1, keys=list(per_scenario_tables.keys()), sort=False)
+
+    return combined_summary, per_scenario_tables
+
+
+def display_state_results(networks, eia_generation_data_df, ces, res, ces_carriers, res_carriers):
+    """
+    Display RES/CES results aggregated by state in a single MultiIndex table:
+    - Index: States.
+    - Columns: MultiIndex (scenario, year, metric), e.g., (scenario_01, 2030, % RES).
+    - For 2023: Includes EIA comparison with deviation colors.
+    - For future years: Only model results with targets.
+    - Returns the final DataFrame for reuse (e.g., export or further analysis).
+    """
+
+    # Legend for 2023 deviation colors
+    legend_html = """
+    <div style="padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:5px; width: fit-content;">
+    <strong>Legend (2023 Only)</strong>
+    <ul style="margin:5px 0; padding-left:20px;">
+        <li style="background-color:#d4edda; padding:2px;">Diff. ≤ ±5%</li>
+        <li style="background-color:#fff3cd; padding:2px;">Diff. > ±5% and ≤ ±10%</li>
+        <li style="background-color:#ffe5b4; padding:2px;">Diff. > ±10% and ≤ ±15%</li>
+        <li style="background-color:#f8d7da; padding:2px;">Diff. > ±15%</li>
+    </ul>
+    </div>
+    """
+
+    # Get RES/CES data by year
+    res_by_network = evaluate_res_ces_by_state(
+        networks, ces=ces, res=res,
+        ces_carriers=ces_carriers, res_carriers=res_carriers
+    )
+
+    # Collect all data into a big DataFrame
+    all_data = defaultdict(dict)  # {(state): {(scenario, year, metric): value}}
+    scenarios_years = set()  # Track all (scenario, year) combinations
+
+    for network_key in sorted(networks.keys()):
+        try:
+            year = int(network_key[-4:])
+        except ValueError:
+            continue
+
+        if year in res_by_network:
+            df_year = res_by_network[year].copy()
+            # Extract scenario
+            match = re.search(r'(?:scenario_(\d{2})|Base)_(\d{4})', network_key)
+            if match:
+                if match.group(1):
+                    scenario = f"scenario_{match.group(1)}"
+                else:
+                    scenario = "Base"
+            else:
+                continue
+
+            for state in df_year.index:
+                # Model values
+                all_data[state][(scenario, year, "% RES")] = df_year.at[state, "% RES"]
+                all_data[state][(scenario, year, "% CES")] = df_year.at[state, "% CES"]
+                
+                # For 2023, add EIA values and targets
+                if year == 2023:
+                    if state in eia_generation_data_df.index:
+                        all_data[state][(scenario, year, "% Actual RES")] = eia_generation_data_df.at[state, "% Actual RES"]
+                        all_data[state][(scenario, year, "% Actual CES")] = eia_generation_data_df.at[state, "% Actual CES"]
+                else:
+                    # For future years, add targets
+                    all_data[state][(scenario, year, "% RES target")] = df_year.at[state, "% RES target"]
+                    all_data[state][(scenario, year, "% CES target")] = df_year.at[state, "% CES target"]
+            
+            scenarios_years.add((scenario, year))
+
+    # Build the MultiIndex DataFrame
+    states_list = sorted(all_data.keys())
+    sorted_scenarios_years = sorted(scenarios_years, key=lambda x: (x[0], x[1]))
+
+    # Create columns: (scenario, year, metric)
+    columns = []
+    for scenario, year in sorted_scenarios_years:
+        if year == 2023:
+            columns.extend([
+                (scenario, year, "% RES"),
+                (scenario, year, "% Actual RES"),
+                (scenario, year, "% CES"),
+                (scenario, year, "% Actual CES")
+            ])
+        else:
+            columns.extend([
+                (scenario, year, "% RES"),
+                (scenario, year, "% RES target"),
+                (scenario, year, "% CES"),
+                (scenario, year, "% CES target")
+            ])
+
+    # Create the DataFrame
+    df_final = pd.DataFrame(index=states_list, columns=pd.MultiIndex.from_tuples(columns))
+
+    # Populate the DataFrame
+    for state, data_dict in all_data.items():
+        for key, value in data_dict.items():
+            df_final.at[state, key] = value
+
+    # Styling function for deviation colors (only for 2023) and simple colors for targets
+    def style_row(row):
+        styles = []
+        for col in df_final.columns:
+            if col[2] == "% RES" and col[1] == 2023:
+                actual_col = (col[0], col[1], "% Actual RES")
+                if actual_col in df_final.columns and not pd.isna(row[actual_col]):
+                    styles.append(deviation_color(row[col], row[actual_col]))
+                else:
+                    styles.append('')
+            elif col[2] == "% CES" and col[1] == 2023:
+                actual_col = (col[0], col[1], "% Actual CES")
+                if actual_col in df_final.columns and not pd.isna(row[actual_col]):
+                    styles.append(deviation_color(row[col], row[actual_col]))
+                else:
+                    styles.append('')
+            elif col[2] == "% RES target":
+                model_col = (col[0], col[1], "% RES")
+                if model_col in df_final.columns and not pd.isna(row[model_col]):
+                    styles.append(simple_color(row[model_col], row[col]))
+                else:
+                    styles.append('')
+            elif col[2] == "% CES target":
+                model_col = (col[0], col[1], "% CES")
+                if model_col in df_final.columns and not pd.isna(row[model_col]):
+                    styles.append(simple_color(row[model_col], row[col]))
+                else:
+                    styles.append('')
+            else:
+                styles.append('')
+        return styles
+
+    # Apply styling
+    styled_df = df_final.style.format(fmt_2dp_or_na, na_rep="N/A").apply(style_row, axis=1)
+
+    # Display the legend and table
+    display(HTML(legend_html))
+    display(styled_df)
+
+    # Return the DataFrame for reuse
+    return df_final
+
+
+def display_grid_region_results_multiple_scenario(networks, ces, res, ces_carriers, res_carriers):
+    """
+    Collect RES/CES tables for all (scenario, year) and return a single MultiColumn DataFrame
+    with scenario names as top-level columns. For each scenario the second level is year and
+    the third level are the metrics (e.g. '% RES', '% Actual RES', ...).
+
+    Returns:
+      combined_df: pd.DataFrame with MultiIndex columns (scenario, year, metric)
+      per_year_dfs: dict mapping (scenario, year) -> per-region DataFrame (raw numeric, not styled)
+    """
+    res_by_region = evaluate_res_ces_by_region(
+        networks,
+        ces_carriers=ces_carriers,
+        res_carriers=res_carriers
+    )
+
+    per_year_dfs = {}  # (scenario, year) -> df_disp (index = Grid Region)
+    for (scenario, yr), df_year in sorted(res_by_region.items()):
+        df_year = df_year.copy()
+
+        if yr == 2023:
+            # Load actuals from Excel / helper
+            eia_region = preprocess_res_ces_share_grid_region()
+
+            excel_df = pd.read_excel(
+                "./validation_data/generation_grid_regions.xlsx",
+                sheet_name="Generation (TWh)"
+            )
+            if "Region" in excel_df.columns and "Grid Region" not in excel_df.columns:
+                excel_df = excel_df.rename(columns={"Region": "Grid Region"})
+            excel_df = excel_df.set_index("Grid Region")
+
+            # Add stats total generation
+            eia_region = eia_region.join(excel_df[["Net generation (TWh)"]])
+
+            # Model generation (TWh)
+            if "Total (MWh)" in df_year.columns:
+                df_year["Model generation (TWh)"] = df_year["Total (MWh)"] / 1e6
+            else:
+                df_year["Model generation (TWh)"] = np.nan
+
+            # Merge with stats
+            df_year = df_year.merge(eia_region, left_index=True, right_index=True, how="left")
+            df_year = df_year.rename(columns={"Net generation (TWh)": "Stats generation (TWh)"})
+
+            # Regional shares (guard against zero)
+            if df_year["Model generation (TWh)"].sum() > 0:
+                df_year["% Model generation share"] = (
+                    df_year["Model generation (TWh)"] / df_year["Model generation (TWh)"].sum() * 100
+                )
+            else:
+                df_year["% Model generation share"] = np.nan
+
+            if df_year["Stats generation (TWh)"].sum() > 0:
+                df_year["% Stats generation share"] = (
+                    df_year["Stats generation (TWh)"] / df_year["Stats generation (TWh)"].sum() * 100
+                )
+            else:
+                df_year["% Stats generation share"] = np.nan
+
+            # U.S. totals row
+            totals = pd.Series({
+                "% RES": (df_year["% RES"] * df_year["Model generation (TWh)"]).sum() / df_year["Model generation (TWh)"].sum()
+                          if df_year["Model generation (TWh)"].sum() > 0 else np.nan,
+                "% Actual RES": (df_year.get("% Actual RES", pd.Series(dtype=float)) * df_year["Stats generation (TWh)"]).sum() / df_year["Stats generation (TWh)"].sum()
+                                 if df_year["Stats generation (TWh)"].sum() > 0 else np.nan,
+                "% CES": (df_year["% CES"] * df_year["Model generation (TWh)"]).sum() / df_year["Model generation (TWh)"].sum()
+                         if df_year["Model generation (TWh)"].sum() > 0 else np.nan,
+                "% Actual CES": (df_year.get("% Actual CES", pd.Series(dtype=float)) * df_year["Stats generation (TWh)"]).sum() / df_year["Stats generation (TWh)"].sum()
+                                if df_year["Stats generation (TWh)"].sum() > 0 else np.nan,
+                "Model generation (TWh)": df_year["Model generation (TWh)"].sum(),
+                "Stats generation (TWh)": df_year["Stats generation (TWh)"].sum() if "Stats generation (TWh)" in df_year.columns else np.nan,
+                "% Model generation share": 100.0,
+                "% Stats generation share": 100.0
+            }, name="U.S.")
+            df_year = pd.concat([df_year, totals.to_frame().T])
+
+            df_disp = df_year[[
+                "% RES", "% Actual RES",
+                "% CES", "% Actual CES",
+                "Model generation (TWh)", "Stats generation (TWh)",
+                "% Model generation share", "% Stats generation share"
+            ]].round(2).copy()
+
+        else:
+            expected_cols = ['% RES', '% RES target', '% CES', '% CES target']
+            cols_present = [c for c in expected_cols if c in df_year.columns]
+            df_year = df_year.reindex(columns=cols_present).round(2)
+
+            # Add model total generation for future years if available
+            if "Total (MWh)" in df_year.columns:
+                df_year["Model generation (TWh)"] = df_year["Total (MWh)"] / 1e6
+                if df_year["Model generation (TWh)"].sum() > 0:
+                    df_year["% Model generation share"] = (
+                        df_year["Model generation (TWh)"] / df_year["Model generation (TWh)"].sum() * 100
+                    )
+                else:
+                    df_year["% Model generation share"] = np.nan
+
+            # national averages (U.S.)
+            totals = pd.Series({c: df_year[c].mean() for c in df_year.columns}, name="U.S.")
+            df_year = pd.concat([df_year, totals.to_frame().T])
+
+            # keep whatever columns are present + derived
+            df_disp = df_year.copy().round(2)
+
+        # normalize index name and ensure Grid Region index
+        df_disp = df_disp.reset_index().rename(columns={"index": "Grid Region"}).set_index("Grid Region")
+        per_year_dfs[(scenario, yr)] = df_disp
+
+    # Build per-scenario frames: second level = year, third level = metric
+    scenarios = sorted(set(s for s, _ in per_year_dfs.keys()))
+    scenario_frames = {}
+    for scen in scenarios:
+        years = sorted([yr for (s, yr) in per_year_dfs.keys() if s == scen])
+        if not years:
+            continue
+        dfs = []
+        keys = []
+        for yr in years:
+            df = per_year_dfs.get((scen, yr))
+            if df is None:
+                continue
+            # ensure consistent row index across concatenation later -> leave as-is, will outer-join
+            dfs.append(df)
+            keys.append(yr)
+        # concat year-level frames into one frame where columns are (year, metric)
+        if dfs:
+            scen_df = pd.concat(dfs, axis=1, keys=keys, sort=False)
+        else:
+            scen_df = pd.DataFrame()
+        scenario_frames[scen] = scen_df
+
+    # Combine scenario frames into final combined_df with top-level = scenario
+    if scenario_frames:
+        combined_df = pd.concat(scenario_frames, axis=1, sort=False)
+        # ensure column names: (scenario, year, metric) -> if deeper nesting produce 3-level columns
+        # leave as-is (top-level = scenario) which satisfies requirement
+    else:
+        combined_df = pd.DataFrame()
+
+    # Return combined dataframe and the raw per-(scenario,year) tables for reuse
+    return combined_df, per_year_dfs

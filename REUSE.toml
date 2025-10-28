@@ -8,7 +8,7 @@ SPDX-PackageSupplier = "Open Energy Transition"
 SPDX-PackageDownloadLocation = "https://github.com/open-energy-transition/efuels-supply-potentials"
 
 [[annotations]]
-path = "data/**"
+path = "data/*.csv"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
 SPDX-License-Identifier = "CC-BY-4.0"
@@ -68,10 +68,22 @@ SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
 SPDX-License-Identifier = "CC-BY-4.0"
 
 [[annotations]]
+path = "data/data_center_profiles/*"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
 path = "data/industry_data/ethanolcapacity.xlsx"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "U.S. Energy Information Administration"
 SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = "data/industry_data/ammoniacapacity.xlsx"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
 
 [[annotations]]
 path = "data/industry_data/uscities.csv"
@@ -84,6 +96,12 @@ path = "data/original_custom_powerplants/original_custom_powerplants.csv"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
 SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/override_component_attrs/*.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC0-1.0"
 
 [[annotations]]
 path = "data/saf_blending_rates/saf_scenarios.csv"
@@ -113,6 +131,18 @@ SPDX-License-Identifier = "CC-BY-4.0"
 path = "data/validation/EIA_*"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "EIA"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/validation/ember_yearly_full_release_long_format.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Ember"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/validation/gadm41_USA_1.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "GADM"
 SPDX-License-Identifier = "CC-BY-4.0"
 
 [[annotations]]

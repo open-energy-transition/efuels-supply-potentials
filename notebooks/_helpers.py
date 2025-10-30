@@ -4292,60 +4292,47 @@ def plot_power_generation_details(cost_data, cost_type_label, power_techs,
 
 def compute_h2_efuels_costs(network, name_tag):
     """
-    Compute costs for H2 and e-fuels technologies (links only)
+    Compute costs for H2 and e-fuels technologies (links only).
+    Returns values in million USD.
     """
     year_str = name_tag[-4:]
+    carriers = ["Alkaline electrolyzer large", "Fischer-Tropsch", "PEM electrolyzer", "SOEC"]
 
-    # Define H2 and e-fuels technologies
-    h2_efuels_carriers = ["Alkaline electrolyzer large",
-                          "Fischer-Tropsch", "PEM electrolyzer", "SOEC"]
+    # Extract component-level statistics
+    stats = network.statistics()[['Capital Expenditure', 'Operational Expenditure']]
+    df = stats.reset_index()
+    if df.columns[0] != "component":
+        df.rename(columns={df.columns[0]: "component"}, inplace=True)
 
-    # Get statistics separated by component type
-    costs_detailed = network.statistics(
-        groupby=None)[['Capital Expenditure', 'Operational Expenditure']]
+    # Select only link components of interest
+    df_links = df[(df["component"] == "Link") & (df["carrier"].isin(carriers))]
 
-    final_results = []
-
-    # Get ONLY Link costs for H2/e-fuels technologies
-    try:
-        link_costs = costs_detailed.loc['Link'].reset_index()
-        link_costs['tech_label'] = link_costs['carrier']
-
-        # Filter for H2/e-fuels technologies only
-        h2_efuels_links = link_costs[link_costs['tech_label'].isin(
-            h2_efuels_carriers)]
-
-        if len(h2_efuels_links) > 0:
-            # CAPEX from H2/e-fuels links
-            link_capex = h2_efuels_links.groupby('tech_label', as_index=False).agg({
-                'Capital Expenditure': 'sum'
+    records = []
+    if not df_links.empty:
+        # CAPEX
+        cap = df_links.groupby("carrier", as_index=False)["Capital Expenditure"].sum()
+        for _, r in cap.iterrows():
+            records.append({
+                "tech_label": r["carrier"],
+                "cost_type": "Capital expenditure",
+                "cost_million": r["Capital Expenditure"] / 1e6,
+                "year": year_str,
+                "scenario": name_tag
             })
-            for _, row in link_capex.iterrows():
-                final_results.append({
-                    'tech_label': row['tech_label'],
-                    'cost_type': 'Capital expenditure',
-                    'cost_billion': row['Capital Expenditure'] / 1e9,
-                    'year': year_str,
-                    'scenario': name_tag
-                })
 
-            # OPEX from H2/e-fuels links
-            link_opex = h2_efuels_links.groupby('tech_label', as_index=False).agg({
-                'Operational Expenditure': 'sum'
+        # OPEX
+        opx = df_links.groupby("carrier", as_index=False)["Operational Expenditure"].sum()
+        for _, r in opx.iterrows():
+            records.append({
+                "tech_label": r["carrier"],
+                "cost_type": "Operational expenditure",
+                "cost_million": r["Operational Expenditure"] / 1e6,
+                "year": year_str,
+                "scenario": name_tag
             })
-            for _, row in link_opex.iterrows():
-                final_results.append({
-                    'tech_label': row['tech_label'],
-                    'cost_type': 'Operational expenditure',
-                    'cost_billion': row['Operational Expenditure'] / 1e9,
-                    'year': year_str,
-                    'scenario': name_tag
-                })
 
-    except KeyError:
-        pass  # No links found
+    return pd.DataFrame(records)
 
-    return pd.DataFrame(final_results)
 
 
 def calculate_lcoh_by_region(
@@ -4649,10 +4636,9 @@ def plot_h2_efuels_details(cost_data, cost_type_label, tech_colors=None, tech_or
 
 def create_h2_efuels_analysis(networks, index='year'):
     """
-    Create complete analysis for H2 and e-fuels
+    Create complete analysis for H2 and e-fuels technologies (no thresholds),
+    plots in million USD with hover only, and legend limited to techs with data.
     """
-
-    # Compute costs for all networks
     all_h2_efuels_costs = []
     for name_tag, network in networks.items():
         df_costs = compute_h2_efuels_costs(network, name_tag)
@@ -4660,47 +4646,63 @@ def create_h2_efuels_analysis(networks, index='year'):
 
     df_h2_efuels_costs = pd.concat(all_h2_efuels_costs, ignore_index=True)
 
-    # Define technology order (H2 first, then e-fuels)
+    # Use millions for plotting
+    df_h2_efuels_costs["cost_billion"] = df_h2_efuels_costs["cost_million"]
+
     h2_efuels_order = [
-        "Alkaline electrolyzer large",  # H2
-        "PEM electrolyzer",             # H2
-        "SOEC",                         # H2
-        "Fischer-Tropsch"               # e-fuels
+        "Alkaline electrolyzer large",
+        "PEM electrolyzer",
+        "SOEC",
+        "Fischer-Tropsch"
     ]
 
-    # Define colors matching your figure + magenta for Fischer-Tropsch
     h2_efuels_colors = {
-        "Alkaline electrolyzer large": "#1f77b4",  # Blue (from your figure)
-        "PEM electrolyzer": "#2ca02c",             # Green (from your figure)
-        "SOEC": "#d62728",                         # Red (from your figure)
-        "Fischer-Tropsch": "#e81cd0"               # Magenta
+        "Alkaline electrolyzer large": "#1f77b4",
+        "PEM electrolyzer": "#2ca02c",
+        "SOEC": "#d62728",
+        "Fischer-Tropsch": "#e81cd0"
     }
 
-    # Create CAPEX plot
+    # keep only techs with nonzero costs
+    active_techs = df_h2_efuels_costs.groupby("tech_label")["cost_million"].sum()
+    active_techs = active_techs[active_techs > 0].index.tolist()
+    active_colors = {k: v for k, v in h2_efuels_colors.items() if k in active_techs}
+    active_order = [t for t in h2_efuels_order if t in active_techs]
+
+    # CAPEX
     fig1 = plot_h2_efuels_details(
         df_h2_efuels_costs,
         "Capital expenditure",
-        tech_colors=h2_efuels_colors,
-        tech_order=h2_efuels_order,
+        tech_colors=active_colors,
+        tech_order=active_order,
         index=index
     )
+    if fig1:
+        fig1.update_traces(
+            text=None,
+            hovertemplate='%{x} – %{label}<br>%{y:.2f} million USD'
+        )
+        fig1.update_yaxes(title_text="Cost (million USD)")
+        fig1.show()
 
-    # Create OPEX plot
+    # OPEX
     fig2 = plot_h2_efuels_details(
         df_h2_efuels_costs,
         "Operational expenditure",
-        tech_colors=h2_efuels_colors,
-        tech_order=h2_efuels_order,
+        tech_colors=active_colors,
+        tech_order=active_order,
         index=index
     )
-
-    # Show plots
-    if fig1:
-        fig1.show()
     if fig2:
+        fig2.update_traces(
+            text=None,
+            hovertemplate='%{x} – %{label}<br>%{y:.2f} million USD'
+        )
+        fig2.update_yaxes(title_text="Cost (million USD)")
         fig2.show()
 
     return df_h2_efuels_costs
+
 
 
 def hourly_matching_plot(networks, year_title=True):

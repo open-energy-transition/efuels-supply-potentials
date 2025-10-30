@@ -4636,9 +4636,12 @@ def plot_h2_efuels_details(cost_data, cost_type_label, tech_colors=None, tech_or
 
 def create_h2_efuels_analysis(networks, index='year'):
     """
-    Create complete analysis for H2 and e-fuels technologies (no thresholds),
-    plots in million USD with hover only, and legend limited to techs with data.
+    Create complete analysis for H2 and e-fuels technologies.
+    CAPEX in billion USD, OPEX in million USD.
+    Hover only, legend limited to techs with data.
     """
+    import pandas as pd
+
     all_h2_efuels_costs = []
     for name_tag, network in networks.items():
         df_costs = compute_h2_efuels_costs(network, name_tag)
@@ -4646,8 +4649,12 @@ def create_h2_efuels_analysis(networks, index='year'):
 
     df_h2_efuels_costs = pd.concat(all_h2_efuels_costs, ignore_index=True)
 
-    # Use millions for plotting
-    df_h2_efuels_costs["cost_billion"] = df_h2_efuels_costs["cost_million"]
+    # Add cost in billion for CAPEX plotting
+    df_h2_efuels_costs["cost_billion"] = df_h2_efuels_costs.apply(
+        lambda r: r["cost_million"] / 1e3 if r["cost_type"] == "Capital expenditure" else r["cost_million"],
+        axis=1
+    )
+
 
     h2_efuels_order = [
         "Alkaline electrolyzer large",
@@ -4669,9 +4676,12 @@ def create_h2_efuels_analysis(networks, index='year'):
     active_colors = {k: v for k, v in h2_efuels_colors.items() if k in active_techs}
     active_order = [t for t in h2_efuels_order if t in active_techs]
 
-    # CAPEX
+    # CAPEX in billion USD
+    df_capex = df_h2_efuels_costs[df_h2_efuels_costs["cost_type"] == "Capital expenditure"].copy()
+    df_capex["plot_value"] = df_capex["cost_billion"]
+
     fig1 = plot_h2_efuels_details(
-        df_h2_efuels_costs,
+        df_capex,
         "Capital expenditure",
         tech_colors=active_colors,
         tech_order=active_order,
@@ -4680,14 +4690,17 @@ def create_h2_efuels_analysis(networks, index='year'):
     if fig1:
         fig1.update_traces(
             text=None,
-            hovertemplate='%{x} – %{label}<br>%{y:.2f} million USD'
+            hovertemplate='%{x} – %{label}<br>%{y:.2f} billion USD'
         )
-        fig1.update_yaxes(title_text="Cost (million USD)")
+        fig1.update_yaxes(title_text="Cost (billion USD)")
         fig1.show()
 
-    # OPEX
+    # OPEX in million USD
+    df_opex = df_h2_efuels_costs[df_h2_efuels_costs["cost_type"] == "Operational expenditure"].copy()
+    df_opex["plot_value"] = df_opex["cost_million"]
+
     fig2 = plot_h2_efuels_details(
-        df_h2_efuels_costs,
+        df_opex,
         "Operational expenditure",
         tech_colors=active_colors,
         tech_order=active_order,

@@ -692,12 +692,8 @@ def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Ne
     )
     links["p_nom_gw"] = links["p_nom_opt"] / 1000
 
-    # aggregate capacity by grid region
-    grid_capacity = links.groupby("grid_region").agg(
-        total_gw=("p_nom_gw", "sum"),
-        x=("x", "mean"),
-        y=("y", "mean")
-    ).reset_index()
+    grid_capacity = links[["grid_region", "x", "y", "p_nom_gw"]].copy()
+    grid_capacity.rename(columns={"p_nom_gw": "total_gw"}, inplace=True)
     grid_capacity = grid_capacity[grid_capacity["total_gw"] >= min_capacity_gw]
 
     # prepare figure and axes with PlateCarree projection

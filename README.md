@@ -6,6 +6,7 @@
 
 # efuels-supply-potentials
 
+[![CI](https://github.com/open-energy-transition/efuels-supply-potentials/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/open-energy-transition/efuels-supply-potentials/actions/workflows/ci.yml)
 
 ## 1. Installation
 Clone the repository including its submodules:
@@ -21,6 +22,33 @@ Activate `pypsa-earth` environment:
     conda activate pypsa-earth
 
 * **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit (`ee14fa5`) of `efuels-supply-potential` branch of [open-energy-transition/pypsa-earth](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials) repository.
+
+### 1.1. Configure pre-commit
+
+To ensure that all team members can use the pre-commit hooks and maintain code quality across the project, follow these steps:
+
+1. Navigate to the root directory of the repository, where the .pre-commit-config.yaml file is located. Then, run the following command to install the hooks defined in the .pre-commit-config.yaml file:
+```bash
+pre-commit install
+```
+This command will set up the hooks in the `.git/hooks directory` (specifically the `pre-commit hook`), ensuring that the hooks are executed automatically before each commit.
+
+2. To ensure that all files comply with the defined hooks, users can run the following command manually to check and fix any issues with all files in the repository:
+```bash
+pre-commit run --a
+```
+This step is optional but recommended to make sure that any formatting or linting issues are fixed before starting to commit changes.
+
+3. Once the pre-commit hooks are installed and verified, you can proceed to make changes to the code, add them to your commit, and push them to the repository. From this point forward, pre-commit will automatically run checks on your files whenever you try to commit:
+```bash
+git add .
+git commit -m "Your commit message"
+```
+If any of the hooks (such as `black`, `isort`, or `reuse lint`) detect issues (for example, formatting issues or missing license headers), the commit will be blocked, and you'll be required to fix the issues before retrying.
+
+4. Some hooks, such as `black` and `isort`, will automatically fix code formatting issues during the commit process. If a file is not formatted correctly, the hook will fix it, and the user can reattempt the commit. If a hook fails (for example, the license linting hook or a formatting hook fails), the commit will not proceed. The user will see a message explaining the issue, and they will need to correct it before committing again.
+
+5. Every time a new hook is added, or changes to the configuration in the `.pre-commit-config.yaml` are performed, it is necessary to run `pre-commit install` again.
 
 ## 2. Running scenarios
 
@@ -70,8 +98,8 @@ snakemake -call solve_sector_networks_myopic --configfile configs/scenarios/conf
 |`validate_all`           |`config.base.yaml`, `config.base_AC.yaml`|Performs country-level validation comparing with EIA and Ember data|
 |`statewise_validate_all` |`config.base_AC.yaml`                    |Performs statewise validation comparing with EIA data|
 |`get_capacity_factors`   |Any base or scenario config file         |Estimates capacity factors for renewables|
-|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand| 
-|`generate_aviation_scenario` |Any base or scenario config file         |Generates aviation demand csv file with different future scenario| 
+|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand|
+|`generate_aviation_scenario` |Any base or scenario config file         |Generates aviation demand csv file with different future scenario|
 |`modify_aviation_demand` |Any base or scenario config file         |Switches aviation demand in energy_total to custom demand|
 |`preprocess_demand_data` |Any base or scenario config file         |Preprocess utlities demand data into geojson|
 |`build_demand_profiles_from_eia` |Any base or scenario config file         |Build custom demand data from eia and bypass build_demand_profiles|
@@ -79,7 +107,7 @@ snakemake -call solve_sector_networks_myopic --configfile configs/scenarios/conf
 |`build_custom_industry_demand` |Any base or scenario config file   |Estimates node level demands for selected custom industries (e.g. ammonia, ethanol, cement, and steel)|
 |`add_custom_industry`    |Any base or scenario config file         |Adds selected custom industries into the network|
 |`prepare_growth_rate_scenarios`  | Any base or scenario config file          | Allows automatic fetching of correct growth rate files according to the demand_projection scenario name                                                                |
-|`solve_custom_sector_network`  | Any base or scenario config file          | Allows state/country-wise clean/RES polices to be applied as constraints. The constraints is turned on by default.                                                                |
+|`solve_custom_sector_network`  | Any base or scenario config file          | Allows state/country-wise clean/RES polices to be applied as constraints. The constraints are turned on by default.                                                                |
 
 
 ### Retrieve rules
@@ -132,12 +160,16 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 9. [PR #65](https://github.com/open-energy-transition/pypsa-earth/pull/65): Remove lignite from default conventional carriers.
 10. [PR #69](https://github.com/open-energy-transition/pypsa-earth/pull/69): Extend lifetime of nuclear power plants to 60 years
 11. [PR #71](https://github.com/open-energy-transition/pypsa-earth/pull/71): Enable selection of custom busmap.
+<<<<<<< HEAD
+
+=======
 12. [PR #76](https://github.com/open-energy-transition/pypsa-earth/pull/76): Add functionality to overwrite cost attributes in sector model.
 13. [PR #84](https://github.com/open-energy-transition/pypsa-earth/pull/84): Add possibility to overwrite discount rate.
 14. [PR #86](https://github.com/open-energy-transition/pypsa-earth/pull/86): Use H2 Store Tank costs without compressor and add lifetime.
 15. [PR #89](https://github.com/open-energy-transition/pypsa-earth/pull/89): Align cost conversion with reference year for costs in input files.
 15. [PR #91](https://github.com/open-energy-transition/pypsa-earth/pull/91): Include existing batteries from `powerplants.csv`.
- 
+
+>>>>>>> origin/main
 ## 5. Validation
 
 ### 5.1. Country-level validation for the base scenario

@@ -5,7 +5,6 @@
 # Git LFS tracking for large files (>2MB)
 # Airport data
 data/airport_data/airports.csv filter=lfs diff=lfs merge=lfs -text
-data/airport_data/merged_airports_data.csv filter=lfs diff=lfs merge=lfs -text
 
 # Demand projections scaling factors
 data/demand_projections/Scaling_Factor_High_Moderate_2024_by_state.csv filter=lfs diff=lfs merge=lfs -text
@@ -34,8 +33,5 @@ data/industry_data/uscities.csv filter=lfs diff=lfs merge=lfs -text
 data/NorthAmerica.csv filter=lfs diff=lfs merge=lfs -text
 
 # Validation data
-data/validation/EIA_statewise_data/use_all_phy.xlsx filter=lfs diff=lfs merge=lfs -text
 data/validation/ember_yearly_full_release_long_format.csv filter=lfs diff=lfs merge=lfs -text
-data/validation/existcapacity_annual.xlsx filter=lfs diff=lfs merge=lfs -text
 data/validation/gadm41_USA_1.json filter=lfs diff=lfs merge=lfs -text
-data/validation/usa_mapped.nc filter=lfs diff=lfs merge=lfs -text

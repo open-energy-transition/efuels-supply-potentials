@@ -401,16 +401,9 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         elif carrier in cc_credit_on_co2_stored:
             if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
 
-                # Detect efficiency toward eligible CO2 buses (buffer or storage)
+                # Detect efficiency toward eligible CO2 buses (only buffer co2)
                 def get_co2_eligible_efficiency(row):
-                    co2_bus_patterns = (
-                        "buffer co2",
-                        "co2 storage steel tank",
-                        "co2 stored",
-                        "geological storage",
-                        "geological sequestration",
-                        "sequestration",
-                    )
+                    co2_bus_patterns = ("buffer co2",)
                     for key, val in row.items():
                         if key.startswith("bus") and isinstance(val, str):
                             name = val.lower()
@@ -422,7 +415,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                 tco2 = get_co2_eligible_efficiency(link)
                 credit_per_t = ptc_credits.get(carrier, 0.0)
 
-                # Always apply usage credit (no distinction usage/sequestration)
+                # Always apply usage credit
                 if tco2 > 0 and credit_per_t != 0.0:
                     credit = credit_per_t * tco2
                     new_cost = base_cost + credit
@@ -442,11 +435,22 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         # DAC - CO2 atmosphere
         elif carrier in cc_credit_on_co2_atmosphere:
             if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
-                # Detect efficiency toward eligible CO2 buses (buffer or storage)
+
+                # Detect efficiency toward eligible CO2 buses (only buffer co2)
+                def get_co2_eligible_efficiency(row):
+                    co2_bus_patterns = ("buffer co2",)
+                    for key, val in row.items():
+                        if key.startswith("bus") and isinstance(val, str):
+                            name = val.lower()
+                            if any(pat in name for pat in co2_bus_patterns):
+                                eff_key = "efficiency" + key[3:]
+                                return float(row.get(eff_key, 0.0))
+                    return 0.0
+
                 tco2 = get_co2_eligible_efficiency(link)
                 credit_per_t = ptc_credits.get(carrier, 0.0)
 
-                # Always apply usage credit (no distinction usage/sequestration)
+                # Always apply usage credit
                 if tco2 > 0 and credit_per_t != 0.0:
                     credit = credit_per_t * tco2
                     new_cost = base_cost + credit

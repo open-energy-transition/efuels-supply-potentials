@@ -222,8 +222,10 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
     regime = "IRA 2022" if pre_ob3_tax_credits else "OB3"
 
     # Filter PTC by regime if column exists
-    if "regime" in ptc_df.columns and not ptc_df["regime"].isna().all():
-        ptc_active = ptc_df[ptc_df["regime"] == regime]
+    if "regime" in ptc_df.columns:
+        ptc_active = ptc_df[
+            (ptc_df["regime"] == regime) | (ptc_df["regime"].isna()) | (ptc_df["regime"] == "")
+            ]
     else:
         ptc_active = ptc_df
 

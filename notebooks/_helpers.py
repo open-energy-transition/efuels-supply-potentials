@@ -4347,12 +4347,10 @@ def calculate_lcoh_by_region(
     baseload_percentages=None
 ):
     """
-    Compute weighted average LCOH by grid region and year, including CAPEX, OPEX,
-    electricity cost (marginal or LCOE), T&D fees, and optional baseload charges.
-    Baseload correction:
-      - Removes the electricity cost portion corresponding to baseload consumption
-        only when electrolyzers are active.
-      - Adds the annual baseload charge as a fixed cost.
+    Compute weighted average LCOH by grid region and year.
+    Adds two final columns:
+      - Hydrogen Dispatch (tons per region)
+      - Hydrogen Dispatch (GWh per region)
     """
     results = {}
     conv = 33.0  # MWh H2 per ton
@@ -4418,12 +4416,12 @@ def calculate_lcoh_by_region(
             f"Electrolysis CAPEX ({suffix})": capex_val,
             f"Electrolysis OPEX ({suffix})": opex_val,
             f"Electricity ({suffix})": elec_val,
-            "h2_out": out_valid,
+            "h2_out": out_valid,                  # MWh
             "bus": links.loc[valid, "bus0"]
         })
         df["grid_region"] = df["bus"].map(net.buses["grid_region"])
 
-        # Transmission & Distribution fees
+        # T&D fees
         fee_map = regional_fees.loc[
             regional_fees["Year"] == scen_year,
             ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"]
@@ -4431,7 +4429,7 @@ def calculate_lcoh_by_region(
         df["EMM"] = df["grid_region"].map(emm_mapping)
         fee_trans = df["EMM"].map(fee_map["Transmission nom USD/MWh"])
         fee_dist = df["EMM"].map(fee_map["Distribution nom USD/MWh"])
-        elec_rate = cons.loc[:, valid].sum(axis=0) / out_valid
+        elec_rate = cons.loc[:, valid].sum(axis=0) / out_valid  # MWh_el per MWh_H2
         fee_trans_val = (fee_trans * elec_rate / conv).reindex(df.index)
         fee_dist_val = (fee_dist * elec_rate / conv).reindex(df.index)
 
@@ -4454,7 +4452,7 @@ def calculate_lcoh_by_region(
             baseload_frac_map = baseload_df.set_index("grid_region")["baseload_pct"] / 100.0
             baseload_cost_map = baseload_df.set_index("grid_region")["baseload_cost_per_mwh_h2"]
 
-            # Compute activity factor: share of hours with positive production
+            # Activity factor: share of hours with positive production
             activity_factor = {}
             for l in valid.index[valid]:
                 p_prod = (-net.links_t.p1[l]).clip(lower=0)
@@ -4464,13 +4462,13 @@ def calculate_lcoh_by_region(
             df["activity_factor"] = df.index.map(activity_factor)
             df["baseload_frac"] = df["grid_region"].map(baseload_frac_map).fillna(0)
 
-            # Remove duplicated baseload electricity cost only during active operation
+            # Remove duplicated baseload electricity cost during active operation
             df[f"Electricity ({suffix})"] = df[f"Electricity ({suffix})"] * (1 - df["baseload_frac"] * df["activity_factor"])
 
-            # Add the constant annual baseload charge
+            # Add constant annual baseload charge
             df[f"Baseload charges ({suffix})"] = df["grid_region"].map(baseload_cost_map).fillna(0) / conv
 
-            # Add combined columns
+            # Combined columns
             df[f"LCOH + Transmission fees + Baseload charges ({suffix})"] = (
                 df[f"LCOH + Transmission fees ({suffix})"] + df[f"Baseload charges ({suffix})"]
             )
@@ -4482,18 +4480,9 @@ def calculate_lcoh_by_region(
             df[f"LCOH + Transmission fees + Baseload charges ({suffix})"] = df[f"LCOH + Transmission fees ({suffix})"]
             df[f"LCOH + T&D fees + Baseload charges ({suffix})"] = df[f"LCOH + T&D fees ({suffix})"]
 
-        # Reorder columns: Baseload charges immediately after LCOH + Transmission fees
-        cols = list(df.columns)
-        base_col = f"Baseload charges ({suffix})"
-        after_col = f"LCOH + Transmission fees ({suffix})"
-        if base_col in cols and after_col in cols:
-            cols.remove(base_col)
-            idx = cols.index(after_col) + 1
-            cols.insert(idx, base_col)
-            df = df[cols]
-
         # Weighted aggregation by region
-        dispatch_label = "Hydrogen Dispatch (tons per region)"
+        dispatch_tons = "Hydrogen Dispatch (tons per region)"
+        dispatch_gwh = "Hydrogen Dispatch (GWh per region)"
         agg_dict = {
             f"Electrolysis CAPEX ({suffix})": lambda g: (g[f"Electrolysis CAPEX ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
             f"Electrolysis OPEX ({suffix})": lambda g: (g[f"Electrolysis OPEX ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
@@ -4506,7 +4495,8 @@ def calculate_lcoh_by_region(
             f"Distribution fees ({suffix})": lambda g: (fee_dist_val.loc[g.index] * g["h2_out"]).sum() / g["h2_out"].sum(),
             f"LCOH + T&D fees ({suffix})": lambda g: (g[f"LCOH + T&D fees ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
             f"LCOH + T&D fees + Baseload charges ({suffix})": lambda g: (g[f"LCOH + T&D fees + Baseload charges ({suffix})"] * g["h2_out"]).sum() / g["h2_out"].sum(),
-            dispatch_label: lambda g: g["h2_out"].sum() * conv / 1000
+            dispatch_tons: lambda g: g["h2_out"].sum() * conv / 1000.0,   # MWh → tons
+            dispatch_gwh:  lambda g: g["h2_out"].sum() / 1000.0,          # MWh → GWh
         }
 
         region_summary = (
@@ -4516,7 +4506,11 @@ def calculate_lcoh_by_region(
             .rename(columns={"grid_region": "Grid Region"})
         )
 
-        region_summary = region_summary.round(2)
+        # Force dispatch columns to be the last two
+        cols = [c for c in region_summary.columns if c not in (dispatch_tons, dispatch_gwh)]
+        cols = cols + [dispatch_tons, dispatch_gwh]
+        region_summary = region_summary[cols].round(2)
+
         results[str(scen_year) if year_title else year_key] = region_summary
 
     return results
@@ -6364,8 +6358,9 @@ def compare_h2_kerosene_production(network, plot=True, network_name="Network", p
             plt.tight_layout(rect=[0, 0, 0.85, 1])  # leave space for legend
             plt.show()
         else:
-            print(
-                f"\nSkipped {network_name}: both daily-average productions are below {plot_threshold_gw*1000:.1f} MW.\n")
+            threshold_mw = plot_threshold_gw * 1e3
+            print(f"\nSkipped {network_name}: both daily-average productions are below {threshold_mw:.2f} MW (threshold = {plot_threshold_gw:.3e} GW).\n")
+
 
     return {
         # Series in GW (daily average)

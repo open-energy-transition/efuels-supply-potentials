@@ -18,9 +18,9 @@ Install the necessary dependencies using `conda` or `mamba` based on the Operati
 
 * **Note!** Please check for `envs/` directory for names of pinned environment files. Supported OS list are `windows`, `linux` and `macos`.
 
-Activate `pypsa-earth` environment:
+Activate `pypsa-earth-stable` environment:
 
-    conda activate pypsa-earth
+    conda activate pypsa-earth-stable
 
 * **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit (`ee14fa5`) of `efuels-supply-potential` branch of [open-energy-transition/pypsa-earth](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials) repository.
 

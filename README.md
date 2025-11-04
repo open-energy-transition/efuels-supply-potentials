@@ -12,9 +12,11 @@ Clone the repository including its submodules:
 
     git clone --recurse-submodules https://github.com/open-energy-transition/efuels-supply-potentials.git
 
-Install the necessary dependencies using `conda` or `mamba`:
+Install the necessary dependencies using `conda` or `mamba` based on the Operating System (OS) of the machine:
 
-    mamba env create -f submodules/pypsa-earth/envs/environment.yaml
+    mamba env create -f envs/environment.{os}-64-pinned.yaml
+
+* **Note!** Please check for `envs/` directory for names of pinned environment files. Supported OS list are `windows`, `linux` and `macos`.
 
 Activate `pypsa-earth` environment:
 

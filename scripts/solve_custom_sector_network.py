@@ -402,10 +402,17 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
             if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
 
                 def get_co2_stored_efficiency(row):
+                    co2_bus_patterns = [
+                        "co2 stored",
+                        "buffer co2 storage",
+                        "geological storage",
+                        "sequestration",
+                    ]
                     for key, val in row.items():
-                        if key.startswith("bus") and isinstance(val, str) and "co2 stored" in val.lower():
-                            eff_key = "efficiency" + key[3:]
-                            return row.get(eff_key, 0.0)
+                        if key.startswith("bus") and isinstance(val, str):
+                            if any(pat in val.lower() for pat in co2_bus_patterns):
+                                eff_key = "efficiency" + key[3:]
+                                return row.get(eff_key, 0.0)
                     return 0.0
 
                 tco2 = get_co2_stored_efficiency(link)

@@ -211,17 +211,28 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
 
     # Load PTC and ITC file
     ptc_df = pd.read_csv(ptc_path)
-    ptc_credits = dict(zip(ptc_df["carrier"], ptc_df["credit"]))
 
-    itc_df = pd.read_csv(itc_path)
-    itc_credits = dict(zip(itc_df["carrier"], itc_df["credit"]))
-
-    # Pre-OB3 tax credits option
+    # ------------------------------------------------------------
+    # Select correct regime (IRA 2022 or OB3) if present
+    # ------------------------------------------------------------
     pre_ob3_tax_credits = None
     if config_file is not None:
-        policies_cfg = config_file.get("policies", {})
-        if "pre_ob3_tax_credits" in policies_cfg:
-            pre_ob3_tax_credits = policies_cfg["pre_ob3_tax_credits"]
+        pre_ob3_tax_credits = config_file.get("policies", {}).get("pre_ob3_tax_credits", None)
+
+    regime = "IRA 2022" if pre_ob3_tax_credits else "OB3"
+
+    # Filter PTC by regime if column exists
+    if "regime" in ptc_df.columns and not ptc_df["regime"].isna().all():
+        ptc_active = ptc_df[ptc_df["regime"] == regime]
+    else:
+        ptc_active = ptc_df
+
+    # Build dictionary for active credits
+    ptc_credits = dict(zip(ptc_active["carrier"], ptc_active["credit"]))
+
+    # Load ITC file and dictionary
+    itc_df = pd.read_csv(itc_path)
+    itc_credits = dict(zip(itc_df["carrier"], itc_df["credit"]))
 
     biomass_aliases = {
         "biomass",
@@ -467,89 +478,6 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                             f"[PTC LINK DAC] {name} | CO2={tco2:.3f}, credit={credit:.2f} (usage-only)"
                         )
 
-    # -------------------------
-    # Apply Investment Tax Credits to STORAGE UNITS (batteries)
-    # -------------------------
-    if os.path.exists(itc_path):
-        itc_df = pd.read_csv(itc_path, index_col=0)
-
-        for carrier, row in itc_df.iterrows():
-            credit_factor = -row.get("credit", 0.0) / 100
-
-            if carrier not in network.stores.carrier.values:
-                continue
-
-            affected = network.stores.query("carrier == @carrier")
-            for idx, su in affected.iterrows():
-                build_year = su.get("build_year", planning_horizon)
-
-                horizon_limit = 2040 if pre_ob3_tax_credits else build_year + 10
-                full_end = 2040 if pre_ob3_tax_credits else 2033
-
-                if 2030 <= build_year <= 2035 and planning_horizon <= horizon_limit:
-                    scale = 0.0
-                    if planning_horizon <= full_end:
-                        scale = 1.0
-                    elif planning_horizon == full_end + 1:
-                        scale = 0.75
-                    elif planning_horizon == full_end + 2:
-                        scale = 0.5
-
-                    if scale > 0:
-                        orig = su.capital_cost
-                        new = orig * (1 - scale * credit_factor)
-                        network.stores.at[idx, "capital_cost"] = new
-                        modifications.append({
-                            "component": "store", "name": idx,
-                            "carrier": carrier, "build_year": build_year,
-                            "original": orig, "credit_factor": scale * credit_factor,
-                            "final": new
-                        })
-                        if verbose:
-                            logger.info(f"[ITC STORAGE] {idx} | year={planning_horizon}, scale={scale:.2f}")
-
-    # -------------------------
-    # Apply Investment Tax Credits to LINKS (battery chargers)
-    # -------------------------
-    if os.path.exists(itc_path):
-        itc_df = pd.read_csv(itc_path, index_col=0)
-
-        if "battery" in itc_df.index and "battery charger" in network.links.carrier.values:
-            credit_factor = -itc_df.loc["battery", "credit"] / 100
-
-            affected = network.links.query("carrier == 'battery charger'")
-            for idx, lk in affected.iterrows():
-                build_year = lk.get("build_year", planning_horizon)
-
-                horizon_limit = 2040 if pre_ob3_tax_credits else build_year + 10
-                full_end = 2040 if pre_ob3_tax_credits else 2033
-
-                if 2030 <= build_year <= 2035 and planning_horizon <= horizon_limit:
-                    scale = 0.0
-                    if planning_horizon <= full_end:
-                        scale = 1.0
-                    elif planning_horizon == full_end + 1:
-                        scale = 0.75
-                    elif planning_horizon == full_end + 2:
-                        scale = 0.5
-
-                    if scale > 0 and lk.capital_cost > 0:
-                        orig = lk.capital_cost
-                        new = orig * (1 - scale * credit_factor)
-                        network.links.at[idx, "capital_cost"] = new
-                        modifications.append({
-                            "component": "link", "name": idx,
-                            "carrier": lk.carrier, "build_year": build_year,
-                            "original": orig, "credit_factor": scale * credit_factor,
-                            "final": new
-                        })
-                        if verbose:
-                            logger.info(f"[ITC LINK BATTERY] {idx} | year={planning_horizon}, scale={scale:.2f}")
-
-    # Save modifications log
-    if modifications and log_path:
-        os.makedirs(os.path.dirname(log_path), exist_ok=True)
-        pd.DataFrame(modifications).to_csv(log_path, index=False)
 
 def add_RPS_constraints(network, config_file):
 
@@ -711,8 +639,8 @@ def add_RPS_constraints(network, config_file):
             n, lhs_grouped, ">=", 0, f"{constraints_type}_{state}", "rps_limit")
         logger.info(
             f"Added {constraints_type} constraint for {state} in {target_year}.")
-        
-        
+
+
     # define carriers for RES and CES sources
     res_generator_carriers = [
         "solar",
@@ -858,14 +786,14 @@ def add_CCL_constraints(n, config):
     )
 
     gen_country = n.generators.bus.map(n.buses.country)
-    
+
     # Calculate existing (non-extendable) capacity per country and carrier
     existing_capacity_per_cc = (
         n.generators.query("not p_nom_extendable")
         .groupby([gen_country, "carrier"])["p_nom"]
         .sum()
     )
-    
+
     # cc means country and carrier
     p_nom_per_cc = (
         pd.DataFrame(
@@ -879,7 +807,7 @@ def add_CCL_constraints(n, config):
         .groupby(["country", "carrier"])
         .p_nom.apply(join_exprs)
     )
-    
+
     minimum = agg_p_nom_minmax["min"].dropna()
     if not minimum.empty:
         # Subtract existing capacity from minimum limits
@@ -887,7 +815,7 @@ def add_CCL_constraints(n, config):
         for idx in minimum.index:
             existing_cap = existing_capacity_per_cc.get(idx, 0.0)
             adjusted_minimum[idx] = max(0.0, minimum[idx] - existing_cap)
-        
+
         # Only apply constraints where adjusted minimum > 0
         adjusted_minimum = adjusted_minimum[adjusted_minimum > 0]
         if not adjusted_minimum.empty:
@@ -896,7 +824,7 @@ def add_CCL_constraints(n, config):
                 minconstraint = define_constraints(
                     n, p_nom_per_cc[available_indices], ">=", adjusted_minimum[available_indices], "agg_p_nom", "min"
                 )
-    
+
     maximum = agg_p_nom_minmax["max"].dropna()
     if not maximum.empty:
         # Subtract existing capacity from maximum limits
@@ -904,7 +832,7 @@ def add_CCL_constraints(n, config):
         for idx in maximum.index:
             existing_cap = existing_capacity_per_cc.get(idx, 0.0)
             adjusted_maximum[idx] = max(0.0, maximum[idx] - existing_cap)
-        
+
         # Only apply constraints where adjusted maximum > 0
         adjusted_maximum = adjusted_maximum[adjusted_maximum > 0]
         if not adjusted_maximum.empty:

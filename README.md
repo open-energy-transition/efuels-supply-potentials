@@ -22,7 +22,7 @@ Activate `pypsa-earth-stable` environment:
 
     conda activate pypsa-earth-stable
 
-* **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit (`ee14fa5`) of `efuels-supply-potential` branch of [open-energy-transition/pypsa-earth](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials) repository.
+* **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit (`0fa2e39`) of `efuels-supply-potential` branch of [open-energy-transition/pypsa-earth](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials) repository. If OS-specific installation of conda environment does not succeed, it is recommended to install general pypsa-earth environment and activate as ` mamba env create -f submodules/pypsa-earth/envs/environment.yaml` and activate by `conda activate pypsa-earth`.
 
 ## 2. Running scenarios
 

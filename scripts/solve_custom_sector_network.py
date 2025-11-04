@@ -401,26 +401,28 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         elif carrier in cc_credit_on_co2_stored:
             if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
 
-                def get_co2_stored_efficiency(row):
-                    co2_bus_patterns = [
+                # Detect efficiency toward eligible CO2 buses (buffer or storage)
+                def get_co2_eligible_efficiency(row):
+                    co2_bus_patterns = (
+                        "buffer co2",
+                        "co2 storage steel tank",
                         "co2 stored",
-                        "buffer co2 storage",
                         "geological storage",
+                        "geological sequestration",
                         "sequestration",
-                    ]
+                    )
                     for key, val in row.items():
                         if key.startswith("bus") and isinstance(val, str):
-                            if any(pat in val.lower() for pat in co2_bus_patterns):
+                            name = val.lower()
+                            if any(pat in name for pat in co2_bus_patterns):
                                 eff_key = "efficiency" + key[3:]
-                                return row.get(eff_key, 0.0)
+                                return float(row.get(eff_key, 0.0))
                     return 0.0
 
-                tco2 = get_co2_stored_efficiency(link)
+                tco2 = get_co2_eligible_efficiency(link)
                 credit_per_t = ptc_credits.get(carrier, 0.0)
 
-                if pre_ob3_tax_credits:
-                    credit_per_t -= 25  # from 85 to 60 USD/t_CO2
-
+                # Always apply usage credit (no distinction usage/sequestration)
                 if tco2 > 0 and credit_per_t != 0.0:
                     credit = credit_per_t * tco2
                     new_cost = base_cost + credit
@@ -428,20 +430,23 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                     modifications.append({
                         "component": "link", "name": name,
                         "carrier": carrier, "build_year": build_year,
-                        "original": base_cost, "credit": credit, "final": new_cost
+                        "original": base_cost, "credit": credit, "final": new_cost,
+                        "assumption": "usage-only credit"
                     })
+
                     if verbose:
-                        logger.info(f"[PTC LINK CC-stored] {name} | CO2={tco2:.3f}, credit={credit:.2f}")
+                        logger.info(
+                            f"[PTC LINK CC-stored] {name} | CO2={tco2:.3f}, credit={credit:.2f} (usage-only)"
+                        )
 
         # DAC - CO2 atmosphere
         elif carrier in cc_credit_on_co2_atmosphere:
             if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
-                tco2 = link.efficiency
+                # Detect efficiency toward eligible CO2 buses (buffer or storage)
+                tco2 = get_co2_eligible_efficiency(link)
                 credit_per_t = ptc_credits.get(carrier, 0.0)
 
-                if pre_ob3_tax_credits:
-                    credit_per_t *= 130 / 180  # from 180 to 130 USD/t_CO2
-
+                # Always apply usage credit (no distinction usage/sequestration)
                 if tco2 > 0 and credit_per_t != 0.0:
                     credit = credit_per_t * tco2
                     new_cost = base_cost + credit
@@ -449,10 +454,14 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                     modifications.append({
                         "component": "link", "name": name,
                         "carrier": carrier, "build_year": build_year,
-                        "original": base_cost, "credit": credit, "final": new_cost
+                        "original": base_cost, "credit": credit, "final": new_cost,
+                        "assumption": "usage-only credit"
                     })
+
                     if verbose:
-                        logger.info(f"[PTC LINK DAC] {name} | CO2={tco2:.3f}, credit={credit:.2f}")
+                        logger.info(
+                            f"[PTC LINK DAC] {name} | CO2={tco2:.3f}, credit={credit:.2f} (usage-only)"
+                        )
 
     # -------------------------
     # Apply Investment Tax Credits to STORAGE UNITS (batteries)

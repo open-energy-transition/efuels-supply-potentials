@@ -5969,28 +5969,30 @@ def compute_LCOC_by_region(
     electricity_price: str = "marginal",   # or "lcoe"
     lcoe_by_region: pd.Series = None,      # required if electricity_price="lcoe"
     year_title: bool = True,
-    captured_threshold_mt: float = 1e-6,   # MtCO2 threshold
-    verbose: bool = True                   # if False, no print/display
+    captured_threshold_mt: float = 1e-6,
+    verbose: bool = True
 ):
     """
     Compute Levelized Cost of CO2 Capture (LCOC) by grid region.
-    - Results aggregated by grid region, weighted by captured CO2.
-    - Includes both excl. and incl. T&D fees.
-    - Units: USD/tCO2
+    - Filters out CCS/DAC links with negligible electricity use.
+    - Distinguishes DAC vs CCS flow directions.
+    - Aggregates by grid region, weighted by captured CO2.
+    - Units: USD/tCO2.
     """
 
-    if verbose:
-        print("Note: LCOC is computed per ton of CO2 captured.")
-
     results = {}
+    cc_carriers = {
+        "ethanol from starch CC",
+        "SMR CC",
+        "DRI CC",
+        "BF-BOF CC",
+        "dry clinker CC",
+        "DAC",
+    }
 
     for name, net in networks.items():
         scen_year = int(re.search(r"\d{4}", str(name)).group())
-
-        # --- detect CCS/DAC links ---
-        mask = net.links.carrier.str.contains(
-            r"(DAC|CC(?!GT))", case=False, na=False)
-        ccs = net.links[mask].copy()
+        ccs = net.links[net.links.carrier.isin(cc_carriers)].copy()
         if ccs.empty:
             continue
 
@@ -6000,12 +6002,8 @@ def compute_LCOC_by_region(
             if len(net.snapshots) > 1 else 1.0
         )
 
-        def energy_flow(series):
-            pos = (series.clip(lower=0) * dt_h).sum()
-            neg = ((-series).clip(lower=0) * dt_h).sum()
-            return series.clip(lower=0) * dt_h if pos >= neg else (-series).clip(lower=0) * dt_h
-
         for link in ccs.index:
+            carrier = str(ccs.at[link, "carrier"]).upper()
             captured, sequestered = 0.0, 0.0
             elec_series, elec_bus = None, None
 
@@ -6013,22 +6011,33 @@ def compute_LCOC_by_region(
                 col = f"p{j}"
                 if col not in net.links_t or link not in net.links_t[col]:
                     continue
-
                 series = net.links_t[col][link]
                 bus = net.links.at[link, f"bus{j}"]
 
+                # CO2 accounting
                 if "co2" in bus.lower():
                     flow = series.sum()
                     if flow < 0:
                         captured += -flow * dt_h
-                        if "storage" in bus.lower() or "sequest" in bus.lower():
+                        if "stor" in bus.lower() or "sequest" in bus.lower():
                             sequestered += -flow * dt_h
-                elif isinstance(bus, str) and bus.strip() and "co2" not in bus.lower():
-                    if re.match(r"US\d+(\s\d+)?$", bus):
-                        elec_series = energy_flow(series)
+                    continue
+
+                # Electricity usage on AC buses
+                if bus in net.buses.index and str(net.buses.at[bus, "carrier"]) == "AC":
+                    if "DAC" in carrier:
+                        cons = (-series).clip(lower=0) * dt_h
+                    else:
+                        cons = (series).clip(lower=0) * dt_h
+                    if cons.sum() > 1e-9:  # electricity consumption threshold (MWh)
+                        elec_series = cons
                         elec_bus = bus
 
             if captured <= 0:
+                continue
+
+            # Skip links with negligible electricity usage
+            if elec_series is None or elec_series.sum() <= 1e-3:
                 continue
 
             try:
@@ -6036,6 +6045,7 @@ def compute_LCOC_by_region(
             except KeyError:
                 continue
 
+            # CAPEX per tCO2
             cap_cost = float(ccs.at[link, "capital_cost"])
             cap_mw = float(
                 ccs.at[link, "p_nom_opt"] if ccs.at[link, "p_nom_extendable"]
@@ -6043,21 +6053,17 @@ def compute_LCOC_by_region(
             )
             c_capex = (cap_cost * cap_mw) / captured
 
-            if elec_series is not None and elec_series.sum() > 0:
-                elec_rate = elec_series.sum() / captured
-                if electricity_price == "marginal":
-                    p_elec = net.buses_t.marginal_price[elec_bus]
-                    avg_p_elec = (elec_series * p_elec).sum() / \
-                        elec_series.sum()
-                elif electricity_price == "lcoe":
-                    avg_p_elec = lcoe_by_region.loc[region]
-                else:
-                    raise ValueError(
-                        "electricity_price must be 'marginal' or 'lcoe'")
-                c_elec = avg_p_elec * elec_rate
+            # Electricity cost per tCO2
+            elec_rate = elec_series.sum() / captured
+            if electricity_price == "marginal":
+                p_elec = net.buses_t.marginal_price[elec_bus]
+                avg_p_elec = (elec_series * p_elec).sum() / elec_series.sum()
+            elif electricity_price == "lcoe":
+                avg_p_elec = lcoe_by_region.loc[region]
             else:
-                elec_rate, avg_p_elec, c_elec = 0.0, 0.0, 0.0
+                raise ValueError("electricity_price must be 'marginal' or 'lcoe'")
 
+            c_elec = avg_p_elec * elec_rate
             lco_excl = c_capex + c_elec
 
             rows.append({
@@ -6103,20 +6109,16 @@ def compute_LCOC_by_region(
             ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"]
         ].set_index("region")
 
-        g["Transmission fee (USD/MWh)"] = g["EMM Region"].map(
-            fee_map["Transmission nom USD/MWh"])
-        g["Distribution fee (USD/MWh)"] = g["EMM Region"].map(
-            fee_map["Distribution nom USD/MWh"])
+        g["Transmission fee (USD/MWh)"] = g["EMM Region"].map(fee_map["Transmission nom USD/MWh"])
+        g["Distribution fee (USD/MWh)"] = g["EMM Region"].map(fee_map["Distribution nom USD/MWh"])
 
-        g["Transmission cost (USD/tCO2)"] = g["Transmission fee (USD/MWh)"] * \
-            g["Electricity rate (MWh el / tCO2)"]
-        g["Distribution cost (USD/tCO2)"] = g["Distribution fee (USD/MWh)"] * \
-            g["Electricity rate (MWh el / tCO2)"]
+        g["Transmission cost (USD/tCO2)"] = g["Transmission fee (USD/MWh)"] * g["Electricity rate (MWh el / tCO2)"]
+        g["Distribution cost (USD/tCO2)"] = g["Distribution fee (USD/MWh)"] * g["Electricity rate (MWh el / tCO2)"]
 
         g["LCOC incl. T&D fees (USD/tCO2)"] = (
-            g["LCOC excl. T&D fees (USD/tCO2)"] +
-            g["Transmission cost (USD/tCO2)"] +
-            g["Distribution cost (USD/tCO2)"]
+            g["LCOC excl. T&D fees (USD/tCO2)"]
+            + g["Transmission cost (USD/tCO2)"]
+            + g["Distribution cost (USD/tCO2)"]
         )
 
         g.drop(columns=["EMM Region"], inplace=True)
@@ -6124,19 +6126,17 @@ def compute_LCOC_by_region(
 
         if verbose:
             tot_captured = g["Captured CO2 (Mt)"].sum()
-            wavg_cost = (g["LCOC incl. T&D fees (USD/tCO2)"] *
-                         g["Captured CO2 (Mt)"]).sum() / tot_captured
-            title = re.search(r"\d{4}", str(
-                name)).group() if year_title else str(name)
+            wavg_cost = (g["LCOC incl. T&D fees (USD/tCO2)"] * g["Captured CO2 (Mt)"]).sum() / tot_captured
+            title = re.search(r"\d{4}", str(name)).group() if year_title else str(name)
             print(f"\nYear: {title}")
             print(f"Total captured CO2: {tot_captured:.2f} Mt")
-            print(
-                f"Weighted average LCOC (incl. T&D fees): {wavg_cost:.2f} USD/tCO2\n")
+            print(f"Weighted average LCOC (incl. T&D fees): {wavg_cost:.2f} USD/tCO2\n")
             numeric_cols = g.select_dtypes(include="number").columns
             fmt = {col: "{:.2f}" for col in numeric_cols}
             display(g.style.format(fmt).hide(axis="index"))
 
     return results
+
 
 
 def calculate_LCOC_by_region(

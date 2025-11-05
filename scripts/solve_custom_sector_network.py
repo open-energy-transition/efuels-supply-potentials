@@ -448,22 +448,10 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         # DAC - CO2 atmosphere
         elif carrier in cc_credit_on_co2_atmosphere:
             if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
-
-                # Detect efficiency toward eligible CO2 buses (only buffer co2)
-                def get_co2_eligible_efficiency(row):
-                    co2_bus_patterns = ("buffer co2",)
-                    for key, val in row.items():
-                        if key.startswith("bus") and isinstance(val, str):
-                            name = val.lower()
-                            if any(pat in name for pat in co2_bus_patterns):
-                                eff_key = "efficiency" + key[3:]
-                                return float(row.get(eff_key, 0.0))
-                    return 0.0
-
-                tco2 = get_co2_eligible_efficiency(link)
+                tco2 = link.efficiency
                 credit_per_t = ptc_credits.get(carrier, 0.0)
 
-                # Always apply usage credit
+                # Apply usage credit
                 if tco2 > 0 and credit_per_t != 0.0:
                     credit = credit_per_t * tco2
                     new_cost = base_cost + credit
@@ -479,6 +467,90 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                         logger.info(
                             f"[PTC LINK DAC] {name} | CO2={tco2:.3f}, credit={credit:.2f} (usage-only)"
                         )
+
+    # -------------------------
+    # Apply Investment Tax Credits to STORAGE UNITS (batteries)
+    # -------------------------
+    if os.path.exists(itc_path):
+        itc_df = pd.read_csv(itc_path, index_col=0)
+
+        for carrier, row in itc_df.iterrows():
+            credit_factor = -row.get("credit", 0.0) / 100
+
+            if carrier not in network.stores.carrier.values:
+                continue
+
+            affected = network.stores.query("carrier == @carrier")
+            for idx, su in affected.iterrows():
+                build_year = su.get("build_year", planning_horizon)
+
+                horizon_limit = 2040 if pre_ob3_tax_credits else build_year + 10
+                full_end = 2040 if pre_ob3_tax_credits else 2033
+
+                if 2030 <= build_year <= 2035 and planning_horizon <= horizon_limit:
+                    scale = 0.0
+                    if planning_horizon <= full_end:
+                        scale = 1.0
+                    elif planning_horizon == full_end + 1:
+                        scale = 0.75
+                    elif planning_horizon == full_end + 2:
+                        scale = 0.5
+
+                    if scale > 0:
+                        orig = su.capital_cost
+                        new = orig * (1 - scale * credit_factor)
+                        network.stores.at[idx, "capital_cost"] = new
+                        modifications.append({
+                            "component": "store", "name": idx,
+                            "carrier": carrier, "build_year": build_year,
+                            "original": orig, "credit_factor": scale * credit_factor,
+                            "final": new
+                        })
+                        if verbose:
+                            logger.info(f"[ITC STORAGE] {idx} | year={planning_horizon}, scale={scale:.2f}")
+
+    # -------------------------
+    # Apply Investment Tax Credits to LINKS (battery chargers)
+    # -------------------------
+    if os.path.exists(itc_path):
+        itc_df = pd.read_csv(itc_path, index_col=0)
+
+        if "battery" in itc_df.index and "battery charger" in network.links.carrier.values:
+            credit_factor = -itc_df.loc["battery", "credit"] / 100
+
+            affected = network.links.query("carrier == 'battery charger'")
+            for idx, lk in affected.iterrows():
+                build_year = lk.get("build_year", planning_horizon)
+
+                horizon_limit = 2040 if pre_ob3_tax_credits else build_year + 10
+                full_end = 2040 if pre_ob3_tax_credits else 2033
+
+                if 2030 <= build_year <= 2035 and planning_horizon <= horizon_limit:
+                    scale = 0.0
+                    if planning_horizon <= full_end:
+                        scale = 1.0
+                    elif planning_horizon == full_end + 1:
+                        scale = 0.75
+                    elif planning_horizon == full_end + 2:
+                        scale = 0.5
+
+                    if scale > 0 and lk.capital_cost > 0:
+                        orig = lk.capital_cost
+                        new = orig * (1 - scale * credit_factor)
+                        network.links.at[idx, "capital_cost"] = new
+                        modifications.append({
+                            "component": "link", "name": idx,
+                            "carrier": lk.carrier, "build_year": build_year,
+                            "original": orig, "credit_factor": scale * credit_factor,
+                            "final": new
+                        })
+                        if verbose:
+                            logger.info(f"[ITC LINK BATTERY] {idx} | year={planning_horizon}, scale={scale:.2f}")
+
+    # Save modifications log
+    if modifications and log_path:
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        pd.DataFrame(modifications).to_csv(log_path, index=False)
 
 
 def add_RPS_constraints(network, config_file):

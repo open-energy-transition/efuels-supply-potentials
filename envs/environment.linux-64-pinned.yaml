@@ -1,4 +1,4 @@
-name: pypsa-earth-stable
+name: pypsa-earth-efuels
 channels:
   - conda-forge
   - gurobi

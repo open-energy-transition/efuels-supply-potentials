@@ -5916,6 +5916,8 @@ def compute_LCO_ekerosene_by_region(
             .reset_index()
         )
 
+        g = g[g["Production (TWh)"] > 0].copy()
+
         g["EMM Region"] = g["Grid Region"].map(emm_mapping)
         fee_map = regional_fees.loc[
             regional_fees["Year"] == scen_year,

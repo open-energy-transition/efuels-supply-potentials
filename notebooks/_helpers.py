@@ -3261,7 +3261,6 @@ def compute_ekerosene_production_cost_by_region(
                 "Total cost (USD/gallon e-kerosene)": total_cost_gallon,
             })
 
-    # ---------------- legacy print mode ----------------
     if not (aggregate or wide):
         # unchanged legacy behavior (only for networks with data)
         if not all_rows:
@@ -3297,7 +3296,6 @@ def compute_ekerosene_production_cost_by_region(
                     f"Weighted average production cost: {w_cost:.2f} USD/MWh ({w_cost_gallon:.2f} USD/gallon)")
         return
 
-    # ---------------- aggregated (long) ----------------
     if not all_rows:
         # build empty frame with expected combos
         base = []
@@ -6004,7 +6002,7 @@ def compute_LCOC_by_region(
 
         for link in ccs.index:
             carrier = str(ccs.at[link, "carrier"]).upper()
-            captured, sequestered = 0.0, 0.0
+            captured = 0.0
             elec_series, elec_bus = None, None
 
             for j in range(6):
@@ -6019,8 +6017,6 @@ def compute_LCOC_by_region(
                     flow = series.sum()
                     if flow < 0:
                         captured += -flow * dt_h
-                        if "stor" in bus.lower() or "sequest" in bus.lower():
-                            sequestered += -flow * dt_h
                     continue
 
                 # Electricity usage on AC buses
@@ -6069,7 +6065,6 @@ def compute_LCOC_by_region(
             rows.append({
                 "Grid Region": region,
                 "Captured CO2 (Mt)": captured / 1e6,
-                "Sequestered CO2 (Mt)": sequestered / 1e6,
                 "CAPEX (USD/tCO2)": c_capex,
                 "Electricity rate (MWh el / tCO2)": elec_rate,
                 "Electricity price (USD/MWh el)": avg_p_elec,
@@ -6089,7 +6084,6 @@ def compute_LCOC_by_region(
             df.groupby("Grid Region")
               .apply(lambda x: pd.Series({
                   "Captured CO2 (Mt)": x["Captured CO2 (Mt)"].sum(),
-                  "Sequestered CO2 (Mt)": x["Sequestered CO2 (Mt)"].sum(),
                   "CAPEX (USD/tCO2)": wavg(x, "CAPEX (USD/tCO2)"),
                   "Electricity rate (MWh el / tCO2)": wavg(x, "Electricity rate (MWh el / tCO2)"),
                   "Electricity price (USD/MWh el)": wavg(x, "Electricity price (USD/MWh el)"),

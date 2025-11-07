@@ -1181,6 +1181,7 @@ def plot_lcoe_map_by_grid_region(lcoe_by_bus, lcoe_data, shapes, title=None, key
 
 
 def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onshore):
+
     h2_carriers_buses = ['Alkaline electrolyzer large',
                          'PEM electrolyzer', 'SOEC']
 
@@ -1226,8 +1227,6 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
                           theta1=start_angle,
                           theta2=start_angle + angle,
                           facecolor=color,
-                          edgecolor='k',
-                          linewidth=0.3,
                           transform=ccrs.PlateCarree()._as_mpl_transform(ax),
                           zorder=5)
             ax.add_patch(wedge)
@@ -1280,12 +1279,14 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
                             bbox_to_anchor=(legend_anchor_x, 0.60),
                             frameon=False,
                             labelspacing=1.0)
+
     tech_legend._legend_title_box._text.set_ha("left")
 
     ax.add_artist(cap_legend)
     ax.add_artist(tech_legend)
 
     ax.set_extent([-130, -65, 20, 55], crs=ccrs.PlateCarree())
+
     ax.set_title(f'Installed electrolyzer capacity (MW input electricity) - {title} (only nodes ≥ 10 MW)\n')
     plt.tight_layout()
     plt.show()

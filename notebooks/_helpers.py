@@ -1181,14 +1181,11 @@ def plot_lcoe_map_by_grid_region(lcoe_by_bus, lcoe_data, shapes, title=None, key
 
 
 def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onshore):
-
-    h2_carriers_links = ['H2 pipeline repurposed', 'H2 pipeline']
     h2_carriers_buses = ['Alkaline electrolyzer large',
                          'PEM electrolyzer', 'SOEC']
 
     net = network.copy()
     h2_capacity_data = compute_h2_capacities(net)[h2_carriers_buses]
-    net.links.query("carrier in @h2_carriers_links", inplace=True)
 
     valid_buses = net.buses.dropna(subset=["x", "y"])
     valid_buses = valid_buses[
@@ -1202,18 +1199,6 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
     regions_onshore_clipped = regions_onshore.to_crs(epsg=4326).clip(bbox)
     regions_onshore_clipped.plot(ax=ax, facecolor='whitesmoke', edgecolor='gray',
                                  alpha=0.7, linewidth=0.5, zorder=0)
-
-    line_scale = 5e2
-    net.plot(ax=ax,
-             bus_sizes=0,
-             bus_alpha=0,
-             link_widths=net.links.p_nom_opt / line_scale,
-             line_colors='teal',
-             link_colors='turquoise',
-             color_geomap=False,
-             flow=None,
-             branch_components=['Link'],
-             boundaries=[-130, -60, 20, 50])
 
     max_cap = h2_capacity_data.sum(axis=1).max()
 
@@ -1280,27 +1265,6 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
                            labelspacing=2.2,
                            handletextpad=1.0)
 
-    # H2 pipeline legend
-    link_caps_MW = [10, 100, 1000]
-    # Apply a visual scaling factor to improve legend visibility
-    legend_line_scale_factor = 2.5  # Adjust this if needed
-
-    link_patches = [
-        mlines.Line2D([], [], color='turquoise',
-                      linewidth=(cap / line_scale) * legend_line_scale_factor,
-                      label=f"{cap} MW")
-        for cap in link_caps_MW
-    ]
-
-    line_legend = ax.legend(handles=link_patches,
-                            title="H2 Pipeline",
-                            title_fontproperties=FontProperties(weight='bold'),
-                            fontsize=9,
-                            loc='upper left',
-                            bbox_to_anchor=(legend_anchor_x, 0.60),
-                            frameon=False,
-                            labelspacing=1.0)
-
     # Technology legend
     carrier_handles = [
         mpatches.Patch(color=tech_colors.get(c, 'gray'),
@@ -1313,19 +1277,15 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
                             title_fontproperties=FontProperties(weight='bold'),
                             fontsize=9,
                             loc='upper left',
-                            bbox_to_anchor=(legend_anchor_x, 0.34),
+                            bbox_to_anchor=(legend_anchor_x, 0.60),
                             frameon=False,
                             labelspacing=1.0)
-
     tech_legend._legend_title_box._text.set_ha("left")
 
-    # Add in order
     ax.add_artist(cap_legend)
-    ax.add_artist(line_legend)
     ax.add_artist(tech_legend)
 
     ax.set_extent([-130, -65, 20, 55], crs=ccrs.PlateCarree())
-
     ax.set_title(f'Installed electrolyzer capacity (MW input electricity) - {title} (only nodes ≥ 10 MW)\n')
     plt.tight_layout()
     plt.show()
@@ -7073,7 +7033,8 @@ def calculate_baseload_charge(
     baseload_percentages: dict = None,
     output_threshold: float = 0.01,
     verbose: bool = True,
-    year_title: bool = True  # New parameter: defaults to True
+    year_title: bool = True,
+    customer_charge_usd: float = 1000.0
 ):
     """
     Calculate baseload charges for hydrogen production by aggregating all carriers at regional level.
@@ -7209,7 +7170,7 @@ def calculate_baseload_charge(
             baseload_power_kw = baseload_power_mw * 1000
             
             # Calculate charges
-            customer_charge_monthly = 1000 * n_plants
+            customer_charge_monthly = customer_charge_usd * n_plants
             demand_charge_monthly = demand_charge_rate * baseload_power_kw
             monthly_baseload_consumption_mwh = baseload_power_mw * hours_per_month
             energy_charge_monthly = monthly_baseload_consumption_mwh * energy_rate_usd_mwh

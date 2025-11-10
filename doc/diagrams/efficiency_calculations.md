@@ -19,7 +19,7 @@ Here is the information about the buses of DRI industry.
 ### DRI 
 |parameter  |equation|values|detail|
 |-----------|--------|------|------|
-|efficiency |$\frac{1}{gas-input_{DRI}}$|$1/2.78(t_{DRI}/MWh_{gas})$|ton of DRI produced per MWh of gas|
+|efficiency |$1/gas-input_{DRI}$|$1/2.78(t_{DRI}/MWh_{gas})$|ton of DRI produced per MWh of gas|
 |efficiency2|$ore-input_{DRI}/gas-input_{DRI}$|$1.59/2.78(t_{ore}/MWh_{gas})$|ton of iron-ore needed per MWh of gas|
 |efficiency3|$i_{CO2,gas}$|$0.198(tCO_2/MWh_{gas})$|ton of $\text{CO}_2$ released to atmosphere per MWh of gas|
 
@@ -27,10 +27,10 @@ Here is the information about the buses of DRI industry.
 If for DRI all gas goes for production of DRI, in DRI CC gas is used for DRI production and carbon capture (CC). Let's define gas fraction using in DRI as $x_{DRI}$, while fraction of gas used in CC as $x_{CC}$. So, $x_{DRI}+x_{CC} = 1$.
 |parameter  |equation|values|detail|
 |-----------|--------|------|------|
-|efficiency |$\frac{x_{DRI}}{\text{gas-input}_{DRI}}$|$\frac{x_{DRI}}{2.78}\frac{\text{t}_{DRI}}{\text{MWh}_{gas}}$|$x_{DRI}$ ton of DRI produced per MWh of gas|
-|efficiency2|$\frac{\text{ore-input}_{DRI}}{\text{gas-input}_{DRI}}$|$\frac{1.59x_{DRI}}{2.78}\frac{\text{t}_{ore}}{\text{MWh}_{gas}}$|$x_{DRI}$ ton of iron-ore needed per MWh of gas|
-|efficiency3|$i_{CO2,gas}*(1-c_{steel,CC})$|$0.198*0.1\frac{\text{tCO}_2}{\text{MWh}_{gas}}$|ton of $\text{CO}_2$ released to atmosphere per MWh of gas|
-|efficiency4|$i_{CO2,gas}*c_{steel,CC}$|$0.198*0.9\frac{\text{tCO}_2}{\text{MWh}_{gas}}$|ton of $\text{CO}_2$ captured per MWh of gas|
-|efficiency5|$i_{CO2,gas}*c_{steel,CC}*\text{elec-input}_{DRI}$|$0.198*0.9*0.16\frac{\text{MWh}_{el}}{\text{MWh}_{gas}}$|ton of $\text{CO}_2$ captured per MWh of gas|
+|efficiency |$x_{DRI}/gas-input_{DRI}$|$x_{DRI}/2.78(t_{DRI}/MWh_{gas})$|$x_{DRI}$ ton of DRI produced per MWh of gas|
+|efficiency2|$ore-input_{DRI}/gas-input_{DRI}$|$1.59x_{DRI}/2.78(t_{ore}/MWh_{gas})$|$x_{DRI}$ ton of iron-ore needed per MWh of gas|
+|efficiency3|$i_{CO2,gas}*(1-c_{steel,CC})$|$0.198*0.1(tCO_2/MWh_{gas})$|ton of $\text{CO}_2$ released to atmosphere per MWh of gas|
+|efficiency4|$i_{CO2,gas}*c_{steel,CC}$|$0.198*0.9(tCO_{2,cap}/MWh_{gas})$|ton of $\text{CO}_2$ captured per MWh of gas|
+|efficiency5|$i_{CO2,gas}*c_{steel,CC}*elec-input_{DRI}$|$0.198*0.9*0.16(MWh_{el}/MWh_{gas})$|ton of $\text{CO}_2$ captured per MWh of gas|
 
 where $c_{steel,CC}$ - carbon capture rate for steel industry, $i_{CO2,gas}$ - carbon intensity of gas.

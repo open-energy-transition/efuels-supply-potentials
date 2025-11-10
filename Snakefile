@@ -661,12 +661,15 @@ if config["foresight"] == "myopic":
             ),
             augmented_line_connection=config["augmented_line_connection"],
             temporal_matching_carriers=config["policy_config"]["hydrogen"]["temporal_matching_carriers"],
+            distance_crs="EPSG:3857",
+            grid_region_field="Grid Region",
         input:
             ces_path="data/current_electricity_state_policies/clean_targets.csv",
             res_path="data/current_electricity_state_policies/res_targets.csv",
             production_tax_credits="data/tax_credits/production_tax_credits.csv",
             investment_tax_credits="data/tax_credits/investment_tax_credits.csv",
             gadm_shape_path="data/demand_data/gadm41_USA_1.json",
+            grid_regions_shape_path="data/temporal_matching/needs_grid_regions_aggregated.geojson",
             overrides="data/override_component_attrs",
             network=PYPSA_EARTH_DIR + RESDIR
             + "prenetworks-brownfield/elec_s{simpl}_{clusters}_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export_custom.nc",
@@ -727,12 +730,15 @@ if config["foresight"] == "overnight" and config["state_policy"] != "off":
             solving=config["solving"],
             augmented_line_connection=config["augmented_line_connection"],
             temporal_matching_carriers=config["policy_config"]["hydrogen"]["temporal_matching_carriers"],
+            distance_crs="EPSG:3857",
+            grid_region_field="Grid Region",
         input:
             ces_path="data/current_electricity_state_policies/clean_targets.csv",
             res_path="data/current_electricity_state_policies/res_targets.csv",
             production_tax_credits="data/tax_credits/production_tax_credits.csv",
             investment_tax_credits="data/tax_credits/investment_tax_credits.csv",
             gadm_shape_path="data/demand_data/gadm41_USA_1.json",
+            grid_regions_shape_path="data/temporal_matching/needs_grid_regions_aggregated.geojson",
             overrides="data/override_component_attrs",
             network=PYPSA_EARTH_DIR + RESDIR
             + "prenetworks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{sopts}_{planning_horizons}_{discountrate}_{demand}_{h2export}export.nc",

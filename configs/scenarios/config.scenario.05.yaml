@@ -106,6 +106,7 @@ policy_config:
   hydrogen:
     temporal_matching: "hourly" # either "hourly", "monthly", "yearly", "no_temporal_matching"
     additionality: true
+    deliverability: true
     temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro, nuclear]
 
 demand_data:

@@ -88,7 +88,7 @@ import pypsa
 import sys
 sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
 sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../submodules/pypsa-earth/scripts/")))
-from scripts._helper import configure_logging, create_logger, mock_snakemake, update_config_from_wildcards
+from scripts._helper import configure_logging, create_logger, mock_snakemake, attach_grid_region_to_buses, update_config_from_wildcards
 from _helpers import override_component_attrs
 from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 from pypsa.linopf import (
@@ -1328,9 +1328,14 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
     ValueError:
         If the `time_period` is invalid or not supported.
     """
-    temporal_matching_carriers = snakemake.params.temporal_matching_carriers
 
+    temporal_matching_carriers = snakemake.params.temporal_matching_carriers
     allowed_excess = snakemake.config["policy_config"]["hydrogen"]["allowed_excess"]
+    deliverability_tolerance = 1.0  # 100% matching across grid regions
+    region_col = "grid_region"
+
+    if region_col not in n.buses.columns:
+        raise ValueError(f"'{region_col}' not found in n.buses. Attach grid regions before solving.")
 
     res_gen_index = n.generators.loc[n.generators.carrier.isin(temporal_matching_carriers)].index
     res_stor_index = n.storage_units.loc[
@@ -1350,7 +1355,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         res_stor_index = res_stor_index.intersection(new_stor)
 
     logger.info(
-        "setting h2 export to {}ly matching constraint {} additionality".format(
+        "setting h2 export to {}ly matching constraint {} additionality (with deliverability)".format(
             time_period, "with" if additionality else "without"
         )
     )
@@ -1361,9 +1366,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         columns=res_gen_index,
     )
 
-    res = linexpr((weightings_gen, get_var(n, "Generator", "p")[res_gen_index])).sum(
-        axis=1
-    )
+    res = linexpr((weightings_gen, get_var(n, "Generator", "p")[res_gen_index])).sum(axis=1)
 
     if not res_stor_index.empty:
         weightings_stor = pd.DataFrame(
@@ -1393,30 +1396,66 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         n.links.loc[electrolyzers].index
     ]
     weightings_electrolysis = pd.DataFrame(
-        np.outer(
-            n.snapshot_weightings["generators"], [
-                1.0] * len(electrolysis.columns)
-        ),
+        np.outer(n.snapshot_weightings["generators"], [1.0] * len(electrolysis.columns)),
         index=n.snapshots,
         columns=electrolysis.columns,
     )
 
-    elec_input = linexpr((-allowed_excess * weightings_electrolysis, electrolysis)).sum(
-        axis=1
-    )
+    # electricity input from electrolysers (negative sign: consumption)
+    elec_input = linexpr((-allowed_excess * weightings_electrolysis, electrolysis)).sum(axis=1)
 
     if time_period == "month":
         elec_input = elec_input.groupby(elec_input.index.month).sum()
     elif time_period == "year":
         elec_input = elec_input.groupby(elec_input.index.year).sum()
 
-    # add temporal matching constraints
-    for i in range(len(res.index)):
-        lhs = res.iloc[i] + "\n" + elec_input.iloc[i]
+    # --- Regional deliverability matching ---
+    gen_region = n.buses.loc[n.generators.loc[res_gen_index, "bus"], region_col].values if len(res_gen_index) > 0 else np.array([])
+    stor_region = n.buses.loc[n.storage_units.loc[res_stor_index, "bus"], region_col].values if len(res_stor_index) > 0 else np.array([])
+    el_region = n.buses.loc[n.links.loc[electrolyzers, "bus0"], region_col].values
+    regions = pd.Index(pd.unique(el_region))
 
-        con = define_constraints(
-            n, lhs, ">=", 0.0, f"RESconstraints_{i}", f"REStarget_{i}"
-        )
+    # Aggregate renewable generation and electrolyzer consumption according to the selected
+    # temporal matching (hourly, monthly, yearly). This defines at which time scale
+    # the RES-to-hydrogen matching constraint is enforced, from strict hour-by-hour compliance
+    # to fully aggregated annual matching when temporal_matching = "no_temporal_matching".
+    def _agg(series):
+        if time_period == "hour":
+            return series
+        if time_period == "month":
+            return series.groupby(series.index.month).sum()
+        if time_period == "year":
+            return series.groupby(series.index.year).sum()
+        if time_period == "no_temporal_matching":
+            series.index = pd.Index([0] * len(series))
+            return series.groupby(level=0).sum()
+        raise ValueError(f"Unsupported time_period: {time_period}")
+
+    for r in regions:
+        # RES generation in region r
+        res_r = 0.0
+        if len(res_gen_index) > 0 and (gen_region == r).any():
+            res_r = linexpr((weightings_gen, get_var(n, "Generator", "p")[res_gen_index[gen_region == r]])).sum(axis=1)
+        if len(res_stor_index) > 0 and (stor_region == r).any():
+            res_r += linexpr(
+                (weightings_stor, get_var(n, "StorageUnit", "p_dispatch")[res_stor_index[stor_region == r]])
+            ).sum(axis=1)
+
+        # Electrolyzer electricity input in region r (apply tolerance)
+        el_r = linexpr(
+            (-deliverability_tolerance * weightings_electrolysis,
+             get_var(n, "Link", "p")[electrolyzers[el_region == r]])
+        ).sum(axis=1)
+
+        res_r = _agg(res_r)
+        el_r = _agg(el_r)
+
+        # add temporal and regional matching constraints
+        for i in range(len(res_r.index)):
+            lhs = res_r.iloc[i] + el_r.iloc[i]  # RES - input >= 0
+            define_constraints(
+                n, lhs, ">=", 0.0, f"RESconstraints_{r}_{i}", f"REStarget_{r}_{i}"
+            )
 
 
 def add_chp_constraints(n):
@@ -1784,6 +1823,13 @@ if __name__ == "__main__":
     overrides = override_component_attrs(snakemake.input.overrides)
     n = pypsa.Network(snakemake.input.network,
                       override_component_attrs=overrides)
+
+    n = attach_grid_region_to_buses(
+        n,
+        path_shapes=snakemake.input.grid_regions_shape_path,
+        grid_region_field=snakemake.params.grid_region_field,
+        distance_crs=snakemake.params.distance_crs,
+    )
 
     if snakemake.params.augmented_line_connection.get("add_to_snakefile"):
         n.lines.loc[n.lines.index.str.contains("new"), "s_nom_min"] = (

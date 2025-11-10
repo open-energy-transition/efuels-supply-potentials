@@ -42,3 +42,32 @@ $x_{CC}=gas_{input, steel-CC}*(c_{steel,CC}*i_{CO2,gas})$
 $x_{CC} = 0.76 MWh_{gas}/tCO2_{cap} * 0.9 tCO2_{cap}/tCO2 * 0.198 tCO2/MWh_{gas} = 0.135432$
 
 So, $x_{DRI} = 1-0.135432 = 0.864568$
+
+Thus, we can use the efficiencies provided in the table above.
+
+## BF-BOF and BF-BOF CC
+Here is the information about the buses of BF-BOF industry.
+
+|bus  |BF-BOF        |BF-BOF CC     |
+|-----|--------------|--------------|
+|bus0 |coal          |coal          |
+|bus1 |steel BF-BOF  |steel BF-BOF  |
+|bus2 |iron ore      |iron ore      |
+|bus3 |co2 atmosphere|co2 atmosphere|
+|bus4 |-             |co2 captured  |
+|bus5 |-             |gas           |
+
+The following equation describes the $\text{CO}_2$ capture per $MWh_{coal}$: 
+$ CO_{2, cap}= (i_{CO2, coal} + k * i_{CO2, gas})*c_{steel,CC}$
+
+where $k$ is a ratio of gas to coal energy usage with unit of $MWh_{gas}/MWh_{coal}$. We can call $k$ as **gas use rate** as compared with coal.
+
+Gas use rate can be calculated alternatively using captured $\text{CO}_2$ and $gas_{input,CC}$:
+
+$k (\text{gas use rate}) = (i_{CO2, coal} + k * i_{CO2, gas})*c_{steel,CC} * gas_{input,CC}$
+
+From this eqation, we can obtain $k$ defined by other parameters:
+
+$k = i_{CO2, coal} *c_{steel,CC} * gas_{input,CC} / (1 - i_{CO2, gas} * c_{steel,CC} * gas_{input,CC}) $
+
+Gas use rate $k$ is directly used as `efficiency5`. While carbon capture efficiency (`efficiency4`) is defined as $(i_{CO2, coal} + k * i_{CO2, gas}) *c_{steel,CC}$

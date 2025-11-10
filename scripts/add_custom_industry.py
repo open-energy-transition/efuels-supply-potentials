@@ -321,6 +321,16 @@ def add_steel(n):
             * costs.at["steel carbon capture retrofit", "capture_rate"]
         )
 
+        # compute fraction of gas input used in carbon capture (look into doc/diagrams/efficiency_calculations.md for details)
+        x_cc = (
+            costs.at["steel carbon capture retrofit", "gas-input"]
+            * costs.at["steel carbon capture retrofit", "capture_rate"]
+            * costs.at["gas", "CO2 intensity"]
+        )
+
+        # compute fraction of gas input used in DRI
+        x_dri = 1 - x_cc
+
         # add DRI CC
         n.madd(
             "Link",
@@ -333,8 +343,8 @@ def add_steel(n):
             bus5=nodes,
             p_nom_extendable=True,
             carrier="DRI CC",
-            efficiency=1/costs.at["natural gas direct iron reduction furnace", "gas-input"],
-            efficiency2=-costs.at["natural gas direct iron reduction furnace", "ore-input"]
+            efficiency=x_dri/costs.at["natural gas direct iron reduction furnace", "gas-input"],
+            efficiency2=-x_dri*costs.at["natural gas direct iron reduction furnace", "ore-input"]
             / costs.at["natural gas direct iron reduction furnace", "gas-input"],
             efficiency3=costs.at["gas", "CO2 intensity"]
             * (1 - costs.at["steel carbon capture retrofit", "capture_rate"]),
@@ -428,16 +438,13 @@ def add_steel(n):
         bus0=nodes + " coal",
         bus1=nodes + " steel BF-BOF",
         bus2=nodes + " iron ore",
-        bus3=nodes + " scrap steel",
-        bus4="co2 atmosphere",
+        bus3="co2 atmosphere",
         p_nom_extendable=True,
         carrier="BF-BOF",
         efficiency=1/costs.at["blast furnace-basic oxygen furnace", "coal-input"],
         efficiency2=-costs.at["blast furnace-basic oxygen furnace", "ore-input"]
         / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
-        efficiency3=-costs.at["blast furnace-basic oxygen furnace", "scrap-input"]
-        / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
-        efficiency4=costs.at["coal", "CO2 intensity"],
+        efficiency3=costs.at["coal", "CO2 intensity"],
         capital_cost=costs.at["blast furnace-basic oxygen furnace", "fixed"]
         / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
         lifetime=costs.at["blast furnace-basic oxygen furnace", "lifetime"],
@@ -454,6 +461,19 @@ def add_steel(n):
             * costs.at["steel carbon capture retrofit", "capture_rate"]
         )
 
+        # compute ratio of gas/coal usage (look into doc/diagrams/efficiency_calculations.md for details)
+        k = (
+            costs.at["steel carbon capture retrofit", "gas-input"]
+            * costs.at["steel carbon capture retrofit", "capture_rate"]
+            * costs.at["coal", "CO2 intensity"]
+            / (1 - (
+                costs.at["steel carbon capture retrofit", "gas-input"]
+                * costs.at["steel carbon capture retrofit", "capture_rate"]
+                * costs.at["gas", "CO2 intensity"])
+            )
+        )
+
+
         # add BF-BOF CC
         n.madd(
             "Link",
@@ -461,20 +481,21 @@ def add_steel(n):
             bus0=nodes + " coal",
             bus1=nodes + " steel BF-BOF",
             bus2=nodes + " iron ore",
-            bus3=nodes + " scrap steel",
-            bus4="co2 atmosphere",
-            bus5=nodes + " co2 stored",
+            bus3="co2 atmosphere",
+            bus4=nodes + " co2 stored",
+            bus5=nodes + " gas",
             p_nom_extendable=True,
             carrier="BF-BOF CC",
             efficiency=1/costs.at["blast furnace-basic oxygen furnace", "coal-input"],
             efficiency2=-costs.at["blast furnace-basic oxygen furnace", "ore-input"]
             / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
-            efficiency3=-costs.at["blast furnace-basic oxygen furnace", "scrap-input"]
-            / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
-            efficiency4=costs.at["coal", "CO2 intensity"]
+            efficiency3=(costs.at["coal", "CO2 intensity"]
+            + k * costs.at["gas", "CO2 intensity"])
             * (1 - costs.at["steel carbon capture retrofit", "capture_rate"]),
-            efficiency5=costs.at["coal", "CO2 intensity"]
+            efficiency4=(costs.at["coal", "CO2 intensity"]
+            + k * costs.at["gas", "CO2 intensity"])
             * costs.at["steel carbon capture retrofit", "capture_rate"],
+            efficiency5=k,
             capital_cost=capital_cost,
             lifetime=costs.at["steel carbon capture retrofit", "lifetime"],
         )
@@ -509,7 +530,7 @@ def add_steel(n):
         nodes + " steel EAF",
         bus0=nodes,
         bus1=nodes + " steel EAF",
-        bus2=nodes + " scrap",
+        bus2=nodes + " scrap steel",
         p_nom_extendable=True,
         carrier="EAF",
         efficiency=1/costs.at["electric arc furnace with hbi and scrap", "electricity-input"],
@@ -1073,14 +1094,14 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "add_custom_industry",
-            configfile="configs/calibration/config.base.yaml",
+            configfile="configs/scenarios/config.scenario.02.yaml",
             simpl="",
-            ll="copt",
+            ll="v1",
             clusters=100,
-            opts="Co2L-24H",
+            opts="CCL-24H",
             sopts="24H",
-            planning_horizons="2020",
-            discountrate="0.071",
+            planning_horizons="2030",
+            discountrate="0.07",
             demand="AB",
         )
 

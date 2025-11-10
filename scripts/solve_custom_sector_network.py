@@ -228,16 +228,30 @@ def apply_tax_credits_to_network(
 
     # Load PTC and ITC file
     ptc_df = pd.read_csv(ptc_path)
-    ptc_credits = dict(zip(ptc_df["carrier"], ptc_df["credit"]))
 
     itc_df = pd.read_csv(itc_path)
 
     # Pre-OB3 tax credits option
     pre_ob3_tax_credits = None
     if config_file is not None:
-        policies_cfg = config_file.get("policies", {})
-        if "pre_ob3_tax_credits" in policies_cfg:
-            pre_ob3_tax_credits = policies_cfg["pre_ob3_tax_credits"]
+        pre_ob3_tax_credits = config_file.get("policies", {}).get("pre_ob3_tax_credits", None)
+
+    regime = "IRA 2022" if pre_ob3_tax_credits else "OB3"
+
+    # Filter PTC by regime if column exists
+    if "regime" in ptc_df.columns:
+        ptc_active = ptc_df[
+            (ptc_df["regime"] == regime) | (ptc_df["regime"].isna()) | (ptc_df["regime"] == "")
+            ]
+    else:
+        ptc_active = ptc_df
+
+    # Build dictionary for active credits
+    ptc_credits = dict(zip(ptc_active["carrier"], ptc_active["credit"]))
+
+    # Load ITC file and dictionary
+    itc_df = pd.read_csv(itc_path)
+    itc_credits = dict(zip(itc_df["carrier"], itc_df["credit"]))
 
     biomass_aliases = {
         "biomass",
@@ -432,7 +446,9 @@ def apply_tax_credits_to_network(
         elif carrier in cc_credit_on_co2_stored:
             if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
 
-                def get_co2_stored_efficiency(row):
+                # Detect efficiency toward eligible CO2 buses (only buffer co2)
+                def get_co2_eligible_efficiency(row):
+                    co2_bus_patterns = ("buffer co2",)
                     for key, val in row.items():
                         if (
                             key.startswith("bus")
@@ -443,12 +459,10 @@ def apply_tax_credits_to_network(
                             return row.get(eff_key, 0.0)
                     return 0.0
 
-                tco2 = get_co2_stored_efficiency(link)
+                tco2 = get_co2_eligible_efficiency(link)
                 credit_per_t = ptc_credits.get(carrier, 0.0)
 
-                if pre_ob3_tax_credits:
-                    credit_per_t -= 25  # from 85 to 60 USD/t_CO2
-
+                # Always apply usage credit
                 if tco2 > 0 and credit_per_t != 0.0:
                     credit = credit_per_t * tco2
                     new_cost = base_cost + credit
@@ -475,9 +489,7 @@ def apply_tax_credits_to_network(
                 tco2 = link.efficiency
                 credit_per_t = ptc_credits.get(carrier, 0.0)
 
-                if pre_ob3_tax_credits:
-                    credit_per_t *= 130 / 180  # from 180 to 130 USD/t_CO2
-
+                # Apply usage credit
                 if tco2 > 0 and credit_per_t != 0.0:
                     credit = credit_per_t * tco2
                     new_cost = base_cost + credit

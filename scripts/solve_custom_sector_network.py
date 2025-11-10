@@ -1433,22 +1433,41 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
 
     for r in regions:
         # RES generation in region r
-        res_r = 0.0
-        if len(res_gen_index) > 0 and (gen_region == r).any():
-            res_r = linexpr((weightings_gen, get_var(n, "Generator", "p")[res_gen_index[gen_region == r]])).sum(axis=1)
-        if len(res_stor_index) > 0 and (stor_region == r).any():
-            res_r += linexpr(
-                (weightings_stor, get_var(n, "StorageUnit", "p_dispatch")[res_stor_index[stor_region == r]])
-            ).sum(axis=1)
+        for r in regions:
+            # subset masks for this region
+            gen_mask = (gen_region == r) if len(res_gen_index) > 0 else np.array([], dtype=bool)
+            stor_mask = (stor_region == r) if len(res_stor_index) > 0 else np.array([], dtype=bool)
+            el_mask = (el_region == r)
 
-        # Electrolyzer electricity input in region r (apply tolerance)
-        el_r = linexpr(
-            (-deliverability_tolerance * weightings_electrolysis,
-             get_var(n, "Link", "p")[electrolyzers[el_region == r]])
-        ).sum(axis=1)
+            # renewable generation in region r
+            res_r = 0.0
+            if gen_mask.any():
+                wg = weightings_gen.loc[:, weightings_gen.columns[gen_mask]]
+                pgen = get_var(n, "Generator", "p")[res_gen_index[gen_mask]]
+                res_r = linexpr((wg, pgen)).sum(axis=1)
+            if stor_mask.any():
+                ws = weightings_stor.loc[:, weightings_stor.columns[stor_mask]]
+                pdisp = get_var(n, "StorageUnit", "p_dispatch")[res_stor_index[stor_mask]]
+                res_r += linexpr((ws, pdisp)).sum(axis=1)
 
-        res_r = _agg(res_r)
-        el_r = _agg(el_r)
+            # electrolyzer electricity input (negative, consumption)
+            if el_mask.any():
+                we = weightings_electrolysis.loc[:, weightings_electrolysis.columns[el_mask]]
+                pel = get_var(n, "Link", "p")[electrolyzers[el_mask]]
+                el_r = linexpr((-deliverability_tolerance * we, pel)).sum(axis=1)
+            else:
+                el_r = 0.0
+
+            # temporal aggregation
+            res_r = _agg(res_r)
+            el_r = _agg(el_r)
+
+            # add temporal + regional matching constraints
+            for i in range(len(res_r.index)):
+                lhs = res_r.iloc[i] + el_r.iloc[i]  # RES - input >= 0
+                define_constraints(
+                    n, lhs, ">=", 0.0, f"RESconstraints_{r}_{i}", f"REStarget_{r}_{i}"
+                )
 
         # add temporal and regional matching constraints
         for i in range(len(res_r.index)):

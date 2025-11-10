@@ -19,7 +19,7 @@ Here is the information about the buses of DRI industry.
 ### DRI 
 |parameter  |equation|values|detail|
 |-----------|--------|------|------|
-|efficiency |$\frac{1}{\text{gas-input}_{DRI}}$|$\frac{1}{2.78}\frac{\text{t}_{DRI}}{\text{MWh}_{gas}}$|ton of DRI produced per MWh of gas|
+|efficiency |$\frac{1}{\text{gas-input}_{DRI}}$|$\frac{1}{2.78} \frac{\text{t}_{DRI}}{\text{MWh}_{gas}}$|ton of DRI produced per MWh of gas|
 |efficiency2|$\frac{\text{ore-input}_{DRI}}{\text{gas-input}_{DRI}}$|$\frac{1.59}{2.78}\frac{\text{t}_{ore}}{\text{MWh}_{gas}}$|ton of iron-ore needed per MWh of gas|
 |efficiency3|$\text{CO}_2\text{-intensity}_{gas}$|$0.198\frac{\text{tCO}_2}{\text{MWh}_{gas}}$|ton of $\text{CO}_2$ released to atmosphere per MWh of gas|
 

@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Add **pinned environment files** for different OS for reproducibility [PR #118](https://github.com/open-energy-transition/efuels-supply-potentials/pull/118)
+
 * Restore tax credits for batteries and correct application for DAC. [PR #120](https://github.com/open-energy-transition/efuels-supply-potentials/pull/120)
 
 * Fix eligibility criteria for CC retrofits to comply with CO2 parallel routes. [PR #116](https://github.com/open-energy-transition/efuels-supply-potentials/pull/116)

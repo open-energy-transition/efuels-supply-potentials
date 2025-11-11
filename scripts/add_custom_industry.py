@@ -438,13 +438,16 @@ def add_steel(n):
         bus0=nodes + " coal",
         bus1=nodes + " steel BF-BOF",
         bus2=nodes + " iron ore",
-        bus3="co2 atmosphere",
+        bus3=nodes + " scrap steel",
+        bus4="co2 atmosphere",
         p_nom_extendable=True,
         carrier="BF-BOF",
         efficiency=1/costs.at["blast furnace-basic oxygen furnace", "coal-input"],
         efficiency2=-costs.at["blast furnace-basic oxygen furnace", "ore-input"]
         / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
-        efficiency3=costs.at["coal", "CO2 intensity"],
+        efficiency3=-costs.at["blast furnace-basic oxygen furnace", "scrap-input"]
+        / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
+        efficiency4=costs.at["coal", "CO2 intensity"],
         capital_cost=costs.at["blast furnace-basic oxygen furnace", "fixed"]
         / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
         lifetime=costs.at["blast furnace-basic oxygen furnace", "lifetime"],
@@ -486,21 +489,24 @@ def add_steel(n):
             bus0=nodes + " coal",
             bus1=nodes + " steel BF-BOF",
             bus2=nodes + " iron ore",
-            bus3="co2 atmosphere",
-            bus4=nodes + " co2 stored",
-            bus5=nodes + " gas",
-            bus6=nodes,
+            bus3=nodes + " scrap steel",
+            bus4="co2 atmosphere",
+            bus5=nodes + " co2 stored",
+            bus6=nodes + " gas",
+            bus7=nodes,
             p_nom_extendable=True,
             carrier="BF-BOF CC",
             efficiency=1/costs.at["blast furnace-basic oxygen furnace", "coal-input"],
             efficiency2=-costs.at["blast furnace-basic oxygen furnace", "ore-input"]
             / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
-            efficiency3=co2_output
-            * (1 - costs.at["steel carbon capture retrofit", "capture_rate"]),
+            efficiency3=-costs.at["blast furnace-basic oxygen furnace", "scrap-input"]
+            / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
             efficiency4=co2_output
+            * (1 - costs.at["steel carbon capture retrofit", "capture_rate"]),
+            efficiency5=co2_output
             * costs.at["steel carbon capture retrofit", "capture_rate"],
-            efficiency5=-k,
-            efficiency6=(-co2_output
+            efficiency6=-k,
+            efficiency7=(-co2_output
             * costs.at["steel carbon capture retrofit", "capture_rate"]
             * costs.at["steel carbon capture retrofit", "electricity-input"],
             ),

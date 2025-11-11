@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Integrate **gas-input** of steel and cement carbon capture technologies. [PR #121](https://github.com/open-energy-transition/efuels-supply-potentials/pull/121)
+
 * Add **pinned environment files** for different OS for reproducibility [PR #118](https://github.com/open-energy-transition/efuels-supply-potentials/pull/118)
 
 * Restore tax credits for batteries and correct application for DAC. [PR #120](https://github.com/open-energy-transition/efuels-supply-potentials/pull/120)

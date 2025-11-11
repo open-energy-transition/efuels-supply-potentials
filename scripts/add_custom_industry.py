@@ -473,6 +473,11 @@ def add_steel(n):
             )
         )
 
+        # compute CO2 output
+        co2_output = (
+            costs.at["coal", "CO2 intensity"]
+            + k * costs.at["gas", "CO2 intensity"]
+        )
 
         # add BF-BOF CC
         n.madd(
@@ -484,18 +489,18 @@ def add_steel(n):
             bus3="co2 atmosphere",
             bus4=nodes + " co2 stored",
             bus5=nodes + " gas",
+            bus6=nodes,
             p_nom_extendable=True,
             carrier="BF-BOF CC",
             efficiency=1/costs.at["blast furnace-basic oxygen furnace", "coal-input"],
             efficiency2=-costs.at["blast furnace-basic oxygen furnace", "ore-input"]
             / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
-            efficiency3=(costs.at["coal", "CO2 intensity"]
-            + k * costs.at["gas", "CO2 intensity"])
+            efficiency3=co2_output
             * (1 - costs.at["steel carbon capture retrofit", "capture_rate"]),
-            efficiency4=(costs.at["coal", "CO2 intensity"]
-            + k * costs.at["gas", "CO2 intensity"])
+            efficiency4=co2_output
             * costs.at["steel carbon capture retrofit", "capture_rate"],
-            efficiency5=k,
+            efficiency5=-k,
+            efficiency6=-co2_output * costs.at["steel carbon capture retrofit", "electricity-input"],
             capital_cost=capital_cost,
             lifetime=costs.at["steel carbon capture retrofit", "lifetime"],
         )

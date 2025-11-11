@@ -56,6 +56,7 @@ Here is the information about the buses of BF-BOF industry.
 |bus3 |co2 atmosphere|co2 atmosphere|
 |bus4 |-             |co2 captured  |
 |bus5 |-             |gas           |
+|bus6 |-             |electricity   |
 
 ### BF-BOF CC
 The following equation describes the $CO_2$ capture per $MWh_{coal}$:
@@ -79,6 +80,7 @@ Gas use rate $k$ is directly used as `efficiency5`. While carbon capture efficie
 |efficiency3|$(i_{CO2, coal} + k * i_{CO2, gas}) * (1 - c_{steel,CC})$|
 |efficiency4|$(i_{CO2, coal} + k * i_{CO2, gas}) *c_{steel,CC}$|
 |efficiency5|$-k$|
+|efficiency6|$(i_{CO2, coal} + k * i_{CO2, gas}) *c_{steel,CC} * elec_{input,CC}$|
 
 ## Cement dry clinker and cement dry clinker CC
 

@@ -648,6 +648,30 @@ def add_cement(n):
             costs.at["cement dry clinker", "VOM"]
             / costs.at["cement dry clinker", "gas-input"]
         )
+
+        # compute fraction of gas input used in carbon capture (look into doc/diagrams/efficiency_calculations.md for details)
+        x_cc = (
+            costs.at["cement carbon capture retrofit", "gas-input"]
+            * costs.at["cement carbon capture retrofit", "capture_rate"]
+            * costs.at["gas", "CO2 intensity"]
+        )
+
+        # compute fraction of gas input used in cement clinker production
+        x_clinker = 1 - x_cc
+
+        # compute fraction of electricity input used in cement clinker production
+        elec_clinker = (
+            -costs.at["cement dry clinker", "electricity-input"]
+            / costs.at["cement dry clinker", "gas-input"]
+        )
+
+        # compute fraction of electricity input used in carbon capture
+        elec_cc = (
+            -costs.at["cement carbon capture retrofit", "electricity-input"]
+            * costs.at["cement carbon capture retrofit", "capture_rate"]
+            * costs.at["gas", "CO2 intensity"]
+        )
+
         # add cement dry clinker CC
         n.madd(
             "Link",
@@ -659,9 +683,8 @@ def add_cement(n):
             bus4=nodes + " co2 stored",
             p_nom_extendable=True,
             carrier="dry clinker CC",
-            efficiency=1/costs.at["cement dry clinker", "gas-input"],
-            efficiency2=-costs.at["cement dry clinker", "electricity-input"]
-            / costs.at["cement dry clinker", "gas-input"],
+            efficiency=x_clinker/costs.at["cement dry clinker", "gas-input"],
+            efficiency2=elec_clinker + elec_cc,
             efficiency3=costs.at["gas", "CO2 intensity"]
             * (1 - costs.at["cement carbon capture retrofit", "capture_rate"]),
             efficiency4=costs.at["gas", "CO2 intensity"]

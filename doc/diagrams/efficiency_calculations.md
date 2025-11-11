@@ -60,7 +60,7 @@ Here is the information about the buses of BF-BOF industry.
 ### BF-BOF CC
 The following equation describes the $CO_2$ capture per $MWh_{coal}$:
 
-$ CO_{2, cap}$ $ = (i_{CO2, coal} + k * i_{CO2, gas})*c_{steel,CC}$
+$CO_{2,cap} = (i_{CO2, coal} + k * i_{CO2, gas})*c_{steel,CC} $
 
 where $k$ is a ratio of gas to coal energy usage with unit of $MWh_{gas}/MWh_{coal}$. We can call $k$ as **gas use rate** as compared with coal.
 

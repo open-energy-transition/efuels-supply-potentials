@@ -1187,10 +1187,11 @@ if __name__ == "__main__":
     if snakemake.params.add_cement:
         add_cement(n)
 
-    # fill efficiency5, bus5, efficiency6 and bus6 for missing links if exists
-    if {"efficiency5", "efficiency6"} & set(n.links.columns):
+    # fill efficiency5-7 and bus5-7 for missing links if exists
+    if {"efficiency5", "efficiency6", "efficiency7"} & set(n.links.columns):
         extend_links(n, level=5)
         extend_links(n, level=6)
+        extend_links(n, level=7)
 
     # apply biogenic CO2 split
     if snakemake.params.biogenic_co2 and snakemake.params.add_ethanol and ("ethanol" in snakemake.params.ccs_retrofit):

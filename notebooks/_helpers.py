@@ -579,186 +579,264 @@ def print_hydrogen_capacity_summary(capacity_data):
             f"{carrier:25s}: {capacity:8.1f} MW ({capacity/total_national*100:5.1f}%)")
 
 
-def create_ft_capacity_by_state_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_gw=0.1, year_title=True):
+def create_ft_capacity_by_state_map(
+    network,
+    path_shapes,
+    network_name="Network",
+    distance_crs=4326,
+    min_capacity_gw=0.1,
+    year_title=True
+):
     """
-    Create a geographic map with simple round circles showing FT capacity per state in gigawatts (GW input H2).
+    Create a geographic map showing Fischer–Tropsch (FT) capacity per state in GW input H2.
+    The plot shows one bubble per state (aggregated), but the function returns the link-level table.
+    CO₂ pipelines are drawn in gray with legend (10–50 MW).
     """
 
-    year_match = re.search(r'\d{4}', network_name)
+    # Extract year from network name
+    year_match = re.search(r"\d{4}", network_name)
     year_str = f"{year_match.group()}" if year_match else ""
 
+    # Filter FT links
     ft_links = network.links[
-        network.links['carrier'].str.contains('FT|Fischer|Tropsch', case=False, na=False) |
-        network.links.index.str.contains(
-            'FT|Fischer|Tropsch', case=False, na=False)
+        network.links["carrier"].str.contains("FT|Fischer|Tropsch", case=False, na=False)
+        | network.links.index.str.contains("FT|Fischer|Tropsch", case=False, na=False)
     ].copy()
-
     if ft_links.empty:
         print(f"No FT links found in the network: {network_name}")
         return None, None, None
 
+    # Merge link data with bus coordinates and state info
     links_with_state = ft_links.merge(
-        network.buses[['state', 'x', 'y']],
-        left_on='bus0',
+        network.buses[["state", "x", "y"]],
+        left_on="bus0",
         right_index=True,
-        how='left'
+        how="left",
     )
-    links_with_state['p_nom_gw'] = links_with_state['p_nom_opt'] / 1000
+    links_with_state["p_nom_gw"] = links_with_state["p_nom_opt"] / 1000
 
+    # Aggregate to state-level capacity for plotting only
+    state_capacity = (
+        links_with_state.groupby("state", as_index=False)
+        .agg({"x": "mean", "y": "mean", "p_nom_gw": "sum"})
+        .rename(columns={"p_nom_gw": "total_gw"})
+    )
+    state_capacity = state_capacity[state_capacity["total_gw"] >= min_capacity_gw]
+
+    # Load shapes and plot base map
     shapes = gpd.read_file(path_shapes, crs=distance_crs)
     shapes["ISO_1"] = shapes["ISO_1"].apply(lambda x: x.split("-")[1])
     shapes.rename(columns={"ISO_1": "State"}, inplace=True)
 
-    state_capacity = links_with_state.groupby(
-        'state').agg({'p_nom_gw': 'sum'}).reset_index()
-    states_to_plot = state_capacity[state_capacity['p_nom_gw']
-                                    >= min_capacity_gw]['state'].tolist()
-
-    fig, ax = plt.subplots(figsize=(12, 6), subplot_kw={
-                           "projection": ccrs.PlateCarree()})
+    fig, ax = plt.subplots(figsize=(12, 6), subplot_kw={"projection": ccrs.PlateCarree()})
     bbox = box(-130, 20, -65, 50)
     shapes_clip = shapes.to_crs(epsg=4326).clip(bbox)
-    shapes_clip.plot(ax=ax, facecolor='whitesmoke',
-                     edgecolor='gray', alpha=0.7, linewidth=0.5)
+    shapes_clip.plot(ax=ax, facecolor="whitesmoke", edgecolor="gray", alpha=0.7, linewidth=0.5)
 
     lon_min, lon_max = -130, -65
     lat_min, lat_max = 20, 50
-    pie_scale = 0.2
 
-    for state in states_to_plot:
-        data = links_with_state[links_with_state['state'] == state]
-        if data.empty:
-            continue
-        x = data['x'].mean()
-        y = data['y'].mean()
+    # --- CO2 PIPELINES -------------------------------------------------------
+    co2_links = network.links[network.links["carrier"].str.lower() == "co2 pipeline"].copy()
+    if not co2_links.empty:
+        line_scale = 30
+        for _, link in co2_links.iterrows():
+            bus0 = network.buses.loc[link.bus0, ["x", "y"]]
+            bus1 = network.buses.loc[link.bus1, ["x", "y"]]
+            if (
+                lon_min < bus0.x < lon_max
+                and lat_min < bus0.y < lat_max
+                and lon_min < bus1.x < lon_max
+                and lat_min < bus1.y < lat_max
+            ):
+                ax.plot(
+                    [bus0.x, bus1.x],
+                    [bus0.y, bus1.y],
+                    color="dimgray",
+                    linewidth=link.p_nom_opt / line_scale,
+                    alpha=0.7,
+                    transform=ccrs.PlateCarree(),
+                    zorder=3,
+                )
+
+        legend_caps_MW = [10, 20, 50]
+        legend_line_scale_factor = 2.5
+        co2_legend_lines = [
+            mlines.Line2D([], [], color="dimgray",
+                          linewidth=(cap / line_scale) * legend_line_scale_factor,
+                          alpha=0.7, label=f"{cap} MW")
+            for cap in legend_caps_MW
+        ]
+        co2_legend = ax.legend(
+            handles=co2_legend_lines,
+            title="CO2 Pipelines",
+            title_fontproperties=FontProperties(weight="bold"),
+            fontsize=9,
+            loc="upper left",
+            bbox_to_anchor=(1.05, 1),
+            frameon=False,
+            labelspacing=1.0,
+        )
+        ax.add_artist(co2_legend)
+
+    # --- Plot one circle per state ---
+    pie_scale = 0.2
+    min_radius = 0.1
+    max_radius = 3.5
+
+    for _, row in state_capacity.iterrows():
+        x, y, total = row["x"], row["y"], row["total_gw"]
         if pd.isna(x) or pd.isna(y):
             continue
         if not (lon_min < x < lon_max and lat_min < y < lat_max):
             continue
 
-        total_gw = data['p_nom_gw'].sum()
-        if total_gw == 0:
-            continue
-
-        radius = np.clip(total_gw * pie_scale, 0.1, 3.5)
-        circle = plt.Circle((x, y), radius, color='#B22222', alpha=0.6,
-                            transform=ccrs.PlateCarree(), zorder=4, linewidth=1)
-
-        ax.add_patch(circle)
-
-        ax.text(x, y - radius - 0.3, f'{total_gw:.2f} GW',
-                ha='center', va='top', fontsize=9, fontweight='normal',
-                bbox=dict(facecolor='white', edgecolor='gray',
-                          boxstyle='round,pad=0.2'),
-                transform=ccrs.PlateCarree())
-
-    ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
-    ax.set_xlim(lon_min, lon_max)
-    ax.set_ylim(lat_min, lat_max)
-    ax.autoscale(False)
-    ax.set_position([0.05, 0.05, 0.9, 0.9])
-
-    ax.set_title(
-        f"Fischer-Tropsch Capacity by State (GW input H2) - {year_str if year_title else network_name}", fontsize=12)
-    ax.axis('off')
-    plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
-
-    return fig, ax, links_with_state
-
-
-def create_ft_capacity_by_grid_region_map(network, path_shapes, network_name="Network", distance_crs=4326, min_capacity_gw=0.1, year_title=True):
-    """
-    Create a map showing total FT capacity per grid region in GW input H2,
-    using circles with linear radius scaling, limited to the contiguous US.
-    """
-
-    # extract year from network name
-    year_match = re.search(r'\d{4}', network_name)
-    year_str = f"{year_match.group()}" if year_match else ""
-
-    # filter Fischer-Tropsch links
-    ft_links = network.links[
-        network.links['carrier'].str.contains('FT|Fischer|Tropsch', case=False, na=False) |
-        network.links.index.str.contains('FT|Fischer|Tropsch', case=False, na=False)
-    ].copy()
-    if ft_links.empty:
-        print(f"No FT links found in network {network_name}")
-        return None, None, None
-
-    # merge link data with bus coordinates and region info
-    links = ft_links.merge(
-        network.buses[["grid_region", "x", "y"]],
-        left_on="bus0", right_index=True, how="left"
-    )
-    links["p_nom_gw"] = links["p_nom_opt"] / 1000
-
-    grid_capacity = links[["grid_region", "x", "y", "p_nom_gw"]].copy()
-    grid_capacity.rename(columns={"p_nom_gw": "total_gw"}, inplace=True)
-    grid_capacity = grid_capacity[grid_capacity["total_gw"] >= min_capacity_gw]
-
-    # prepare figure and axes with PlateCarree projection
-    fig, ax = plt.subplots(figsize=(12, 6), subplot_kw={"projection": ccrs.PlateCarree()})
-
-    # define geographic boundary for contiguous US
-    lon_min, lon_max = -130, -65
-    lat_min, lat_max = 20, 50
-
-    # enforce map extent before drawing any shapes or circles
-    ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
-    ax.set_xlim(lon_min, lon_max)
-    ax.set_ylim(lat_min, lat_max)
-
-    # load state boundaries, convert CRS, and clip to boundary
-    shapes = gpd.read_file(path_shapes, crs=distance_crs)
-    shapes = shapes.to_crs(epsg=4326).clip(box(lon_min, lat_min, lon_max, lat_max))
-    shapes.plot(
-        ax=ax,
-        facecolor='whitesmoke',
-        edgecolor='gray',
-        alpha=0.7,
-        linewidth=0.5
-    )
-
-    # define scaling and radius limits for circles
-    pie_scale = 0.2
-    min_radius = 0.1
-    max_radius = 3.5
-
-    # draw a circle at each region centroid, skipping any outside the boundary
-    for _, row in grid_capacity.iterrows():
-        x, y, total = row["x"], row["y"], row["total_gw"]
-        if not (lon_min < x < lon_max and lat_min < y < lat_max):
-            continue
         radius = np.clip(total * pie_scale, min_radius, max_radius)
         circle = plt.Circle(
             (x, y),
             radius,
-            facecolor='#B22222',
-            edgecolor='gray',
+            color="#B22222",
             alpha=0.6,
-            linewidth=1,
             transform=ccrs.PlateCarree(),
-            clip_on=True,
-            zorder=4
+            zorder=4,
+            linewidth=1,
         )
         ax.add_patch(circle)
         ax.text(
             x,
             y - radius - 0.3,
-            f'{total:.2f} GW',
-            ha='center',
-            va='top',
+            f"{total:.2f} GW",
+            ha="center",
+            va="top",
             fontsize=9,
-            bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.2'),
-            transform=ccrs.PlateCarree()
+            bbox=dict(facecolor="white", edgecolor="gray", boxstyle="round,pad=0.2"),
+            transform=ccrs.PlateCarree(),
         )
 
-    # set the title and hide axes
-    ax.set_title(f"Fischer-Tropsch Capacity by Grid Region (GW input H2) - {year_str if year_title else network_name}", fontsize=12, pad=20)
-    ax.axis('off')
+    ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+    ax.axis("off")
+    ax.set_title(
+        f"Fischer-Tropsch Capacity by State (GW input H2) - {year_str if year_title else network_name}",
+        fontsize=12,
+    )
+    plt.tight_layout()
+
+    return fig, ax, links_with_state
+
+
+def create_ft_capacity_by_grid_region_map(
+    network,
+    path_shapes,
+    network_name="Network",
+    distance_crs=4326,
+    min_capacity_gw=0.1,
+    year_title=True
+):
+    """
+    Create a map showing total FT capacity per grid region in GW input H2,
+    aggregating multiple FT links on the same node (bus0) into a single bubble.
+    CO2 pipelines are drawn in gray lines with legend (10–50 MW range).
+    """
+
+    year_match = re.search(r"\d{4}", network_name)
+    year_str = f"{year_match.group()}" if year_match else ""
+
+    ft_links = network.links[
+        network.links["carrier"].str.contains("FT|Fischer|Tropsch", case=False, na=False)
+        | network.links.index.str.contains("FT|Fischer|Tropsch", case=False, na=False)
+    ].copy()
+    if ft_links.empty:
+        print(f"No FT links found in network {network_name}")
+        return None, None, None
+
+    links = ft_links.merge(
+        network.buses[["grid_region", "x", "y"]],
+        left_on="bus0",
+        right_index=True,
+        how="left",
+    )
+    links["p_nom_gw"] = links["p_nom_opt"] / 1000
+
+    grid_capacity = (
+        links.groupby("bus0", as_index=False)
+        .agg({"grid_region": "first", "x": "first", "y": "first", "p_nom_gw": "sum"})
+        .rename(columns={"p_nom_gw": "total_gw"})
+    )
+    grid_capacity = grid_capacity[grid_capacity["total_gw"] >= min_capacity_gw]
+
+    fig, ax = plt.subplots(figsize=(12, 6), subplot_kw={"projection": ccrs.PlateCarree()})
+    lon_min, lon_max = -130, -65
+    lat_min, lat_max = 20, 50
+    ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+
+    shapes = gpd.read_file(path_shapes, crs=distance_crs)
+    shapes = shapes.to_crs(epsg=4326).clip(box(lon_min, lat_min, lon_max, lat_max))
+    shapes.plot(ax=ax, facecolor="whitesmoke", edgecolor="gray", alpha=0.7, linewidth=0.5)
+
+    # CO2 pipelines
+    co2_links = network.links[network.links["carrier"].str.lower() == "co2 pipeline"].copy()
+    if not co2_links.empty:
+        line_scale = 30
+        for _, link in co2_links.iterrows():
+            bus0 = network.buses.loc[link.bus0, ["x", "y"]]
+            bus1 = network.buses.loc[link.bus1, ["x", "y"]]
+            if (lon_min < bus0.x < lon_max and lat_min < bus0.y < lat_max and
+                lon_min < bus1.x < lon_max and lat_min < bus1.y < lat_max):
+                ax.plot([bus0.x, bus1.x], [bus0.y, bus1.y],
+                        color="dimgray",
+                        linewidth=link.p_nom_opt / line_scale,
+                        alpha=0.7,
+                        transform=ccrs.PlateCarree(),
+                        zorder=3)
+
+        legend_caps_MW = [10, 20, 50]
+        legend_line_scale_factor = 2.5
+        co2_legend_lines = [
+            mlines.Line2D([], [], color="dimgray",
+                          linewidth=(cap / line_scale) * legend_line_scale_factor,
+                          alpha=0.7, label=f"{cap} MW")
+            for cap in legend_caps_MW
+        ]
+        co2_legend = ax.legend(handles=co2_legend_lines,
+                               title="CO2 Pipelines",
+                               title_fontproperties=FontProperties(weight="bold"),
+                               fontsize=9,
+                               loc="upper left",
+                               bbox_to_anchor=(1.05, 1),
+                               frameon=False,
+                               labelspacing=1.0)
+        ax.add_artist(co2_legend)
+
+    pie_scale = 0.2
+    min_radius = 0.1
+    max_radius = 3.5
+
+    for _, row in grid_capacity.iterrows():
+        x, y, total = row["x"], row["y"], row["total_gw"]
+        if not (lon_min < x < lon_max and lat_min < y < lat_max):
+            continue
+        radius = np.clip(total * pie_scale, min_radius, max_radius)  # lineare
+        circle = plt.Circle((x, y), radius,
+                            facecolor="#B22222",
+                            edgecolor="gray",
+                            alpha=0.6,
+                            linewidth=1,
+                            transform=ccrs.PlateCarree(),
+                            clip_on=True,
+                            zorder=4)
+        ax.add_patch(circle)
+        ax.text(x, y - radius - 0.3, f"{total:.2f} GW",
+                ha="center", va="top", fontsize=9,
+                bbox=dict(facecolor="white", edgecolor="gray", boxstyle="round,pad=0.2"),
+                transform=ccrs.PlateCarree())
+
+    ax.set_title(f"Fischer-Tropsch Capacity by Grid Region (GW input H2) - {year_str if year_title else network_name}",
+                 fontsize=12, pad=20)
+    ax.axis("off")
     plt.tight_layout()
 
     return fig, ax, grid_capacity
+
 
 
 
@@ -2778,46 +2856,52 @@ def compute_installed_capacity_by_carrier(
 
 
 def compute_system_costs(network, rename_capex, rename_opex, name_tag):
+    """
+    Compute system costs (CAPEX, OPEX, and input-based OPEX)
+    including dynamic input costs from marginal prices for all
+    non-conventional links.
+    """
 
-    costs_raw = network.statistics(
-    )[['Capital Expenditure', 'Operational Expenditure']]
+    costs_raw = network.statistics()[
+        ["Capital Expenditure", "Operational Expenditure"]
+    ]
     year_str = name_tag[-4:]
 
     # CAPEX
-    capex_raw = costs_raw[['Capital Expenditure']].reset_index()
-    capex_raw['tech_label'] = capex_raw['carrier'].map(
-        rename_capex).fillna(capex_raw['carrier'])
-    capex_raw['main_category'] = capex_raw['tech_label']
+    capex_raw = costs_raw[["Capital Expenditure"]].reset_index()
+    capex_raw["tech_label"] = capex_raw["carrier"].map(rename_capex).fillna(
+        capex_raw["carrier"]
+    )
+    capex_raw["main_category"] = capex_raw["tech_label"]
 
-    capex_grouped = capex_raw.groupby('tech_label', as_index=False).agg({
-        'Capital Expenditure': 'sum',
-        'main_category': 'first'
-    })
-    capex_grouped['cost_type'] = 'Capital expenditure'
-    capex_grouped.rename(
-        columns={'Capital Expenditure': 'cost_billion'}, inplace=True)
-    capex_grouped['cost_billion'] /= 1e9
-    capex_grouped['year'] = year_str
-    capex_grouped['scenario'] = name_tag
+    capex_grouped = (
+        capex_raw.groupby("tech_label", as_index=False)
+        .agg({"Capital Expenditure": "sum", "main_category": "first"})
+        .rename(columns={"Capital Expenditure": "cost_billion"})
+    )
+    capex_grouped["cost_billion"] /= 1e9
+    capex_grouped["cost_type"] = "Capital expenditure"
+    capex_grouped["year"] = year_str
+    capex_grouped["scenario"] = name_tag
 
-    # OPEX
-    opex_raw = costs_raw[['Operational Expenditure']].reset_index()
-    opex_raw['tech_label'] = opex_raw['carrier'].map(
-        rename_opex).fillna(opex_raw['carrier'])
-    opex_raw['main_category'] = opex_raw['tech_label']
+    # OPEX (from statistics)
+    opex_raw = costs_raw[["Operational Expenditure"]].reset_index()
+    opex_raw["tech_label"] = opex_raw["carrier"].map(rename_opex).fillna(
+        opex_raw["carrier"]
+    )
+    opex_raw["main_category"] = opex_raw["tech_label"]
 
-    opex_grouped = opex_raw.groupby('tech_label', as_index=False).agg({
-        'Operational Expenditure': 'sum',
-        'main_category': 'first'
-    })
-    opex_grouped['cost_type'] = 'Operational expenditure'
-    opex_grouped.rename(
-        columns={'Operational Expenditure': 'cost_billion'}, inplace=True)
-    opex_grouped['cost_billion'] /= 1e9
-    opex_grouped['year'] = year_str
-    opex_grouped['scenario'] = name_tag
+    opex_grouped = (
+        opex_raw.groupby("tech_label", as_index=False)
+        .agg({"Operational Expenditure": "sum", "main_category": "first"})
+        .rename(columns={"Operational Expenditure": "cost_billion"})
+    )
+    opex_grouped["cost_billion"] /= 1e9
+    opex_grouped["cost_type"] = "Operational expenditure"
+    opex_grouped["year"] = year_str
+    opex_grouped["scenario"] = name_tag
 
-    # Additional OPEX from link-based conventional generators
+    # === Additional OPEX for conventional link-based generators ===
     carriers_of_interest = ["coal", "gas", "oil", "biomass"]
     results = []
     for carrier in carriers_of_interest:
@@ -2825,38 +2909,83 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
         for link_id in links.index:
             try:
                 p0 = network.links_t.p0[link_id]  # fuel input (negative)
-                bus0 = links.loc[link_id, 'bus0']
+                bus0 = links.loc[link_id, "bus0"]
                 fuel_price = network.buses_t.marginal_price[bus0]
-                weightings = network.snapshot_weightings['objective']
+                weightings = network.snapshot_weightings["objective"]
 
                 # Fuel cost (positive)
-                fuel_cost = (p0 * fuel_price * weightings).sum()
+                fuel_cost = (-p0.clip(upper=0.0) * fuel_price * weightings).sum()
 
                 # Other OPEX (marginal cost of link, positive)
-                marginal_cost = links.loc[link_id, 'marginal_cost']
-                other_opex = (p0 * marginal_cost * weightings).sum()
+                marginal_cost = links.loc[link_id, "marginal_cost"]
+                other_opex = (-p0.clip(upper=0.0) * marginal_cost * weightings).sum()
 
                 total_opex = fuel_cost + other_opex
 
-                results.append({
-                    'tech_label': f'{carrier} (power)',
-                    'main_category': f'{carrier} (power)',
-                    'cost_type': 'Operational expenditure',
-                    'cost_billion': total_opex / 1e9,
-                    'year': year_str,
-                    'scenario': name_tag
-                })
+                results.append(
+                    {
+                        "tech_label": f"{carrier} (power)",
+                        "main_category": f"{carrier} (power)",
+                        "cost_type": "Operational expenditure",
+                        "cost_billion": total_opex / 1e9,
+                        "year": year_str,
+                        "scenario": name_tag,
+                    }
+                )
             except KeyError:
                 continue
 
     link_opex_df = pd.DataFrame(results)
 
-    # Apply renaming also to link-based OPEX
-    link_opex_df['tech_label'] = link_opex_df['tech_label'].replace(
-        rename_opex)
-    link_opex_df['main_category'] = link_opex_df['tech_label']
+    # Additional input-cost OPEX for all other links
+    non_conv_mask = ~network.links.carrier.isin(carriers_of_interest)
+    links_nc = network.links[non_conv_mask]
+    bus_cols = [c for c in network.links.columns if c.startswith("bus")]
+    weightings = network.snapshot_weightings["objective"]
 
-    return pd.concat([capex_grouped, opex_grouped, link_opex_df], ignore_index=True)
+    rows = []
+    for link_id, row in links_nc.iterrows():
+        total_input_cost = 0.0
+
+        for bcol in bus_cols:
+            bus_name = row.get(bcol)
+            if not isinstance(bus_name, str) or not bus_name:
+                continue
+
+            pcol = "p" + bcol[3:]
+            if pcol not in network.links_t or link_id not in network.links_t[pcol].columns:
+                continue
+
+            flows = network.links_t[pcol][link_id]
+            inflow = -flows.clip(upper=0.0)  # only inputs (negative flow into link)
+            if inflow.abs().sum() == 0:
+                continue
+
+            if bus_name not in network.buses_t.marginal_price.columns:
+                continue
+
+            prices = network.buses_t.marginal_price[bus_name]
+            total_input_cost += (inflow * prices * weightings).sum()
+
+        if total_input_cost != 0.0:
+            rows.append(
+                {
+                    "tech_label": row["carrier"],
+                    "main_category": row["carrier"],
+                    "cost_type": "Operational expenditure (inputs)",
+                    "cost_billion": total_input_cost / 1e9,
+                    "year": year_str,
+                    "scenario": name_tag,
+                }
+            )
+
+    link_input_costs_df = pd.DataFrame(rows)
+
+    # Combine all results
+    return pd.concat(
+        [capex_grouped, opex_grouped, link_opex_df, link_input_costs_df],
+        ignore_index=True,
+    )
 
 
 def assign_macro_category(row, categories_capex, categories_opex):

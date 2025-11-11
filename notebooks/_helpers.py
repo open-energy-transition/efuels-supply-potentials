@@ -8238,136 +8238,76 @@ def display_grid_region_results_multiple_scenario(networks, ces, res, ces_carrie
     return combined_df, per_year_dfs
 
 
-import pypsa
-import pandas as pd
-import numpy as np
-from _helpers import *
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import geopandas as gpd
-
-def calculate_and_plot_renewable_potential(network, shapes_path, tech_colors=None, nice_names=None):
+def plot_renewable_potential(renewable_profile_path, title=None, vmax=0.15, cmap='YlOrRd'):
     """
-    Calculate wind and solar generation potential for a given network and plot on a map.
+    Plot renewable energy potential from Atlite weather data.
     
     Parameters:
     -----------
-    network : pypsa.Network
-        The PyPSA network object
-    shapes_path : str
-        Path to the GeoJSON file with grid region boundaries
-        Note: Use 'EMM_regions.geojson' for detailed grid operator regions
-    tech_colors : dict, optional
-        Dictionary mapping technology names to colors
-    nice_names : dict, optional
-        Dictionary mapping carrier names to display names
+    renewable_profile_path : str
+        Path to the renewable profile NetCDF file
+    title : str, optional
+        Custom title for the plot
+    vmax : float, optional
+        Maximum value for color scale
+    exclude_alaska_hawaii : bool, optional
+        If True, focus on continental US only
     
     Returns:
     --------
-    potential_df : pd.DataFrame
-        DataFrame with renewable potential by grid region
     fig, ax : matplotlib objects
         The figure and axis objects
+    renewable_ds : xarray.Dataset
+        The loaded renewable dataset
     """
-    
-    # Default colors if not provided
-    if tech_colors is None:
-        tech_colors = {"onwind": "#4472C4", "offwind-ac": "#70AD47", "solar": "#FFC000"}
-    
-    if nice_names is None:
-        nice_names = {"onwind": "Onshore Wind", "offwind-ac": "Offshore Wind", "solar": "Solar"}
-    
-    # Calculate potential for each technology
-    renewable_techs = ["onwind", "offwind-ac", "solar"]
-    
-    gens = network.generators[network.generators.carrier.isin(renewable_techs)].copy()
-    
-    if gens.empty:
-        print("No renewable generators found in network")
-        return None, None, None
-    
-    # Add region and state information from bus
-    gens["region"] = gens.bus.map(network.buses.grid_region)
-    gens["state"] = gens.bus.map(network.buses.state)
-    
-    # Calculate potential (installed capacity in GW)
-    potential_by_region = gens.groupby(["region", "carrier"]).agg({
-        "p_nom_opt": "sum"
-    }).reset_index()
-    potential_by_region.rename(columns={"p_nom_opt": "capacity_gw"}, inplace=True)
-    potential_by_region["capacity_gw"] = potential_by_region["capacity_gw"] / 1000
-    
-    # Pivot for easier viewing
-    potential_df = potential_by_region.pivot(
-        index="region",
-        columns="carrier",
-        values="capacity_gw"
-    ).fillna(0)
-    
-    # Flatten multi-index columns if present
-    potential_df.columns.name = None
-    
-    # Load shapes and merge data
-    shapes = gpd.read_file(shapes_path)
-    potential_df_reset = potential_df.reset_index()
-    
-    # Merge on region column
-    shapes_merged = shapes.merge(
-        potential_df_reset,
-        left_on="GRID_REGIO",
-        right_on="region",
-        how="left"
+
+    # Load renewable profile data
+    renewable_ds = xr.open_dataset(renewable_profile_path)
+    renewable_potential = renewable_ds['potential']
+
+    # Try using imshow with proper extent instead
+    fig = plt.figure(figsize=(20, 10))
+    ax = plt.axes(projection=ccrs.PlateCarree())
+
+    # Set extent to continental US
+    ax.set_extent([-125, -66, 24, 50], crs=ccrs.PlateCarree())
+
+    # Mask zero values
+    renewable_potential_masked = renewable_ds['potential'].where(renewable_ds['potential'] > 0)
+
+    # Get the extent from the coordinates
+    x_min, x_max = float(renewable_ds['x'].min()), float(renewable_ds['x'].max())
+    y_min, y_max = float(renewable_ds['y'].min()), float(renewable_ds['y'].max())
+
+    # Use imshow with explicit extent
+    im = ax.imshow(
+        renewable_potential_masked,
+        origin='lower',
+        extent=[x_min, x_max, y_min, y_max],
+        transform=ccrs.PlateCarree(),
+        cmap=cmap,
+        vmin=0,
+        vmax=vmax,
+        aspect='auto',
+        interpolation='nearest'
     )
-    
-    # Get the technology columns
-    tech_cols = [col for col in potential_df.columns if col != "region"]
-    
-    # Apply nice names if provided and if available
-    plot_cols = []
-    for col in tech_cols:
-        if col in nice_names:
-            plot_cols.append(nice_names[col])
-        else:
-            plot_cols.append(col)
-    
-    # Plot
-    fig, axes = plt.subplots(1, len(tech_cols), figsize=(7*len(tech_cols), 7), 
-                             subplot_kw={"projection": ccrs.PlateCarree()})
-    
-    # Ensure axes is always iterable
-    if len(tech_cols) == 1:
-        axes = [axes]
-    
-    for idx, (col, plot_name) in enumerate(zip(tech_cols, plot_cols)):
-        ax = axes[idx]
-        
-        # Handle missing data
-        valid_data = shapes_merged[col].dropna()
-        if len(valid_data) == 0:
-            print(f"Warning: No data for {col}")
-            continue
-            
-        vmin = valid_data.min()
-        vmax = valid_data.max()
-        
-        shapes_merged.plot(
-            column=col,
-            ax=ax,
-            cmap="YlOrRd",
-            edgecolor="k",
-            linewidth=0.5,
-            legend=True,
-            vmin=vmin,
-            vmax=vmax,
-            legend_kwds={"label": f"{plot_name} (GW)", "shrink": 0.8},
-            missing_kwds={"color": "lightgrey", "label": "No data"}
-        )
-        
-        ax.set_title(f"{plot_name} Potential by Grid Region (GW)")
-        ax.coastlines()
-        ax.gridlines(draw_labels=True, alpha=0.3)
-        ax.set_extent([-130, -65, 24, 50], crs=ccrs.PlateCarree())  # Focus on continental US
-    
-    plt.tight_layout()
-    
-    return potential_df, fig, axes
+
+    # Add map features
+    ax.add_feature(cfeature.STATES, edgecolor='black', linewidth=0.8, alpha=0.7)
+    ax.add_feature(cfeature.COASTLINE, linewidth=1.0)
+    ax.add_feature(cfeature.BORDERS, linewidth=0.5, linestyle='--', alpha=0.5)
+
+    # Add gridlines with labels
+    gl = ax.gridlines(draw_labels=True, alpha=0.3, linestyle='--', linewidth=0.5)
+    gl.top_labels = False
+    gl.right_labels = False
+
+    # Add colorbar
+    cbar = plt.colorbar(im, ax=ax, orientation='vertical', pad=0.02, shrink=0.7)
+    cbar.set_label(f'{title} Capacity Factor (Mean Annual)', fontsize=13, weight='bold')
+
+    # Title
+    ax.set_title(f'{title} Energy Potential', 
+                fontsize=15, weight='bold', pad=20)
+
+    return fig, ax, renewable_ds

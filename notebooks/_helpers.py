@@ -2857,21 +2857,36 @@ def compute_installed_capacity_by_carrier(
 
 def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     """
-    Compute system costs (CAPEX, OPEX, and input-based OPEX)
-    including dynamic input costs from marginal prices for all
-    non-conventional links.
-    """
+    Compute CAPEX and OPEX (including input-cost OPEX for industrial and link components).
+    Aggregates all values to billion EUR.
 
-    costs_raw = network.statistics()[
-        ["Capital Expenditure", "Operational Expenditure"]
-    ]
+    Parameters
+    ----------
+    network : pypsa.Network
+        Solved PyPSA network.
+    rename_capex : dict
+        Mapping of carrier names for CAPEX aggregation.
+    rename_opex : dict
+        Mapping of carrier names for OPEX aggregation.
+    name_tag : str
+        Scenario name containing the year (e.g. 'Base_2030').
+
+    Returns
+    -------
+    pandas.DataFrame
+        With columns: tech_label, main_category, cost_type,
+        cost_billion, year, scenario.
+    """
+    import numpy as np
+    import pandas as pd
+
+    # --- Base stats from PyPSA ---
+    costs_raw = network.statistics()[["Capital Expenditure", "Operational Expenditure"]]
     year_str = name_tag[-4:]
 
     # CAPEX
     capex_raw = costs_raw[["Capital Expenditure"]].reset_index()
-    capex_raw["tech_label"] = capex_raw["carrier"].map(rename_capex).fillna(
-        capex_raw["carrier"]
-    )
+    capex_raw["tech_label"] = capex_raw["carrier"].map(rename_capex).fillna(capex_raw["carrier"])
     capex_raw["main_category"] = capex_raw["tech_label"]
 
     capex_grouped = (
@@ -2884,11 +2899,9 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     capex_grouped["year"] = year_str
     capex_grouped["scenario"] = name_tag
 
-    # OPEX (from statistics)
+    # OPEX
     opex_raw = costs_raw[["Operational Expenditure"]].reset_index()
-    opex_raw["tech_label"] = opex_raw["carrier"].map(rename_opex).fillna(
-        opex_raw["carrier"]
-    )
+    opex_raw["tech_label"] = opex_raw["carrier"].map(rename_opex).fillna(opex_raw["carrier"])
     opex_raw["main_category"] = opex_raw["tech_label"]
 
     opex_grouped = (
@@ -2901,91 +2914,55 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     opex_grouped["year"] = year_str
     opex_grouped["scenario"] = name_tag
 
-    # === Additional OPEX for conventional link-based generators ===
-    carriers_of_interest = ["coal", "gas", "oil", "biomass"]
+    # Extra OPEX from link input flows (fuel, electricity, feedstock)
+    w = network.snapshot_weightings["objective"]
     results = []
-    for carrier in carriers_of_interest:
-        links = network.links[network.links.carrier == carrier]
-        for link_id in links.index:
-            try:
-                p0 = network.links_t.p0[link_id]  # fuel input (negative)
-                bus0 = links.loc[link_id, "bus0"]
-                fuel_price = network.buses_t.marginal_price[bus0]
-                weightings = network.snapshot_weightings["objective"]
 
-                # Fuel cost (positive)
-                fuel_cost = (-p0.clip(upper=0.0) * fuel_price * weightings).sum()
-
-                # Other OPEX (marginal cost of link, positive)
-                marginal_cost = links.loc[link_id, "marginal_cost"]
-                other_opex = (-p0.clip(upper=0.0) * marginal_cost * weightings).sum()
-
-                total_opex = fuel_cost + other_opex
-
-                results.append(
-                    {
-                        "tech_label": f"{carrier} (power)",
-                        "main_category": f"{carrier} (power)",
-                        "cost_type": "Operational expenditure",
-                        "cost_billion": total_opex / 1e9,
-                        "year": year_str,
-                        "scenario": name_tag,
-                    }
-                )
-            except KeyError:
-                continue
-
-    link_opex_df = pd.DataFrame(results)
-
-    # Additional input-cost OPEX for all other links
-    non_conv_mask = ~network.links.carrier.isin(carriers_of_interest)
-    links_nc = network.links[non_conv_mask]
     bus_cols = [c for c in network.links.columns if c.startswith("bus")]
-    weightings = network.snapshot_weightings["objective"]
 
-    rows = []
-    for link_id, row in links_nc.iterrows():
-        total_input_cost = 0.0
-
+    for link_id, row in network.links.iterrows():
         for bcol in bus_cols:
-            bus_name = row.get(bcol)
-            if not isinstance(bus_name, str) or not bus_name:
-                continue
-
-            pcol = "p" + bcol[3:]
+            pcol = f"p{bcol[3:]}"  # e.g. bus0 -> p0
             if pcol not in network.links_t or link_id not in network.links_t[pcol].columns:
                 continue
 
+            # efficiency attribute (positive = input)
+            eff_key = f"efficiency{bcol[3:]}" if f"efficiency{bcol[3:]}" in row else "efficiency"
+            eff = row.get(eff_key, np.nan)
+            if not pd.notna(eff) or eff <= 0:
+                continue  # only input ports
+
+            bus = row[bcol]
+            if bus not in network.buses_t.marginal_price.columns:
+                continue
+
             flows = network.links_t[pcol][link_id]
-            inflow = -flows.clip(upper=0.0)  # only inputs (negative flow into link)
+            inflow = -flows.clip(upper=0.0)  # positive inflow into link
             if inflow.abs().sum() == 0:
                 continue
 
-            if bus_name not in network.buses_t.marginal_price.columns:
-                continue
+            price = network.buses_t.marginal_price[bus]
+            fuel_cost = (inflow * price * w).sum()  # EUR
 
-            prices = network.buses_t.marginal_price[bus_name]
-            total_input_cost += (inflow * prices * weightings).sum()
+            results.append({
+                "tech_label": row["carrier"],
+                "main_category": row["carrier"],
+                "cost_type": "Operational expenditure (inputs)",
+                "cost_billion": fuel_cost / 1e9,
+                "year": year_str,
+                "scenario": name_tag,
+            })
 
-        if total_input_cost != 0.0:
-            rows.append(
-                {
-                    "tech_label": row["carrier"],
-                    "main_category": row["carrier"],
-                    "cost_type": "Operational expenditure (inputs)",
-                    "cost_billion": total_input_cost / 1e9,
-                    "year": year_str,
-                    "scenario": name_tag,
-                }
-            )
+    link_opex_df = pd.DataFrame(results)
 
-    link_input_costs_df = pd.DataFrame(rows)
+    if not link_opex_df.empty:
+        link_opex_df["tech_label"] = link_opex_df["tech_label"].replace(rename_opex)
+        link_opex_df["main_category"] = link_opex_df["tech_label"]
 
-    # Combine all results
-    return pd.concat(
-        [capex_grouped, opex_grouped, link_opex_df, link_input_costs_df],
-        ignore_index=True,
-    )
+    # Combine and return
+    df_all = pd.concat([capex_grouped, opex_grouped, link_opex_df], ignore_index=True)
+    return df_all
+
 
 
 def assign_macro_category(row, categories_capex, categories_opex):
@@ -7350,129 +7327,130 @@ def calculate_baseload_charge(
     return results
 
 
+
 def compute_power_opex_with_tax_credits(network, name_tag):
     """
-    Compute power generation OPEX broken down by:
-    - OPEX without tax credits
-    - Tax credits amount
-    - OPEX with tax credits (actual)
-    
-    Returns a DataFrame with columns:
-    - tech_label: Technology carrier name
-    - opex_without_tax_credits: OPEX using original marginal costs (billion USD)
-    - tax_credits: Tax credit amount (billion USD, negative means subsidy)
-    - opex_with_tax_credits: OPEX with tax credits applied (billion USD)
-    - year: Year
-    - scenario: Scenario name
+    Compute OPEX for power generation, including tax credits and input costs.
+    Returns a DataFrame with:
+    - tech_label
+    - without_tax_credits_billion
+    - tax_credits_billion
+    - with_tax_credits_billion
+    - year, scenario
     """
+    import numpy as np
+    import pandas as pd
+
     year_str = name_tag[-4:]
     fossil_carriers = ["coal", "gas", "oil", "biomass"]
-    
     results = []
-    
-    # Process GENERATORS (solar, wind, nuclear, geothermal, etc.)
+    w = network.snapshot_weightings["objective"]
+
+    # ---------------------------------------------------
+    # 1. GENERATORS (renewables, nuclear, geothermal...)
+    # ---------------------------------------------------
     for carrier in network.generators.carrier.unique():
-        # Skip fossil fuel generators (they're end-uses)
         if carrier in fossil_carriers:
             continue
-            
+
         gens = network.generators[network.generators.carrier == carrier]
-        
-        # Calculate OPEX with original costs (without tax credits)
-        opex_without_tc = 0
-        opex_with_tc = 0
-        
+        opex_no_tc = opex_with_tc = 0
+
         for gen_name in gens.index:
-            gen = network.generators.loc[gen_name]
-            
-            # Get generation
-            if gen_name in network.generators_t.p.columns:
-                generation = network.generators_t.p[gen_name]
-                weightings = network.snapshot_weightings['objective']
-                
-                # Original marginal cost (without tax credits)
-                if '_marginal_cost_original' in network.generators.columns:
-                    mc_original = gen['_marginal_cost_original']
-                else:
-                    mc_original = gen['marginal_cost']
-                
-                # Current marginal cost (with tax credits)
-                mc_current = gen['marginal_cost']
-                
-                # Calculate costs
-                opex_without_tc += (generation * mc_original * weightings).sum()
-                opex_with_tc += (generation * mc_current * weightings).sum()
-        
-        if opex_without_tc != 0 or opex_with_tc != 0:
-            tax_credit = opex_with_tc - opex_without_tc
-            
+            if gen_name not in network.generators_t.p.columns:
+                continue
+
+            gen = gens.loc[gen_name]
+            gen_output = network.generators_t.p[gen_name]
+
+            # Original and current marginal cost
+            mc_original = (
+                gen["_marginal_cost_original"]
+                if "_marginal_cost_original" in network.generators.columns
+                else gen["marginal_cost"]
+            )
+            mc_current = gen["marginal_cost"]
+
+            opex_no_tc += (gen_output * mc_original * w).sum()
+            opex_with_tc += (gen_output * mc_current * w).sum()
+
+        if opex_no_tc != 0 or opex_with_tc != 0:
+            tax_credit = opex_with_tc - opex_no_tc
             results.append({
-                'tech_label': carrier,
-                'without_tax_credits_billion': opex_without_tc / 1e9,
-                'tax_credits_billion': tax_credit / 1e9,
-                'with_tax_credits_billion': opex_with_tc / 1e9,
-                'year': year_str,
-                'scenario': name_tag
+                "tech_label": carrier,
+                "without_tax_credits_billion": opex_no_tc / 1e9,
+                "tax_credits_billion": tax_credit / 1e9,
+                "with_tax_credits_billion": opex_with_tc / 1e9,
+                "year": year_str,
+                "scenario": name_tag,
             })
-    
-    # Process LINKS (fossil fuel power, biomass, etc.)
+
+    # ---------------------------------------------------
+    # 2. LINKS (fossil and industrial power processes)
+    # ---------------------------------------------------
+    bus_cols = [c for c in network.links.columns if c.startswith("bus")]
+
     for carrier in network.links.carrier.unique():
         links = network.links[network.links.carrier == carrier]
-        
-        # Calculate OPEX with original costs (without tax credits)
-        opex_without_tc = 0
-        opex_with_tc = 0
-        fuel_cost = 0
-        
-        for link_name in links.index:
-            link = network.links.loc[link_name]
-            
-            # Get dispatch
-            if link_name in network.links_t.p0.columns:
-                dispatch = network.links_t.p0[link_name]
-                weightings = network.snapshot_weightings['objective']
-                
-                # Original marginal cost (without tax credits)
-                if '_marginal_cost_original' in network.links.columns:
-                    mc_original = link['_marginal_cost_original']
-                else:
-                    mc_original = link['marginal_cost']
-                
-                # Current marginal cost (with tax credits)
-                mc_current = link['marginal_cost']
-                
-                # Calculate costs from marginal cost
-                opex_without_tc += (dispatch * mc_original * weightings).sum()
-                opex_with_tc += (dispatch * mc_current * weightings).sum()
-                
-                # For fossil fuels, also add fuel costs
-                if carrier in fossil_carriers:
-                    try:
-                        fuel_bus = link['bus0']
-                        fuel_price = network.buses_t.marginal_price[fuel_bus]
-                        fuel_cost += (dispatch * fuel_price * weightings).sum()
-                    except KeyError:
-                        pass
-        
-        # Add fuel costs to both (fuel costs are not affected by tax credits)
-        opex_without_tc += fuel_cost
+        opex_no_tc = opex_with_tc = fuel_cost = 0
+
+        for link_id, link in links.iterrows():
+            if link_id not in network.links_t.p0.columns:
+                continue
+
+            dispatch = network.links_t.p0[link_id]
+
+            # Marginal costs
+            mc_original = (
+                link["_marginal_cost_original"]
+                if "_marginal_cost_original" in network.links.columns
+                else link["marginal_cost"]
+            )
+            mc_current = link["marginal_cost"]
+
+            opex_no_tc += (dispatch * mc_original * w).sum()
+            opex_with_tc += (dispatch * mc_current * w).sum()
+
+            # ---- Additional fuel/feedstock input costs ----
+            for bcol in bus_cols:
+                pcol = f"p{bcol[3:]}"
+                if pcol not in network.links_t or link_id not in network.links_t[pcol].columns:
+                    continue
+
+                eff_key = f"efficiency{bcol[3:]}" if f"efficiency{bcol[3:]}" in link else "efficiency"
+                eff = link.get(eff_key, np.nan)
+                if not pd.notna(eff) or eff <= 0:
+                    continue  # only positive efficiencies → inputs
+
+                bus = link[bcol]
+                if bus not in network.buses_t.marginal_price.columns:
+                    continue
+
+                flows = network.links_t[pcol][link_id]
+                inflow = -flows.clip(upper=0.0)
+                if inflow.abs().sum() == 0:
+                    continue
+
+                price = network.buses_t.marginal_price[bus]
+                input_cost = (inflow * price * w).sum()
+                fuel_cost += input_cost
+
+        # Fuel/feedstock cost not affected by tax credits
+        opex_no_tc += fuel_cost
         opex_with_tc += fuel_cost
-        
-        if opex_without_tc != 0 or opex_with_tc != 0:
-            tax_credit = opex_with_tc - opex_without_tc
-            
-            # For fossil carriers, rename to (power)
+
+        if opex_no_tc != 0 or opex_with_tc != 0:
+            tax_credit = opex_with_tc - opex_no_tc
             tech_name = f"{carrier} (power)" if carrier in fossil_carriers else carrier
-            
             results.append({
-                'tech_label': tech_name,
-                'without_tax_credits_billion': opex_without_tc / 1e9,
-                'tax_credits_billion': tax_credit / 1e9,
-                'with_tax_credits_billion': opex_with_tc / 1e9,
-                'year': year_str,
-                'scenario': name_tag
+                "tech_label": tech_name,
+                "without_tax_credits_billion": opex_no_tc / 1e9,
+                "tax_credits_billion": tax_credit / 1e9,
+                "with_tax_credits_billion": opex_with_tc / 1e9,
+                "year": year_str,
+                "scenario": name_tag,
             })
-    
+
     return pd.DataFrame(results)
 
 

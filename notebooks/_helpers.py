@@ -15,7 +15,9 @@ import math
 from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
 from pathlib import Path
 
+import xarray as xr
 import cartopy.crs as ccrs  # For plotting maps
+import cartopy.feature as cfeature
 import geopandas as gpd
 from shapely.geometry import Point
 from shapely.geometry import box
@@ -8252,6 +8254,8 @@ def plot_renewable_potential(renewable_profile_path, title=None, vmax=0.15, cmap
         Maximum value for color scale
     exclude_alaska_hawaii : bool, optional
         If True, focus on continental US only
+    cmap : str, optional
+        Colormap to use for the plot
     
     Returns:
     --------

@@ -984,7 +984,7 @@ def modify_dac_inputs(n):
 
 def add_co2_storage_tanks(n):
     """
-    Adds CO2 storage steel tanks and (optionally) CO2 buffer tanks to the network.
+    Adds CO2 storage steel tanks to the network and optionally CO2 buffer tanks.
     """
     use_buffer = getattr(snakemake.params, "buffer_co2_stored", True)
 
@@ -1025,14 +1025,15 @@ def add_co2_storage_tanks(n):
     logger.info("Updated Fischer-Tropsch connections to CO2 storage steel tanks")
 
     # -------------------------------------------------------------------------
-    # Optional buffer creation if enabled
+    # Optional buffer creation
     # -------------------------------------------------------------------------
     if use_buffer:
-        # Connect links to buffer CO2 stored
+        logger.info("buffer_co2_stored is True – creating CO2 buffer tanks")
+
         bus_cols = ["bus0", "bus1", "bus2", "bus3", "bus4", "bus5"]
         for col in bus_cols:
             if col in n.links.columns:
-                # Biogenic CO2 buffers
+                # Handle biogenic CO2 buffers
                 if snakemake.params.biogenic_co2:
                     mask_bio = n.links[col].notna() & n.links[col].str.contains(
                         "biogenic co2 stored", na=False
@@ -1043,7 +1044,7 @@ def add_co2_storage_tanks(n):
                         regex=False,
                     )
 
-                # Fossil/industrial CO2 buffers
+                # Handle fossil CO2 buffers
                 mask = n.links[col].notna() & n.links[col].str.contains(
                     "co2 stored", na=False
                 )
@@ -1068,25 +1069,70 @@ def add_co2_storage_tanks(n):
             )
             logger.info(f"Added buffer {c} buses")
 
-        # Connect buffer buses to main CO2 storage tanks
+        # Connect buffer to tank
         for c in carriers_for_buffer:
-            buffer_co2_storage_tank_buses = n.buses[
-                n.buses.carrier == f"buffer {c}"
-            ]
+            buffer_buses = n.buses[n.buses.carrier == f"buffer {c}"]
             n.madd(
                 "Link",
-                buffer_co2_storage_tank_buses.index + " to tank",
-                bus0=buffer_co2_storage_tank_buses.index,
-                bus1=buffer_co2_storage_tank_buses.index.str.replace("buffer ", ""),
+                buffer_buses.index + " to tank",
+                bus0=buffer_buses.index,
+                bus1=buffer_buses.index.str.replace("buffer ", ""),
                 p_nom_extendable=True,
                 carrier=f"buffer {c} to tank",
                 efficiency=1,
                 capital_cost=0,
             )
-            logger.info(f"Added links from buffer '{c}' to tank")
+            logger.info(f"Added links from buffer '{c}' to tank'")
+
+        # Connect buffer to geological sequestration
+        carriers_for_buffer_geo = ["buffer co2 storage steel tank"]
+        if snakemake.params.biogenic_co2:
+            carriers_for_buffer_geo.append("buffer biogenic co2 storage steel tank")
+
+        for c in carriers_for_buffer_geo:
+            buffer_buses = n.buses[n.buses.carrier == c]
+            n.madd(
+                "Link",
+                buffer_buses.index + " geological sequestration",
+                bus0=buffer_buses.index,
+                bus1=buffer_buses.index.str.split("buffer").str[0].str.strip()
+                + " co2 geological sequestration",
+                p_nom_extendable=True,
+                carrier=f"{c} geological sequestration",
+                efficiency=1,
+                capital_cost=0,
+            )
+            logger.info(f"Added links from '{c}' to 'co2 geological sequestration'")
+
+    else:
+        # ---------------------------------------------------------------------
+        # No buffer: redirect all references to the real tanks
+        # ---------------------------------------------------------------------
+        logger.info("buffer_co2_stored is False – redirecting all buffer references")
+
+        for col in [c for c in n.links.columns if c.startswith("bus")]:
+            # Replace fossil CO2 buffer references
+            mask = n.links[col].notna() & n.links[col].str.contains(
+                "buffer co2 storage steel tank", na=False
+            )
+            n.links.loc[mask, col] = n.links.loc[mask, col].str.replace(
+                "buffer co2 storage steel tank", "co2 storage steel tank", regex=False
+            )
+
+            # Replace biogenic CO2 buffer references
+            mask_bio = n.links[col].notna() & n.links[col].str.contains(
+                "buffer biogenic co2 storage steel tank", na=False
+            )
+            n.links.loc[mask_bio, col] = n.links.loc[mask_bio, col].str.replace(
+                "buffer biogenic co2 storage steel tank",
+                "biogenic co2 storage steel tank",
+                regex=False,
+            )
+
+        logger.info("Redirected all buffer references to CO2 storage steel tanks")
 
     # -------------------------------------------------------------------------
-    # Add CO2 geological sequestration buses and stores
+    # Geological sequestration (always added)
     # -------------------------------------------------------------------------
     co2_storage_tank_buses = n.buses[n.buses.carrier == "co2 storage steel tank"]
     n.madd(
@@ -1114,7 +1160,6 @@ def add_co2_storage_tanks(n):
         capital_cost=config["sector"]["co2_sequestration_cost"],
         carrier="co2 geological sequestration",
     )
-    logger.info("Added CO2 geological sequestration buses and stores")
 
     carriers_for_geo = ["co2 storage steel tank"]
     if snakemake.params.biogenic_co2:
@@ -1134,34 +1179,7 @@ def add_co2_storage_tanks(n):
             efficiency=1,
             capital_cost=0,
         )
-        logger.info(f"Added links from '{c}' to geological sequestration")
-
-    # -------------------------------------------------------------------------
-    # Only if buffer_co2_stored is False: redirect any existing buffer references
-    # -------------------------------------------------------------------------
-    if not use_buffer:
-        logger.info("buffer_co2_stored is False – redirecting buffer links to real tanks")
-
-        for col in [c for c in n.links.columns if c.startswith("bus")]:
-            # Standard CO2
-            mask = n.links[col].notna() & n.links[col].str.contains(
-                "buffer co2 storage steel tank", na=False
-            )
-            n.links.loc[mask, col] = n.links.loc[mask, col].str.replace(
-                "buffer co2 storage steel tank", "co2 storage steel tank", regex=False
-            )
-
-            # Biogenic CO2
-            mask_bio = n.links[col].notna() & n.links[col].str.contains(
-                "buffer biogenic co2 storage steel tank", na=False
-            )
-            n.links.loc[mask_bio, col] = n.links.loc[mask_bio, col].str.replace(
-                "buffer biogenic co2 storage steel tank",
-                "biogenic co2 storage steel tank",
-                regex=False,
-            )
-
-        logger.info("Redirected all buffer references to CO2 storage steel tanks")
+        logger.info(f"Added links from '{c}' to 'co2 geological sequestration'")
 
 
 if __name__ == "__main__":

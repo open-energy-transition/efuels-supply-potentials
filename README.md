@@ -12,15 +12,17 @@ Clone the repository including its submodules:
 
     git clone --recurse-submodules https://github.com/open-energy-transition/efuels-supply-potentials.git
 
-Install the necessary dependencies using `conda` or `mamba`:
+Install the necessary dependencies using `conda` or `mamba` based on the Operating System (OS) of the machine:
 
-    mamba env create -f submodules/pypsa-earth/envs/environment.yaml
+    mamba env create -f envs/environment.{os}-64-pinned.yaml
 
-Activate `pypsa-earth` environment:
+* **Note!** Please check for `envs/` directory for names of pinned environment files. Supported OS list are `windows`, `linux` and `macos`.
 
-    conda activate pypsa-earth
+Activate `pypsa-earth-efuels` environment:
 
-* **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit (`ee14fa5`) of `efuels-supply-potential` branch of [open-energy-transition/pypsa-earth](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials) repository.
+    conda activate pypsa-earth-efuels
+
+* **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit (`0fa2e39`) of `efuels-supply-potential` branch of [open-energy-transition/pypsa-earth](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials) repository. If OS-specific installation of conda environment does not succeed, it is recommended to install general pypsa-earth environment and activate as ` mamba env create -f submodules/pypsa-earth/envs/environment.yaml` and activate by `conda activate pypsa-earth`. The detailed instructions are provided in [PyPSA-Earth Documentation](https://pypsa-earth.readthedocs.io/en/latest/installation.html).
 
 ## 2. Running scenarios
 

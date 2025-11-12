@@ -321,6 +321,16 @@ def add_steel(n):
             * costs.at["steel carbon capture retrofit", "capture_rate"]
         )
 
+        # compute fraction of gas input used in carbon capture (look into doc/diagrams/efficiency_calculations.md for details)
+        x_cc = (
+            costs.at["steel carbon capture retrofit", "gas-input"]
+            * costs.at["steel carbon capture retrofit", "capture_rate"]
+            * costs.at["gas", "CO2 intensity"]
+        )
+
+        # compute fraction of gas input used in DRI
+        x_dri = 1 - x_cc
+
         # add DRI CC
         n.madd(
             "Link",
@@ -333,8 +343,8 @@ def add_steel(n):
             bus5=nodes,
             p_nom_extendable=True,
             carrier="DRI CC",
-            efficiency=1/costs.at["natural gas direct iron reduction furnace", "gas-input"],
-            efficiency2=-costs.at["natural gas direct iron reduction furnace", "ore-input"]
+            efficiency=x_dri/costs.at["natural gas direct iron reduction furnace", "gas-input"],
+            efficiency2=-x_dri*costs.at["natural gas direct iron reduction furnace", "ore-input"]
             / costs.at["natural gas direct iron reduction furnace", "gas-input"],
             efficiency3=costs.at["gas", "CO2 intensity"]
             * (1 - costs.at["steel carbon capture retrofit", "capture_rate"]),
@@ -454,6 +464,24 @@ def add_steel(n):
             * costs.at["steel carbon capture retrofit", "capture_rate"]
         )
 
+        # compute ratio of gas/coal usage (look into doc/diagrams/efficiency_calculations.md for details)
+        k = (
+            costs.at["steel carbon capture retrofit", "gas-input"]
+            * costs.at["steel carbon capture retrofit", "capture_rate"]
+            * costs.at["coal", "CO2 intensity"]
+            / (1 - (
+                costs.at["steel carbon capture retrofit", "gas-input"]
+                * costs.at["steel carbon capture retrofit", "capture_rate"]
+                * costs.at["gas", "CO2 intensity"])
+            )
+        )
+
+        # compute CO2 output
+        co2_output = (
+            costs.at["coal", "CO2 intensity"]
+            + k * costs.at["gas", "CO2 intensity"]
+        )
+
         # add BF-BOF CC
         n.madd(
             "Link",
@@ -464,6 +492,8 @@ def add_steel(n):
             bus3=nodes + " scrap steel",
             bus4="co2 atmosphere",
             bus5=nodes + " co2 stored",
+            bus6=nodes + " gas",
+            bus7=nodes,
             p_nom_extendable=True,
             carrier="BF-BOF CC",
             efficiency=1/costs.at["blast furnace-basic oxygen furnace", "coal-input"],
@@ -471,10 +501,15 @@ def add_steel(n):
             / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
             efficiency3=-costs.at["blast furnace-basic oxygen furnace", "scrap-input"]
             / costs.at["blast furnace-basic oxygen furnace", "coal-input"],
-            efficiency4=costs.at["coal", "CO2 intensity"]
+            efficiency4=co2_output
             * (1 - costs.at["steel carbon capture retrofit", "capture_rate"]),
-            efficiency5=costs.at["coal", "CO2 intensity"]
+            efficiency5=co2_output
             * costs.at["steel carbon capture retrofit", "capture_rate"],
+            efficiency6=-k,
+            efficiency7=(-co2_output
+            * costs.at["steel carbon capture retrofit", "capture_rate"]
+            * costs.at["steel carbon capture retrofit", "electricity-input"],
+            ),
             capital_cost=capital_cost,
             lifetime=costs.at["steel carbon capture retrofit", "lifetime"],
         )
@@ -509,7 +544,7 @@ def add_steel(n):
         nodes + " steel EAF",
         bus0=nodes,
         bus1=nodes + " steel EAF",
-        bus2=nodes + " scrap",
+        bus2=nodes + " scrap steel",
         p_nom_extendable=True,
         carrier="EAF",
         efficiency=1/costs.at["electric arc furnace with hbi and scrap", "electricity-input"],
@@ -627,6 +662,30 @@ def add_cement(n):
             costs.at["cement dry clinker", "VOM"]
             / costs.at["cement dry clinker", "gas-input"]
         )
+
+        # compute fraction of gas input used in carbon capture (look into doc/diagrams/efficiency_calculations.md for details)
+        x_cc = (
+            costs.at["cement carbon capture retrofit", "gas-input"]
+            * costs.at["cement carbon capture retrofit", "capture_rate"]
+            * costs.at["gas", "CO2 intensity"]
+        )
+
+        # compute fraction of gas input used in cement clinker production
+        x_clinker = 1 - x_cc
+
+        # compute fraction of electricity input used in cement clinker production
+        elec_clinker = (
+            -costs.at["cement dry clinker", "electricity-input"]
+            / costs.at["cement dry clinker", "gas-input"]
+        )
+
+        # compute fraction of electricity input used in carbon capture
+        elec_cc = (
+            -costs.at["cement carbon capture retrofit", "electricity-input"]
+            * costs.at["cement carbon capture retrofit", "capture_rate"]
+            * costs.at["gas", "CO2 intensity"]
+        )
+
         # add cement dry clinker CC
         n.madd(
             "Link",
@@ -638,9 +697,8 @@ def add_cement(n):
             bus4=nodes + " co2 stored",
             p_nom_extendable=True,
             carrier="dry clinker CC",
-            efficiency=1/costs.at["cement dry clinker", "gas-input"],
-            efficiency2=-costs.at["cement dry clinker", "electricity-input"]
-            / costs.at["cement dry clinker", "gas-input"],
+            efficiency=x_clinker/costs.at["cement dry clinker", "gas-input"],
+            efficiency2=elec_clinker + elec_cc,
             efficiency3=costs.at["gas", "CO2 intensity"]
             * (1 - costs.at["cement carbon capture retrofit", "capture_rate"]),
             efficiency4=costs.at["gas", "CO2 intensity"]
@@ -1085,14 +1143,14 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "add_custom_industry",
-            configfile="configs/calibration/config.base.yaml",
+            configfile="configs/scenarios/config.scenario.02.yaml",
             simpl="",
-            ll="copt",
+            ll="v1",
             clusters=100,
-            opts="Co2L-24H",
+            opts="CCL-24H",
             sopts="24H",
-            planning_horizons="2020",
-            discountrate="0.071",
+            planning_horizons="2030",
+            discountrate="0.07",
             demand="AB",
         )
 
@@ -1141,9 +1199,11 @@ if __name__ == "__main__":
     if snakemake.params.add_cement:
         add_cement(n)
 
-    # fill efficiency5 and bus5 for missing links if exists
-    if "efficiency5" in n.links.columns:
+    # fill efficiency5-7 and bus5-7 for missing links if exists
+    if {"efficiency5", "efficiency6", "efficiency7"} & set(n.links.columns):
         extend_links(n, level=5)
+        extend_links(n, level=6)
+        extend_links(n, level=7)
 
     # apply biogenic CO2 split
     if snakemake.params.biogenic_co2 and snakemake.params.add_ethanol and ("ethanol" in snakemake.params.ccs_retrofit):

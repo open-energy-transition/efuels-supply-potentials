@@ -1181,6 +1181,18 @@ def add_co2_storage_tanks(n):
         )
         logger.info(f"Added links from '{c}' to 'co2 geological sequestration'")
 
+    # -------------------------------------------------------------------------
+    # Update CO2 pipeline buses to match renamed CO2 storage tanks
+    # -------------------------------------------------------------------------
+    logger.info("Aligning CO2 pipelines with CO2 storage steel tank buses")
+
+    for col in [c for c in n.links.columns if c.startswith("bus")]:
+        mask = n.links[col].notna() & n.links[col].str.contains("co2 stored", na=False)
+        if mask.any():
+            n.links.loc[mask, col] = n.links.loc[mask, col].str.replace(
+                "co2 stored", "co2 storage steel tank", regex=False
+            )
+
 
 if __name__ == "__main__":
     if "snakemake" not in globals():

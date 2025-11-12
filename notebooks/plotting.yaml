@@ -423,6 +423,7 @@ rename_tech_capex:
   Solar: Solar
   solar rooftop: Solar
   Csp: Solar
+  csp: Solar
   residential urban decentral solar thermal: Solar
   services urban decentral solar thermal: Solar
   urban central solar thermal: Solar
@@ -595,6 +596,7 @@ rename_tech_opex:
   Solar: Solar (incl. tax credits)
   solar rooftop: Solar (incl. tax credits)
   Csp: Solar (incl. tax credits)
+  csp: Solar (incl. tax credits)
   urban central solar thermal: Solar (incl. tax credits)
   residential urban decentral solar thermal: Solar (incl. tax credits)
   services urban decentral solar thermal: Solar (incl. tax credits)

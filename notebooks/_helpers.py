@@ -2886,7 +2886,7 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     costs_raw = network.statistics()[["Capital Expenditure", "Operational Expenditure"]]
     year_str = name_tag[-4:]
 
-    # CAPEX
+    # ---- CAPEX ----
     capex_raw = costs_raw[["Capital Expenditure"]].reset_index()
     capex_raw["tech_label"] = capex_raw["carrier"].map(rename_capex).fillna(capex_raw["carrier"])
     capex_raw["main_category"] = capex_raw["tech_label"]
@@ -2901,7 +2901,7 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     capex_grouped["year"] = year_str
     capex_grouped["scenario"] = name_tag
 
-    # OPEX
+    # ---- OPEX (base stats) ----
     opex_raw = costs_raw[["Operational Expenditure"]].reset_index()
     opex_raw["tech_label"] = opex_raw["carrier"].map(rename_opex).fillna(opex_raw["carrier"])
     opex_raw["main_category"] = opex_raw["tech_label"]
@@ -2916,10 +2916,9 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     opex_grouped["year"] = year_str
     opex_grouped["scenario"] = name_tag
 
-    # Extra OPEX from link input flows (fuel, electricity, feedstock)
+    # ---- Extra OPEX from link input flows (fuel, electricity, feedstock) ----
     w = network.snapshot_weightings["objective"]
     results = []
-
     bus_cols = [c for c in network.links.columns if c.startswith("bus")]
 
     for link_id, row in network.links.iterrows():
@@ -2928,7 +2927,7 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
             if pcol not in network.links_t or link_id not in network.links_t[pcol].columns:
                 continue
 
-            # efficiency attribute (positive = input)
+            # Determine efficiency (positive = input)
             eff_key = f"efficiency{bcol[3:]}" if f"efficiency{bcol[3:]}" in row else "efficiency"
             eff = row.get(eff_key, np.nan)
             if not pd.notna(eff) or eff <= 0:
@@ -2949,7 +2948,7 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
             results.append({
                 "tech_label": row["carrier"],
                 "main_category": row["carrier"],
-                "cost_type": "Operational expenditure (inputs)",
+                "cost_type": "Operational expenditure",
                 "cost_billion": fuel_cost / 1e9,
                 "year": year_str,
                 "scenario": name_tag,
@@ -2957,11 +2956,11 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
 
     link_opex_df = pd.DataFrame(results)
 
+    # ---- Normalize naming and combine ----
     if not link_opex_df.empty:
         link_opex_df["tech_label"] = link_opex_df["tech_label"].replace(rename_opex)
         link_opex_df["main_category"] = link_opex_df["tech_label"]
 
-    # Combine and return
     df_all = pd.concat([capex_grouped, opex_grouped, link_opex_df], ignore_index=True)
     return df_all
 
@@ -7614,6 +7613,7 @@ def plot_tax_credit_cluster_bars(
 ):
     """
     Plot clustered stacked bar chart for tax credit analysis (OPEX or CAPEX).
+    Order: With Tax Credits → Without Tax Credits → Tax Credits
     """
     if total_tax_credit_df.empty:
         raise ValueError("total_tax_credit_df is empty; nothing to plot.")
@@ -7655,9 +7655,10 @@ def plot_tax_credit_cluster_bars(
         for raw_name, hex_color in tech_power_color.items()
     }
 
+    # Order changed: With → Without → Tax Credits
     cluster_specs = [
-        ("without_tax_credits_billion", f"{cost_type} Without Tax Credits", -0.28, 1.0, ""),
-        ("with_tax_credits_billion", f"{cost_type} With Tax Credits", 0.0, 0.85, "/"),
+        ("with_tax_credits_billion", f"{cost_type} With Tax Credits", -0.28, 0.85, "/"),
+        ("without_tax_credits_billion", f"{cost_type} Without Tax Credits", 0.0, 1.0, ""),
         ("tax_credits_billion", "Tax Credits", 0.28, 0.7, "x"),
     ]
 
@@ -7715,11 +7716,10 @@ def plot_tax_credit_cluster_bars(
             visible="legendonly",
         )
 
-    # Increased padding on the left
     padding = 0.5 if len(years) > 1 else 0.6
     fig.update_layout(
         title=title,
-        barmode="relative",  # now negatives appear below zero
+        barmode="relative",  # negatives appear below zero
         bargap=0.15,
         xaxis=dict(
             title="Year",
@@ -7741,11 +7741,12 @@ def plot_tax_credit_cluster_bars(
         template="plotly_white",
         width=width,
         height=height,
-        margin=dict(l=80, r=right_margin, t=50, b=50),  # more left margin
+        margin=dict(l=80, r=right_margin, t=50, b=50),
     )
 
     fig.add_hline(y=0, line_width=1, line_color="black")
     return fig
+
 
 
 def plot_geostorage_daily(networks, plot=True, year_title=True):

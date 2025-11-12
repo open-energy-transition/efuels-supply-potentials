@@ -961,6 +961,10 @@ def add_co2_storage_tanks(n):
         )
     logger.info("Updated Fischer-Tropsch bus2 connections from 'co2 stored' to 'co2 storage steel tank'")
 
+    # -------------------------------------------------------------------------
+    # COMMENTED OUT: buffer logic removed
+    # -------------------------------------------------------------------------
+    """
     # connect links to buffer co2 stored
     bus_cols = ["bus0", "bus1", "bus2", "bus3", "bus4", "bus5"]
     for col in bus_cols:
@@ -1004,6 +1008,8 @@ def add_co2_storage_tanks(n):
             capital_cost=0,
         )
         logger.info(f"Added links from buffer '{c}' to tank'")
+    """
+    # -------------------------------------------------------------------------
 
     # create CO2 geological sequestration buses
     co2_storage_tank_buses = n.buses[n.buses.carrier == "co2 storage steel tank"]
@@ -1049,6 +1055,10 @@ def add_co2_storage_tanks(n):
         )
         logger.info(f"Added links from '{c}' to 'co2 geological sequestration'")
 
+    # -------------------------------------------------------------------------
+    # COMMENTED OUT: buffer to geological sequestration links removed
+    # -------------------------------------------------------------------------
+    """
     # add link from buffer co2 storage steel tank to co2 sequestration
     carriers_for_buffer_geo = ["buffer co2 storage steel tank"]
     if snakemake.params.biogenic_co2:
@@ -1067,6 +1077,8 @@ def add_co2_storage_tanks(n):
             capital_cost=0,
         )
         logger.info(f"Added links from '{c}' to 'co2 geological sequestration'")
+    """
+    # -------------------------------------------------------------------------
 
 
 if __name__ == "__main__":

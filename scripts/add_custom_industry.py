@@ -506,10 +506,9 @@ def add_steel(n):
             efficiency5=co2_output
             * costs.at["steel carbon capture retrofit", "capture_rate"],
             efficiency6=-k,
-            efficiency7=(-co2_output
+            efficiency7=-co2_output
             * costs.at["steel carbon capture retrofit", "capture_rate"]
             * costs.at["steel carbon capture retrofit", "electricity-input"],
-            ),
             capital_cost=capital_cost,
             lifetime=costs.at["steel carbon capture retrofit", "lifetime"],
         )

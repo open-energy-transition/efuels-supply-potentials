@@ -449,6 +449,7 @@ if config["saf_mandate"]["ekerosene_split"]:
         params:
             non_spatial_ekerosene=config["saf_mandate"]["non_spatial_ekerosene"],
             saf_scenario=config["saf_mandate"]["saf_scenario"],
+            limit_ekerosene_from_hawaii=config["saf_mandate"]["limit_ekerosene_from_hawaii"],
         input:
             network=PYPSA_EARTH_DIR + "results/"
             + SECDIR

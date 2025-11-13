@@ -84,6 +84,18 @@ def add_ekerosene_buses(n):
         )
         logger.info("Added links between E-kerosene buses and E-kerosene main bus")
 
+        if snakemake.params.limit_ekerosene_from_hawaii:
+            lat_min, lat_max, lon_min, lon_max = 16.0, 25.0, -163.0, -150.0 # Hawaii bounding box
+            hawaii_ac_bus = n.buses[
+                (n.buses.carrier == "AC")&(n.buses.x > lon_min)&(n.buses.x < lon_max)&(n.buses.y > lat_min)&(n.buses.y < lat_max)
+            ].index
+            hawaii_ekerosene_bus = hawaii_ac_bus + " e-kerosene"
+
+            # set p_nom_max of e-kerosene-to-main link from Hawaii to main bus to 0 MW
+            n.links.loc[(n.links.carrier == 'e-kerosene-to-main')&(n.links.bus0.isin(hawaii_ekerosene_bus)), "p_nom_max"] = 0
+
+            logger.info("Limiting e-kerosene imports from Hawaii from main bus to 0 MW")
+
 
 def reroute_FT_output(n):
     """
@@ -137,14 +149,14 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "set_saf_mandate",
-            configfile="configs/scenarios/config.2040.yaml",
+            configfile="configs/scenarios/config.scenario.02.yaml",
             simpl="",
-            ll="copt",
-            clusters=10,
-            opts="24H",
+            ll="v1",
+            clusters=100,
+            opts="CCL-24H",
             sopts="24H",
-            planning_horizons=2040,
-            discountrate="0.071",
+            planning_horizons=2030,
+            discountrate="0.07",
             demand="AB",
         )
 

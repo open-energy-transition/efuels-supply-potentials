@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Limit **e-kerosene flow from Hawaii** to main e-kerosene bus [PR #123](https://github.com/open-energy-transition/efuels-supply-potentials/pull/123)
+
 * Integrate **gas-input** of steel and cement carbon capture technologies. [PR #121](https://github.com/open-energy-transition/efuels-supply-potentials/pull/121)
 
 * Add **pinned environment files** for different OS for reproducibility [PR #118](https://github.com/open-energy-transition/efuels-supply-potentials/pull/118)

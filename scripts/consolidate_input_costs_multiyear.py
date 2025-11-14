@@ -1,32 +1,6 @@
-#!/usr/bin/env python3
-"""
-Consolidate Model Input Costs - Multi-Year Version
-
-This script downloads cost and performance data from multiple years from the 
-open-energy-transition technology-data GitHub repository and consolidates them 
-into a single Excel file.
-
-The output is a single Excel file with 3 sheets:
-1. 1_Electricity_Generation
-2. 2_Hydrogen_FischerTropsch
-3. 3_Industrial_DAC
-
-Each sheet uses LONG format: technology | parameter | value | unit | source | currency_year | year
-
-Data is downloaded from GitHub for years: 2030, 2035, 2040
-
-Features:
-- Downloads latest cost data directly from GitHub
-- Only includes technologies actually used in the model (found via costs.at[...] references)
-- Merges data from multiple years with year column
-- Excel AutoFilter on all columns
-- Freeze panes on headers
-- Conditional formatting to highlight missing/NA values
-- Row grouping by technology sub-categories
-
-Usage:
-    python scripts/consolidate_input_costs_multiyear.py
-"""
+# SPDX-FileCopyrightText:  Open Energy Transition gGmbH
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
 
 import pandas as pd
 import numpy as np

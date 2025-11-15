@@ -1323,6 +1323,9 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
     and ensures that hydrogen production via electrolysis does not exceed the allowed excess of renewable energy.
     It adds constraints to the PyPSA model to enforce this temporal matching.
 
+    Additionally, when deliverability is enabled, the function enforces that electrolyzers use renewable electricity
+    generated within the same grid region, applying the same temporal aggregation rules.
+
     Raises:
     -------
     ValueError:
@@ -1331,26 +1334,25 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
 
     temporal_matching_carriers = snakemake.params.temporal_matching_carriers
     allowed_excess = snakemake.config["policy_config"]["hydrogen"]["allowed_excess"]
-    deliverability_tolerance = 1.0  # 100% matching across grid regions
-    region_col = "grid_region"
 
-    if region_col not in n.buses.columns:
-        raise ValueError(f"'{region_col}' not found in n.buses. Attach grid regions before solving.")
+    # --- Select RES generators and storage ---
+    res_gen_index = n.generators.loc[
+        n.generators.carrier.isin(temporal_matching_carriers)
+    ].index
 
-    res_gen_index = n.generators.loc[n.generators.carrier.isin(temporal_matching_carriers)].index
     res_stor_index = n.storage_units.loc[
         n.storage_units.carrier.isin(temporal_matching_carriers)
     ].index
 
+    # --- Additionality filter (only new builds) ---
     if additionality:
-        # get newly built generators and storage_units only
         new_gens = n.generators.loc[
             n.generators.build_year == int(snakemake.wildcards.planning_horizons)
         ].index
         new_stor = n.storage_units.loc[
             n.storage_units.build_year == int(snakemake.wildcards.planning_horizons)
         ].index
-        # keep only new RES generators and storage units
+
         res_gen_index = res_gen_index.intersection(new_gens)
         res_stor_index = res_stor_index.intersection(new_stor)
 
@@ -1360,13 +1362,16 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         )
     )
 
+    # --- Global RES calculation ---
     weightings_gen = pd.DataFrame(
         np.outer(n.snapshot_weightings["generators"], [1.0] * len(res_gen_index)),
         index=n.snapshots,
         columns=res_gen_index,
     )
 
-    res = linexpr((weightings_gen, get_var(n, "Generator", "p")[res_gen_index])).sum(axis=1)
+    res = linexpr(
+        (weightings_gen, get_var(n, "Generator", "p")[res_gen_index])
+    ).sum(axis=1)
 
     if not res_stor_index.empty:
         weightings_stor = pd.DataFrame(
@@ -1378,47 +1383,77 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
             (weightings_stor, get_var(n, "StorageUnit", "p_dispatch")[res_stor_index])
         ).sum(axis=1)
 
+    # --- Global temporal aggregation ---
     if time_period == "month":
         res = res.groupby(res.index.month).sum()
     elif time_period == "year":
         res = res.groupby(res.index.year).sum()
 
+    # --- Electrolyzers ---
     electrolysis_carriers = [
-        'H2 Electrolysis',
-        'Alkaline electrolyzer large',
-        'Alkaline electrolyzer medium',
-        'Alkaline electrolyzer small',
-        'PEM electrolyzer',
-        'SOEC'
+        "H2 Electrolysis",
+        "Alkaline electrolyzer large",
+        "Alkaline electrolyzer medium",
+        "Alkaline electrolyzer small",
+        "PEM electrolyzer",
+        "SOEC",
     ]
+
     electrolyzers = n.links[n.links.carrier.isin(electrolysis_carriers)].index
-    electrolysis = get_var(n, "Link", "p")[
-        n.links.loc[electrolyzers].index
-    ]
+    electrolysis = get_var(n, "Link", "p")[electrolyzers]
+
     weightings_electrolysis = pd.DataFrame(
         np.outer(n.snapshot_weightings["generators"], [1.0] * len(electrolysis.columns)),
         index=n.snapshots,
         columns=electrolysis.columns,
     )
 
-    # electricity input from electrolysers (negative sign: consumption)
-    elec_input = linexpr((-allowed_excess * weightings_electrolysis, electrolysis)).sum(axis=1)
+    # --- Global electricity input from electrolyzers ---
+    elec_input = linexpr(
+        (-allowed_excess * weightings_electrolysis, electrolysis)
+    ).sum(axis=1)
 
+    # --- Global temporal aggregation ---
     if time_period == "month":
         elec_input = elec_input.groupby(elec_input.index.month).sum()
     elif time_period == "year":
         elec_input = elec_input.groupby(elec_input.index.year).sum()
 
-    # --- Regional deliverability matching ---
-    gen_region = n.buses.loc[n.generators.loc[res_gen_index, "bus"], region_col].values if len(res_gen_index) > 0 else np.array([])
-    stor_region = n.buses.loc[n.storage_units.loc[res_stor_index, "bus"], region_col].values if len(res_stor_index) > 0 else np.array([])
+    # --- Global matching constraint (unchanged) ---
+    for i in range(len(res.index)):
+        lhs = res.iloc[i] + "\n" + elec_input.iloc[i]
+        define_constraints(
+            n, lhs, ">=", 0.0, f"RESconstraints_{i}", f"REStarget_{i}"
+        )
+
+    # ===================================================================
+    #  ADDITIONAL DELIVERABILITY CONSTRAINT PER GRID REGION (NEW)
+    # ===================================================================
+
+    deliverability_tolerance = 1.0  # 100% region-level matching
+    region_col = "grid_region"
+
+    if region_col not in n.buses.columns:
+        raise ValueError(
+            f"'{region_col}' not found in n.buses. Attach grid regions before solving."
+        )
+
+    # Map assets to grid regions
+    gen_region = (
+        n.buses.loc[n.generators.loc[res_gen_index, "bus"], region_col].values
+        if len(res_gen_index) > 0
+        else np.array([])
+    )
+    stor_region = (
+        n.buses.loc[n.storage_units.loc[res_stor_index, "bus"], region_col].values
+        if len(res_stor_index) > 0
+        else np.array([])
+    )
     el_region = n.buses.loc[n.links.loc[electrolyzers, "bus0"], region_col].values
+
     regions = pd.Index(pd.unique(el_region))
 
-    # Aggregate renewable generation and electrolyzer consumption according to the selected
-    # temporal matching (hourly, monthly, yearly). This defines at which time scale
-    # the RES-to-hydrogen matching constraint is enforced, from strict hour-by-hour compliance
-    # to fully aggregated annual matching when temporal_matching = "no_temporal_matching".
+    # Helper: same temporal aggregation used globally
     def _agg(series):
         if time_period == "hour":
             return series
@@ -1427,53 +1462,54 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         if time_period == "year":
             return series.groupby(series.index.year).sum()
         if time_period == "no_temporal_matching":
-            series.index = pd.Index([0] * len(series))
-            return series.groupby(level=0).sum()
+            s = series.copy()
+            s.index = pd.Index([0] * len(s))
+            return s.groupby(level=0).sum()
         raise ValueError(f"Unsupported time_period: {time_period}")
 
+    # --- Regional constraints ---
     for r in regions:
-        # RES generation in region r
-        for r in regions:
-            # subset masks for this region
-            gen_mask = (gen_region == r) if len(res_gen_index) > 0 else np.array([], dtype=bool)
-            stor_mask = (stor_region == r) if len(res_stor_index) > 0 else np.array([], dtype=bool)
-            el_mask = (el_region == r)
+        gen_mask = (gen_region == r) if len(res_gen_index) > 0 else np.array([], bool)
+        stor_mask = (stor_region == r) if len(res_stor_index) > 0 else np.array([], bool)
+        el_mask = (el_region == r)
 
-            # renewable generation in region r
-            res_r = 0.0
-            if gen_mask.any():
-                wg = weightings_gen.loc[:, weightings_gen.columns[gen_mask]]
-                pgen = get_var(n, "Generator", "p")[res_gen_index[gen_mask]]
-                res_r = linexpr((wg, pgen)).sum(axis=1)
-            if stor_mask.any():
-                ws = weightings_stor.loc[:, weightings_stor.columns[stor_mask]]
-                pdisp = get_var(n, "StorageUnit", "p_dispatch")[res_stor_index[stor_mask]]
-                res_r += linexpr((ws, pdisp)).sum(axis=1)
+        # --- Regional RES ---
+        res_r = pd.Series(0.0, index=n.snapshots)
 
-            # electrolyzer electricity input (negative, consumption)
-            if el_mask.any():
-                we = weightings_electrolysis.loc[:, weightings_electrolysis.columns[el_mask]]
-                pel = get_var(n, "Link", "p")[electrolyzers[el_mask]]
-                el_r = linexpr((-deliverability_tolerance * we, pel)).sum(axis=1)
-            else:
-                el_r = 0.0
+        if gen_mask.any():
+            wg = weightings_gen.loc[:, weightings_gen.columns[gen_mask]]
+            pgen = get_var(n, "Generator", "p")[res_gen_index[gen_mask]]
+            res_r += linexpr((wg, pgen)).sum(axis=1)
 
-            # temporal aggregation
-            res_r = _agg(res_r)
-            el_r = _agg(el_r)
+        if stor_mask.any():
+            ws = weightings_stor.loc[:, weightings_stor.columns[stor_mask]]
+            pdisp = get_var(n, "StorageUnit", "p_dispatch")[res_stor_index[stor_mask]]
+            res_r += linexpr((ws, pdisp)).sum(axis=1)
 
-            # add temporal + regional matching constraints
-            for i in range(len(res_r.index)):
-                lhs = res_r.iloc[i] + el_r.iloc[i]  # RES - input >= 0
-                define_constraints(
-                    n, lhs, ">=", 0.0, f"RESconstraints_{r}_{i}", f"REStarget_{r}_{i}"
-                )
+        # --- Regional electrolyzer consumption ---
+        el_r = pd.Series(0.0, index=n.snapshots)
 
-        # add temporal and regional matching constraints
+        if el_mask.any():
+            we = weightings_electrolysis.loc[
+                :, weightings_electrolysis.columns[el_mask]
+            ]
+            pel = get_var(n, "Link", "p")[electrolyzers[el_mask]]
+            el_r = linexpr((-deliverability_tolerance * we, pel)).sum(axis=1)
+
+        # --- Temporal aggregation for region ---
+        res_r = _agg(res_r)
+        el_r = _agg(el_r)
+
+        # --- RES_r(t) - Input_r(t) >= 0 ---
         for i in range(len(res_r.index)):
-            lhs = res_r.iloc[i] + el_r.iloc[i]  # RES - input >= 0
+            lhs = res_r.iloc[i] + el_r.iloc[i]
             define_constraints(
-                n, lhs, ">=", 0.0, f"RESconstraints_{r}_{i}", f"REStarget_{r}_{i}"
+                n,
+                lhs,
+                ">=",
+                0.0,
+                f"RESconstraints_{r}_{i}",
+                f"REStarget_{r}_{i}",
             )
 
 

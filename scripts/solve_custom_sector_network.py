@@ -1392,7 +1392,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         'SOEC'
     ]
     electrolyzers = n.links[n.links.carrier.isin(electrolysis_carriers)].index
-    electrolysis = get_var(n, "Link", "p")[
+    electrolysis = get_var(n, "Link", "p0")[
         n.links.loc[electrolyzers].index
     ]
     weightings_electrolysis = pd.DataFrame(

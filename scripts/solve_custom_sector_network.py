@@ -1474,20 +1474,25 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         el_mask = (el_region == r)
 
         # --- Regional RES ---
-        res_r = pd.Series(0.0, index=n.snapshots)
+        res_r = None
 
         if gen_mask.any():
             wg = weightings_gen.loc[:, weightings_gen.columns[gen_mask]]
             pgen = get_var(n, "Generator", "p")[res_gen_index[gen_mask]]
-            res_r += linexpr((wg, pgen)).sum(axis=1)
+            res_r = linexpr((wg, pgen)).sum(axis=1)
 
         if stor_mask.any():
             ws = weightings_stor.loc[:, weightings_stor.columns[stor_mask]]
             pdisp = get_var(n, "StorageUnit", "p_dispatch")[res_stor_index[stor_mask]]
-            res_r += linexpr((ws, pdisp)).sum(axis=1)
+            term = linexpr((ws, pdisp)).sum(axis=1)
+            res_r = term if res_r is None else res_r + term
+
+        if res_r is None:
+            # no RES in this region
+            res_r = pd.Series(0.0, index=n.snapshots)
 
         # --- Regional electrolyzer consumption ---
-        el_r = pd.Series(0.0, index=n.snapshots)
+        el_r = None
 
         if el_mask.any():
             we = weightings_electrolysis.loc[
@@ -1495,6 +1500,10 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
             ]
             pel = get_var(n, "Link", "p")[electrolyzers[el_mask]]
             el_r = linexpr((-deliverability_tolerance * we, pel)).sum(axis=1)
+
+        if el_r is None:
+            # no electrolyzers in this region
+            el_r = pd.Series(0.0, index=n.snapshots)
 
         # --- Temporal aggregation for region ---
         res_r = _agg(res_r)

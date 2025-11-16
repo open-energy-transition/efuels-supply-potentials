@@ -1421,7 +1421,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
 
     # --- Global matching constraint (unchanged) ---
     for i in range(len(res.index)):
-        lhs = res.iloc[i] + "\n" + elec_input.iloc[i]
+        lhs = res.iloc[i] + elec_input.iloc[i]
         define_constraints(
             n, lhs, ">=", 0.0, f"RESconstraints_{i}", f"REStarget_{i}"
         )

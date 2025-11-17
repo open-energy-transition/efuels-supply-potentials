@@ -1391,12 +1391,12 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
 
     # --- Electrolyzers ---
     electrolysis_carriers = [
-        "H2 Electrolysis",
-        "Alkaline electrolyzer large",
-        "Alkaline electrolyzer medium",
-        "Alkaline electrolyzer small",
-        "PEM electrolyzer",
-        "SOEC",
+        'H2 Electrolysis',
+        'Alkaline electrolyzer large',
+        'Alkaline electrolyzer medium',
+        'Alkaline electrolyzer small',
+        'PEM electrolyzer',
+        'SOEC',
     ]
 
     electrolyzers = n.links[n.links.carrier.isin(electrolysis_carriers)].index
@@ -1419,7 +1419,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
     elif time_period == "year":
         elec_input = elec_input.groupby(elec_input.index.year).sum()
 
-    # --- Global matching constraint (unchanged) ---
+    # --- Global matching constraint ---
     for i in range(len(res.index)):
         lhs = res.iloc[i] + elec_input.iloc[i]
         define_constraints(
@@ -1427,7 +1427,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         )
 
     # ===================================================================
-    #  ADDITIONAL DELIVERABILITY CONSTRAINT PER GRID REGION (NEW)
+    #  Deliverability constraint
     # ===================================================================
 
     deliverability_tolerance = 1.0  # 100% region-level matching

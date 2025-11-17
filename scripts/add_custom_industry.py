@@ -841,6 +841,38 @@ def define_grid_H2(n):
     )
     logger.info("Added links to connect grid H2 to H2")
 
+    # add transport network for grid H2
+
+    if "pipelines" in snakemake.input:
+        pipelines_df = pd.read_csv(snakemake.input.pipelines)
+
+        pipelines_df["buses_idx"] = (
+            "grid H2 pipeline "
+            + pipelines_df["bus0"]
+            + " -> "
+            + pipelines_df["bus1"]
+        )
+
+        grid_h2_links = pipelines_df.groupby("buses_idx").agg(
+            {"bus0": "first", "bus1": "first", "length": "mean", "capacity": "sum"}
+        )
+
+        n.madd(
+            "Link",
+            grid_h2_links.index,
+            bus0=grid_h2_links.bus0.values + " grid H2",
+            bus1=grid_h2_links.bus1.values + " grid H2",
+            p_min_pu=-1,
+            p_nom_extendable=True,
+            p_nom_max=grid_h2_links.capacity.values,  # opzionale
+            length=grid_h2_links.length.values,
+            capital_cost=costs.at["H2 (g) pipeline", "fixed"]
+            * grid_h2_links.length.values,
+            carrier="grid H2 pipeline",
+            lifetime=costs.at["H2 (g) pipeline", "lifetime"],
+        )
+
+        logger.info("Added separate grid H2 pipeline network")
 
 def add_other_electricity(n):
     """

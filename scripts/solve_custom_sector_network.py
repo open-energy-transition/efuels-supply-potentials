@@ -1426,9 +1426,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
             n, lhs, ">=", 0.0, f"RESconstraints_{i}", f"REStarget_{i}"
         )
 
-    # ===================================================================
     #  Deliverability constraint
-    # ===================================================================
 
     deliverability_tolerance = 1.0  # 100% region-level matching
     region_col = "grid_region"
@@ -1488,30 +1486,38 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
             res_r = term if res_r is None else res_r + term
 
         if res_r is None:
-            # no RES in this region
             res_r = pd.Series(0.0, index=n.snapshots)
 
         # --- Regional electrolyzer consumption ---
         el_r = None
-
         if el_mask.any():
-            we = weightings_electrolysis.loc[
-                :, weightings_electrolysis.columns[el_mask]
-            ]
+            we = weightings_electrolysis.loc[:, weightings_electrolysis.columns[el_mask]]
             pel = get_var(n, "Link", "p")[electrolyzers[el_mask]]
             el_r = linexpr((-deliverability_tolerance * we, pel)).sum(axis=1)
 
         if el_r is None:
-            # no electrolyzers in this region
             el_r = pd.Series(0.0, index=n.snapshots)
 
         # --- Temporal aggregation for region ---
         res_r = _agg(res_r)
         el_r = _agg(el_r)
 
-        # --- RES_r(t) - Input_r(t) >= 0 ---
+        # --- Slack variable for feasibility ---
+        # Slack allows regions with insufficient RES to remain feasible.
+        slack_name = f"slack_deliv_{r}"
+        slack = n.model.add_variables(
+            1,  # one slack per aggregated period, but PyPSA treats this as scalar and expands
+            name=slack_name,
+            lower_bound=0.0,
+            upper_bound=np.inf
+        )
+
+        # Penalize slack in objective with a large weight
+        n.model.objective += 1e8 * slack.sum()
+
+        # --- RES_r(t) - Input_r(t) + slack >= 0 ---
         for i in range(len(res_r.index)):
-            lhs = res_r.iloc[i] + el_r.iloc[i]
+            lhs = res_r.iloc[i] + el_r.iloc[i] + slack[0]
             define_constraints(
                 n,
                 lhs,

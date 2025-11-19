@@ -1391,7 +1391,6 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
 
     # --- Electrolyzers ---
     electrolysis_carriers = [
-        'H2 Electrolysis',
         'Alkaline electrolyzer large',
         'Alkaline electrolyzer medium',
         'Alkaline electrolyzer small',
@@ -1442,11 +1441,13 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         if len(res_gen_index) > 0
         else np.array([])
     )
+
     stor_region = (
         n.buses.loc[n.storage_units.loc[res_stor_index, "bus"], region_col].values
         if len(res_stor_index) > 0
         else np.array([])
     )
+
     el_region = n.buses.loc[n.links.loc[electrolyzers, "bus0"], region_col].values
 
     regions = pd.Index(pd.unique(el_region))
@@ -1467,6 +1468,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
 
     # --- Regional constraints ---
     for r in regions:
+
         gen_mask = (gen_region == r) if len(res_gen_index) > 0 else np.array([], bool)
         stor_mask = (stor_region == r) if len(res_stor_index) > 0 else np.array([], bool)
         el_mask = (el_region == r)
@@ -1486,38 +1488,30 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
             res_r = term if res_r is None else res_r + term
 
         if res_r is None:
+            # no RES in this region
             res_r = pd.Series(0.0, index=n.snapshots)
 
         # --- Regional electrolyzer consumption ---
         el_r = None
+
         if el_mask.any():
-            we = weightings_electrolysis.loc[:, weightings_electrolysis.columns[el_mask]]
+            we = weightings_electrolysis.loc[
+                :, weightings_electrolysis.columns[el_mask]
+            ]
             pel = get_var(n, "Link", "p")[electrolyzers[el_mask]]
             el_r = linexpr((-deliverability_tolerance * we, pel)).sum(axis=1)
 
         if el_r is None:
+            # no electrolyzers in this region
             el_r = pd.Series(0.0, index=n.snapshots)
 
         # --- Temporal aggregation for region ---
         res_r = _agg(res_r)
         el_r = _agg(el_r)
 
-        # --- Slack variable for feasibility ---
-        # Slack allows regions with insufficient RES to remain feasible.
-        slack_name = f"slack_deliv_{r}"
-        slack = n.model.add_variables(
-            1,  # one slack per aggregated period, but PyPSA treats this as scalar and expands
-            name=slack_name,
-            lower_bound=0.0,
-            upper_bound=np.inf
-        )
-
-        # Penalize slack in objective with a large weight
-        n.model.objective += 1e8 * slack.sum()
-
-        # --- RES_r(t) - Input_r(t) + slack >= 0 ---
+        # --- RES_r(t) - Input_r(t) >= 0 ---
         for i in range(len(res_r.index)):
-            lhs = res_r.iloc[i] + el_r.iloc[i] + slack[0]
+            lhs = res_r.iloc[i] + el_r.iloc[i]
             define_constraints(
                 n,
                 lhs,

@@ -2,17 +2,17 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Scenario n. 2 - Reference - ReFuel EU
+# Scenario n. 10 - Sensitivity - Biogenic point-source CO2 only
 #
 # | Temporal matching        | Hourly matching                           | Yes                                   |
 # | Aviation sector          | Aviation demand                           | Central                               |
 # |                          | e-kerosene blending mandate               | ReFuel EU                             |
 # | Demand projections       | Electricity demand + EV share             | Medium                                |
 # | Costs                    | Electricity generation (NREL ATB)         | Moderate + tax credits                |
-# |                          | Electrolysis (ICCT IRA assumptions)       | Moderate (no tax credits)             |
-# |                          | DAC                                       | Moderate  + tax credits               |
+# |                          | Electrolysis (ICCT IRA assumptions)       | Moderate + tax credits                |
+# |                          | DAC                                       | Moderate + tax credits                |
 # |                          | Point-source CO₂ capture (NPC)            | Conservative + tax credits            |
-# | Supply constraint        | CO2 supply                                | Biogenic & non-biogenic sources + DAC |
+# | Supply constraint        | CO2 supply                                | Biogenic sources + DAC                |
 # | Power sector development | Transmission expansion                    | No new expansion *                    |
 # |                          | State policies for electricity generation | Current policies                      |
 # * Optimal transmission expansion if infeasible
@@ -27,8 +27,8 @@ enable:
   custom_busmap: true
 
 run:
-  name: "US_scenario_02" # use this to keep track of runs with different settings
-  sector_name: "US_scenario_02"
+  name: "US_scenario_10" # use this to keep track of runs with different settings
+  sector_name: "US_scenario_10"
 
 foresight: myopic
 
@@ -64,7 +64,7 @@ policies:
   country: [] # "CES" to adopt country-wise clean electricity generation constraint (90% clean electricity by 2040), otherwise empty
 
 custom_industry:
-  CCS_retrofit: [ethanol, ammonia, steel, cement]
+  biogenic_co2: true
 
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes
@@ -103,9 +103,9 @@ costs:
 
 policy_config:
   hydrogen:
-    temporal_matching: "no_temporal_matching" # either "hourly", "monthly", "yearly", "no_temporal_matching"
-    additionality: false
-    deliverability: false
+    temporal_matching: "hourly" # either "hourly", "monthly", "yearly", "no_temporal_matching"
+    additionality: true
+    deliverability: true
     temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro, nuclear]
 
 demand_data:

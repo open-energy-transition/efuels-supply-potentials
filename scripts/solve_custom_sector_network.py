@@ -212,9 +212,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
     # Load PTC and ITC file
     ptc_df = pd.read_csv(ptc_path)
 
-    # ------------------------------------------------------------
     # Select correct regime (IRA 2022 or OB3) if present
-    # ------------------------------------------------------------
     pre_ob3_tax_credits = None
     if config_file is not None:
         pre_ob3_tax_credits = config_file.get("policies", {}).get("pre_ob3_tax_credits", None)
@@ -260,9 +258,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         "SOEC"
     }
 
-    # -------------------------
     # Apply Production Tax Credits to GENERATORS
-    # -------------------------
     for name, gen in network.generators.iterrows():
         carrier = gen.carrier
         build_year = gen.build_year
@@ -345,9 +341,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
             if verbose:
                 logger.info(f"[PTC GEN] {name} | +{scale * credit:.2f}")
 
-    # -------------------------
     # Apply PTC to LINKS (biomass, carbon capture, electrolyzers, DAC)
-    # -------------------------
     for name, link in network.links.iterrows():
         carrier = link.carrier
         build_year = getattr(link, "build_year", planning_horizon)
@@ -468,9 +462,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                             f"[PTC LINK DAC] {name} | CO2={tco2:.3f}, credit={credit:.2f} (usage-only)"
                         )
 
-    # -------------------------
     # Apply Investment Tax Credits to STORAGE UNITS (batteries)
-    # -------------------------
     if os.path.exists(itc_path):
         itc_df = pd.read_csv(itc_path, index_col=0)
 
@@ -509,9 +501,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                         if verbose:
                             logger.info(f"[ITC STORAGE] {idx} | year={planning_horizon}, scale={scale:.2f}")
 
-    # -------------------------
     # Apply Investment Tax Credits to LINKS (battery chargers)
-    # -------------------------
     if os.path.exists(itc_path):
         itc_df = pd.read_csv(itc_path, index_col=0)
 
@@ -1335,7 +1325,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
     temporal_matching_carriers = snakemake.params.temporal_matching_carriers
     allowed_excess = snakemake.config["policy_config"]["hydrogen"]["allowed_excess"]
 
-    # --- Select RES generators and storage ---
+    # Select RES generators and storage
     res_gen_index = n.generators.loc[
         n.generators.carrier.isin(temporal_matching_carriers)
     ].index
@@ -1344,17 +1334,21 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         n.storage_units.carrier.isin(temporal_matching_carriers)
     ].index
 
-    # --- Additionality filter (only new builds) ---
+    # Additionality filter (45V-compatible: enforce only in commissioning year)
     if additionality:
-        new_gens = n.generators.loc[
-            n.generators.build_year == int(snakemake.wildcards.planning_horizons)
-        ].index
-        new_stor = n.storage_units.loc[
-            n.storage_units.build_year == int(snakemake.wildcards.planning_horizons)
-        ].index
+        current_year = int(snakemake.wildcards.planning_horizons)
 
-        res_gen_index = res_gen_index.intersection(new_gens)
-        res_stor_index = res_stor_index.intersection(new_stor)
+        # New RES built in the current planning horizon
+        new_gens = n.generators.loc[n.generators.build_year == current_year].index
+        new_stor = n.storage_units.loc[n.storage_units.build_year == current_year].index
+
+        # If we are in the commissioning horizon → enforce additionality strictly
+        # If we are in a later horizon → allow all RES again (no filtering)
+        if current_year == n.generators.build_year.max():
+            # Restrict to new RES only (commissioning year logic)
+            res_gen_index = res_gen_index.intersection(new_gens)
+            res_stor_index = res_stor_index.intersection(new_stor)
+        # else: do nothing (RES from previous years are allowed)
 
     logger.info(
         "setting h2 export to {}ly matching constraint {} additionality (with deliverability)".format(
@@ -1362,7 +1356,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         )
     )
 
-    # --- Global RES calculation ---
+    # Global RES calculation
     weightings_gen = pd.DataFrame(
         np.outer(n.snapshot_weightings["generators"], [1.0] * len(res_gen_index)),
         index=n.snapshots,
@@ -1383,13 +1377,13 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
             (weightings_stor, get_var(n, "StorageUnit", "p_dispatch")[res_stor_index])
         ).sum(axis=1)
 
-    # --- Global temporal aggregation ---
+    # Global temporal aggregation
     if time_period == "month":
         res = res.groupby(res.index.month).sum()
     elif time_period == "year":
         res = res.groupby(res.index.year).sum()
 
-    # --- Electrolyzers ---
+    # Electrolyzers
     electrolysis_carriers = [
         'Alkaline electrolyzer large',
         'Alkaline electrolyzer medium',
@@ -1407,18 +1401,18 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         columns=electrolysis.columns,
     )
 
-    # --- Global electricity input from electrolyzers ---
+    # Global electricity input from electrolyzers
     elec_input = linexpr(
         (-allowed_excess * weightings_electrolysis, electrolysis)
     ).sum(axis=1)
 
-    # --- Global temporal aggregation ---
+    # Global temporal aggregation
     if time_period == "month":
         elec_input = elec_input.groupby(elec_input.index.month).sum()
     elif time_period == "year":
         elec_input = elec_input.groupby(elec_input.index.year).sum()
 
-    # --- Global matching constraint ---
+    # Global matching constraint
     for i in range(len(res.index)):
         lhs = res.iloc[i] + elec_input.iloc[i]
         define_constraints(
@@ -1466,14 +1460,14 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
             return s.groupby(level=0).sum()
         raise ValueError(f"Unsupported time_period: {time_period}")
 
-    # --- Regional constraints ---
+    # Regional constraints
     for r in regions:
 
         gen_mask = (gen_region == r) if len(res_gen_index) > 0 else np.array([], bool)
         stor_mask = (stor_region == r) if len(res_stor_index) > 0 else np.array([], bool)
         el_mask = (el_region == r)
 
-        # --- Regional RES ---
+        # Regional RES
         res_r = None
 
         if gen_mask.any():
@@ -1491,7 +1485,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
             # no RES in this region
             res_r = pd.Series(0.0, index=n.snapshots)
 
-        # --- Regional electrolyzer consumption ---
+        # Regional electrolyzer consumption
         el_r = None
 
         if el_mask.any():
@@ -1505,11 +1499,11 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
             # no electrolyzers in this region
             el_r = pd.Series(0.0, index=n.snapshots)
 
-        # --- Temporal aggregation for region ---
+        # Temporal aggregation for region
         res_r = _agg(res_r)
         el_r = _agg(el_r)
 
-        # --- RES_r(t) - Input_r(t) >= 0 ---
+        # RES_r(t) - Input_r(t) >= 0
         for i in range(len(res_r.index)):
             lhs = res_r.iloc[i] + el_r.iloc[i]
             define_constraints(

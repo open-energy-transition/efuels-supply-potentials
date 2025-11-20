@@ -2882,11 +2882,11 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     import numpy as np
     import pandas as pd
 
-    # --- Base stats from PyPSA ---
+    # --- PyPSA statistics ---
     costs_raw = network.statistics()[["Capital Expenditure", "Operational Expenditure"]]
     year_str = name_tag[-4:]
 
-    # ---- CAPEX ----
+    # CAPEX
     capex_raw = costs_raw[["Capital Expenditure"]].reset_index()
     capex_raw["tech_label"] = capex_raw["carrier"].map(rename_capex).fillna(capex_raw["carrier"])
     capex_raw["main_category"] = capex_raw["tech_label"]
@@ -2901,7 +2901,7 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     capex_grouped["year"] = year_str
     capex_grouped["scenario"] = name_tag
 
-    # ---- OPEX (base stats) ----
+    # OPEX (base)
     opex_raw = costs_raw[["Operational Expenditure"]].reset_index()
     opex_raw["tech_label"] = opex_raw["carrier"].map(rename_opex).fillna(opex_raw["carrier"])
     opex_raw["main_category"] = opex_raw["tech_label"]
@@ -2916,54 +2916,61 @@ def compute_system_costs(network, rename_capex, rename_opex, name_tag):
     opex_grouped["year"] = year_str
     opex_grouped["scenario"] = name_tag
 
-    # ---- Extra OPEX from link input flows (fuel, electricity, feedstock) ----
+
+    # EXTRA OPEX FROM INPUT FLOWS (GENERIC)
     w = network.snapshot_weightings["objective"]
-    results = []
     bus_cols = [c for c in network.links.columns if c.startswith("bus")]
+    results_extra = []
 
     for link_id, row in network.links.iterrows():
+        tech = row["carrier"]
+
         for bcol in bus_cols:
-            pcol = f"p{bcol[3:]}"  # e.g. bus0 -> p0
-            if pcol not in network.links_t or link_id not in network.links_t[pcol].columns:
+            bus = row[bcol]
+            if pd.isna(bus):
                 continue
 
-            # Determine efficiency (positive = input)
-            eff_key = f"efficiency{bcol[3:]}" if f"efficiency{bcol[3:]}" in row else "efficiency"
-            eff = row.get(eff_key, np.nan)
-            if not pd.notna(eff) or eff <= 0:
-                continue  # only input ports
-
-            bus = row[bcol]
+            # Only count buses with marginal price
             if bus not in network.buses_t.marginal_price.columns:
                 continue
 
-            flows = network.links_t[pcol][link_id]
-            inflow = -flows.clip(upper=0.0)  # positive inflow into link
-            if inflow.abs().sum() == 0:
+            # dispatch column p0,p1,...
+            idx = bcol[3:]      # bus2 : "2"
+            pcol = f"p{idx}"    #       : p2
+
+            if pcol not in network.links_t or link_id not in network.links_t[pcol]:
                 continue
 
-            price = network.buses_t.marginal_price[bus]
-            fuel_cost = (inflow * price * w).sum()  # EUR
+            # annual flow
+            flow = (network.links_t[pcol][link_id] * w).sum()
 
-            results.append({
-                "tech_label": row["carrier"],
-                "main_category": row["carrier"],
+            # INPUT = flow > 0   (100% consistent with CC calculations)
+            inflow = max(flow, 0.0)
+            if inflow <= 0:
+                continue
+
+            price = float(network.buses_t.marginal_price[bus].mean())
+            fuel_cost = inflow * price  # EUR
+
+            results_extra.append({
+                "tech_label": tech,
+                "main_category": tech,
                 "cost_type": "Operational expenditure",
                 "cost_billion": fuel_cost / 1e9,
                 "year": year_str,
                 "scenario": name_tag,
             })
 
-    link_opex_df = pd.DataFrame(results)
+    link_opex_df = pd.DataFrame(results_extra)
 
-    # ---- Normalize naming and combine ----
+    # Apply renaming rules to extra OPEX
     if not link_opex_df.empty:
         link_opex_df["tech_label"] = link_opex_df["tech_label"].replace(rename_opex)
         link_opex_df["main_category"] = link_opex_df["tech_label"]
 
+    # MERGE ALL COSTS
     df_all = pd.concat([capex_grouped, opex_grouped, link_opex_df], ignore_index=True)
     return df_all
-
 
 
 def assign_macro_category(row, categories_capex, categories_opex):

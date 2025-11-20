@@ -8316,3 +8316,265 @@ def plot_renewable_potential(renewable_profile_path, title=None, vmax=0.15, cmap
                 fontsize=15, weight='bold', pad=20)
 
     return fig, ax, renewable_ds
+
+def compute_captured_co2_by_tech_from_network(net):
+    """
+    Compute captured CO2 per real CC technologies only.
+    """
+
+    # allowed CC technologies
+    cc_techs = {
+        "BF-BOF CC",
+        "DRI CC",
+        "SMR CC",
+        "dry clinker CC",
+        "ethanol from starch CC",
+        "DAC"
+    }
+
+    weights = net.snapshot_weightings["objective"]
+    bus_cols = [c for c in net.links.columns if c.startswith("bus")]
+    p_cols = [f"p{i}" for i in range(len(bus_cols))]
+
+    co2_cap = {}
+
+    for link_name, row in net.links.iterrows():
+        tech = row["carrier"]
+
+        # skip everything that's not a CC technology
+        if tech not in cc_techs:
+            continue
+
+        captured_tons = 0.0
+
+        for j, bus_col in enumerate(bus_cols):
+            bus = str(row[bus_col]).lower()
+            pcol = p_cols[j]
+
+            if pcol not in net.links_t or link_name not in net.links_t[pcol]:
+                continue
+
+            flow = (net.links_t[pcol][link_name] * weights).sum()
+
+            # capture = CO2 flowing **into** the capture link
+            if ("buffer" in bus or "co2 stored" in bus):
+                captured_tons += max(-flow, 0)
+
+        if captured_tons > 0:
+            co2_cap[tech] = co2_cap.get(tech, 0) + captured_tons / 1e6
+
+    return co2_cap
+
+
+def compute_captured_co2_by_tech_from_network(net):
+    """
+    Compute captured CO2 per real CC technologies only.
+    """
+
+    # allowed CC technologies
+    cc_techs = {
+        "BF-BOF CC",
+        "DRI CC",
+        "SMR CC",
+        "dry clinker CC",
+        "ethanol from starch CC",
+        "DAC"
+    }
+
+    weights = net.snapshot_weightings["objective"]
+    bus_cols = [c for c in net.links.columns if c.startswith("bus")]
+    p_cols = [f"p{i}" for i in range(len(bus_cols))]
+
+    co2_cap = {}
+
+    for link_name, row in net.links.iterrows():
+        tech = row["carrier"]
+
+        # skip everything that's not a CC technology
+        if tech not in cc_techs:
+            continue
+
+        captured_tons = 0.0
+
+        for j, bus_col in enumerate(bus_cols):
+            bus = str(row[bus_col]).lower()
+            pcol = p_cols[j]
+
+            if pcol not in net.links_t or link_name not in net.links_t[pcol]:
+                continue
+
+            flow = (net.links_t[pcol][link_name] * weights).sum()
+
+            # capture = CO2 flowing **into** the capture link
+            if ("buffer" in bus or "co2 stored" in bus):
+                captured_tons += max(-flow, 0)
+
+        if captured_tons > 0:
+            co2_cap[tech] = co2_cap.get(tech, 0) + captured_tons / 1e6
+
+    return co2_cap
+
+
+def compute_cc_energy_costs(net, year, co2_captured_dict):
+    """
+    Compute for each CC technology:
+        - gas_input_MWh
+        - elec_input_MWh
+        - cost_gas_USD
+        - cost_elec_USD
+        - capex_annual_USD
+        - co2_cost_USD_tCO2 ( (capex+opex)/captured )
+        - co2_captured_Mt
+    """
+
+    weights = net.snapshot_weightings["objective"]
+
+    # link structure
+    bus_cols = [c for c in net.links.columns if c.startswith("bus")]
+    p_cols = [f"p{i}" for i in range(len(bus_cols))]
+
+    # GAS price map
+    gas_buses = [b for b in net.buses.index if b.endswith(" gas")]
+    gas_price_map = {
+        b: float(net.buses_t.marginal_price[b].mean())
+        for b in gas_buses
+    }
+
+    # ELECTRICITY price map (AC buses only)
+    ac_buses = [
+        b for b in net.buses.index
+        if net.buses.at[b, "carrier"] == "AC"
+    ]
+    elec_price_map = {
+        b: float(net.buses_t.marginal_price[b].mean())
+        for b in ac_buses
+    }
+
+    results = []
+
+    for tech in co2_captured_dict.keys():
+
+        links = net.links[net.links.carrier == tech]
+        if links.empty:
+            continue
+
+        gas_MWh = 0.0
+        elec_MWh = 0.0
+        cost_gas = 0.0
+        cost_elec = 0.0
+        capex_annual = 0.0
+
+        for link_name, row in links.iterrows():
+
+            # CAPEX already annualised by PyPSA
+            capital_cost = row.get("capital_cost", 0.0)
+            p_nom_opt = row.get("p_nom_opt", 0.0)
+            capex_annual += capital_cost * p_nom_opt
+
+            # ENERGY INPUTS
+            for j, bus_col in enumerate(bus_cols):
+                bus = str(row[bus_col])
+                pcol = p_cols[j]
+
+                if pcol not in net.links_t or link_name not in net.links_t[pcol]:
+                    continue
+
+                flow = (net.links_t[pcol][link_name] * weights).sum()
+                f_in = max(flow, 0)
+
+                # GAS
+                if bus.endswith(" gas"):
+                    gas_MWh += f_in
+                    if bus in gas_price_map:
+                        cost_gas += f_in * gas_price_map[bus]
+
+                # ELECTRICITY
+                elif bus in elec_price_map:
+                    elec_MWh += f_in
+                    cost_elec += f_in * elec_price_map[bus]
+
+        # CO2 captured
+        co2_Mt = co2_captured_dict[tech]
+        co2_t = co2_Mt * 1e6
+
+        if co2_t > 0:
+            total_cost = capex_annual + cost_gas + cost_elec
+            co2_cost = total_cost / co2_t
+        else:
+            co2_cost = 0.0
+
+        results.append({
+            "Technology": tech,
+            "co2_captured_Mt": co2_Mt,
+            "gas_input_MWh": gas_MWh,
+            "elec_input_MWh": elec_MWh,
+            "cost_gas_USD": cost_gas,
+            "cost_elec_USD": cost_elec,
+            "capex_annual_USD": capex_annual,
+            "co2_cost_USD_tCO2": co2_cost
+        })
+
+    return pd.DataFrame(results)
+
+def display_cc_summary(df):
+    """
+    Format and display the CC summary:
+      - gas/electricity input in TWh
+      - costs in MUSD
+      - CO2 captured in Mt
+      - Cost per tCO2 renamed to CO2 cost
+      - two decimals
+      - remove rows with zero captured CO2
+      - sorted by CO2 capture cost (cheapest first)
+    """
+
+    if df.empty:
+        print("No CC data available.")
+        return
+
+    # Remove zero-capture rows
+    df = df[df["co2_captured_Mt"] > 0].copy()
+    if df.empty:
+        print("No technologies with CO2 capture.")
+        return
+
+    # Unit conversions
+    df["Gas input (TWh)"] = df["gas_input_MWh"] / 1e6
+    df["Electricity input (TWh)"] = df["elec_input_MWh"] / 1e6
+    df["Gas cost (MUSD)"] = df["cost_gas_USD"] / 1e6
+    df["Electricity cost (MUSD)"] = df["cost_elec_USD"] / 1e6
+    df["CAPEX expenditure (MUSD)"] = df["capex_annual_USD"] / 1e6
+    df["Captured CO2 (Mt)"] = df["co2_captured_Mt"]
+    df["CO2 capture cost (USD/tCO2)"] = df["co2_cost_USD_tCO2"]
+
+    cols_show = [
+        "Technology",
+        "Captured CO2 (Mt)",
+        "Gas input (TWh)",
+        "Electricity input (TWh)",
+        "Gas cost (MUSD)",
+        "Electricity cost (MUSD)",
+        "CAPEX expenditure (MUSD)",
+        "CO2 capture cost (USD/tCO2)"
+    ]
+
+    df = df[cols_show].copy()
+
+    # Sort: cheapest to most expensive
+    df = df.sort_values(by="CO2 capture cost (USD/tCO2)", ascending=True)
+
+    sty = (
+        df.style
+        .hide(axis="index")
+        .format({
+            "Captured CO2 (Mt)": "{:,.2e}",
+            "Gas input (TWh)": "{:,.2f}",
+            "Electricity input (TWh)": "{:,.2f}",
+            "Gas cost (MUSD)": "{:,.2f}",
+            "Electricity cost (MUSD)": "{:,.2f}",
+            "CAPEX expenditure (MUSD)": "{:,.2f}",
+            "CO2 capture cost (USD/tCO2)": "{:,.2f}",
+        })
+    )
+
+    display(sty)

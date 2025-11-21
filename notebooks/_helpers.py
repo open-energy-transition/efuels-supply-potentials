@@ -8585,3 +8585,69 @@ def display_cc_summary(df):
     )
 
     display(sty)
+
+def compute_aviation_shares(network, level="state"):
+    """Compute kerosene and e-kerosene demand and shares by region."""
+
+    carrier_e = "e-kerosene for aviation"
+    carrier_f = "kerosene for aviation"
+
+    # Snapshot weights
+    if "energy" in network.snapshot_weightings:
+        weights = network.snapshot_weightings["energy"]
+    else:
+        weights = pd.Series(1.0, index=network.snapshots)
+
+    buses = network.buses[["state", "grid_region"]]
+    all_levels = buses[level].dropna().unique()
+
+    # Internal helper to compute annual energy by region
+    def get_energy(carrier_name):
+        mask = network.loads["carrier"].str.contains(carrier_name, case=False, na=False)
+        loads = network.loads[mask].copy()
+
+        if loads.empty:
+            return pd.DataFrame({level: all_levels, "energy_TWh": np.zeros(len(all_levels))})
+
+        loads_p = network.loads_t.p[loads.index].reindex(weights.index).fillna(0.0)
+        e_mwh = loads_p.mul(weights, axis=0).sum()
+
+        loads = loads.join(buses, on="bus", how="left")
+        loads["energy_TWh"] = e_mwh / 1e6
+
+        df = loads.groupby(level)["energy_TWh"].sum().reset_index()
+
+        df_full = pd.DataFrame({level: all_levels})
+        df_full = df_full.merge(df, on=level, how="left").fillna(0.0)
+        return df_full
+
+    # Fossil and synthetic kerosene
+    df_f = get_energy(carrier_f)
+    df_e = get_energy(carrier_e)
+
+    df = df_f.merge(df_e, on=level, suffixes=("_kero", "_ekero"))
+
+    # Shares
+    total = df["energy_TWh_kero"] + df["energy_TWh_ekero"]
+    df["kero_share"] = np.where(total > 0, df["energy_TWh_kero"] / total * 100, 0)
+    df["ekero_share"] = np.where(total > 0, df["energy_TWh_ekero"] / total * 100, 0)
+
+    # Rename columns
+    df = df.rename(columns={
+        level: "State" if level == "state" else "Grid region",
+        "energy_TWh_kero": "Kerosene cons. (TWh)",
+        "energy_TWh_ekero": "e-kerosene cons. (TWh)",
+        "kero_share": "Kerosene share (%)",
+        "ekero_share": "e-kerosene share (%)"
+    })
+
+    # Round results
+    df["Kerosene cons. (TWh)"] = df["Kerosene cons. (TWh)"].round(2)
+    df["e-kerosene cons. (TWh)"] = df["e-kerosene cons. (TWh)"].round(2)
+    df["Kerosene share (%)"] = df["Kerosene share (%)"].round(2)
+    df["e-kerosene share (%)"] = df["e-kerosene share (%)"].round(2)
+
+    # Clean table: region as index, no numeric index
+    df = df.set_index(df.columns[0])
+
+    return df

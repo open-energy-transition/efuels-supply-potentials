@@ -1302,15 +1302,12 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         - Always hourly unless user selects "month" or "year".
         - Uses only renewable carriers listed in temporal_matching_carriers.
 
-    Additionality (45V-compliant):
-        - In each planning horizon, only RES with build_year == current_year
-          are considered "incremental" for that horizon.
-        - RES from previous horizons remain valid because they were incremental
-          at commissioning and continue to qualify in later horizons.
+    Additionality:
+        - Electrolyzers can use only RES with build_year >= electrolyzer_build_year.
+        - This is applied across horizons (myopic runs preserve build_years).
 
     Deliverability:
-        - Enforced at the grid_region level.
-        - Matching is ANNUAL, not hourly (deliverability is a spatial, not temporal constraint).
+        - Enforced at the grid_region level on an annual basis.
     """
 
     temporal_matching_carriers = snakemake.params.temporal_matching_carriers
@@ -1324,22 +1321,39 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         n.storage_units.carrier.isin(temporal_matching_carriers)
     ]
 
+    electrolysis_carriers = [
+        "Alkaline electrolyzer large",
+        "Alkaline electrolyzer medium",
+        "Alkaline electrolyzer small",
+        "PEM electrolyzer",
+        "SOEC",
+    ]
+
     # ADDITIONALITY
     if additionality:
         current_year = int(snakemake.wildcards.planning_horizons)
 
-        # Incremental RES for THIS horizon:
-        # commissioning year uses build_year == current_year
-        incremental_gens = n.generators.index[
-            n.generators.build_year == current_year
-        ]
-        incremental_stor = n.storage_units.index[
-            n.storage_units.build_year == current_year
+        # Identify build years of all electrolyzers in this horizon
+        electrolyzer_build_years = n.links.loc[
+            n.links.carrier.isin(electrolysis_carriers),
+            "build_year"
         ]
 
-        # Apply incrementality for this horizon only
-        res_gen_index = res_gen_index.intersection(incremental_gens)
-        res_stor_index = res_stor_index.intersection(incremental_stor)
+        if len(electrolyzer_build_years) > 0:
+            # RES must be >= earliest electrolyzer build year
+            min_elec_year = electrolyzer_build_years.min()
+        else:
+            min_elec_year = current_year
+
+        allowed_gen = n.generators.index[
+            n.generators.build_year >= min_elec_year
+        ]
+        allowed_stor = n.storage_units.index[
+            n.storage_units.build_year >= min_elec_year
+        ]
+
+        res_gen_index = res_gen_index.intersection(allowed_gen)
+        res_stor_index = res_stor_index.intersection(allowed_stor)
 
     logger.info(
         f"setting h2 export to {time_period}ly matching constraint "
@@ -1374,14 +1388,6 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         res = res.groupby(res.index.month).sum()
     elif time_period == "year":
         res = res.groupby(res.index.year).sum()
-
-    electrolysis_carriers = [
-        "Alkaline electrolyzer large",
-        "Alkaline electrolyzer medium",
-        "Alkaline electrolyzer small",
-        "PEM electrolyzer",
-        "SOEC",
-    ]
 
     electrolyzers = n.links.index[
         n.links.carrier.isin(electrolysis_carriers)

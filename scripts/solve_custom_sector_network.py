@@ -1303,11 +1303,12 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         - Uses only renewable carriers listed in temporal_matching_carriers.
 
     Additionality:
-        - Electrolyzers can use only RES with build_year >= electrolyzer_build_year.
-        - This is applied across horizons (myopic runs preserve build_years).
+        - Each electrolyzer cohort (defined by build_year) must be matched only with RES whose build_year >= build_year_of_that_cohort.
+        - Enforced with separate hourly matching constraints per cohort.
 
     Deliverability:
         - Enforced at the grid_region level on an annual basis.
+        - Matching is ANNUAL, not hourly (deliverability is a spatial, not temporal constraint).
     """
 
     temporal_matching_carriers = snakemake.params.temporal_matching_carriers
@@ -1329,38 +1330,47 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         "SOEC",
     ]
 
-    # ADDITIONALITY
+    electrolyzers = n.links.index[
+        n.links.carrier.isin(electrolysis_carriers)
+    ]
+
+    electrolysis = get_var(n, "Link", "p")[electrolyzers]
+
+    weightings_electrolysis = pd.DataFrame(
+        np.outer(n.snapshot_weightings["generators"],
+                 [1.0] * len(electrolysis.columns)),
+        index=n.snapshots,
+        columns=electrolysis.columns,
+    )
+
+    # Additionality rules
     if additionality:
-        current_year = int(snakemake.wildcards.planning_horizons)
 
-        # Identify build years of all electrolyzers in this horizon
-        electrolyzer_build_years = n.links.loc[
-            n.links.carrier.isin(electrolysis_carriers),
-            "build_year"
-        ]
+        # Identify build year of each electrolyzer
+        el_build_year = n.links.loc[electrolyzers, "build_year"]
+        cohorts = el_build_year.unique()
 
-        if len(electrolyzer_build_years) > 0:
-            # RES must be >= earliest electrolyzer build year
-            min_elec_year = electrolyzer_build_years.min()
-        else:
-            min_elec_year = current_year
+        # Prepare RES lists by build_year
+        gen_by_year = n.generators.build_year
+        stor_by_year = n.storage_units.build_year
 
-        allowed_gen = n.generators.index[
-            n.generators.build_year >= min_elec_year
-        ]
-        allowed_stor = n.storage_units.index[
-            n.storage_units.build_year >= min_elec_year
-        ]
-
-        res_gen_index = res_gen_index.intersection(allowed_gen)
-        res_stor_index = res_stor_index.intersection(allowed_stor)
+        # Dictionary: for each cohort of electrolyzer built in year Y, RES allowed (build_year >= Y)
+        allowed_RES = {}
+        for Y in cohorts:
+            allowed_gen = res_gen_index.intersection(
+                gen_by_year.index[gen_by_year >= Y]
+            )
+            allowed_stor = res_stor_index.intersection(
+                stor_by_year.index[stor_by_year >= Y]
+            )
+            allowed_RES[Y] = {"gen": allowed_gen, "stor": allowed_stor}
 
     logger.info(
         f"setting h2 export to {time_period}ly matching constraint "
         f"{'with' if additionality else 'without'} additionality (annual deliverability)"
     )
 
-    # GLOBAL RES CALCULATION (hourly)
+    # GLOBAL RES CALCULATION
 
     weightings_gen = pd.DataFrame(
         np.outer(n.snapshot_weightings["generators"], [1.0] * len(res_gen_index)),
@@ -1389,19 +1399,6 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
     elif time_period == "year":
         res = res.groupby(res.index.year).sum()
 
-    electrolyzers = n.links.index[
-        n.links.carrier.isin(electrolysis_carriers)
-    ]
-
-    electrolysis = get_var(n, "Link", "p")[electrolyzers]
-
-    weightings_electrolysis = pd.DataFrame(
-        np.outer(n.snapshot_weightings["generators"],
-                 [1.0] * len(electrolysis.columns)),
-        index=n.snapshots,
-        columns=electrolysis.columns,
-    )
-
     elec_input = linexpr(
         (-allowed_excess * weightings_electrolysis, electrolysis)
     ).sum(axis=1)
@@ -1411,14 +1408,57 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
     elif time_period == "year":
         elec_input = elec_input.groupby(elec_input.index.year).sum()
 
-    # MATCHING (hourly/monthly/annual)
-
+    # MATCHING
     for i in range(len(res.index)):
         lhs = res.iloc[i] + elec_input.iloc[i]
         define_constraints(
             n, lhs, ">=", 0.0,
             f"RESconstraints_{i}", f"REStarget_{i}"
         )
+
+    # ADDITIONALITY
+    if additionality:
+
+        for Y in cohorts:
+
+            gens_Y = allowed_RES[Y]["gen"]
+            stor_Y = allowed_RES[Y]["stor"]
+
+            # Hourly RES from generators
+            if len(gens_Y) > 0:
+                wgY = weightings_gen.loc[:, gens_Y]
+                res_Y = linexpr(
+                    (wgY, get_var(n, "Generator", "p")[gens_Y])
+                ).sum(axis=1)
+            else:
+                res_Y = pd.Series(0.0, index=n.snapshots)
+
+            # Hourly RES from storage
+            if len(stor_Y) > 0:
+                wsY = weightings_stor.loc[:, stor_Y]
+                res_Y += linexpr(
+                    (wsY, get_var(n, "StorageUnit", "p_dispatch")[stor_Y])
+                ).sum(axis=1)
+
+            # Hourly electricity input for this cohort
+            el_mask_Y = (el_build_year == Y).values
+            el_cols_Y = electrolysis.columns[el_mask_Y]
+
+            if len(el_cols_Y) > 0:
+                weY = weightings_electrolysis.loc[:, el_cols_Y]
+                pelY = electrolysis[el_cols_Y]
+                el_input_Y = linexpr((-allowed_excess * weY, pelY)).sum(axis=1)
+            else:
+                el_input_Y = pd.Series(0.0, index=n.snapshots)
+
+            # Enforce hourly cohort-level constraint
+            for i in range(len(res_Y.index)):
+                lhs = res_Y.iloc[i] + el_input_Y.iloc[i]
+                define_constraints(
+                    n, lhs, ">=", 0.0,
+                    f"RESconstraints_additionality_{Y}_{i}",
+                    f"REStarget_additionality_{Y}_{i}",
+                )
 
     # DELIVERABILITY
 
@@ -1439,7 +1479,6 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
     el_region = n.buses.loc[n.links.loc[electrolyzers, "bus0"], region_col].values
     regions = pd.Index(pd.unique(el_region))
 
-    # helper for aggregation
     def _agg(series):
         if time_period == "hour":
             return series
@@ -1453,14 +1492,12 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
             return s.groupby(level=0).sum()
         raise ValueError(f"Unsupported time_period {time_period}")
 
-    # Regional deliverability
     for r in regions:
 
         gen_mask = (gen_region == r)
         stor_mask = (stor_region == r)
         el_mask = (el_region == r)
 
-        # Regional RES
         res_r = None
         if gen_mask.any():
             wg = weightings_gen.loc[:, weightings_gen.columns[gen_mask]]
@@ -1476,7 +1513,6 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         if res_r is None:
             res_r = pd.Series(0.0, index=n.snapshots)
 
-        # Regional electrolyzer input
         el_r = None
         if el_mask.any():
             we = weightings_electrolysis.loc[:, weightings_electrolysis.columns[el_mask]]
@@ -1489,7 +1525,6 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         res_r = _agg(res_r)
         el_r = _agg(el_r)
 
-        # Annual deliverability constraint
         lhs = res_r.sum() + el_r.sum()
         define_constraints(
             n, lhs, ">=", 0.0,

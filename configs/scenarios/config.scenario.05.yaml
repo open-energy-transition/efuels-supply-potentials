@@ -107,7 +107,7 @@ policy_config:
     temporal_matching: "hourly" # either "hourly", "monthly", "yearly", "no_temporal_matching"
     additionality: true
     deliverability: true
-    deliverability_period: "yearly" # either "hourly", "monthly", "yearly", "no_deliverability"
+    deliverability_period: "yearly" # either "yearly", "no_deliverability"
     temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro, nuclear]
 
 demand_data:

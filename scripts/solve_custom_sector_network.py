@@ -1323,6 +1323,8 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
 
     deliverability_enabled = hydrogen_cfg.get("deliverability", True)
     deliverability_period = hydrogen_cfg.get("deliverability_period", "yearly")
+    if deliverability_period not in ("yearly", "no_deliverability"):
+        raise ValueError("deliverability_period must be 'yearly' or 'no_deliverability'")
 
     # Helper: temporal aggregation supporting "hourly"/"monthly"/"yearly"
     def _agg_by_period(series, period):
@@ -1422,22 +1424,10 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
     else:
         weightings_stor = None
 
-    # Temporal aggregation for global matching
-    res_global = _agg_by_period(res, time_period)
-
     # Global electricity input from electrolyzers
     elec_input = linexpr(
         (-allowed_excess * weightings_electrolysis, electrolysis)
     ).sum(axis=1)
-    elec_input_global = _agg_by_period(elec_input, time_period)
-
-    # TEMPORAL MATCHING
-    for i in range(len(res_global.index)):
-        lhs = res_global.iloc[i] + elec_input_global.iloc[i]
-        define_constraints(
-            n, lhs, ">=", 0.0,
-            f"RESconstraints_{i}", f"REStarget_{i}"
-        )
 
     # ADDITIONALITY CONSTRAINTS PER COHORT
     if additionality and len(cohorts) > 0:

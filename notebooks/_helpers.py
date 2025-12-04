@@ -44,6 +44,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl import load_workbook
 import yaml
+from typing import Dict, List, Optional, Tuple
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -8651,3 +8652,803 @@ def compute_aviation_shares(network, level="state"):
     df = df.set_index(df.columns[0])
 
     return df
+
+
+def compute_additionality_compliance_data(
+    network,
+    region: Optional[str] = None,
+    year: Optional[int] = None,
+    additionality: bool = True,
+    res_carriers: Optional[List[str]] = None,
+    res_stor_techs: Optional[List[str]] = None,
+    electrolysis_carriers: Optional[List[str]] = None,
+) -> pd.DataFrame:
+    """
+    Compute RES generation and electrolyzer consumption for additionality compliance analysis.
+
+    Parameters
+    ----------
+    network : pypsa.Network
+        The PyPSA network to analyze
+    region : str, optional
+        Grid region to filter (e.g., "Plains", "Southeast"). If None, analyze whole country.
+    year : int, optional
+        Year for additionality filtering. If additionality=True and year is provided,
+        only new generators/storage built in that year are included.
+    additionality : bool, default True
+        If True, filter only generators/storage built in the specified year
+    res_carriers : list of str, optional
+        List of RES carrier names. Defaults to standard list.
+    res_stor_techs : list of str, optional
+        List of RES storage tech names. Defaults to ["hydro"].
+    electrolysis_carriers : list of str, optional
+        List of electrolyzer carrier names. Defaults to standard list.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with columns for each RES carrier and 'Electrolyzer consumption' (in MWh)
+    """
+    # Default carrier lists
+    if res_carriers is None:
+        res_carriers = [
+            "csp",
+            "solar",
+            "onwind",
+            "offwind-ac",
+            "ror",
+            "nuclear",
+        ]
+
+    if res_stor_techs is None:
+        res_stor_techs = ["hydro"]
+
+    if electrolysis_carriers is None:
+        electrolysis_carriers = [
+            'H2 Electrolysis',
+            'Alkaline electrolyzer large',
+            'Alkaline electrolyzer medium',
+            'Alkaline electrolyzer small',
+            'PEM electrolyzer',
+            'SOEC'
+        ]
+
+    # Filter by region if specified
+    if region is not None:
+        region_buses = network.buses.query(f"grid_region == '{region}'").index
+        region_gens = network.generators[network.generators.bus.isin(
+            region_buses)].index
+        region_stor = network.storage_units[network.storage_units.bus.isin(
+            region_buses)].index
+    else:
+        # Whole country: use all buses/generators/storage
+        region_gens = network.generators.index
+        region_stor = network.storage_units.index
+
+    # Calculate electrolyzer consumption
+    electrolyzers = network.links[network.links.carrier.isin(
+        electrolysis_carriers)].index
+    electrolyzers_consumption = network.links_t.p0[electrolyzers].multiply(
+        network.snapshot_weightings.objective, axis=0
+    ).sum(axis=1)
+
+    # Build dataframe with separate columns per carrier
+    res_by_carrier = {}
+
+    for carrier in res_carriers:
+        carrier_gens = network.generators.query(
+            "carrier == @carrier and index in @region_gens").index
+
+        if additionality and year is not None:
+            new_gens = network.generators.loc[
+                network.generators.build_year == int(year)
+            ].index
+            carrier_gens = carrier_gens.intersection(new_gens)
+
+        if len(carrier_gens) > 0:
+            carrier_gen = network.generators_t.p[carrier_gens].multiply(
+                network.snapshot_weightings.objective, axis=0
+            ).sum(axis=1)
+            res_by_carrier[carrier] = carrier_gen
+        else:
+            res_by_carrier[carrier] = pd.Series(0, index=network.snapshots)
+
+    # Add storage
+    res_storages = network.storage_units.query(
+        "carrier in @res_stor_techs and index in @region_stor").index
+    if additionality and year is not None:
+        new_stor = network.storage_units.loc[
+            network.storage_units.build_year == int(year)
+        ].index
+        res_storages = res_storages.intersection(new_stor)
+
+    if len(res_storages) > 0:
+        res_storages_dispatch = network.storage_units_t.p[res_storages].multiply(
+            network.snapshot_weightings.objective, axis=0
+        ).sum(axis=1)
+        res_by_carrier['hydro'] = res_storages_dispatch
+    else:
+        res_by_carrier['hydro'] = pd.Series(0, index=network.snapshots)
+
+    # Create DataFrame with all carriers
+    plot_df = pd.DataFrame(res_by_carrier)
+
+    # Add electrolyzer consumption
+    plot_df['Electrolyzer consumption'] = electrolyzers_consumption
+
+    return plot_df
+
+
+def apply_nice_names_and_resample(
+    df: pd.DataFrame,
+    nice_names_power: Dict[str, str],
+    nice_names: Dict[str, str],
+    resample_freq: str = "D"
+) -> pd.DataFrame:
+    """
+    Apply nice names to carriers and resample to daily (or other) frequency.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with raw carrier names as columns
+    nice_names_power : dict
+        Primary mapping for power carrier names
+    nice_names : dict
+        Fallback mapping for carrier names
+    resample_freq : str, default "D"
+        Resampling frequency (e.g., "D" for daily, "W" for weekly)
+
+    Returns
+    -------
+    pd.DataFrame
+        Resampled DataFrame with nice names (in GW)
+    """
+    # Convert to GW and resample
+    plot_df = df.div(1e3).resample(resample_freq).mean()
+
+    # Apply nice names
+    carrier_rename = {}
+    for carrier in df.columns:
+        if carrier == 'Electrolyzer consumption':
+            continue
+        nice_carrier = nice_names_power.get(
+            carrier, nice_names.get(carrier, carrier))
+        carrier_rename[carrier] = nice_carrier
+
+    plot_df.rename(columns=carrier_rename, inplace=True)
+
+    return plot_df
+
+
+def plot_additionality_compliance(
+    plot_df: pd.DataFrame,
+    tech_power_color: Dict[str, str],
+    tech_colors: Dict[str, str],
+    region: Optional[str] = None,
+    scenario_name: Optional[str] = None,
+    year: Optional[int] = None,
+    additionality: bool = True,
+    figsize: Tuple[float, float] = (18, 4),
+    show_plot: bool = True
+) -> plt.Figure:
+    """
+    Create an area plot showing additionality-compliant RES generation vs electrolyzer consumption.
+
+    Parameters
+    ----------
+    plot_df : pd.DataFrame
+        DataFrame with RES carriers and 'Electrolyzer consumption' column (in GW)
+    tech_power_color : dict
+        Color mapping for power technologies
+    tech_colors : dict
+        Fallback color mapping
+    region : str, optional
+        Grid region name for title. If None, assumes whole country.
+    scenario_name : str, optional
+        Scenario name for title
+    year : int, optional
+        Year for title
+    additionality : bool, default True
+        Whether additionality was applied (for title)
+    figsize : tuple, default (18, 4)
+        Figure size
+    show_plot : bool, default True
+        Whether to call plt.show()
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        The figure object
+    """
+    # Separate RES columns and electrolyzer
+    electrolyzer_col = 'Electrolyzer consumption'
+    res_cols = [col for col in plot_df.columns if col != electrolyzer_col]
+
+    # Create color list based on the renamed column names in res_cols
+    color_list = []
+    for col in res_cols:
+        color = tech_power_color.get(col, tech_colors.get(col, 'gray'))
+        color_list.append(color)
+
+    # Create area plot
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Plot stacked areas for RES carriers
+    plot_df[res_cols].plot.area(
+        ax=ax,
+        stacked=True,
+        alpha=0.7,
+        color=color_list
+    )
+
+    # Plot electrolyzer consumption as line on top
+    plot_df[electrolyzer_col].plot(
+        ax=ax,
+        linewidth=2,
+        color='black',
+        linestyle='-',
+        label=electrolyzer_col
+    )
+
+    ax.set_ylabel("GW")
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
+    ax.set_xlabel(None)
+    ax.grid(alpha=0.3, zorder=0)
+
+    # Build title
+    title_parts = ["RES + nuclear vs Electrolyzer consumption"]
+
+    if region:
+        title_parts.append(f"{region} region")
+    else:
+        title_parts.append("Whole Country")
+
+    if scenario_name or year:
+        subtitle = []
+        if scenario_name:
+            subtitle.append(scenario_name)
+        if year:
+            subtitle.append(str(year))
+        title_parts.append(f"({', '.join(subtitle)})")
+
+    if additionality:
+        title_parts.append(
+            "[RES + nuclear generation (additionality-compliant)]")
+
+    ax.set_title(" - ".join(title_parts))
+
+    ax.legend(
+        loc="center left",
+        bbox_to_anchor=(1.05, 0.5),
+        frameon=True,
+        fancybox=True,
+        shadow=False,
+    )
+
+    plt.tight_layout()
+
+    if show_plot:
+        plt.show()
+
+    return fig
+
+
+def analyze_additionality_single_scenario(
+    network,
+    network_name: str,
+    region: Optional[str] = None,
+    additionality: bool = True,
+    nice_names_power: Optional[Dict[str, str]] = None,
+    nice_names: Optional[Dict[str, str]] = None,
+    tech_power_color: Optional[Dict[str, str]] = None,
+    tech_colors: Optional[Dict[str, str]] = None,
+    show_plot: bool = True,
+    **kwargs
+) -> Tuple[pd.DataFrame, plt.Figure]:
+    """
+    Analyze additionality compliance for a single scenario: compute data, apply names, and create plot.
+
+    Parameters
+    ----------
+    network : pypsa.Network
+        The PyPSA network
+    network_name : str
+        Network name (used to extract year and for title)
+    region : str, optional
+        Grid region to analyze. If None, analyze whole country.
+    additionality : bool, default True
+        Apply additionality filtering
+    nice_names_power : dict, optional
+        Power carrier name mapping
+    nice_names : dict, optional
+        Fallback carrier name mapping
+    tech_power_color : dict, optional
+        Color mapping for power technologies
+    tech_colors : dict, optional
+        Fallback color mapping
+    show_plot : bool, default True
+        Whether to display the plot
+    **kwargs
+        Additional arguments passed to compute_res_electrolyzer_data
+
+    Returns
+    -------
+    tuple of (pd.DataFrame, matplotlib.figure.Figure)
+        The processed data and the figure object
+    """
+    # Extract year from network name (assumes format like "scenario_02_2030")
+    import re
+    match = re.search(r"(20\d{2})", network_name)
+    year = int(match.group(1)) if match else None
+
+    # Extract scenario name (everything except the year)
+    scenario_name = network_name.rsplit("_", 1)[0] if year else network_name
+
+    # Compute raw data
+    raw_df = compute_additionality_compliance_data(
+        network,
+        region=region,
+        year=year,
+        additionality=additionality,
+        **kwargs
+    )
+
+    # Apply nice names and resample
+    if nice_names_power is None:
+        nice_names_power = {}
+    if nice_names is None:
+        nice_names = {}
+
+    plot_df = apply_nice_names_and_resample(
+        raw_df,
+        nice_names_power,
+        nice_names
+    )
+
+    # Create plot
+    if tech_power_color is None:
+        tech_power_color = {}
+    if tech_colors is None:
+        tech_colors = {}
+
+    fig = plot_additionality_compliance(
+        plot_df,
+        tech_power_color,
+        tech_colors,
+        region=region,
+        scenario_name=scenario_name,
+        year=year,
+        additionality=additionality,
+        show_plot=show_plot
+    )
+
+    return plot_df, fig
+
+
+def analyze_additionality_multiple_networks(
+    networks: Dict[str, any],
+    regions: Optional[List[str]] = None,
+    additionality: bool = True,
+    nice_names_power: Optional[Dict[str, str]] = None,
+    nice_names: Optional[Dict[str, str]] = None,
+    tech_power_color: Optional[Dict[str, str]] = None,
+    tech_colors: Optional[Dict[str, str]] = None,
+    show_plots: bool = True,
+    skip_years: Optional[List[int]] = None,
+    **kwargs
+) -> Dict[str, Dict[str, Tuple[pd.DataFrame, plt.Figure]]]:
+    """
+    Analyze additionality compliance across multiple networks and regions, storing results.
+
+    Parameters
+    ----------
+    networks : dict of {str: pypsa.Network}
+        Dictionary mapping network names to network objects
+    regions : list of str, optional
+        List of grid regions to analyze. If None, only analyze whole country.
+        To analyze whole country AND regions, include None in the list.
+    additionality : bool, default True
+        Apply additionality filtering
+    nice_names_power : dict, optional
+        Power carrier name mapping
+    nice_names : dict, optional
+        Fallback carrier name mapping
+    tech_power_color : dict, optional
+        Color mapping for power technologies
+    tech_colors : dict, optional
+        Fallback color mapping
+    show_plots : bool, default True
+        Whether to display plots
+    skip_years : list of int, optional
+        Years to skip (e.g., [2023] if hourly matching not implemented)
+    **kwargs
+        Additional arguments passed to compute_res_electrolyzer_data
+
+    Returns
+    -------
+    dict
+        Nested dictionary: {network_name: {region: (dataframe, figure)}}
+        where region can be a region name or "whole_country"
+    """
+    if regions is None:
+        regions = [None]  # Analyze whole country by default
+
+    if skip_years is None:
+        skip_years = []
+
+    results = {}
+
+    for network_name, network in networks.items():
+        # Extract year
+        import re
+        match = re.search(r"(20\d{2})", network_name)
+        year = int(match.group(1)) if match else None
+
+        # Skip if in skip list
+        if year and year in skip_years:
+            print(f"Skipping {network_name}: year {year} in skip list")
+            continue
+
+        results[network_name] = {}
+
+        for region in regions:
+            region_key = region if region else "whole_country"
+
+            print(f"Analyzing {network_name} - {region_key}")
+
+            plot_df, fig = analyze_additionality_single_scenario(
+                network,
+                network_name,
+                region=region,
+                additionality=additionality,
+                nice_names_power=nice_names_power,
+                nice_names=nice_names,
+                tech_power_color=tech_power_color,
+                tech_colors=tech_colors,
+                show_plot=show_plots,
+                **kwargs
+            )
+
+            results[network_name][region_key] = (plot_df, fig)
+
+    return results
+
+
+def get_all_regions(network) -> List[str]:
+    """
+    Get all unique grid regions from a network.
+
+    Parameters
+    ----------
+    network : pypsa.Network
+        The PyPSA network
+
+    Returns
+    -------
+    list of str
+        Sorted list of unique region names
+    """
+    if 'grid_region' not in network.buses.columns:
+        raise ValueError("Network buses do not have 'grid_region' column")
+
+    return sorted(network.buses['grid_region'].dropna().unique())
+
+
+def plot_additionality_regions_subplots(
+    network,
+    network_name: str,
+    regions: List[str],
+    include_whole_country: bool = True,
+    additionality: bool = True,
+    nice_names_power: Optional[Dict[str, str]] = None,
+    nice_names: Optional[Dict[str, str]] = None,
+    tech_power_color: Optional[Dict[str, str]] = None,
+    tech_colors: Optional[Dict[str, str]] = None,
+    ncols: int = 2,
+    subplot_height: float = 4,
+    subplot_width: float = 9,
+    show_plot: bool = True,
+    **kwargs
+) -> Tuple[Dict[str, pd.DataFrame], plt.Figure]:
+    """
+    Create subplots showing additionality compliance for all regions (and optionally whole country) for a single scenario.
+
+    Parameters
+    ----------
+    network : pypsa.Network
+        The PyPSA network
+    network_name : str
+        Network name (used to extract year and for title)
+    regions : list of str
+        List of grid regions to plot
+    include_whole_country : bool, default True
+        Whether to include a subplot for the whole country
+    additionality : bool, default True
+        Apply additionality filtering
+    nice_names_power : dict, optional
+        Power carrier name mapping
+    nice_names : dict, optional
+        Fallback carrier name mapping
+    tech_power_color : dict, optional
+        Color mapping for power technologies
+    tech_colors : dict, optional
+        Fallback color mapping
+    ncols : int, default 2
+        Number of columns in subplot grid
+    subplot_height : float, default 4
+        Height of each subplot
+    subplot_width : float, default 9
+        Width of each subplot
+    show_plot : bool, default True
+        Whether to display the plot
+    **kwargs
+        Additional arguments passed to compute_res_electrolyzer_data
+
+    Returns
+    -------
+    tuple of (dict, matplotlib.figure.Figure)
+        Dictionary mapping region names to dataframes, and the figure object
+    """
+    import re
+    import math
+
+    # Extract year from network name
+    match = re.search(r"(20\d{2})", network_name)
+    year = int(match.group(1)) if match else None
+    scenario_name = network_name.rsplit("_", 1)[0] if year else network_name
+
+    # Set defaults
+    if nice_names_power is None:
+        nice_names_power = {}
+    if nice_names is None:
+        nice_names = {}
+    if tech_power_color is None:
+        tech_power_color = {}
+    if tech_colors is None:
+        tech_colors = {}
+
+    # Prepare region list
+    plot_regions = regions.copy()
+    if include_whole_country:
+        plot_regions = plot_regions + [None]
+
+    # Calculate subplot grid
+    nplots = len(plot_regions)
+    nrows = math.ceil(nplots / ncols)
+
+    # Create figure with subplots
+    fig, axes = plt.subplots(
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(subplot_width * ncols, subplot_height * nrows),
+        squeeze=False
+    )
+    axes = axes.flatten()
+
+    # Store dataframes
+    dataframes = {}
+
+    # Plot each region
+    for idx, region in enumerate(plot_regions):
+        ax = axes[idx]
+
+        # Compute data
+        raw_df = compute_additionality_compliance_data(
+            network,
+            region=region,
+            year=year,
+            additionality=additionality,
+            **kwargs
+        )
+
+        # Apply nice names and resample
+        plot_df = apply_nice_names_and_resample(
+            raw_df,
+            nice_names_power,
+            nice_names
+        )
+
+        # Store dataframe
+        region_key = region if region else "whole_country"
+        dataframes[region_key] = plot_df
+
+        # Separate RES columns and electrolyzer
+        electrolyzer_col = 'Electrolyzer consumption'
+        res_cols = [col for col in plot_df.columns if col != electrolyzer_col]
+
+        # Create color list
+        color_list = []
+        for col in res_cols:
+            color = tech_power_color.get(col, tech_colors.get(col, 'gray'))
+            color_list.append(color)
+
+        # Plot stacked areas for RES carriers
+        plot_df[res_cols].plot.area(
+            ax=ax,
+            stacked=True,
+            alpha=0.7,
+            color=color_list,
+            legend=False  # We'll add a single legend later
+        )
+
+        # Plot electrolyzer consumption as line
+        plot_df[electrolyzer_col].plot(
+            ax=ax,
+            linewidth=2,
+            color='black',
+            linestyle='-',
+            label=electrolyzer_col,
+            legend=False
+        )
+
+        # Format subplot
+        ax.set_ylabel("GW", fontsize=10)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
+        ax.set_xlabel(None)
+        ax.grid(alpha=0.3, zorder=0)
+
+        # Build subplot title
+        subplot_title = region if region else "Whole Country"
+        ax.set_title(subplot_title, fontsize=11, fontweight='bold')
+
+        # Remove x-axis labels for all but bottom row
+        if idx < nplots - ncols:
+            ax.set_xticklabels([])
+
+    # Hide unused subplots
+    for idx in range(nplots, len(axes)):
+        axes[idx].set_visible(False)
+
+    # Add overall title
+    title_parts = ["RES + nuclear vs Electrolyzer consumption"]
+    if scenario_name or year:
+        subtitle = []
+        if scenario_name:
+            subtitle.append(scenario_name)
+        if year:
+            subtitle.append(str(year))
+        title_parts.append(f"({', '.join(subtitle)})")
+    if additionality:
+        title_parts.append("[additionality-compliant]")
+
+    fig.suptitle(" - ".join(title_parts), fontsize=14,
+                 fontweight='bold', y=0.995)
+
+    # Create unified legend
+    # Get handles and labels from first subplot
+    handles, labels = axes[0].get_legend_handles_labels()
+
+    # Add electrolyzer line to legend
+    from matplotlib.lines import Line2D
+    electrolyzer_handle = Line2D(
+        [0], [0], color='black', linewidth=2, label='Electrolyzer consumption')
+    handles.append(electrolyzer_handle)
+    labels.append('Electrolyzer consumption')
+
+    # Place legend outside the plot area
+    fig.legend(
+        handles,
+        labels,
+        loc='center left',
+        bbox_to_anchor=(1.0, 0.5),
+        frameon=True,
+        fancybox=True,
+        shadow=False,
+        fontsize=10
+    )
+
+    # Leave space for legend and title
+    plt.tight_layout(rect=[0, 0, 0.95, 0.99])
+
+    if show_plot:
+        plt.show()
+
+    return dataframes, fig
+
+
+def analyze_additionality_multiple_subplots(
+    networks: Dict[str, any],
+    regions: Optional[List[str]] = None,
+    include_whole_country: bool = True,
+    additionality: bool = True,
+    nice_names_power: Optional[Dict[str, str]] = None,
+    nice_names: Optional[Dict[str, str]] = None,
+    tech_power_color: Optional[Dict[str, str]] = None,
+    tech_colors: Optional[Dict[str, str]] = None,
+    skip_years: Optional[List[int]] = None,
+    show_plots: bool = True,
+    ncols: int = 2,
+    subplot_height: float = 4,
+    subplot_width: float = 9,
+    **kwargs
+) -> Dict[str, Tuple[Dict[str, pd.DataFrame], plt.Figure]]:
+    """
+    Analyze additionality compliance across multiple networks, creating one subplot figure per network showing all regions.
+
+    This creates a single figure per scenario with subplots for each region (and optionally
+    the whole country), making it easy to compare regions within each scenario.
+
+    Parameters
+    ----------
+    networks : dict of {str: pypsa.Network}
+        Dictionary mapping network names to network objects
+    regions : list of str, optional
+        List of grid regions to plot. If None, automatically detect from first network.
+    include_whole_country : bool, default True
+        Whether to include a subplot for the whole country
+    additionality : bool, default True
+        Apply additionality filtering
+    nice_names_power : dict, optional
+        Power carrier name mapping
+    nice_names : dict, optional
+        Fallback carrier name mapping
+    tech_power_color : dict, optional
+        Color mapping for power technologies
+    tech_colors : dict, optional
+        Fallback color mapping
+    skip_years : list of int, optional
+        Years to skip (e.g., [2023] if hourly matching not implemented)
+    show_plots : bool, default True
+        Whether to display plots
+    ncols : int, default 2
+        Number of columns in subplot grid
+    subplot_height : float, default 4
+        Height of each subplot
+    subplot_width : float, default 9
+        Width of each subplot
+    **kwargs
+        Additional arguments passed to compute_res_electrolyzer_data
+
+    Returns
+    -------
+    dict
+        Dictionary: {network_name: (dict_of_dataframes, figure)}
+        where dict_of_dataframes maps region names to dataframes
+    """
+    import re
+
+    if skip_years is None:
+        skip_years = []
+
+    # Auto-detect regions if not provided
+    if regions is None:
+        first_network = list(networks.values())[0]
+        regions = get_all_regions(first_network)
+        print(f"Auto-detected regions: {regions}")
+
+    results = {}
+
+    for network_name, network in networks.items():
+        # Extract year
+        match = re.search(r"(20\d{2})", network_name)
+        year = int(match.group(1)) if match else None
+
+        # Skip if in skip list
+        if year and year in skip_years:
+            print(f"Skipping {network_name}: year {year} in skip list")
+            continue
+
+        print(f"Creating subplot figure for {network_name}")
+
+        # Create subplot figure for this network
+        dataframes, fig = plot_additionality_regions_subplots(
+            network=network,
+            network_name=network_name,
+            regions=regions,
+            include_whole_country=include_whole_country,
+            additionality=additionality,
+            nice_names_power=nice_names_power,
+            nice_names=nice_names,
+            tech_power_color=tech_power_color,
+            tech_colors=tech_colors,
+            ncols=ncols,
+            subplot_height=subplot_height,
+            subplot_width=subplot_width,
+            show_plot=show_plots,
+            **kwargs
+        )
+
+        results[network_name] = (dataframes, fig)
+
+    return results

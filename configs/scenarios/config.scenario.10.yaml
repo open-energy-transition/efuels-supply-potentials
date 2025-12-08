@@ -27,8 +27,8 @@ enable:
   custom_busmap: true
 
 run:
-  name: "US_scenario_02" # use this to keep track of runs with different settings
-  sector_name: "US_scenario_02"
+  name: "US_scenario_10" # use this to keep track of runs with different settings
+  sector_name: "US_scenario_10"
 
 foresight: myopic
 
@@ -163,3 +163,4 @@ plotting:
   tech_colors:
     PHS: #036356
     wind: #6895dd
+

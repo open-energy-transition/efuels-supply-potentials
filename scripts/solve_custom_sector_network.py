@@ -1293,6 +1293,47 @@ def add_h2_network_cap(n, cap):
     rhs = cap * 1000
     define_constraints(n, lhs, "<=", rhs, "h2_network_cap")
 
+def add_flexible_electrolyzers(n, costs):
+    """
+    Add a 'Flexible electrolyzer' technology:
+    - Same technical and cost parameters as Alkaline electrolyzer (large size)
+    - Very high marginal cost so it is used only as last-resort hydrogen production
+    - Not subject to 45V constraints (temporal matching, additionality, deliverability)
+    """
+    logger.info("Adding flexible electrolyzers")
+
+    flex_carrier = "Flexible electrolyzer"
+    n.add("Carrier", flex_carrier)
+
+    # Retrieve the reference parameters from the Alkaline large electrolyzer
+    ref = "Alkaline electrolyzer large size"
+
+    efficiency = 1 / costs.at[ref, "electricity-input"]
+    capital_cost = costs.at[ref, "fixed"]
+    lifetime = costs.at[ref, "lifetime"]
+    p_min_pu = 0.6   # Same operational constraint as alkaline electrolyzers
+
+    # Very high marginal cost makes this technology a fallback option only
+    marginal_cost = 1e6
+
+    n.madd(
+        "Link",
+        spatial.nodes + " " + flex_carrier,
+        bus0=spatial.nodes,                  # electricity input (AC grid)
+        bus1=spatial.nodes + " grid H2",     # output to grid H2 system
+        p_nom_extendable=True,
+        carrier=flex_carrier,
+        efficiency=efficiency,
+        capital_cost=capital_cost,
+        lifetime=lifetime,
+        p_min_pu=p_min_pu,
+        marginal_cost=marginal_cost,
+    )
+
+    logger.info(
+        f"Flexible electrolyzers added with alkaline parameters and marginal cost={marginal_cost}"
+    )
+
 
 def hydrogen_temporal_constraint(n, additionality, time_period):
     """
@@ -1826,6 +1867,10 @@ def extra_functionality(n, snapshots):
     """
     opts = n.opts
     config = n.config
+
+    # Add flexible electrolyzers before hydrogen constraints are applied
+    add_flexible_electrolyzers(n, pd.read_csv(snakemake.input.costs, index_col=0))
+
     if "BAU" in opts and n.generators.p_nom_extendable.any():
         add_BAU_constraints(n, config)
     if "SAFE" in opts and n.generators.p_nom_extendable.any():

@@ -1371,15 +1371,12 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
 
     # Prepare additionality structures (cohort-based)
     if additionality:
-        # Build year of each electrolyzer
         el_build_year = n.links.loc[electrolyzers, "build_year"]
         cohorts = el_build_year.unique()
 
-        # RES build years
         gen_by_year = n.generators.build_year
         stor_by_year = n.storage_units.build_year
 
-        # For each cohort Y: allowed temporal matching carriers have build_year >= Y
         allowed_RES = {}
         for Y in cohorts:
             allowed_gen = res_gen_index.intersection(
@@ -1399,16 +1396,12 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         f"(deliverability period={deliverability_period})"
     )
 
-    # GLOBAL TEMPORAL MATCHING CARRIERS CALCULATION
+    # Snapshot weightings for RES (used everywhere below)
     weightings_gen = pd.DataFrame(
         np.outer(n.snapshot_weightings["generators"], [1.0] * len(res_gen_index)),
         index=n.snapshots,
         columns=res_gen_index,
     )
-
-    res = linexpr(
-        (weightings_gen, get_var(n, "Generator", "p")[res_gen_index])
-    ).sum(axis=1)
 
     if len(res_stor_index) > 0:
         weightings_stor = pd.DataFrame(
@@ -1417,74 +1410,11 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
             index=n.snapshots,
             columns=res_stor_index,
         )
-        res += linexpr(
-            (weightings_stor,
-             get_var(n, "StorageUnit", "p_dispatch")[res_stor_index])
-        ).sum(axis=1)
     else:
         weightings_stor = None
 
-    # Global electricity input from electrolyzers
-    elec_input = linexpr(
-        (-allowed_excess * weightings_electrolysis, electrolysis)
-    ).sum(axis=1)
-
-    # ADDITIONALITY CONSTRAINTS PER COHORT
-    if additionality and len(cohorts) > 0:
-
-        for Y in cohorts:
-            gens_Y = allowed_RES[Y]["gen"]
-            stor_Y = allowed_RES[Y]["stor"]
-
-            # Hourly temporal matching carriers available to cohort Y
-            if len(gens_Y) > 0:
-                wgY = weightings_gen.loc[:, gens_Y]
-                res_Y = linexpr(
-                    (wgY, get_var(n, "Generator", "p")[gens_Y])
-                ).sum(axis=1)
-            else:
-                res_Y = pd.Series(0.0, index=n.snapshots)
-
-            # Hourly RES from storage for this cohort
-            if len(stor_Y) > 0 and weightings_stor is not None:
-                wsY = weightings_stor.loc[:, stor_Y]
-                res_Y += linexpr(
-                    (wsY, get_var(n, "StorageUnit", "p_dispatch")[stor_Y])
-                ).sum(axis=1)
-
-            # Hourly electricity input for this cohort (electrolyzers with build_year == Y)
-            el_mask_Y = (el_build_year == Y).values
-            el_cols_Y = electrolysis.columns[el_mask_Y]
-
-            if len(el_cols_Y) > 0:
-                weY = weightings_electrolysis.loc[:, el_cols_Y]
-                pelY = electrolysis[el_cols_Y]
-                el_input_Y = linexpr(
-                    (-allowed_excess * weY, pelY)
-                ).sum(axis=1)
-            else:
-                el_input_Y = pd.Series(0.0, index=n.snapshots)
-
-            # Temporal aggregation for the cohort-level constraint
-            res_Y_agg = _agg_by_period(res_Y, time_period)
-            el_input_Y_agg = _agg_by_period(el_input_Y, time_period)
-
-            # Cohort-level constraint
-            for i in range(len(res_Y_agg.index)):
-                lhs = res_Y_agg.iloc[i] + el_input_Y_agg.iloc[i]
-                define_constraints(
-                    n, lhs, ">=", 0.0,
-                    f"RESconstraints_additionality_{Y}_{i}",
-                    f"REStarget_additionality_{Y}_{i}",
-                )
-
-    # DELIVERABILITY
-    if not deliverability_enabled or deliverability_period == "no_deliverability":
-        return
-
-    deliverability_tolerance = 1.0
+    # Map RES generators, storage, and electrolyzers to regions
     region_col = "grid_region"
-
     if region_col not in n.buses.columns:
         raise ValueError(f"'{region_col}' missing in n.buses")
 
@@ -1497,7 +1427,118 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         if len(res_stor_index) > 0 else np.array([])
     )
     el_region = n.buses.loc[n.links.loc[electrolyzers, "bus0"], region_col].values
+
     regions = pd.Index(pd.unique(el_region))
+
+    # REGIONAL TEMPORAL MATCHING CARRIERS CALCULATION
+    for r in regions:
+
+        # masks for this region
+        gen_mask = (gen_region == r)
+        stor_mask = (stor_region == r)
+        el_mask = (el_region == r)
+
+        # RES in region
+        res_r = None
+
+        if gen_mask.any():
+            wg = weightings_gen.loc[:, weightings_gen.columns[gen_mask]]
+            pgen = get_var(n, "Generator", "p")[res_gen_index[gen_mask]]
+            res_r = linexpr((wg, pgen)).sum(axis=1)
+
+        if stor_mask.any() and weightings_stor is not None:
+            ws = weightings_stor.loc[:, weightings_stor.columns[stor_mask]]
+            pdisp = get_var(n, "StorageUnit", "p_dispatch")[res_stor_index[stor_mask]]
+            term = linexpr((ws, pdisp)).sum(axis=1)
+            res_r = term if res_r is None else res_r + term
+
+        if res_r is None:
+            res_r = pd.Series(0.0, index=n.snapshots)
+
+        # Electrolyzer input in region
+        if el_mask.any():
+            we = weightings_electrolysis.loc[:, weightings_electrolysis.columns[el_mask]]
+            pel = electrolysis.loc[:, electrolysis.columns[el_mask]]
+            el_r = linexpr((-allowed_excess * we, pel)).sum(axis=1)
+        else:
+            el_r = pd.Series(0.0, index=n.snapshots)
+
+        # Aggregate by time_period
+        res_r_agg = _agg_by_period(res_r, time_period)
+        el_r_agg = _agg_by_period(el_r, time_period)
+
+        # Impose constraint for each period
+        for i in range(len(res_r_agg.index)):
+            lhs = res_r_agg.iloc[i] + el_r_agg.iloc[i]
+            define_constraints(
+                n, lhs, ">=", 0.0,
+                f"RESconstraints_tm_reg_{r}_{i}",
+                f"REStarget_tm_reg_{r}_{i}",
+            )
+
+    # REGIONAL ADDITIONALITY CONSTRAINTS PER COHORT
+    if additionality and len(cohorts) > 0:
+
+        for r in regions:
+
+            # region masks
+            gen_mask_r = (gen_region == r)
+            stor_mask_r = (stor_region == r)
+            el_mask_r = (el_region == r)
+
+            for Y in cohorts:
+
+                # RES allowed by build_year AND in same region
+                gens_Y = allowed_RES[Y]["gen"].intersection(res_gen_index[gen_mask_r])
+                stor_Y = allowed_RES[Y]["stor"].intersection(res_stor_index[stor_mask_r])
+
+                # RES from generators
+                if len(gens_Y) > 0:
+                    wgY = weightings_gen.loc[:, gens_Y]
+                    res_Y_r = linexpr(
+                        (wgY, get_var(n, "Generator", "p")[gens_Y])
+                    ).sum(axis=1)
+                else:
+                    res_Y_r = pd.Series(0.0, index=n.snapshots)
+
+                # RES from storage
+                if len(stor_Y) > 0 and weightings_stor is not None:
+                    wsY = weightings_stor.loc[:, stor_Y]
+                    res_Y_r += linexpr(
+                        (wsY, get_var(n, "StorageUnit", "p_dispatch")[stor_Y])
+                    ).sum(axis=1)
+
+                # Electrolyzers of cohort Y **in this region**
+                el_mask_Y_r = ((el_build_year == Y).values) & (el_mask_r)
+                el_cols_Y_r = electrolysis.columns[el_mask_Y_r]
+
+                if len(el_cols_Y_r) > 0:
+                    weY = weightings_electrolysis.loc[:, el_cols_Y_r]
+                    pelY = electrolysis[el_cols_Y_r]
+                    el_input_Y_r = linexpr(
+                        (-allowed_excess * weY, pelY)
+                    ).sum(axis=1)
+                else:
+                    el_input_Y_r = pd.Series(0.0, index=n.snapshots)
+
+                # Aggregate per time_period
+                res_Y_r_agg = _agg_by_period(res_Y_r, time_period)
+                el_input_Y_r_agg = _agg_by_period(el_input_Y_r, time_period)
+
+                # Constraint for each bucket
+                for i in range(len(res_Y_r_agg.index)):
+                    lhs = res_Y_r_agg.iloc[i] + el_input_Y_r_agg.iloc[i]
+                    define_constraints(
+                        n, lhs, ">=", 0.0,
+                        f"RESconstraints_additionality_reg_{r}_{Y}_{i}",
+                        f"REStarget_additionality_reg_{r}_{Y}_{i}",
+                    )
+
+    # DELIVERABILITY (regional, annual)
+    if not deliverability_enabled or deliverability_period == "no_deliverability":
+        return
+
+    deliverability_tolerance = 1.0
 
     for r in regions:
 
@@ -1505,7 +1546,6 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         stor_mask = (stor_region == r)
         el_mask = (el_region == r)
 
-        # Regional temporal matching carriers (all, not just additional)
         res_r = None
         if gen_mask.any():
             wg = weightings_gen.loc[:, weightings_gen.columns[gen_mask]]
@@ -1521,7 +1561,6 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         if res_r is None:
             res_r = pd.Series(0.0, index=n.snapshots)
 
-        # Regional electrolyzer input
         el_r = None
         if el_mask.any():
             we = weightings_electrolysis.loc[:, weightings_electrolysis.columns[el_mask]]
@@ -1533,11 +1572,9 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         if el_r is None:
             el_r = pd.Series(0.0, index=n.snapshots)
 
-        # Aggregate with deliverability_period (typically "yearly")
         res_r_agg = _agg_by_period(res_r, deliverability_period)
         el_r_agg = _agg_by_period(el_r, deliverability_period)
 
-        # Annual / monthly / hourly deliverability constraint (depending on config)
         lhs = res_r_agg.sum() + el_r_agg.sum()
         define_constraints(
             n, lhs, ">=", 0.0,

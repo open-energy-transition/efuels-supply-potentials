@@ -1293,10 +1293,11 @@ def add_h2_network_cap(n, cap):
     rhs = cap * 1000
     define_constraints(n, lhs, "<=", rhs, "h2_network_cap")
 
+
 def add_flexible_electrolyzers(n, costs):
     """
     Add a 'Flexible electrolyzer' technology:
-    - Same technical and cost parameters as Alkaline electrolyzer (large size)
+    - Same technical and cost parameters as the existing Alkaline electrolyzer (large size)
     - Very high marginal cost so it is used only as last-resort hydrogen production
     - Not subject to 45V constraints (temporal matching, additionality, deliverability)
     """
@@ -1305,22 +1306,34 @@ def add_flexible_electrolyzers(n, costs):
     flex_carrier = "Flexible electrolyzer"
     n.add("Carrier", flex_carrier)
 
-    # Retrieve the reference parameters from the Alkaline large electrolyzer
-    ref = "Alkaline electrolyzer large size"
+    # Reference carrier already added in add_hydrogen()
+    ref = "Alkaline electrolyzer large"
 
-    efficiency = 1 / costs.at[ref, "electricity-input"]
-    capital_cost = costs.at[ref, "fixed"]
-    lifetime = costs.at[ref, "lifetime"]
-    p_min_pu = 0.6   # Same operational constraint as alkaline electrolyzers
+    # Retrieve actual parameters from the existing network
+    try:
+        ref_links = n.links[n.links.carrier == ref]
+        if ref_links.empty:
+            raise KeyError(f"No existing electrolyzer with carrier '{ref}' found.")
+    except KeyError:
+        raise ValueError(
+            f"Reference electrolyzer '{ref}' not found in the network. "
+            f"add_hydrogen() must run before add_flexible_electrolyzers()."
+        )
 
-    # Very high marginal cost makes this technology a fallback option only
+    # Extract parameters directly from the network
+    efficiency = float(ref_links["efficiency"].iloc[0])
+    capital_cost = float(ref_links["capital_cost"].iloc[0])
+    lifetime = int(ref_links["lifetime"].iloc[0])
+    p_min_pu = float(ref_links["p_min_pu"].iloc[0])
+
+    # Very high marginal cost so this is only used as fallback
     marginal_cost = 1e6
 
     n.madd(
         "Link",
         spatial.nodes + " " + flex_carrier,
-        bus0=spatial.nodes,                  # electricity input (AC grid)
-        bus1=spatial.nodes + " grid H2",     # output to grid H2 system
+        bus0=spatial.nodes,
+        bus1=spatial.nodes + " grid H2",
         p_nom_extendable=True,
         carrier=flex_carrier,
         efficiency=efficiency,
@@ -1331,7 +1344,8 @@ def add_flexible_electrolyzers(n, costs):
     )
 
     logger.info(
-        f"Flexible electrolyzers added with alkaline parameters and marginal cost={marginal_cost}"
+        f"Flexible electrolyzers added with parameters copied from '{ref}' "
+        f"and marginal cost={marginal_cost}"
     )
 
 

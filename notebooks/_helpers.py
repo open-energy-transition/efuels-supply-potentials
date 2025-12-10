@@ -8612,36 +8612,40 @@ def compute_aviation_shares(network, level="state"):
     carrier_e = "e-kerosene for aviation"
     carrier_f = "kerosene for aviation"
 
-    # Snapshot weights
-    if "energy" in network.snapshot_weightings:
-        weights = network.snapshot_weightings["energy"]
-    else:
-        weights = pd.Series(1.0, index=network.snapshots)
+    # Use the same snapshot weights as compute_aviation_fuel_demand()
+    weights = network.snapshot_weightings.generators
 
     buses = network.buses[["state", "grid_region"]]
     all_levels = buses[level].dropna().unique()
 
-    # Internal helper to compute annual energy by region
+    # --- Helper: compute annual regional energy for a given carrier ---
     def get_energy(carrier_name):
-        mask = network.loads["carrier"].str.contains(carrier_name, case=False, na=False)
+        mask = network.loads["carrier"].eq(carrier_name)
         loads = network.loads[mask].copy()
 
         if loads.empty:
             return pd.DataFrame({level: all_levels, "energy_TWh": np.zeros(len(all_levels))})
 
-        loads_p = network.loads_t.p[loads.index].reindex(weights.index).fillna(0.0)
+        # Time series for these loads (aligned, no reindexing that creates zeros)
+        loads_p = network.loads_t.p[loads.index]
+        loads_p = loads_p.loc[weights.index]     # exact alignment with snapshot weighting
+
+        # Apply snapshot weights and sum across time → MWh per load
         e_mwh = loads_p.mul(weights, axis=0).sum()
 
+        # Merge load metadata
         loads = loads.join(buses, on="bus", how="left")
         loads["energy_TWh"] = e_mwh / 1e6
 
+        # Aggregate by region
         df = loads.groupby(level)["energy_TWh"].sum().reset_index()
 
+        # Ensure all regions appear
         df_full = pd.DataFrame({level: all_levels})
         df_full = df_full.merge(df, on=level, how="left").fillna(0.0)
         return df_full
 
-    # Fossil and synthetic kerosene
+    # Fossil and synthetic kerosene by region
     df_f = get_energy(carrier_f)
     df_e = get_energy(carrier_e)
 
@@ -8649,25 +8653,23 @@ def compute_aviation_shares(network, level="state"):
 
     # Shares
     total = df["energy_TWh_kero"] + df["energy_TWh_ekero"]
-    df["kero_share"] = np.where(total > 0, df["energy_TWh_kero"] / total * 100, 0)
-    df["ekero_share"] = np.where(total > 0, df["energy_TWh_ekero"] / total * 100, 0)
+    df["Kerosene share (%)"] = np.where(total > 0, df["energy_TWh_kero"] / total * 100, 0)
+    df["e-kerosene share (%)"] = np.where(total > 0, df["energy_TWh_ekero"] / total * 100, 0)
 
     # Rename columns
     df = df.rename(columns={
         level: "State" if level == "state" else "Grid region",
         "energy_TWh_kero": "Kerosene cons. (TWh)",
         "energy_TWh_ekero": "e-kerosene cons. (TWh)",
-        "kero_share": "Kerosene share (%)",
-        "ekero_share": "e-kerosene share (%)"
     })
 
-    # Round results
+    # Round
     df["Kerosene cons. (TWh)"] = df["Kerosene cons. (TWh)"].round(2)
     df["e-kerosene cons. (TWh)"] = df["e-kerosene cons. (TWh)"].round(2)
     df["Kerosene share (%)"] = df["Kerosene share (%)"].round(2)
     df["e-kerosene share (%)"] = df["e-kerosene share (%)"].round(2)
 
-    # Clean table: region as index, no numeric index
+    # Clean table: index = region
     df = df.set_index(df.columns[0])
 
     return df

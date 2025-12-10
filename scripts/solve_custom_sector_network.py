@@ -1329,11 +1329,15 @@ def add_flexible_electrolyzers(n, costs):
     # Very high marginal cost so this is only used as fallback
     marginal_cost = 1e6
 
+    ref_links = n.links[n.links.carrier == "Alkaline electrolyzer large"]
+    ac_nodes = ref_links["bus0"].values
+    h2_nodes = ref_links["bus1"].values
+
     n.madd(
         "Link",
-        spatial.nodes + " " + flex_carrier,
-        bus0=spatial.nodes,
-        bus1=spatial.nodes + " grid H2",
+        [f"{bus0} {flex_carrier}" for bus0 in ac_nodes],
+        bus0=ac_nodes,
+        bus1=h2_nodes,
         p_nom_extendable=True,
         carrier=flex_carrier,
         efficiency=efficiency,

@@ -9715,3 +9715,237 @@ def analyze_additionality_multiple_subplots(
         results[network_name] = (dataframes, fig)
 
     return results
+
+
+def plot_solar_cf_from_network(network, cmap='YlOrRd', figsize=(20,10), plot_type='scatter'):
+    """
+    Plot solar capacity factors from PyPSA network generators.
+    
+    Parameters:
+    -----------
+    network : pypsa.Network
+        PyPSA network object
+    cmap : str
+        Colormap name (default: 'YlOrRd')
+    figsize : tuple
+        Figure size (width, height)
+    plot_type : str
+        Visualization type:
+        - 'scatter': Discrete points sized by capacity
+        - 'nearest': Nearest neighbor interpolation (blocky regions)
+        - 'cubic': Cubic interpolation (smooth gradients)
+        - 'weighted': K-nearest neighbors weighted average (balanced smoothness)
+    
+    Returns:
+    --------
+    fig, ax, plot_data : matplotlib figure, axes, and pandas DataFrame
+    """
+    from scipy.spatial import cKDTree
+    from matplotlib.lines import Line2D
+    from scipy.interpolate import griddata
+    
+    # Filter solar generators
+    solar_gens = network.generators[network.generators.carrier == 'solar'].copy()
+    
+    # Get bus coordinates
+    solar_gens = solar_gens.join(network.buses[['x', 'y']], on='bus')
+    
+    # Calculate average capacity factor from p_max_pu time series
+    cf_data = []
+    for gen_name in solar_gens.index:
+        if gen_name in network.generators_t.p_max_pu.columns:
+            avg_cf = network.generators_t.p_max_pu[gen_name].mean()
+            cf_data.append({'generator': gen_name, 'avg_cf': avg_cf})
+    
+    cf_df = pd.DataFrame(cf_data).set_index('generator')
+    solar_gens = solar_gens.join(cf_df)
+    
+    # Remove any rows with NaN values or infinite p_nom_max values
+    solar_gens = solar_gens.dropna(subset=['avg_cf', 'x', 'y'])
+    solar_gens = solar_gens[np.isfinite(solar_gens['p_nom_max'])]
+    
+    # Create figure
+    fig, ax = plt.subplots(
+        figsize=figsize,
+        subplot_kw={'projection': ccrs.PlateCarree()}
+    )
+    
+    # Set map extent for US
+    ax.set_extent([-125, -66, 24, 50], crs=ccrs.PlateCarree())
+    
+    # Add map features
+    ax.add_feature(cfeature.COASTLINE, linewidth=0.5)
+    ax.add_feature(cfeature.BORDERS, linewidth=0.5)
+    ax.add_feature(cfeature.STATES, linewidth=0.3, edgecolor='gray')
+    ax.add_feature(cfeature.LAND, facecolor='lightgray', alpha=0.3)
+    ax.add_feature(cfeature.OCEAN, facecolor='lightblue', alpha=0.3)
+    
+    # Add gridlines
+    gl = ax.gridlines(draw_labels=True, linewidth=0.5, alpha=0.5, linestyle='--')
+    gl.top_labels = False
+    gl.right_labels = False
+    
+    # Calculate statistics
+    mean_cf = solar_gens['avg_cf'].mean()
+    min_cf = solar_gens['avg_cf'].min()
+    max_cf = solar_gens['avg_cf'].max()
+    total_capacity = solar_gens['p_nom_max'].sum()
+    min_capacity = solar_gens['p_nom_max'].min()
+    max_capacity = solar_gens['p_nom_max'].max()
+    
+    if plot_type == 'scatter':
+        # Original scatter plot with capacity-based sizing
+        scatter = ax.scatter(
+            solar_gens['x'],
+            solar_gens['y'],
+            c=solar_gens['avg_cf'],
+            s=solar_gens['p_nom_max'] / 100,  # Size by capacity
+            cmap=cmap,
+            alpha=0.6,
+            edgecolors='black',
+            linewidth=0.5,
+            transform=ccrs.PlateCarree()
+        )
+        
+        # Add colorbar
+        cbar = plt.colorbar(scatter, ax=ax, orientation='horizontal',
+                           pad=0.05, shrink=0.8, label='Annual Average Capacity Factor')
+        
+        # Add legend for circle sizes (scaled down for visibility)
+        legend_sizes = [min_capacity, max_capacity/2, max_capacity]
+        legend_labels = [f'{size/1000:.0f} GW' for size in legend_sizes]
+        legend_elements = [Line2D([0], [0], marker='o', color='w', 
+                                 markerfacecolor='gray', markersize=np.sqrt(size/100) * 0.3,  # Scale down by 30%
+                                 alpha=0.6, markeredgecolor='black', markeredgewidth=0.5,
+                                 label=label) 
+                          for size, label in zip(legend_sizes, legend_labels)]
+        
+        ax.legend(handles=legend_elements, title='Capacity (p_nom_max)', 
+                 loc='upper right', framealpha=0.9, fontsize=10)
+        
+        title_suffix = '(Scatter - Sized by Capacity)'
+        
+    else:
+        # Create interpolation grid for all other plot types
+        x_grid = np.linspace(solar_gens['x'].min(), solar_gens['x'].max(), 300)
+        y_grid = np.linspace(solar_gens['y'].min(), solar_gens['y'].max(), 200)
+        X_grid, Y_grid = np.meshgrid(x_grid, y_grid)
+        
+        if plot_type == 'nearest':
+            # Nearest neighbor interpolation
+            cf_grid = griddata(
+                (solar_gens['x'], solar_gens['y']),
+                solar_gens['avg_cf'],
+                (X_grid, Y_grid),
+                method='nearest',
+                fill_value=np.nan
+            )
+            
+            im = ax.pcolormesh(
+                X_grid, Y_grid, cf_grid,
+                cmap=cmap,
+                transform=ccrs.PlateCarree(),
+                alpha=0.8,
+                shading='auto'
+            )
+            
+            cbar = plt.colorbar(im, ax=ax, orientation='horizontal',
+                               pad=0.05, shrink=0.8, label='Annual Average Capacity Factor')
+            title_suffix = '(Nearest Neighbor)'
+            
+        elif plot_type == 'cubic':
+            # Cubic interpolation
+            cf_grid = griddata(
+                (solar_gens['x'], solar_gens['y']),
+                solar_gens['avg_cf'],
+                (X_grid, Y_grid),
+                method='cubic',
+                fill_value=np.nan
+            )
+            
+            # Clip to valid range to avoid interpolation artifacts
+            cf_grid = np.clip(cf_grid, min_cf, max_cf)
+            
+            levels = np.linspace(min_cf, max_cf, 20)
+            contour = ax.contourf(
+                X_grid, Y_grid, cf_grid,
+                levels=levels,
+                cmap=cmap,
+                transform=ccrs.PlateCarree(),
+                alpha=0.8,
+                extend='neither'
+            )
+            
+            cbar = plt.colorbar(contour, ax=ax, orientation='horizontal',
+                               pad=0.05, shrink=0.8, label='Annual Average Capacity Factor')
+            title_suffix = '(Cubic Interpolation)'
+            
+        elif plot_type == 'weighted':
+            # K-nearest neighbors weighted average
+            tree = cKDTree(np.column_stack([solar_gens['x'], solar_gens['y']]))
+            grid_points = np.column_stack([X_grid.ravel(), Y_grid.ravel()])
+            
+            # Find k nearest neighbors and weight by inverse distance
+            k = 5  # Number of neighbors
+            distances, indices = tree.query(grid_points, k=k)
+            
+            # Avoid division by zero
+            distances = np.where(distances == 0, 1e-10, distances)
+            weights = 1.0 / distances
+            weights = weights / weights.sum(axis=1, keepdims=True)
+            
+            # Weighted average of CF values
+            cf_values = solar_gens['avg_cf'].values
+            cf_grid = (weights * cf_values[indices]).sum(axis=1).reshape(X_grid.shape)
+            
+            levels = np.linspace(min_cf, max_cf, 20)
+            contour = ax.contourf(
+                X_grid, Y_grid, cf_grid,
+                levels=levels,
+                cmap=cmap,
+                transform=ccrs.PlateCarree(),
+                alpha=0.8,
+                extend='neither'
+            )
+            
+            cbar = plt.colorbar(contour, ax=ax, orientation='horizontal',
+                               pad=0.05, shrink=0.8, label='Annual Average Capacity Factor')
+            title_suffix = '(Weighted Average K=5)'
+        
+        else:
+            raise ValueError(f"Invalid plot_type: {plot_type}. Choose from 'scatter', 'nearest', 'cubic', or 'weighted'")
+        
+        # Overlay actual generator locations with small fixed size for interpolated plots
+        ax.scatter(
+            solar_gens['x'],
+            solar_gens['y'],
+            c='black',
+            s=20,  # Fixed small size
+            alpha=0.5,
+            transform=ccrs.PlateCarree(),
+            zorder=5,
+            edgecolors='white',
+            linewidth=0.5
+        )
+        
+        # Add text annotation for capacity information
+        ax.text(0.02, 0.98, f'Total p_nom_max: {total_capacity/1000:.1f} GW\n'
+                f'Range: {min_capacity/1000:.1f} - {max_capacity/1000:.1f} GW',
+                transform=ax.transAxes, fontsize=11,
+                verticalalignment='top', bbox=dict(boxstyle='round', 
+                facecolor='white', alpha=0.8))
+    
+    # Add title with capacity information
+    ax.set_title(
+        f'Solar Generator Capacity Factors {title_suffix}\n'
+        f'Mean CF: {mean_cf:.1%}, Range: {min_cf:.1%} - {max_cf:.1%}, Total Capacity: {total_capacity/1000:.1f} GW',
+        fontsize=15, weight='bold', pad=20
+    )
+    
+    print(f"Plotted {len(solar_gens)} solar generators using '{plot_type}' method")
+    print(f"Average CF: {mean_cf:.2%}")
+    print(f"CF range: {min_cf:.2%} to {max_cf:.2%}")
+    print(f"Total capacity (p_nom_max): {total_capacity:.1f} MW ({total_capacity/1000:.1f} GW)")
+    print(f"Capacity range: {min_capacity:.1f} - {max_capacity:.1f} MW")
+    
+    return fig, ax, solar_gens

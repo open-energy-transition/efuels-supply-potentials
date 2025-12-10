@@ -5,7 +5,10 @@
 import os
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from IPython.display import Image, display
 import seaborn as sns
 import re
 import pycountry
@@ -49,6 +52,12 @@ from typing import Dict, List, Optional, Tuple
 import warnings
 warnings.filterwarnings("ignore")
 
+
+def showfig(name="_tmp.png", dpi=120):
+    fig = plt.gcf()
+    fig.savefig(name, dpi=dpi, bbox_inches="tight")
+    display(Image(name))
+    plt.close(fig)
 
 def attach_grid_region_to_buses(network, path_shapes, distance_crs="EPSG:4326"):
     """
@@ -357,7 +366,7 @@ def plot_h2_capacities_by_state(grouped, title, ymax, max_n_states, bar_width=0.
     ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1), frameon=False)
 
     plt.tight_layout()
-    plt.show()
+    showfig()
 
 
 def plot_h2_capacities_by_grid_region(grouped, title, ymax, max_n_grid_regions, bar_width=0.5, height=5):
@@ -404,7 +413,7 @@ def plot_h2_capacities_by_grid_region(grouped, title, ymax, max_n_grid_regions, 
     ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1), frameon=False)
 
     plt.tight_layout()
-    plt.show()
+    showfig()
 
 
 def create_hydrogen_capacity_map(network, path_shapes, distance_crs=4326, min_capacity_mw=10):
@@ -1000,7 +1009,7 @@ def plot_electricity_dispatch(networks, carrier_colors, start_date=None, end_dat
     # Label x-axis for the bottom plot
     axes[-1].set_xlabel("Time")
     plt.tight_layout(rect=[0, 0, 0.80, 1])
-    plt.show()
+    showfig()
 
     return summary_list
 
@@ -1051,7 +1060,7 @@ def compute_and_plot_load(n, key="", ymax=None, start_date=None, end_date=None):
     ax.grid(True)
 
     plt.tight_layout(rect=[0, 0, 0.88, 1])
-    plt.show()
+    showfig()
 
     return {
         "key": key,
@@ -1370,7 +1379,7 @@ def plot_h2_capacities_map(network, title, tech_colors, nice_names, regions_onsh
 
     ax.set_title(f'Installed electrolyzer capacity (MW input electricity) - {title} (only nodes ≥ 10 MW)\n')
     plt.tight_layout()
-    plt.show()
+    showfig()
 
 
 def plot_lcoh_maps_by_grid_region_lcoe(
@@ -1523,7 +1532,7 @@ def plot_lcoh_maps_by_grid_region_lcoe(
         ax.set_extent([-130, -65, 20, 55])
         ax.axis("off")
         ax.set_title(f"LCOH (incl. Transmission fees & Baseload charges, elec.cost = LCOE) – {y}")
-        plt.show()
+        showfig()
 
 
 def plot_lcoh_maps_by_grid_region_marginal(
@@ -1670,7 +1679,7 @@ def plot_lcoh_maps_by_grid_region_marginal(
         ax.set_extent([-130, -65, 20, 55])
         ax.axis("off")
         ax.set_title(f"LCOH (incl. Transmission fees & Baseload charges, elec.cost = marginal) – {y}")
-        plt.show()
+        showfig()
 
 
 def calculate_weighted_lcoh_table_by_year(
@@ -1882,7 +1891,7 @@ def plot_hydrogen_dispatch(networks, h2_carriers, output_threshold=1.0, year_tit
         )
 
         plt.tight_layout(rect=[0, 0, 0.85, 1])
-        plt.show()
+        showfig()
 
     return merged_dispatch_df
 
@@ -2410,7 +2419,7 @@ def plot_emissions_maps_by_group(
     )
     plt.tight_layout()
     plt.subplots_adjust(top=0.9, right=0.85)
-    plt.show()
+    showfig()
 
 
 def evaluate_res_ces_by_state(networks, ces, res, ces_carriers, res_carriers, multiple_scenarios=False):
@@ -2767,7 +2776,7 @@ def plot_network_generation_and_transmission(n, key, tech_colors, nice_names, re
     )
 
     plt.tight_layout()
-    plt.show()
+    showfig()
 
 
 
@@ -4002,7 +4011,7 @@ def plot_float_bar_lcoe_dispatch_ranges(table_df, key, nice_names, use_scenario_
     for j in range(idx + 1, len(axs)):
         fig.delaxes(axs[j])
 
-    plt.show()
+    showfig()
 
 
 def compute_line_expansion_capacity(n):
@@ -6428,7 +6437,7 @@ def compare_h2_kerosene_production(network, plot=True, network_name="Network", p
                       loc='upper left', borderaxespad=0.)
             ax.grid(True, alpha=0.3)
             plt.tight_layout(rect=[0, 0, 0.85, 1])  # leave space for legend
-            plt.show()
+            showfig()
         else:
             threshold_mw = plot_threshold_gw * 1e3
             print(f"\nSkipped {network_name}: both daily-average productions are below {threshold_mw:.2f} MW (threshold = {plot_threshold_gw:.3e} GW).\n")
@@ -6527,6 +6536,13 @@ def compute_capacity_factor_electrolysis(
             "Hydrogen output (MWh)": energy_out,
         }).dropna()
 
+        # compute capacity factor per link
+        df_links["Capacity factor (%)"] = (
+            df_links["Electricity input (MWh)"]
+            / (df_links["Capacity (MW)"] * total_hours)
+            * 100
+        )
+
         # aggregate by region
         region_summary = (
             df_links.groupby("Grid Region")
@@ -6546,7 +6562,10 @@ def compute_capacity_factor_electrolysis(
         if region_summary["Hydrogen output (MWh)"].sum() < output_threshold:
             continue
 
-        results[key] = region_summary.round(round_digits)
+        results[key] = {
+            "links": df_links.round(round_digits),
+            "regions": region_summary.round(round_digits),
+        }
 
     return results
 
@@ -7024,7 +7043,7 @@ def plot_electricity_dispatch(networks, tech_colors, nice_names,
     # Set x-label for bottom subplot
     axes[-1].set_xlabel("Time (months)")
     plt.tight_layout(rect=[0, 0.05, 0.80, 1])
-    plt.show()
+    showfig()
     
     # Return data if requested
     if return_data:
@@ -7134,7 +7153,7 @@ def plot_marginal_prices_by_region_weighted(
         ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=10)
         ax.grid(alpha=0.3)
         plt.tight_layout(rect=[0, 0, 0.85, 1])
-        plt.show()
+        showfig()
 
     return df_daily
 
@@ -7818,7 +7837,7 @@ def plot_geostorage_daily(networks, plot=True, year_title=True):
                 ax.grid(True)
 
             plt.tight_layout()
-            plt.show()
+            showfig()
 
     if not scenario_tables:
         print("No CO2 geostorage data collected from networks.")
@@ -7954,7 +7973,7 @@ def compute_h2_balance_tables(networks,
                 ax.grid(True, axis="x")
 
             plt.tight_layout()
-            plt.show()
+            showfig()
 
     # Build combined DataFrame: top-level = scenario, second-level = metrics (production, consumption, net)
     summaries = [per_scenario_tables[s]["summary"] for s in per_scenario_tables.keys()]
@@ -8854,7 +8873,7 @@ def plot_additionality_compliance(
     figsize : tuple, default (18, 4)
         Figure size
     show_plot : bool, default True
-        Whether to call plt.show()
+        Whether to call showfig()
 
     Returns
     -------
@@ -8929,7 +8948,7 @@ def plot_additionality_compliance(
     plt.tight_layout()
 
     if show_plot:
-        plt.show()
+        showfig()
 
     return fig
 
@@ -9342,7 +9361,7 @@ def plot_additionality_regions_subplots(
     plt.tight_layout(rect=[0, 0, 0.95, 0.99])
 
     if show_plot:
-        plt.show()
+        showfig()
 
     return dataframes, fig
 

@@ -1324,7 +1324,6 @@ def add_flexible_electrolyzers(n, costs):
     efficiency = float(ref_links["efficiency"].iloc[0])
     capital_cost = float(ref_links["capital_cost"].iloc[0])
     lifetime = int(ref_links["lifetime"].iloc[0])
-    p_min_pu = float(ref_links["p_min_pu"].iloc[0])
 
     # Very high marginal cost so this is only used as fallback
     marginal_cost = 1e6
@@ -1343,7 +1342,6 @@ def add_flexible_electrolyzers(n, costs):
         efficiency=efficiency,
         capital_cost=capital_cost,
         lifetime=lifetime,
-        p_min_pu=p_min_pu,
         marginal_cost=marginal_cost,
     )
 

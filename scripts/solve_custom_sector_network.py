@@ -1534,62 +1534,62 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
                     f"REStarget_tm_reg_{r}_{i}",
                 )
 
-    # REGIONAL ADDITIONALITY CONSTRAINTS PER COHORT
+    # REGIONAL ADDITIONALITY CONSTRAINTS (CUMULATIVE / THRESHOLD FORMULATION)
     if additionality and len(cohorts) > 0:
+
+        # Sort cohorts ascending (e.g. 2030, 2035, 2040)
+        cohorts_sorted = np.sort(cohorts)
 
         for r in regions:
 
-            # region masks
             gen_mask_r = (gen_region == r)
             stor_mask_r = (stor_region == r)
             el_mask_r = (el_region == r)
 
-            for Y in cohorts:
+            for Y in cohorts_sorted:
 
-                # RES allowed by build_year AND in same region
+                # RES with build_year >= Y in this region
                 gens_Y = allowed_RES[Y]["gen"].intersection(res_gen_index[gen_mask_r])
                 stor_Y = allowed_RES[Y]["stor"].intersection(res_stor_index[stor_mask_r])
 
-                # RES from generators
+                res_Y_r = pd.Series(0.0, index=n.snapshots)
+
                 if len(gens_Y) > 0:
                     wgY = weightings_gen.loc[:, gens_Y]
-                    res_Y_r = linexpr(
+                    res_Y_r += linexpr(
                         (wgY, get_var(n, "Generator", "p")[gens_Y])
                     ).sum(axis=1)
-                else:
-                    res_Y_r = pd.Series(0.0, index=n.snapshots)
 
-                # RES from storage
                 if len(stor_Y) > 0 and weightings_stor is not None:
                     wsY = weightings_stor.loc[:, stor_Y]
                     res_Y_r += linexpr(
                         (wsY, get_var(n, "StorageUnit", "p_dispatch")[stor_Y])
                     ).sum(axis=1)
 
-                # Electrolyzers of cohort Y **in this region**
-                el_mask_Y_r = ((el_build_year == Y).values) & (el_mask_r)
-                el_cols_Y_r = electrolysis.columns[el_mask_Y_r]
+                # Electrolyzers with build_year >= Y in this region
+                el_mask_Yplus_r = ((el_build_year >= Y).values) & el_mask_r
+                el_cols_Yplus_r = electrolysis.columns[el_mask_Yplus_r]
 
-                if len(el_cols_Y_r) > 0:
-                    weY = weightings_electrolysis.loc[:, el_cols_Y_r]
-                    pelY = electrolysis[el_cols_Y_r]
-                    el_input_Y_r = linexpr(
+                el_input_Yplus_r = pd.Series(0.0, index=n.snapshots)
+
+                if len(el_cols_Yplus_r) > 0:
+                    weY = weightings_electrolysis.loc[:, el_cols_Yplus_r]
+                    pelY = electrolysis[el_cols_Yplus_r]
+                    el_input_Yplus_r += linexpr(
                         (-allowed_excess * weY, pelY)
                     ).sum(axis=1)
-                else:
-                    el_input_Y_r = pd.Series(0.0, index=n.snapshots)
 
-                # Aggregate per time_period
+                # Aggregate by time_period
                 res_Y_r_agg = _agg_by_period(res_Y_r, time_period)
-                el_input_Y_r_agg = _agg_by_period(el_input_Y_r, time_period)
+                el_input_Yplus_r_agg = _agg_by_period(el_input_Yplus_r, time_period)
 
-                # Constraint for each bucket
+                # One constraint per threshold Y and per time bucket
                 for i in range(len(res_Y_r_agg.index)):
-                    lhs = res_Y_r_agg.iloc[i] + el_input_Y_r_agg.iloc[i]
+                    lhs = res_Y_r_agg.iloc[i] + el_input_Yplus_r_agg.iloc[i]
                     define_constraints(
                         n, lhs, ">=", 0.0,
-                        f"RESconstraints_additionality_reg_{r}_{Y}_{i}",
-                        f"REStarget_additionality_reg_{r}_{Y}_{i}",
+                        f"RESconstraints_additionality_threshold_{r}_{Y}_{i}",
+                        f"REStarget_additionality_threshold_{r}_{Y}_{i}",
                     )
 
     # DELIVERABILITY (regional, annual)

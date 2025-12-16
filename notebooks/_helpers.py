@@ -2,54 +2,53 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import warnings
+from typing import Dict, List, Optional, Tuple
+import yaml
+from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils.dataframe import dataframe_to_rows
+from matplotlib.lines import Line2D
+import matplotlib.patches as mpatches
+from shapely.geometry import LineString
+from collections import OrderedDict
+import plotly.graph_objects as go
+import plotly.express as px
+from collections import defaultdict
+from IPython.display import display, HTML
+from matplotlib.font_manager import FontProperties
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+import matplotlib.dates as mdates
+from matplotlib.legend_handler import HandlerPatch
+import matplotlib.lines as mlines
+import matplotlib.transforms as mtransforms
+from matplotlib.patches import Patch
+import matplotlib.path as mpath
+from matplotlib.patches import Wedge
+from matplotlib.offsetbox import AnnotationBbox, AuxTransformBox
+from shapely.geometry import box
+from shapely.geometry import Point
+import geopandas as gpd
+import cartopy.feature as cfeature
+import cartopy.crs as ccrs  # For plotting maps
+import xarray as xr
+from pathlib import Path
+from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
+import math
+import pypsa
+import pycountry
+import re
+import seaborn as sns
+from IPython.display import Image, display
+import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from IPython.display import Image, display
-import seaborn as sns
-import re
-import pycountry
 
-import pypsa
-import math
-from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
-from pathlib import Path
 
-import xarray as xr
-import cartopy.crs as ccrs  # For plotting maps
-import cartopy.feature as cfeature
-import geopandas as gpd
-from shapely.geometry import Point
-from shapely.geometry import box
-from matplotlib.offsetbox import AnnotationBbox, AuxTransformBox
-from matplotlib.patches import Wedge
-import matplotlib.path as mpath
-from matplotlib.patches import Patch
-import matplotlib.transforms as mtransforms
-import matplotlib.lines as mlines
-from matplotlib.legend_handler import HandlerPatch
-import matplotlib.dates as mdates
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from matplotlib.font_manager import FontProperties
-from IPython.display import display, HTML
-from collections import defaultdict
-import plotly.express as px
-import plotly.graph_objects as go
-from collections import OrderedDict
-from shapely.geometry import LineString
-import matplotlib.patches as mpatches
-from matplotlib.lines import Line2D
-from openpyxl.utils.dataframe import dataframe_to_rows
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils import get_column_letter
-from openpyxl import load_workbook
-import yaml
-from typing import Dict, List, Optional, Tuple
-
-import warnings
 warnings.filterwarnings("ignore")
 
 
@@ -58,6 +57,7 @@ def showfig(name="_tmp.png", dpi=120):
     fig.savefig(name, dpi=dpi, bbox_inches="tight")
     display(Image(name))
     plt.close(fig)
+
 
 def attach_grid_region_to_buses(network, path_shapes, distance_crs="EPSG:4326"):
     """
@@ -1560,7 +1560,8 @@ def plot_lcoh_maps_by_grid_region_lcoe(
         )
         ax.set_extent([-130, -65, 20, 55])
         ax.axis("off")
-        ax.set_title(f"LCOH (incl. Transmission fees & Baseload charges, elec.cost = LCOE) – {y}")
+        ax.set_title(
+            f"LCOH (incl. Transmission fees & Baseload charges, elec.cost = LCOE) – {y}")
         showfig()
 
 
@@ -1712,7 +1713,8 @@ def plot_lcoh_maps_by_grid_region_marginal(
         )
         ax.set_extent([-130, -65, 20, 55])
         ax.axis("off")
-        ax.set_title(f"LCOH (incl. Transmission fees & Baseload charges, elec.cost = marginal) – {y}")
+        ax.set_title(
+            f"LCOH (incl. Transmission fees & Baseload charges, elec.cost = marginal) – {y}")
         showfig()
 
 
@@ -7131,7 +7133,7 @@ def plot_electricity_dispatch(networks, tech_colors, nice_names,
     axes[-1].set_xlabel("Time (months)")
     plt.tight_layout(rect=[0, 0.05, 0.80, 1])
     showfig()
-    
+
     # Return data if requested
     if return_data:
         return {
@@ -8767,7 +8769,8 @@ def compute_aviation_shares(network, level="state"):
 
         # Time series for these loads (aligned, no reindexing that creates zeros)
         loads_p = network.loads_t.p[loads.index]
-        loads_p = loads_p.loc[weights.index]     # exact alignment with snapshot weighting
+        # exact alignment with snapshot weighting
+        loads_p = loads_p.loc[weights.index]
 
         # Apply snapshot weights and sum across time → MWh per load
         e_mwh = loads_p.mul(weights, axis=0).sum()
@@ -8792,8 +8795,10 @@ def compute_aviation_shares(network, level="state"):
 
     # Shares
     total = df["energy_TWh_kero"] + df["energy_TWh_ekero"]
-    df["Kerosene share (%)"] = np.where(total > 0, df["energy_TWh_kero"] / total * 100, 0)
-    df["e-kerosene share (%)"] = np.where(total > 0, df["energy_TWh_ekero"] / total * 100, 0)
+    df["Kerosene share (%)"] = np.where(
+        total > 0, df["energy_TWh_kero"] / total * 100, 0)
+    df["e-kerosene share (%)"] = np.where(total > 0,
+                                          df["energy_TWh_ekero"] / total * 100, 0)
 
     # Rename columns
     df = df.rename(columns={
@@ -8822,6 +8827,8 @@ def compute_additionality_compliance_data(
     res_carriers: Optional[List[str]] = None,
     res_stor_techs: Optional[List[str]] = None,
     electrolysis_carriers: Optional[List[str]] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Compute RES generation and electrolyzer consumption for additionality compliance analysis.
@@ -8843,6 +8850,12 @@ def compute_additionality_compliance_data(
         List of RES storage tech names. Defaults to ["hydro"].
     electrolysis_carriers : list of str, optional
         List of electrolyzer carrier names. Defaults to standard list.
+    start_date : str, optional
+        Start date for filtering snapshots (format: 'MM-DD', e.g., '06-01' for June 1st).
+        Year is automatically taken from network snapshots. If None, uses first snapshot.
+    end_date : str, optional
+        End date for filtering snapshots (format: 'MM-DD', e.g., '08-31' for August 31st).
+        Year is automatically taken from network snapshots. If None, uses last snapshot.
 
     Returns
     -------
@@ -8880,14 +8893,17 @@ def compute_additionality_compliance_data(
             region_buses)].index
         region_stor = network.storage_units[network.storage_units.bus.isin(
             region_buses)].index
+        region_links = network.links[network.links.bus0.isin(
+            region_buses)].index
     else:
         # Whole country: use all buses/generators/storage
         region_gens = network.generators.index
         region_stor = network.storage_units.index
+        region_links = network.links.index
 
-    # Calculate electrolyzer consumption
+    # Calculate electrolyzer consumption (filtered by region)
     electrolyzers = network.links[network.links.carrier.isin(
-        electrolysis_carriers)].index
+        electrolysis_carriers) & network.links.index.isin(region_links)].index
     electrolyzers_consumption = network.links_t.p0[electrolyzers].multiply(
         network.snapshot_weightings.objective, axis=0
     ).sum(axis=1)
@@ -8935,6 +8951,21 @@ def compute_additionality_compliance_data(
 
     # Add electrolyzer consumption
     plot_df['Electrolyzer consumption'] = electrolyzers_consumption
+
+    # Filter by date range if specified (using month-day format)
+    if start_date is not None or end_date is not None:
+        # Get the year from the network snapshots
+        snapshot_year = plot_df.index[0].year if len(plot_df) > 0 else None
+
+        if snapshot_year is not None:
+            if start_date is not None:
+                # Parse MM-DD format and add the year from snapshots
+                start_timestamp = pd.Timestamp(f"{snapshot_year}-{start_date}")
+                plot_df = plot_df[plot_df.index >= start_timestamp]
+            if end_date is not None:
+                # Parse MM-DD format and add the year from snapshots
+                end_timestamp = pd.Timestamp(f"{snapshot_year}-{end_date}")
+                plot_df = plot_df[plot_df.index <= end_timestamp]
 
     return plot_df
 
@@ -9069,7 +9100,8 @@ def plot_additionality_compliance(
         ax.set_ylim(ylim)
 
     # Build title
-    title_parts = ["Temporal matching and additionality-compliant electricity generation VS Electrolyzer consumption"]
+    title_parts = [
+        "Temporal matching and additionality-compliant electricity generation VS Electrolyzer consumption"]
 
     if region:
         title_parts.append(f"{region} region")
@@ -9337,6 +9369,8 @@ def plot_additionality_regions_subplots(
     show_year: bool = True,
     shared_ylim: bool = True,
     ylim: Optional[Tuple[float, float]] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     ncols: int = 2,
     subplot_height: float = 4,
     subplot_width: float = 9,
@@ -9375,6 +9409,12 @@ def plot_additionality_regions_subplots(
         If True, automatically calculates max value across all regions.
     ylim : tuple of (float, float), optional
         Explicitly set y-axis limits (min, max) for all subplots. If provided, overrides shared_ylim.
+    start_date : str, optional
+        Start date for plotting (format: 'MM-DD', e.g., '06-01' for June 1st).
+        Year is automatically taken from network snapshots. If None, plots from the beginning of the year.
+    end_date : str, optional
+        End date for plotting (format: 'MM-DD', e.g., '08-31' for August 31st).
+        Year is automatically taken from network snapshots. If None, plots to the end of the year.
     ncols : int, default 2
         Number of columns in subplot grid
     subplot_height : float, default 4
@@ -9414,29 +9454,55 @@ def plot_additionality_regions_subplots(
     if include_whole_country:
         plot_regions = plot_regions + [None]
 
+    # Print date range info if specified
+    if start_date or end_date:
+        date_range_str = f"Date range: {start_date or 'start'} to {end_date or 'end'}"
+        print(f"\n{date_range_str}")
+
+    # First pass: compute all data and filter out regions with no RES generation
+    print("Checking regions for RES generation...")
+    all_plot_data = []
+    regions_with_data = []
+
+    for region in plot_regions:
+        raw_df = compute_additionality_compliance_data(
+            network,
+            region=region,
+            year=year,
+            additionality=additionality,
+            start_date=start_date,
+            end_date=end_date,
+            **kwargs
+        )
+        plot_df = apply_nice_names_and_resample(
+            raw_df,
+            nice_names_power,
+            nice_names
+        )
+
+        # Check if region has any RES generation
+        electrolyzer_col = 'Electrolyzer consumption'
+        res_cols = [col for col in plot_df.columns if col != electrolyzer_col]
+        total_res_generation = plot_df[res_cols].sum().sum()
+
+        region_name = region if region else "whole_country"
+        if total_res_generation > 0:
+            all_plot_data.append(plot_df)
+            regions_with_data.append(region)
+
+    # Update plot_regions to only include regions with data
+    plot_regions = regions_with_data
+
+    if len(plot_regions) == 0:
+        print("\nWarning: No regions with RES generation found!")
+        return {}, None
+
     # Calculate subplot grid
     nplots = len(plot_regions)
     nrows = math.ceil(nplots / ncols)
 
-    # First pass: compute all data to determine shared y-axis limits if needed
-    all_plot_data = []
+    # Calculate max value across all regions for shared y-axis
     if shared_ylim and ylim is None:
-        for region in plot_regions:
-            raw_df = compute_additionality_compliance_data(
-                network,
-                region=region,
-                year=year,
-                additionality=additionality,
-                **kwargs
-            )
-            plot_df = apply_nice_names_and_resample(
-                raw_df,
-                nice_names_power,
-                nice_names
-            )
-            all_plot_data.append(plot_df)
-
-        # Calculate max value across all regions
         max_val = 0
         for plot_df in all_plot_data:
             electrolyzer_col = 'Electrolyzer consumption'
@@ -9467,25 +9533,8 @@ def plot_additionality_regions_subplots(
     for idx, region in enumerate(plot_regions):
         ax = axes[idx]
 
-        # Use pre-computed data if available, otherwise compute now
-        if all_plot_data:
-            plot_df = all_plot_data[idx]
-        else:
-            # Compute data
-            raw_df = compute_additionality_compliance_data(
-                network,
-                region=region,
-                year=year,
-                additionality=additionality,
-                **kwargs
-            )
-
-            # Apply nice names and resample
-            plot_df = apply_nice_names_and_resample(
-                raw_df,
-                nice_names_power,
-                nice_names
-            )
+        # Use pre-computed data (all_plot_data is always populated now)
+        plot_df = all_plot_data[idx]
 
         # Store dataframe
         region_key = region if region else "whole_country"
@@ -9607,6 +9656,8 @@ def analyze_additionality_multiple_subplots(
     show_year: bool = True,
     shared_ylim: bool = True,
     ylim: Optional[Tuple[float, float]] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     skip_years: Optional[List[int]] = None,
     show_plots: bool = True,
     ncols: int = 2,
@@ -9647,6 +9698,12 @@ def analyze_additionality_multiple_subplots(
         If True, automatically calculates max value across all regions.
     ylim : tuple of (float, float), optional
         Explicitly set y-axis limits (min, max) for all figures. If provided, overrides shared_ylim.
+    start_date : str, optional
+        Start date for plotting (format: 'MM-DD', e.g., '06-01' for June 1st).
+        Year is automatically taken from network snapshots. If None, plots from the beginning of the year.
+    end_date : str, optional
+        End date for plotting (format: 'MM-DD', e.g., '08-31' for August 31st).
+        Year is automatically taken from network snapshots. If None, plots to the end of the year.
     skip_years : list of int, optional
         Years to skip (e.g., [2023] if hourly matching not implemented)
     show_plots : bool, default True
@@ -9689,7 +9746,6 @@ def analyze_additionality_multiple_subplots(
             print(f"Skipping {network_name}: year {year} in skip list")
             continue
 
-
         # Create subplot figure for this network
         dataframes, fig = plot_additionality_regions_subplots(
             network=network,
@@ -9705,6 +9761,8 @@ def analyze_additionality_multiple_subplots(
             show_year=show_year,
             shared_ylim=shared_ylim,
             ylim=ylim,
+            start_date=start_date,
+            end_date=end_date,
             ncols=ncols,
             subplot_height=subplot_height,
             subplot_width=subplot_width,
@@ -9717,235 +9775,406 @@ def analyze_additionality_multiple_subplots(
     return results
 
 
-def plot_solar_cf_from_network(network, cmap='YlOrRd', figsize=(20,10), plot_type='scatter'):
+def plot_solar_cf_from_network(network, cmap='YlOrRd', figsize=(20, 10), plot_type='scatter'):
     """
-    Plot solar capacity factors from PyPSA network generators.
-    
-    Parameters:
-    -----------
-    network : pypsa.Network
-        PyPSA network object
-    cmap : str
-        Colormap name (default: 'YlOrRd')
-    figsize : tuple
-        Figure size (width, height)
-    plot_type : str
-        Visualization type:
-        - 'scatter': Discrete points sized by capacity
-        - 'nearest': Nearest neighbor interpolation (blocky regions)
-        - 'cubic': Cubic interpolation (smooth gradients)
-        - 'weighted': K-nearest neighbors weighted average (balanced smoothness)
-    
-    Returns:
-    --------
-    fig, ax, plot_data : matplotlib figure, axes, and pandas DataFrame
+    Plot solar capacity factors from a PyPSA network.
+    Supported plot types: scatter, nearest, cubic, weighted.
     """
-    from scipy.spatial import cKDTree
+
     from matplotlib.lines import Line2D
     from scipy.interpolate import griddata
-    
-    # Filter solar generators
-    solar_gens = network.generators[network.generators.carrier == 'solar'].copy()
-    
-    # Get bus coordinates
+    from scipy.spatial import cKDTree
+
+    # Filter solar generators and attach coordinates
+    solar_gens = network.generators[network.generators.carrier == 'solar'].copy(
+    )
     solar_gens = solar_gens.join(network.buses[['x', 'y']], on='bus')
-    
-    # Calculate average capacity factor from p_max_pu time series
-    cf_data = []
-    for gen_name in solar_gens.index:
-        if gen_name in network.generators_t.p_max_pu.columns:
-            avg_cf = network.generators_t.p_max_pu[gen_name].mean()
-            cf_data.append({'generator': gen_name, 'avg_cf': avg_cf})
-    
-    cf_df = pd.DataFrame(cf_data).set_index('generator')
-    solar_gens = solar_gens.join(cf_df)
-    
-    # Remove any rows with NaN values or infinite p_nom_max values
-    solar_gens = solar_gens.dropna(subset=['avg_cf', 'x', 'y'])
+
+    # Compute average capacity factor
+    cf_df = (
+        network.generators_t.p_max_pu
+        .mean(axis=0)
+        .rename("avg_cf")
+        .to_frame()
+    )
+    solar_gens = solar_gens.join(cf_df).dropna(subset=['avg_cf', 'x', 'y'])
     solar_gens = solar_gens[np.isfinite(solar_gens['p_nom_max'])]
-    
-    # Create figure
+
+    # Grid for interpolated plot types
+    x_grid = np.linspace(solar_gens['x'].min(), solar_gens['x'].max(), 300)
+    y_grid = np.linspace(solar_gens['y'].min(), solar_gens['y'].max(), 200)
+    Xg, Yg = np.meshgrid(x_grid, y_grid)
+
     fig, ax = plt.subplots(
         figsize=figsize,
         subplot_kw={'projection': ccrs.PlateCarree()}
     )
-    
-    # Set map extent for US
+
+    # Map background
     ax.set_extent([-125, -66, 24, 50], crs=ccrs.PlateCarree())
-    
-    # Add map features
     ax.add_feature(cfeature.COASTLINE, linewidth=0.5)
     ax.add_feature(cfeature.BORDERS, linewidth=0.5)
     ax.add_feature(cfeature.STATES, linewidth=0.3, edgecolor='gray')
     ax.add_feature(cfeature.LAND, facecolor='lightgray', alpha=0.3)
     ax.add_feature(cfeature.OCEAN, facecolor='lightblue', alpha=0.3)
-    
-    # Add gridlines
-    gl = ax.gridlines(draw_labels=True, linewidth=0.5, alpha=0.5, linestyle='--')
+
+    gl = ax.gridlines(draw_labels=True, linewidth=0.5,
+                      alpha=0.5, linestyle='--')
     gl.top_labels = False
     gl.right_labels = False
-    
-    # Calculate statistics
-    mean_cf = solar_gens['avg_cf'].mean()
-    min_cf = solar_gens['avg_cf'].min()
-    max_cf = solar_gens['avg_cf'].max()
-    total_capacity = solar_gens['p_nom_max'].sum()
-    min_capacity = solar_gens['p_nom_max'].min()
-    max_capacity = solar_gens['p_nom_max'].max()
-    
-    if plot_type == 'scatter':
-        # Original scatter plot with capacity-based sizing
+
+    # SCATTER PLOT
+    if plot_type == "scatter":
+
+        marker_sizes = solar_gens['p_nom_max'] / 500
+
         scatter = ax.scatter(
-            solar_gens['x'],
-            solar_gens['y'],
+            solar_gens['x'], solar_gens['y'],
             c=solar_gens['avg_cf'],
-            s=solar_gens['p_nom_max'] / 100,  # Size by capacity
+            s=marker_sizes,
             cmap=cmap,
             alpha=0.6,
             edgecolors='black',
             linewidth=0.5,
             transform=ccrs.PlateCarree()
         )
-        
-        # Add colorbar
-        cbar = plt.colorbar(scatter, ax=ax, orientation='horizontal',
-                           pad=0.05, shrink=0.8, label='Annual Average Capacity Factor')
-        
-        # Add legend for circle sizes (scaled down for visibility)
-        legend_sizes = [min_capacity, max_capacity/2, max_capacity]
-        legend_labels = [f'{size/1000:.0f} GW' for size in legend_sizes]
-        legend_elements = [Line2D([0], [0], marker='o', color='w', 
-                                 markerfacecolor='gray', markersize=np.sqrt(size/100) * 0.3,  # Scale down by 30%
-                                 alpha=0.6, markeredgecolor='black', markeredgewidth=0.5,
-                                 label=label) 
-                          for size, label in zip(legend_sizes, legend_labels)]
-        
-        ax.legend(handles=legend_elements, title='Capacity (p_nom_max)', 
-                 loc='upper right', framealpha=0.9, fontsize=10)
-        
-        title_suffix = '(Scatter - Sized by Capacity)'
-        
-    else:
-        # Create interpolation grid for all other plot types
-        x_grid = np.linspace(solar_gens['x'].min(), solar_gens['x'].max(), 300)
-        y_grid = np.linspace(solar_gens['y'].min(), solar_gens['y'].max(), 200)
-        X_grid, Y_grid = np.meshgrid(x_grid, y_grid)
-        
-        if plot_type == 'nearest':
-            # Nearest neighbor interpolation
-            cf_grid = griddata(
-                (solar_gens['x'], solar_gens['y']),
-                solar_gens['avg_cf'],
-                (X_grid, Y_grid),
-                method='nearest',
-                fill_value=np.nan
-            )
-            
-            im = ax.pcolormesh(
-                X_grid, Y_grid, cf_grid,
-                cmap=cmap,
-                transform=ccrs.PlateCarree(),
-                alpha=0.8,
-                shading='auto'
-            )
-            
-            cbar = plt.colorbar(im, ax=ax, orientation='horizontal',
-                               pad=0.05, shrink=0.8, label='Annual Average Capacity Factor')
-            title_suffix = '(Nearest Neighbor)'
-            
-        elif plot_type == 'cubic':
-            # Cubic interpolation
-            cf_grid = griddata(
-                (solar_gens['x'], solar_gens['y']),
-                solar_gens['avg_cf'],
-                (X_grid, Y_grid),
-                method='cubic',
-                fill_value=np.nan
-            )
-            
-            # Clip to valid range to avoid interpolation artifacts
-            cf_grid = np.clip(cf_grid, min_cf, max_cf)
-            
-            levels = np.linspace(min_cf, max_cf, 20)
-            contour = ax.contourf(
-                X_grid, Y_grid, cf_grid,
-                levels=levels,
-                cmap=cmap,
-                transform=ccrs.PlateCarree(),
-                alpha=0.8,
-                extend='neither'
-            )
-            
-            cbar = plt.colorbar(contour, ax=ax, orientation='horizontal',
-                               pad=0.05, shrink=0.8, label='Annual Average Capacity Factor')
-            title_suffix = '(Cubic Interpolation)'
-            
-        elif plot_type == 'weighted':
-            # K-nearest neighbors weighted average
-            tree = cKDTree(np.column_stack([solar_gens['x'], solar_gens['y']]))
-            grid_points = np.column_stack([X_grid.ravel(), Y_grid.ravel()])
-            
-            # Find k nearest neighbors and weight by inverse distance
-            k = 5  # Number of neighbors
-            distances, indices = tree.query(grid_points, k=k)
-            
-            # Avoid division by zero
-            distances = np.where(distances == 0, 1e-10, distances)
-            weights = 1.0 / distances
-            weights = weights / weights.sum(axis=1, keepdims=True)
-            
-            # Weighted average of CF values
-            cf_values = solar_gens['avg_cf'].values
-            cf_grid = (weights * cf_values[indices]).sum(axis=1).reshape(X_grid.shape)
-            
-            levels = np.linspace(min_cf, max_cf, 20)
-            contour = ax.contourf(
-                X_grid, Y_grid, cf_grid,
-                levels=levels,
-                cmap=cmap,
-                transform=ccrs.PlateCarree(),
-                alpha=0.8,
-                extend='neither'
-            )
-            
-            cbar = plt.colorbar(contour, ax=ax, orientation='horizontal',
-                               pad=0.05, shrink=0.8, label='Annual Average Capacity Factor')
-            title_suffix = '(Weighted Average K=5)'
-        
-        else:
-            raise ValueError(f"Invalid plot_type: {plot_type}. Choose from 'scatter', 'nearest', 'cubic', or 'weighted'")
-        
-        # Overlay actual generator locations with small fixed size for interpolated plots
-        ax.scatter(
-            solar_gens['x'],
-            solar_gens['y'],
-            c='black',
-            s=20,  # Fixed small size
-            alpha=0.5,
-            transform=ccrs.PlateCarree(),
-            zorder=5,
-            edgecolors='white',
-            linewidth=0.5
+
+        plt.colorbar(
+            scatter, ax=ax,
+            orientation="horizontal",
+            pad=0.05,
+            label="Annual average capacity factor (-)"
         )
-        
-        # Add text annotation for capacity information
-        ax.text(0.02, 0.98, f'Total p_nom_max: {total_capacity/1000:.1f} GW\n'
-                f'Range: {min_capacity/1000:.1f} - {max_capacity/1000:.1f} GW',
-                transform=ax.transAxes, fontsize=11,
-                verticalalignment='top', bbox=dict(boxstyle='round', 
-                facecolor='white', alpha=0.8))
-    
-    # Add title with capacity information
-    ax.set_title(
-        f'Solar Generator Capacity Factors {title_suffix}\n'
-        f'Mean CF: {mean_cf:.1%}, Range: {min_cf:.1%} - {max_cf:.1%}, Total Capacity: {total_capacity/1000:.1f} GW',
-        fontsize=15, weight='bold', pad=20
-    )
-    
-    print(f"Plotted {len(solar_gens)} solar generators using '{plot_type}' method")
-    print(f"Average CF: {mean_cf:.2%}")
-    print(f"CF range: {min_cf:.2%} to {max_cf:.2%}")
-    print(f"Total capacity (p_nom_max): {total_capacity:.1f} MW ({total_capacity/1000:.1f} GW)")
-    print(f"Capacity range: {min_capacity:.1f} - {max_capacity:.1f} MW")
-    
+
+    # NEAREST INTERPOLATION
+    elif plot_type == "nearest":
+
+        cf_grid = griddata(
+            (solar_gens['x'], solar_gens['y']),
+            solar_gens['avg_cf'],
+            (Xg, Yg),
+            method='nearest'
+        )
+
+        img = ax.pcolormesh(
+            Xg, Yg, cf_grid,
+            cmap=cmap,
+            shading='auto',
+            transform=ccrs.PlateCarree()
+        )
+
+        plt.colorbar(
+            img, ax=ax,
+            orientation="horizontal",
+            pad=0.05,
+            label="Annual average capacity factor (-)"
+        )
+
+        ax.scatter(solar_gens['x'], solar_gens['y'], s=20, c='black', alpha=0.5,
+                   transform=ccrs.PlateCarree())
+
+    # CUBIC INTERPOLATION
+    elif plot_type == "cubic":
+
+        cf_grid = griddata(
+            (solar_gens['x'], solar_gens['y']),
+            solar_gens['avg_cf'],
+            (Xg, Yg),
+            method='cubic'
+        )
+
+        cf_grid = np.clip(
+            cf_grid, solar_gens['avg_cf'].min(), solar_gens['avg_cf'].max())
+
+        img = ax.pcolormesh(
+            Xg, Yg, cf_grid,
+            cmap=cmap,
+            shading='auto',
+            transform=ccrs.PlateCarree()
+        )
+
+        plt.colorbar(
+            img, ax=ax,
+            orientation="horizontal",
+            pad=0.05,
+            label="Annual average capacity factor (-)"
+        )
+
+        ax.scatter(solar_gens['x'], solar_gens['y'], s=20, c='black', alpha=0.5,
+                   transform=ccrs.PlateCarree())
+
+    # WEIGHTED INTERPOLATION
+    elif plot_type == "weighted":
+
+        tree = cKDTree(np.column_stack([solar_gens['x'], solar_gens['y']]))
+        pts = np.column_stack([Xg.ravel(), Yg.ravel()])
+
+        d, idx = tree.query(pts, k=5)
+        d = np.where(d == 0, 1e-10, d)
+        w = 1 / d
+        w /= w.sum(axis=1, keepdims=True)
+
+        cf_grid = (solar_gens['avg_cf'].values[idx]
+                   * w).sum(axis=1).reshape(Xg.shape)
+
+        img = ax.pcolormesh(
+            Xg, Yg, cf_grid,
+            cmap=cmap,
+            shading='auto',
+            transform=ccrs.PlateCarree()
+        )
+
+        plt.colorbar(
+            img, ax=ax,
+            orientation="horizontal",
+            pad=0.05,
+            label="Annual average capacity factor (-)"
+        )
+
+        ax.scatter(solar_gens['x'], solar_gens['y'], s=20, c='black', alpha=0.5,
+                   transform=ccrs.PlateCarree())
+
+    else:
+        raise ValueError(f"Unknown plot_type '{plot_type}'")
+
+    # LEGEND ONLY FOR SCATTER
+    if plot_type == "scatter":
+
+        legend_box = fig.add_axes([0.74, 0.30, 0.11, 0.18])
+
+        legend_box.set_facecolor("white")
+        legend_box.set_alpha(0.9)
+        legend_box.set_xticks([])
+        legend_box.set_yticks([])
+        legend_box.set_xlim(0, 1)
+        legend_box.set_ylim(0, 1)
+
+        legend_box.text(0.05, 0.92, "Max. installable capacity",
+                        fontsize=11, va="top")
+
+        caps = [200e3, 1000e3]   # MW
+        labels = ["200 GW", "1000 GW"]
+        sizes = [c / 500 for c in caps]
+        y_pos = [0.60, 0.28]
+
+        for y, s, lab in zip(y_pos, sizes, labels):
+            legend_box.scatter(
+                0.22, y, s=s,
+                color="gray", alpha=0.6,
+                edgecolors="black", linewidth=0.6
+            )
+            legend_box.text(0.45, y, lab, va='center', fontsize=11)
+
+    ax.set_title("Solar capacity factor", fontsize=16, pad=20)
+
     return fig, ax, solar_gens
+
+
+def plot_wind_cf_from_network(network, wind_type='onwind', cmap='viridis', figsize=(20, 10), plot_type='scatter'):
+    """
+    Plot wind capacity factors from a PyPSA network.
+    Supported plot types: scatter, nearest, cubic, weighted.
+    Wind types: 'onwind', 'offwind', or 'both'.
+    """
+
+    from matplotlib.lines import Line2D
+    from scipy.interpolate import griddata
+    from scipy.spatial import cKDTree
+
+    # Filter wind generators based on type
+    if wind_type == 'both':
+        wind_gens = network.generators[
+            (network.generators.carrier == 'onwind') |
+            (network.generators.carrier == 'offwind')
+        ].copy()
+    else:
+        wind_gens = network.generators[network.generators.carrier == wind_type].copy(
+        )
+
+    # Attach coordinates
+    wind_gens = wind_gens.join(network.buses[['x', 'y']], on='bus')
+
+    # Compute average capacity factor
+    cf_df = (
+        network.generators_t.p_max_pu
+        .mean(axis=0)
+        .rename("avg_cf")
+        .to_frame()
+    )
+    wind_gens = wind_gens.join(cf_df).dropna(subset=['avg_cf', 'x', 'y'])
+    wind_gens = wind_gens[np.isfinite(wind_gens['p_nom_max'])]
+
+    # Grid for interpolated plot types
+    x_grid = np.linspace(wind_gens['x'].min(), wind_gens['x'].max(), 300)
+    y_grid = np.linspace(wind_gens['y'].min(), wind_gens['y'].max(), 200)
+    Xg, Yg = np.meshgrid(x_grid, y_grid)
+
+    fig, ax = plt.subplots(
+        figsize=figsize,
+        subplot_kw={'projection': ccrs.PlateCarree()}
+    )
+
+    # Map background
+    ax.set_extent([-125, -66, 24, 50], crs=ccrs.PlateCarree())
+    ax.add_feature(cfeature.COASTLINE, linewidth=0.5)
+    ax.add_feature(cfeature.BORDERS, linewidth=0.5)
+    ax.add_feature(cfeature.STATES, linewidth=0.3, edgecolor='gray')
+    ax.add_feature(cfeature.LAND, facecolor='lightgray', alpha=0.3)
+    ax.add_feature(cfeature.OCEAN, facecolor='lightblue', alpha=0.3)
+
+    gl = ax.gridlines(draw_labels=True, linewidth=0.5,
+                      alpha=0.5, linestyle='--')
+    gl.top_labels = False
+    gl.right_labels = False
+
+    # SCATTER PLOT
+    if plot_type == "scatter":
+
+        marker_sizes = wind_gens['p_nom_max'] / 500
+
+        scatter = ax.scatter(
+            wind_gens['x'], wind_gens['y'],
+            c=wind_gens['avg_cf'],
+            s=marker_sizes,
+            cmap=cmap,
+            alpha=0.6,
+            edgecolors='black',
+            linewidth=0.5,
+            transform=ccrs.PlateCarree()
+        )
+
+        plt.colorbar(
+            scatter, ax=ax,
+            orientation="horizontal",
+            pad=0.05,
+            label="Annual average capacity factor (-)"
+        )
+
+    # NEAREST INTERPOLATION
+    elif plot_type == "nearest":
+
+        cf_grid = griddata(
+            (wind_gens['x'], wind_gens['y']),
+            wind_gens['avg_cf'],
+            (Xg, Yg),
+            method='nearest'
+        )
+
+        img = ax.pcolormesh(
+            Xg, Yg, cf_grid,
+            cmap=cmap,
+            shading='auto',
+            transform=ccrs.PlateCarree()
+        )
+
+        plt.colorbar(
+            img, ax=ax,
+            orientation="horizontal",
+            pad=0.05,
+            label="Annual average capacity factor (-)"
+        )
+
+        ax.scatter(wind_gens['x'], wind_gens['y'], s=20, c='black', alpha=0.5,
+                   transform=ccrs.PlateCarree())
+
+    # CUBIC INTERPOLATION
+    elif plot_type == "cubic":
+
+        cf_grid = griddata(
+            (wind_gens['x'], wind_gens['y']),
+            wind_gens['avg_cf'],
+            (Xg, Yg),
+            method='cubic'
+        )
+
+        cf_grid = np.clip(
+            cf_grid, wind_gens['avg_cf'].min(), wind_gens['avg_cf'].max())
+
+        img = ax.pcolormesh(
+            Xg, Yg, cf_grid,
+            cmap=cmap,
+            shading='auto',
+            transform=ccrs.PlateCarree()
+        )
+
+        plt.colorbar(
+            img, ax=ax,
+            orientation="horizontal",
+            pad=0.05,
+            label="Annual average capacity factor (-)"
+        )
+
+        ax.scatter(wind_gens['x'], wind_gens['y'], s=20, c='black', alpha=0.5,
+                   transform=ccrs.PlateCarree())
+
+    # WEIGHTED INTERPOLATION
+    elif plot_type == "weighted":
+
+        tree = cKDTree(np.column_stack([wind_gens['x'], wind_gens['y']]))
+        pts = np.column_stack([Xg.ravel(), Yg.ravel()])
+
+        d, idx = tree.query(pts, k=5)
+        d = np.where(d == 0, 1e-10, d)
+        w = 1 / d
+        w /= w.sum(axis=1, keepdims=True)
+
+        cf_grid = (wind_gens['avg_cf'].values[idx]
+                   * w).sum(axis=1).reshape(Xg.shape)
+
+        img = ax.pcolormesh(
+            Xg, Yg, cf_grid,
+            cmap=cmap,
+            shading='auto',
+            transform=ccrs.PlateCarree()
+        )
+
+        plt.colorbar(
+            img, ax=ax,
+            orientation="horizontal",
+            pad=0.05,
+            label="Annual average capacity factor (-)"
+        )
+
+        ax.scatter(wind_gens['x'], wind_gens['y'], s=20, c='black', alpha=0.5,
+                   transform=ccrs.PlateCarree())
+
+    else:
+        raise ValueError(f"Unknown plot_type '{plot_type}'")
+
+    # LEGEND ONLY FOR SCATTER
+    if plot_type == "scatter":
+
+        legend_box = fig.add_axes([0.74, 0.30, 0.11, 0.18])
+
+        legend_box.set_facecolor("white")
+        legend_box.set_alpha(0.9)
+        legend_box.set_xticks([])
+        legend_box.set_yticks([])
+        legend_box.set_xlim(0, 1)
+        legend_box.set_ylim(0, 1)
+
+        legend_box.text(0.05, 0.92, "Max. installable capacity",
+                        fontsize=11, va="top")
+
+        caps = [200e3, 1000e3]   # MW
+        labels = ["200 GW", "1000 GW"]
+        sizes = [c / 500 for c in caps]
+        y_pos = [0.60, 0.28]
+
+        for y, s, lab in zip(y_pos, sizes, labels):
+            legend_box.scatter(
+                0.22, y, s=s,
+                color="gray", alpha=0.6,
+                edgecolors="black", linewidth=0.6
+            )
+            legend_box.text(0.45, y, lab, va='center', fontsize=11)
+
+    # Set title
+    wind_label = wind_type.replace(
+        'onwind', 'Onshore wind').replace('offwind', 'Offshore wind')
+    if wind_type == 'both':
+        wind_label = 'Wind (onshore & offshore)'
+
+    ax.set_title(f"{wind_label} capacity factor", fontsize=16, pad=20)
+
+    return fig, ax, wind_gens

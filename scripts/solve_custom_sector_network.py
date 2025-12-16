@@ -1552,32 +1552,39 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
                 gens_Y = allowed_RES[Y]["gen"].intersection(res_gen_index[gen_mask_r])
                 stor_Y = allowed_RES[Y]["stor"].intersection(res_stor_index[stor_mask_r])
 
-                res_Y_r = pd.Series(0.0, index=n.snapshots)
+                res_Y_r = None
 
                 if len(gens_Y) > 0:
                     wgY = weightings_gen.loc[:, gens_Y]
-                    res_Y_r += linexpr(
+                    res_Y_r = linexpr(
                         (wgY, get_var(n, "Generator", "p")[gens_Y])
                     ).sum(axis=1)
 
                 if len(stor_Y) > 0 and weightings_stor is not None:
                     wsY = weightings_stor.loc[:, stor_Y]
-                    res_Y_r += linexpr(
+                    term = linexpr(
                         (wsY, get_var(n, "StorageUnit", "p_dispatch")[stor_Y])
                     ).sum(axis=1)
+                    res_Y_r = term if res_Y_r is None else res_Y_r + term
+
+                if res_Y_r is None:
+                    res_Y_r = pd.Series(0.0, index=n.snapshots)
 
                 # Electrolyzers with build_year >= Y in this region
                 el_mask_Yplus_r = ((el_build_year >= Y).values) & el_mask_r
                 el_cols_Yplus_r = electrolysis.columns[el_mask_Yplus_r]
 
-                el_input_Yplus_r = pd.Series(0.0, index=n.snapshots)
+                el_input_Yplus_r = None
 
                 if len(el_cols_Yplus_r) > 0:
                     weY = weightings_electrolysis.loc[:, el_cols_Yplus_r]
                     pelY = electrolysis[el_cols_Yplus_r]
-                    el_input_Yplus_r += linexpr(
+                    el_input_Yplus_r = linexpr(
                         (-allowed_excess * weY, pelY)
                     ).sum(axis=1)
+
+                if el_input_Yplus_r is None:
+                    el_input_Yplus_r = pd.Series(0.0, index=n.snapshots)
 
                 # Aggregate by time_period
                 res_Y_r_agg = _agg_by_period(res_Y_r, time_period)

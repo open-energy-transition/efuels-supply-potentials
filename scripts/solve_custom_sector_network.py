@@ -1488,50 +1488,51 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
     regions = pd.Index(pd.unique(el_region))
 
     # REGIONAL TEMPORAL MATCHING CARRIERS CALCULATION
-    for r in regions:
+    if not additionality:
+        for r in regions:
 
-        # masks for this region
-        gen_mask = (gen_region == r)
-        stor_mask = (stor_region == r)
-        el_mask = (el_region == r)
+            # masks for this region
+            gen_mask = (gen_region == r)
+            stor_mask = (stor_region == r)
+            el_mask = (el_region == r)
 
-        # RES in region
-        res_r = None
+            # RES in region
+            res_r = None
 
-        if gen_mask.any():
-            wg = weightings_gen.loc[:, weightings_gen.columns[gen_mask]]
-            pgen = get_var(n, "Generator", "p")[res_gen_index[gen_mask]]
-            res_r = linexpr((wg, pgen)).sum(axis=1)
+            if gen_mask.any():
+                wg = weightings_gen.loc[:, weightings_gen.columns[gen_mask]]
+                pgen = get_var(n, "Generator", "p")[res_gen_index[gen_mask]]
+                res_r = linexpr((wg, pgen)).sum(axis=1)
 
-        if stor_mask.any() and weightings_stor is not None:
-            ws = weightings_stor.loc[:, weightings_stor.columns[stor_mask]]
-            pdisp = get_var(n, "StorageUnit", "p_dispatch")[res_stor_index[stor_mask]]
-            term = linexpr((ws, pdisp)).sum(axis=1)
-            res_r = term if res_r is None else res_r + term
+            if stor_mask.any() and weightings_stor is not None:
+                ws = weightings_stor.loc[:, weightings_stor.columns[stor_mask]]
+                pdisp = get_var(n, "StorageUnit", "p_dispatch")[res_stor_index[stor_mask]]
+                term = linexpr((ws, pdisp)).sum(axis=1)
+                res_r = term if res_r is None else res_r + term
 
-        if res_r is None:
-            res_r = pd.Series(0.0, index=n.snapshots)
+            if res_r is None:
+                res_r = pd.Series(0.0, index=n.snapshots)
 
-        # Electrolyzer input in region
-        if el_mask.any():
-            we = weightings_electrolysis.loc[:, weightings_electrolysis.columns[el_mask]]
-            pel = electrolysis.loc[:, electrolysis.columns[el_mask]]
-            el_r = linexpr((-allowed_excess * we, pel)).sum(axis=1)
-        else:
-            el_r = pd.Series(0.0, index=n.snapshots)
+            # Electrolyzer input in region
+            if el_mask.any():
+                we = weightings_electrolysis.loc[:, weightings_electrolysis.columns[el_mask]]
+                pel = electrolysis.loc[:, electrolysis.columns[el_mask]]
+                el_r = linexpr((-allowed_excess * we, pel)).sum(axis=1)
+            else:
+                el_r = pd.Series(0.0, index=n.snapshots)
 
-        # Aggregate by time_period
-        res_r_agg = _agg_by_period(res_r, time_period)
-        el_r_agg = _agg_by_period(el_r, time_period)
+            # Aggregate by time_period
+            res_r_agg = _agg_by_period(res_r, time_period)
+            el_r_agg = _agg_by_period(el_r, time_period)
 
-        # Impose constraint for each period
-        for i in range(len(res_r_agg.index)):
-            lhs = res_r_agg.iloc[i] + el_r_agg.iloc[i]
-            define_constraints(
-                n, lhs, ">=", 0.0,
-                f"RESconstraints_tm_reg_{r}_{i}",
-                f"REStarget_tm_reg_{r}_{i}",
-            )
+            # Impose constraint for each period
+            for i in range(len(res_r_agg.index)):
+                lhs = res_r_agg.iloc[i] + el_r_agg.iloc[i]
+                define_constraints(
+                    n, lhs, ">=", 0.0,
+                    f"RESconstraints_tm_reg_{r}_{i}",
+                    f"REStarget_tm_reg_{r}_{i}",
+                )
 
     # REGIONAL ADDITIONALITY CONSTRAINTS PER COHORT
     if additionality and len(cohorts) > 0:
@@ -1625,8 +1626,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
             el_r = linexpr(
                 (-deliverability_tolerance * we, pel)
             ).sum(axis=1)
-
-        if el_r is None:
+        else:
             el_r = pd.Series(0.0, index=n.snapshots)
 
         res_r_agg = _agg_by_period(res_r, deliverability_period)

@@ -8833,6 +8833,12 @@ def compute_additionality_compliance_data(
     """
     Compute RES generation and electrolyzer consumption for additionality compliance analysis.
 
+    For additionality plots, this function ensures that total electrolyzer consumption 
+    is always less than or equal to eligible RES generation by:
+    - Including ALL electrolyzers in the region (all build years)
+    - Including RES with build_year >= oldest electrolyzer build year
+    This provides a conservative check that sufficient new RES exists to power all electrolyzers.
+
     Parameters
     ----------
     network : pypsa.Network
@@ -8840,10 +8846,11 @@ def compute_additionality_compliance_data(
     region : str, optional
         Grid region to filter (e.g., "Plains", "Southeast"). If None, analyze whole country.
     year : int, optional
-        Year for additionality filtering. If additionality=True and year is provided,
-        only new generators/storage built in that year are included.
+        Fallback year for additionality filtering if no electrolyzers exist in region.
+        If additionality=True, RES with build_year >= oldest electrolyzer (or this year) are included.
     additionality : bool, default True
-        If True, filter only generators/storage built in the specified year
+        If True, filter RES to only include those built >= oldest electrolyzer build year.
+        This ensures electrolyzer consumption ≤ eligible RES generation.
     res_carriers : list of str, optional
         List of RES carrier names. Defaults to standard list.
     res_stor_techs : list of str, optional
@@ -8901,12 +8908,22 @@ def compute_additionality_compliance_data(
         region_stor = network.storage_units.index
         region_links = network.links.index
 
-    # Calculate electrolyzer consumption (filtered by region)
+    # Calculate electrolyzer consumption (filtered by region, ALL cohorts)
     electrolyzers = network.links[network.links.carrier.isin(
         electrolysis_carriers) & network.links.index.isin(region_links)].index
     electrolyzers_consumption = network.links_t.p0[electrolyzers].multiply(
         network.snapshot_weightings.objective, axis=0
     ).sum(axis=1)
+
+    # For additionality: find the oldest electrolyzer build year to determine eligible RES
+    if additionality and 'build_year' in network.links.columns:
+        if len(electrolyzers) > 0:
+            oldest_electrolyzer_year = network.links.loc[electrolyzers, 'build_year'].min(
+            )
+        else:
+            oldest_electrolyzer_year = year if year is not None else None
+    else:
+        oldest_electrolyzer_year = year if year is not None else None
 
     # Build dataframe with separate columns per carrier
     res_by_carrier = {}
@@ -8915,9 +8932,10 @@ def compute_additionality_compliance_data(
         carrier_gens = network.generators.query(
             "carrier == @carrier and index in @region_gens").index
 
-        if additionality and year is not None:
+        # For additionality, include RES built in or after the oldest electrolyzer year
+        if additionality and oldest_electrolyzer_year is not None:
             new_gens = network.generators.loc[
-                network.generators.build_year == int(year)
+                network.generators.build_year >= int(oldest_electrolyzer_year)
             ].index
             carrier_gens = carrier_gens.intersection(new_gens)
 
@@ -8932,9 +8950,10 @@ def compute_additionality_compliance_data(
     # Add storage
     res_storages = network.storage_units.query(
         "carrier in @res_stor_techs and index in @region_stor").index
-    if additionality and year is not None:
+    # For additionality, include storage built in or after the oldest electrolyzer year
+    if additionality and oldest_electrolyzer_year is not None:
         new_stor = network.storage_units.loc[
-            network.storage_units.build_year == int(year)
+            network.storage_units.build_year >= int(oldest_electrolyzer_year)
         ].index
         res_storages = res_storages.intersection(new_stor)
 
@@ -9361,6 +9380,8 @@ def plot_additionality_regions_subplots(
     regions: List[str],
     include_whole_country: bool = True,
     additionality: bool = True,
+    skip_no_electrolyzer: bool = True,
+    min_electrolyzer_mw: float = 1.0,
     nice_names_power: Optional[Dict[str, str]] = None,
     nice_names: Optional[Dict[str, str]] = None,
     tech_power_color: Optional[Dict[str, str]] = None,
@@ -9392,6 +9413,11 @@ def plot_additionality_regions_subplots(
         Whether to include a subplot for the whole country
     additionality : bool, default True
         Apply additionality filtering
+    skip_no_electrolyzer : bool, default True
+        If True, skip regions with no or negligible electrolyzer consumption
+    min_electrolyzer_mw : float, default 1.0
+        Minimum average electrolyzer consumption (MW) for a region to be included.
+        Only used if skip_no_electrolyzer=True.
     nice_names_power : dict, optional
         Power carrier name mapping
     nice_names : dict, optional
@@ -9459,10 +9485,12 @@ def plot_additionality_regions_subplots(
         date_range_str = f"Date range: {start_date or 'start'} to {end_date or 'end'}"
         print(f"\n{date_range_str}")
 
-    # First pass: compute all data and filter out regions with no RES generation
-    print("Checking regions for RES generation...")
+    # First pass: compute all data and filter out regions based on criteria
+    print("Checking regions for data...")
     all_plot_data = []
     regions_with_data = []
+    skipped_no_res = []
+    skipped_no_electrolyzer = []
 
     for region in plot_regions:
         raw_df = compute_additionality_compliance_data(
@@ -9480,21 +9508,44 @@ def plot_additionality_regions_subplots(
             nice_names
         )
 
+        region_name = region if region else "whole_country"
+
         # Check if region has any RES generation
         electrolyzer_col = 'Electrolyzer consumption'
         res_cols = [col for col in plot_df.columns if col != electrolyzer_col]
         total_res_generation = plot_df[res_cols].sum().sum()
 
-        region_name = region if region else "whole_country"
-        if total_res_generation > 0:
-            all_plot_data.append(plot_df)
-            regions_with_data.append(region)
+        if total_res_generation <= 0:
+            skipped_no_res.append(region_name)
+            continue
+
+        # Check if region has electrolyzer consumption (if filtering enabled)
+        if skip_no_electrolyzer:
+            avg_electrolyzer_mw = plot_df[electrolyzer_col].mean()
+            if avg_electrolyzer_mw < min_electrolyzer_mw:
+                skipped_no_electrolyzer.append(region_name)
+                continue
+
+        # Region passes all filters
+        all_plot_data.append(plot_df)
+        regions_with_data.append(region)
 
     # Update plot_regions to only include regions with data
     plot_regions = regions_with_data
 
+    # Print diagnostic information
+    if skipped_no_res:
+        print(
+            f"  Skipped {len(skipped_no_res)} region(s) with no RES generation: {', '.join(skipped_no_res)}")
+    if skipped_no_electrolyzer:
+        print(f"  Skipped {len(skipped_no_electrolyzer)} region(s) with no/negligible electrolyzer consumption: {', '.join(skipped_no_electrolyzer)}")
+    if regions_with_data:
+        region_names = [r if r else "whole_country" for r in regions_with_data]
+        print(
+            f"  Including {len(regions_with_data)} region(s): {', '.join(region_names)}")
+
     if len(plot_regions) == 0:
-        print("\nWarning: No regions with RES generation found!")
+        print("\nWarning: No regions with data found after filtering!")
         return {}, None
 
     # Calculate subplot grid
@@ -9648,6 +9699,8 @@ def analyze_additionality_multiple_subplots(
     regions: Optional[List[str]] = None,
     include_whole_country: bool = True,
     additionality: bool = True,
+    skip_no_electrolyzer: bool = True,
+    min_electrolyzer_mw: float = 1.0,
     nice_names_power: Optional[Dict[str, str]] = None,
     nice_names: Optional[Dict[str, str]] = None,
     tech_power_color: Optional[Dict[str, str]] = None,
@@ -9681,6 +9734,11 @@ def analyze_additionality_multiple_subplots(
         Whether to include a subplot for the whole country
     additionality : bool, default True
         Apply additionality filtering
+    skip_no_electrolyzer : bool, default True
+        If True, skip regions with no or negligible electrolyzer consumption
+    min_electrolyzer_mw : float, default 1.0
+        Minimum average electrolyzer consumption (MW) for a region to be included.
+        Only used if skip_no_electrolyzer=True.
     nice_names_power : dict, optional
         Power carrier name mapping
     nice_names : dict, optional
@@ -9753,6 +9811,8 @@ def analyze_additionality_multiple_subplots(
             regions=regions,
             include_whole_country=include_whole_country,
             additionality=additionality,
+            skip_no_electrolyzer=skip_no_electrolyzer,
+            min_electrolyzer_mw=min_electrolyzer_mw,
             nice_names_power=nice_names_power,
             nice_names=nice_names,
             tech_power_color=tech_power_color,

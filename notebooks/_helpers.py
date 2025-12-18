@@ -8908,22 +8908,27 @@ def compute_additionality_compliance_data(
         region_stor = network.storage_units.index
         region_links = network.links.index
 
-    # Calculate electrolyzer consumption (filtered by region, ALL cohorts)
-    electrolyzers = network.links[network.links.carrier.isin(
-        electrolysis_carriers) & network.links.index.isin(region_links)].index
-    electrolyzers_consumption = network.links_t.p0[electrolyzers].multiply(
+    # Calculate electrolyzer consumption (filtered by region AND build year >= 2030)
+    # Default base year for additionality is 2030 as per requirements
+    base_year = 2030
+    
+    # Get all electrolyzers in the region
+    region_electrolyzers = network.links[
+        network.links.carrier.isin(electrolysis_carriers) & 
+        network.links.index.isin(region_links)
+    ]
+    
+    # Filter by build year if column exists, otherwise include all
+    if 'build_year' in region_electrolyzers.columns:
+        filtered_electrolyzers = region_electrolyzers[
+            region_electrolyzers.build_year >= base_year
+        ].index
+    else:
+        filtered_electrolyzers = region_electrolyzers.index
+        
+    electrolyzers_consumption = network.links_t.p0[filtered_electrolyzers].multiply(
         network.snapshot_weightings.objective, axis=0
     ).sum(axis=1)
-
-    # For additionality: find the oldest electrolyzer build year to determine eligible RES
-    if additionality and 'build_year' in network.links.columns:
-        if len(electrolyzers) > 0:
-            oldest_electrolyzer_year = network.links.loc[electrolyzers, 'build_year'].min(
-            )
-        else:
-            oldest_electrolyzer_year = year if year is not None else None
-    else:
-        oldest_electrolyzer_year = year if year is not None else None
 
     # Build dataframe with separate columns per carrier
     res_by_carrier = {}
@@ -8932,10 +8937,10 @@ def compute_additionality_compliance_data(
         carrier_gens = network.generators.query(
             "carrier == @carrier and index in @region_gens").index
 
-        # For additionality, include RES built in or after the oldest electrolyzer year
-        if additionality and oldest_electrolyzer_year is not None:
+        # For additionality, include RES built in or after 2030
+        if additionality and 'build_year' in network.generators.columns:
             new_gens = network.generators.loc[
-                network.generators.build_year >= int(oldest_electrolyzer_year)
+                network.generators.build_year >= base_year
             ].index
             carrier_gens = carrier_gens.intersection(new_gens)
 
@@ -8950,10 +8955,10 @@ def compute_additionality_compliance_data(
     # Add storage
     res_storages = network.storage_units.query(
         "carrier in @res_stor_techs and index in @region_stor").index
-    # For additionality, include storage built in or after the oldest electrolyzer year
-    if additionality and oldest_electrolyzer_year is not None:
+    # For additionality, include storage built in or after 2030
+    if additionality and 'build_year' in network.storage_units.columns:
         new_stor = network.storage_units.loc[
-            network.storage_units.build_year >= int(oldest_electrolyzer_year)
+            network.storage_units.build_year >= base_year
         ].index
         res_storages = res_storages.intersection(new_stor)
 
@@ -9552,19 +9557,19 @@ def plot_additionality_regions_subplots(
     nplots = len(plot_regions)
     nrows = math.ceil(nplots / ncols)
 
-    # Calculate max value across all regions for shared y-axis
-    if shared_ylim and ylim is None:
-        max_val = 0
-        for plot_df in all_plot_data:
-            electrolyzer_col = 'Electrolyzer consumption'
-            res_cols = [
-                col for col in plot_df.columns if col != electrolyzer_col]
-            # Get max of stacked RES sum
-            max_res = plot_df[res_cols].sum(axis=1).max()
-            # Get max of electrolyzer line
-            max_electrolyzer = plot_df[electrolyzer_col].max()
-            max_val = max(max_val, max_res, max_electrolyzer)
+    # Calculate max value across all regions for shared y-axis or individual axes check
+    max_vals = []
+    for plot_df in all_plot_data:
+        electrolyzer_col = 'Electrolyzer consumption'
+        res_cols = [col for col in plot_df.columns if col != electrolyzer_col]
+        # Get max of stacked RES sum
+        max_res = plot_df[res_cols].sum(axis=1).max()
+        # Get max of electrolyzer line
+        max_electrolyzer = plot_df[electrolyzer_col].max()
+        max_vals.append(max(max_res, max_electrolyzer))
 
+    if shared_ylim and ylim is None:
+        max_val = max(max_vals) if max_vals else 0
         # Add 10% padding
         ylim = (0, max_val * 1.1)
 
@@ -9629,6 +9634,10 @@ def plot_additionality_regions_subplots(
         # Apply y-axis limits if specified
         if ylim is not None:
             ax.set_ylim(ylim)
+        else:
+            # If not shared_ylim, ensure ylim covers the max value for this specific region
+            region_max = max_vals[idx] if idx < len(max_vals) else 0
+            ax.set_ylim(0, region_max * 1.1)
 
         # Build subplot title
         subplot_title = region if region else "Whole Country"

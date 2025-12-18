@@ -8907,10 +8907,6 @@ def compute_additionality_compliance_data(
         region_gens = network.generators.index
         region_stor = network.storage_units.index
         region_links = network.links.index
-
-    # Calculate electrolyzer consumption (filtered by region AND build year >= 2030)
-    # Default base year for additionality is 2030 as per requirements
-    base_year = 2030
     
     # Get all electrolyzers in the region
     region_electrolyzers = network.links[
@@ -8918,13 +8914,7 @@ def compute_additionality_compliance_data(
         network.links.index.isin(region_links)
     ]
     
-    # Filter by build year if column exists, otherwise include all
-    if 'build_year' in region_electrolyzers.columns:
-        filtered_electrolyzers = region_electrolyzers[
-            region_electrolyzers.build_year >= base_year
-        ].index
-    else:
-        filtered_electrolyzers = region_electrolyzers.index
+    filtered_electrolyzers = region_electrolyzers.index
         
     electrolyzers_consumption = network.links_t.p0[filtered_electrolyzers].multiply(
         network.snapshot_weightings.objective, axis=0
@@ -8937,13 +8927,6 @@ def compute_additionality_compliance_data(
         carrier_gens = network.generators.query(
             "carrier == @carrier and index in @region_gens").index
 
-        # For additionality, include RES built in or after 2030
-        if additionality and 'build_year' in network.generators.columns:
-            new_gens = network.generators.loc[
-                network.generators.build_year >= base_year
-            ].index
-            carrier_gens = carrier_gens.intersection(new_gens)
-
         if len(carrier_gens) > 0:
             carrier_gen = network.generators_t.p[carrier_gens].multiply(
                 network.snapshot_weightings.objective, axis=0
@@ -8954,13 +8937,7 @@ def compute_additionality_compliance_data(
 
     # Add storage
     res_storages = network.storage_units.query(
-        "carrier in @res_stor_techs and index in @region_stor").index
-    # For additionality, include storage built in or after 2030
-    if additionality and 'build_year' in network.storage_units.columns:
-        new_stor = network.storage_units.loc[
-            network.storage_units.build_year >= base_year
-        ].index
-        res_storages = res_storages.intersection(new_stor)
+        "carrier in @res_stor_techs and index in @region_stor").index    
 
     if len(res_storages) > 0:
         res_storages_dispatch = network.storage_units_t.p[res_storages].multiply(

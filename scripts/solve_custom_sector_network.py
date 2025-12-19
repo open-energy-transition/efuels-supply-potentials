@@ -1304,37 +1304,32 @@ def add_flexible_electrolyzers(n, costs):
     logger.info("Adding flexible electrolyzers")
 
     flex_carrier = "Flexible electrolyzer"
-    n.add("Carrier", flex_carrier)
+    if flex_carrier not in n.carriers.index:
+        n.add("Carrier", flex_carrier)
 
-    # Reference carrier already added in add_hydrogen()
     ref = "Alkaline electrolyzer large"
-
-    # Retrieve actual parameters from the existing network
-    try:
-        ref_links = n.links[n.links.carrier == ref]
-        if ref_links.empty:
-            raise KeyError(f"No existing electrolyzer with carrier '{ref}' found.")
-    except KeyError:
+    ref_links = n.links[n.links.carrier == ref]
+    if ref_links.empty:
         raise ValueError(
             f"Reference electrolyzer '{ref}' not found in the network. "
             f"add_hydrogen() must run before add_flexible_electrolyzers()."
         )
 
-    # Extract parameters directly from the network
     efficiency = float(ref_links["efficiency"].iloc[0])
     capital_cost = float(ref_links["capital_cost"].iloc[0])
     lifetime = int(ref_links["lifetime"].iloc[0])
 
-    # Very high marginal cost so this is only used as fallback
     marginal_cost = 1e6
 
-    ref_links = n.links[n.links.carrier == "Alkaline electrolyzer large"]
     ac_nodes = ref_links["bus0"].values
     h2_nodes = ref_links["bus1"].values
 
+    # make link names unique
+    names = [f"{bus0} {flex_carrier} #{i}" for i, bus0 in enumerate(ac_nodes)]
+
     n.madd(
         "Link",
-        [f"{bus0} {flex_carrier}" for bus0 in ac_nodes],
+        names,
         bus0=ac_nodes,
         bus1=h2_nodes,
         p_nom_extendable=True,
@@ -1344,6 +1339,12 @@ def add_flexible_electrolyzers(n, costs):
         lifetime=lifetime,
         marginal_cost=marginal_cost,
     )
+
+    # CHECK: fail fast if nothing was added
+    if (n.links.carrier == flex_carrier).sum() == 0:
+        raise RuntimeError(
+            "Flexible electrolyzers were not added (zero links after madd)."
+        )
 
     logger.info(
         f"Flexible electrolyzers added with parameters copied from '{ref}' "

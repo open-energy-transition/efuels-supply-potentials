@@ -1600,52 +1600,6 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
                         f"REStarget_additionality_threshold_{r}_{Y}_{i}",
                     )
 
-    # DELIVERABILITY (regional, annual)
-    if not deliverability_enabled or deliverability_period == "no_deliverability":
-        return
-
-    deliverability_tolerance = 1.0
-
-    for r in regions:
-
-        gen_mask = (gen_region == r)
-        stor_mask = (stor_region == r)
-        el_mask = (el_region == r)
-
-        res_r = None
-        if gen_mask.any():
-            wg = weightings_gen.loc[:, weightings_gen.columns[gen_mask]]
-            pgen = get_var(n, "Generator", "p")[res_gen_index[gen_mask]]
-            res_r = linexpr((wg, pgen)).sum(axis=1)
-
-        if stor_mask.any() and weightings_stor is not None:
-            ws = weightings_stor.loc[:, weightings_stor.columns[stor_mask]]
-            pdisp = get_var(n, "StorageUnit", "p_dispatch")[res_stor_index[stor_mask]]
-            term = linexpr((ws, pdisp)).sum(axis=1)
-            res_r = term if res_r is None else res_r + term
-
-        if res_r is None:
-            res_r = pd.Series(0.0, index=n.snapshots)
-
-        el_r = None
-        if el_mask.any():
-            we = weightings_electrolysis.loc[:, weightings_electrolysis.columns[el_mask]]
-            pel = get_var(n, "Link", "p")[electrolyzers[el_mask]]
-            el_r = linexpr(
-                (-deliverability_tolerance * we, pel)
-            ).sum(axis=1)
-        else:
-            el_r = pd.Series(0.0, index=n.snapshots)
-
-        res_r_agg = _agg_by_period(res_r, deliverability_period)
-        el_r_agg = _agg_by_period(el_r, deliverability_period)
-
-        lhs = res_r_agg.sum() + el_r_agg.sum()
-        define_constraints(
-            n, lhs, ">=", 0.0,
-            f"RESconstraints_deliv_{r}", f"REStarget_deliv_{r}"
-        )
-
 
 def add_chp_constraints(n):
     electric_bool = (

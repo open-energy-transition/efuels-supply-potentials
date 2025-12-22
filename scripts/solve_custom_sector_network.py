@@ -1354,25 +1354,18 @@ def add_flexible_electrolyzers(n, costs):
 
 def hydrogen_temporal_constraint(n, additionality, time_period):
     """
-    Enforces temporal matching, additionality, and deliverability constraints
+    Enforces temporal matching and additionality
     for hydrogen production.
 
     Temporal matching:
         - Resolution given by `time_period` ("hourly", "monthly", "yearly",
           or "no_temporal_matching").
-        - Uses only renewable carriers listed in temporal_matching_carriers.
+        - Uses only renewable carriers within the same region of the electrolyzers if listed in temporal_matching_carriers.
 
     Additionality:
         - Each electrolyzer cohort (defined by build_year) can only be matched
           with RES whose build_year >= cohort build_year.
         - Implemented as separate cohort-level matching constraints.
-
-    Deliverability:
-        - Enforced at the grid region level.
-        - Uses a separate resolution `deliverability_period`, read from
-          config:
-              policy_config.hydrogen.deliverability_period ("hourly", "monthly", "yearly", "no_deliverability")
-        - If "no_deliverability", regional deliverability is skipped.
     """
 
     temporal_matching_carriers = snakemake.params.temporal_matching_carriers

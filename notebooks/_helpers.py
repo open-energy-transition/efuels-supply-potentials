@@ -677,7 +677,7 @@ def create_ft_capacity_by_state_map(
                     zorder=3,
                 )
 
-        legend_caps_MW = [10, 20, 50]
+        legend_caps_MW = [10, 50, 100]
         legend_line_scale_factor = 1
         co2_legend_lines = [
             mlines.Line2D([], [], color="dimgray",
@@ -814,7 +814,7 @@ def create_ft_capacity_by_grid_region_map(
                         transform=ccrs.PlateCarree(),
                         zorder=3)
 
-        legend_caps_MW = [10, 20, 50]
+        legend_caps_MW = [10, 50, 100]
         legend_line_scale_factor = 1
         co2_legend_lines = [
             mlines.Line2D([], [], color="dimgray",
@@ -9565,8 +9565,6 @@ def plot_additionality_regions_subplots(
         print(f"  Skipped {len(skipped_no_electrolyzer)} region(s) with no/negligible electrolyzer consumption: {', '.join(skipped_no_electrolyzer)}")
     if regions_with_data:
         region_names = [r if r else "whole_country" for r in regions_with_data]
-        print(
-            f"  Including {len(regions_with_data)} region(s): {', '.join(region_names)}")
 
     if len(plot_regions) == 0:
         print("\nWarning: No regions with data found after filtering!")
@@ -9672,7 +9670,7 @@ def plot_additionality_regions_subplots(
 
     # Add overall title
     title_parts = [
-        "Temporal matching and additionality-compliant electricity generation VS Electrolyzer consumption"]
+        "Temporal matching and additionality-compliant electricity generation VS Electrolyzer consumption -"]
 
     # Add scenario name and/or year based on flags
     subtitle = []
@@ -9818,7 +9816,6 @@ def analyze_additionality_multiple_subplots(
     if regions is None:
         first_network = list(networks.values())[0]
         regions = get_all_regions(first_network)
-        print(f"Auto-detected regions: {regions}")
 
     results = {}
 
@@ -9829,7 +9826,6 @@ def analyze_additionality_multiple_subplots(
 
         # Skip if in skip list
         if year and year in skip_years:
-            print(f"Skipping {network_name}: year {year} in skip list")
             continue
 
         # Create subplot figure for this network

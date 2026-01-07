@@ -88,7 +88,7 @@ import pypsa
 import sys
 sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
 sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../submodules/pypsa-earth/scripts/")))
-from scripts._helper import configure_logging, create_logger, mock_snakemake, update_config_from_wildcards
+from scripts._helper import configure_logging, create_logger, mock_snakemake, attach_grid_region_to_buses, update_config_from_wildcards
 from _helpers import override_component_attrs
 from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 from pypsa.linopf import (
@@ -212,9 +212,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
     # Load PTC and ITC file
     ptc_df = pd.read_csv(ptc_path)
 
-    # ------------------------------------------------------------
     # Select correct regime (IRA 2022 or OB3) if present
-    # ------------------------------------------------------------
     pre_ob3_tax_credits = None
     if config_file is not None:
         pre_ob3_tax_credits = config_file.get("policies", {}).get("pre_ob3_tax_credits", None)
@@ -260,9 +258,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         "SOEC"
     }
 
-    # -------------------------
     # Apply Production Tax Credits to GENERATORS
-    # -------------------------
     for name, gen in network.generators.iterrows():
         carrier = gen.carrier
         build_year = gen.build_year
@@ -345,9 +341,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
             if verbose:
                 logger.info(f"[PTC GEN] {name} | +{scale * credit:.2f}")
 
-    # -------------------------
     # Apply PTC to LINKS (biomass, carbon capture, electrolyzers, DAC)
-    # -------------------------
     for name, link in network.links.iterrows():
         carrier = link.carrier
         build_year = getattr(link, "build_year", planning_horizon)
@@ -468,9 +462,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                             f"[PTC LINK DAC] {name} | CO2={tco2:.3f}, credit={credit:.2f} (usage-only)"
                         )
 
-    # -------------------------
     # Apply Investment Tax Credits to STORAGE UNITS (batteries)
-    # -------------------------
     if os.path.exists(itc_path):
         itc_df = pd.read_csv(itc_path, index_col=0)
 
@@ -509,9 +501,7 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                         if verbose:
                             logger.info(f"[ITC STORAGE] {idx} | year={planning_horizon}, scale={scale:.2f}")
 
-    # -------------------------
     # Apply Investment Tax Credits to LINKS (battery chargers)
-    # -------------------------
     if os.path.exists(itc_path):
         itc_df = pd.read_csv(itc_path, index_col=0)
 
@@ -1304,119 +1294,304 @@ def add_h2_network_cap(n, cap):
     define_constraints(n, lhs, "<=", rhs, "h2_network_cap")
 
 
-def hydrogen_temporal_constraint(n, additionality, time_period):
+def add_flexible_electrolyzers(n, costs):
     """
-    Enforces temporal matching constraints for hydrogen production based on renewable energy sources.
-
-    Parameters:
-    -----------
-    n : pypsa.Network
-        The PyPSA network object containing the energy system model.
-    additionality : bool
-        If True, only new renewable energy sources built in the current planning horizon are considered.
-    time_period : str
-        Specifies the temporal matching period. Valid options are "hour", "month", "year", or "no_temporal_matching".
-
-    Description:
-    ------------
-    This function calculates the renewable energy generation and storage dispatch over the specified time period
-    and ensures that hydrogen production via electrolysis does not exceed the allowed excess of renewable energy.
-    It adds constraints to the PyPSA model to enforce this temporal matching.
-
-    Raises:
-    -------
-    ValueError:
-        If the `time_period` is invalid or not supported.
+    Add a 'Flexible electrolyzer' technology:
+    - Same technical and cost parameters as the existing Alkaline electrolyzer (large size)
+    - Very high marginal cost so it is used only as last-resort hydrogen production
+    - Not subject to 45V constraints (temporal matching, additionality, deliverability)
     """
-    temporal_matching_carriers = snakemake.params.temporal_matching_carriers
+    logger.info("Adding flexible electrolyzers")
 
-    allowed_excess = snakemake.config["policy_config"]["hydrogen"]["allowed_excess"]
+    flex_carrier = "Flexible electrolyzer"
+    if flex_carrier not in n.carriers.index:
+        n.add("Carrier", flex_carrier)
 
-    res_gen_index = n.generators.loc[n.generators.carrier.isin(temporal_matching_carriers)].index
-    res_stor_index = n.storage_units.loc[
-        n.storage_units.carrier.isin(temporal_matching_carriers)
-    ].index
-
-    if additionality:
-        # get newly built generators and storage_units only
-        new_gens = n.generators.loc[
-            n.generators.build_year == int(snakemake.wildcards.planning_horizons)
-        ].index
-        new_stor = n.storage_units.loc[
-            n.storage_units.build_year == int(snakemake.wildcards.planning_horizons)
-        ].index
-        # keep only new RES generators and storage units
-        res_gen_index = res_gen_index.intersection(new_gens)
-        res_stor_index = res_stor_index.intersection(new_stor)
-
-    logger.info(
-        "setting h2 export to {}ly matching constraint {} additionality".format(
-            time_period, "with" if additionality else "without"
+    ref = "Alkaline electrolyzer large"
+    ref_links = n.links[n.links.carrier == ref]
+    if ref_links.empty:
+        raise ValueError(
+            f"Reference electrolyzer '{ref}' not found in the network. "
+            f"add_hydrogen() must run before add_flexible_electrolyzers()."
         )
+
+    efficiency = float(ref_links["efficiency"].iloc[0])
+    capital_cost = float(ref_links["capital_cost"].iloc[0])
+    lifetime = int(ref_links["lifetime"].iloc[0])
+
+    marginal_cost = 1e6
+
+    ac_nodes = ref_links["bus0"].values
+    h2_nodes = ref_links["bus1"].values
+
+    # make link names unique
+    names = [f"{bus0} {flex_carrier} #{i}" for i, bus0 in enumerate(ac_nodes)]
+
+    n.madd(
+        "Link",
+        names,
+        bus0=ac_nodes,
+        bus1=h2_nodes,
+        p_nom_extendable=True,
+        carrier=flex_carrier,
+        efficiency=efficiency,
+        capital_cost=capital_cost,
+        lifetime=lifetime,
+        marginal_cost=marginal_cost,
     )
 
+    # CHECK: fail fast if nothing was added
+    if (n.links.carrier == flex_carrier).sum() == 0:
+        raise RuntimeError(
+            "Flexible electrolyzers were not added (zero links after madd)."
+        )
+
+    logger.info(
+        f"Flexible electrolyzers added with parameters copied from '{ref}' "
+        f"and marginal cost={marginal_cost}"
+    )
+
+
+def hydrogen_temporal_constraint(n, additionality, time_period):
+    """
+    Enforces temporal matching and additionality
+    for hydrogen production.
+
+    Temporal matching:
+        - Resolution given by `time_period` ("hourly", "monthly", "yearly",
+          or "no_temporal_matching").
+        - Uses only renewable carriers within the same region of the electrolyzers if listed in temporal_matching_carriers.
+
+    Additionality:
+        - Each electrolyzer cohort (defined by build_year) can only be matched
+          with RES whose build_year >= cohort build_year.
+        - Implemented as separate cohort-level matching constraints.
+    """
+
+    temporal_matching_carriers = snakemake.params.temporal_matching_carriers
+    hydrogen_cfg = snakemake.config["policy_config"]["hydrogen"]
+    allowed_excess = hydrogen_cfg["allowed_excess"]
+
+    deliverability_enabled = hydrogen_cfg.get("deliverability", True)
+    deliverability_period = hydrogen_cfg.get("deliverability_period", "yearly")
+    if deliverability_period not in ("yearly", "no_deliverability"):
+        raise ValueError("deliverability_period must be 'yearly' or 'no_deliverability'")
+
+    # Helper: temporal aggregation supporting "hourly"/"monthly"/"yearly"
+    def _agg_by_period(series, period):
+        if period in ("hour", "hourly"):
+            return series
+        if period in ("month", "monthly"):
+            return series.groupby(series.index.month).sum()
+        if period in ("year", "yearly"):
+            return series.groupby(series.index.year).sum()
+        if period == "no_temporal_matching":
+            s = series.copy()
+            s.index = pd.Index([0] * len(s))
+            return s.groupby(level=0).sum()
+        raise ValueError(f"Unsupported time period: {period}")
+
+    # Select all RES generators and storage eligible for matching
+    res_gen_index = n.generators.index[
+        n.generators.carrier.isin(temporal_matching_carriers)
+    ]
+    res_stor_index = n.storage_units.index[
+        n.storage_units.carrier.isin(temporal_matching_carriers)
+    ]
+
+    electrolysis_carriers = [
+        "Alkaline electrolyzer large",
+        "Alkaline electrolyzer medium",
+        "Alkaline electrolyzer small",
+        "PEM electrolyzer",
+        "SOEC",
+    ]
+
+    electrolyzers = n.links.index[
+        n.links.carrier.isin(electrolysis_carriers)
+    ]
+
+    electrolysis = get_var(n, "Link", "p")[electrolyzers]
+
+    weightings_electrolysis = pd.DataFrame(
+        np.outer(n.snapshot_weightings["generators"],
+                 [1.0] * len(electrolysis.columns)),
+        index=n.snapshots,
+        columns=electrolysis.columns,
+    )
+
+    # Prepare additionality structures (cohort-based)
+    if additionality:
+        el_build_year = n.links.loc[electrolyzers, "build_year"]
+        cohorts = el_build_year.unique()
+
+        gen_by_year = n.generators.build_year
+        stor_by_year = n.storage_units.build_year
+
+        allowed_RES = {}
+        for Y in cohorts:
+            allowed_gen = res_gen_index.intersection(
+                gen_by_year.index[gen_by_year >= Y]
+            )
+            allowed_stor = res_stor_index.intersection(
+                stor_by_year.index[stor_by_year >= Y]
+            )
+            allowed_RES[Y] = {"gen": allowed_gen, "stor": allowed_stor}
+    else:
+        el_build_year = None
+        cohorts = []
+
+    logger.info(
+        f"setting h2 export to {time_period}ly matching constraint "
+        f"{'with' if additionality else 'without'} additionality "
+        f"(deliverability period={deliverability_period})"
+    )
+
+    # Snapshot weightings for RES (used everywhere below)
     weightings_gen = pd.DataFrame(
         np.outer(n.snapshot_weightings["generators"], [1.0] * len(res_gen_index)),
         index=n.snapshots,
         columns=res_gen_index,
     )
 
-    res = linexpr((weightings_gen, get_var(n, "Generator", "p")[res_gen_index])).sum(
-        axis=1
-    )
-
-    if not res_stor_index.empty:
+    if len(res_stor_index) > 0:
         weightings_stor = pd.DataFrame(
-            np.outer(n.snapshot_weightings["generators"], [1.0] * len(res_stor_index)),
+            np.outer(n.snapshot_weightings["generators"],
+                     [1.0] * len(res_stor_index)),
             index=n.snapshots,
             columns=res_stor_index,
         )
-        res += linexpr(
-            (weightings_stor, get_var(n, "StorageUnit", "p_dispatch")[res_stor_index])
-        ).sum(axis=1)
+    else:
+        weightings_stor = None
 
-    if time_period == "month":
-        res = res.groupby(res.index.month).sum()
-    elif time_period == "year":
-        res = res.groupby(res.index.year).sum()
+    # Map RES generators, storage, and electrolyzers to regions
+    region_col = "grid_region"
+    if region_col not in n.buses.columns:
+        raise ValueError(f"'{region_col}' missing in n.buses")
 
-    electrolysis_carriers = [
-        'H2 Electrolysis',
-        'Alkaline electrolyzer large',
-        'Alkaline electrolyzer medium',
-        'Alkaline electrolyzer small',
-        'PEM electrolyzer',
-        'SOEC'
-    ]
-    electrolyzers = n.links[n.links.carrier.isin(electrolysis_carriers)].index
-    electrolysis = get_var(n, "Link", "p")[
-        n.links.loc[electrolyzers].index
-    ]
-    weightings_electrolysis = pd.DataFrame(
-        np.outer(
-            n.snapshot_weightings["generators"], [
-                1.0] * len(electrolysis.columns)
-        ),
-        index=n.snapshots,
-        columns=electrolysis.columns,
+    gen_region = (
+        n.buses.loc[n.generators.loc[res_gen_index, "bus"], region_col].values
+        if len(res_gen_index) > 0 else np.array([])
     )
-
-    elec_input = linexpr((-allowed_excess * weightings_electrolysis, electrolysis)).sum(
-        axis=1
+    stor_region = (
+        n.buses.loc[n.storage_units.loc[res_stor_index, "bus"], region_col].values
+        if len(res_stor_index) > 0 else np.array([])
     )
+    el_region = n.buses.loc[n.links.loc[electrolyzers, "bus0"], region_col].values
 
-    if time_period == "month":
-        elec_input = elec_input.groupby(elec_input.index.month).sum()
-    elif time_period == "year":
-        elec_input = elec_input.groupby(elec_input.index.year).sum()
+    regions = pd.Index(pd.unique(el_region))
 
-    # add temporal matching constraints
-    for i in range(len(res.index)):
-        lhs = res.iloc[i] + "\n" + elec_input.iloc[i]
+    # REGIONAL TEMPORAL MATCHING CARRIERS CALCULATION
+    if not additionality:
+        for r in regions:
 
-        con = define_constraints(
-            n, lhs, ">=", 0.0, f"RESconstraints_{i}", f"REStarget_{i}"
-        )
+            # masks for this region
+            gen_mask = (gen_region == r)
+            stor_mask = (stor_region == r)
+            el_mask = (el_region == r)
+
+            # RES in region
+            res_r = None
+
+            if gen_mask.any():
+                wg = weightings_gen.loc[:, weightings_gen.columns[gen_mask]]
+                pgen = get_var(n, "Generator", "p")[res_gen_index[gen_mask]]
+                res_r = linexpr((wg, pgen)).sum(axis=1)
+
+            if stor_mask.any() and weightings_stor is not None:
+                ws = weightings_stor.loc[:, weightings_stor.columns[stor_mask]]
+                pdisp = get_var(n, "StorageUnit", "p_dispatch")[res_stor_index[stor_mask]]
+                term = linexpr((ws, pdisp)).sum(axis=1)
+                res_r = term if res_r is None else res_r + term
+
+            if res_r is None:
+                res_r = pd.Series(0.0, index=n.snapshots)
+
+            # Electrolyzer input in region
+            if el_mask.any():
+                we = weightings_electrolysis.loc[:, weightings_electrolysis.columns[el_mask]]
+                pel = electrolysis.loc[:, electrolysis.columns[el_mask]]
+                el_r = linexpr((-allowed_excess * we, pel)).sum(axis=1)
+            else:
+                el_r = pd.Series(0.0, index=n.snapshots)
+
+            # Aggregate by time_period
+            res_r_agg = _agg_by_period(res_r, time_period)
+            el_r_agg = _agg_by_period(el_r, time_period)
+
+            # Impose constraint for each period
+            for i in range(len(res_r_agg.index)):
+                lhs = res_r_agg.iloc[i] + el_r_agg.iloc[i]
+                define_constraints(
+                    n, lhs, ">=", 0.0,
+                    f"RESconstraints_tm_reg_{r}_{i}",
+                    f"REStarget_tm_reg_{r}_{i}",
+                )
+
+    # REGIONAL ADDITIONALITY CONSTRAINTS (CUMULATIVE / THRESHOLD FORMULATION)
+    if additionality and len(cohorts) > 0:
+
+        # Sort cohorts ascending (e.g. 2030, 2035, 2040)
+        cohorts_sorted = np.sort(cohorts)
+
+        for r in regions:
+
+            gen_mask_r = (gen_region == r)
+            stor_mask_r = (stor_region == r)
+            el_mask_r = (el_region == r)
+
+            for Y in cohorts_sorted:
+
+                # RES with build_year >= Y in this region
+                gens_Y = allowed_RES[Y]["gen"].intersection(res_gen_index[gen_mask_r])
+                stor_Y = allowed_RES[Y]["stor"].intersection(res_stor_index[stor_mask_r])
+
+                res_Y_r = None
+
+                if len(gens_Y) > 0:
+                    wgY = weightings_gen.loc[:, gens_Y]
+                    res_Y_r = linexpr(
+                        (wgY, get_var(n, "Generator", "p")[gens_Y])
+                    ).sum(axis=1)
+
+                if len(stor_Y) > 0 and weightings_stor is not None:
+                    wsY = weightings_stor.loc[:, stor_Y]
+                    term = linexpr(
+                        (wsY, get_var(n, "StorageUnit", "p_dispatch")[stor_Y])
+                    ).sum(axis=1)
+                    res_Y_r = term if res_Y_r is None else res_Y_r + term
+
+                if res_Y_r is None:
+                    res_Y_r = pd.Series(0.0, index=n.snapshots)
+
+                # Electrolyzers with build_year >= Y in this region
+                el_mask_Yplus_r = ((el_build_year >= Y).values) & el_mask_r
+                el_cols_Yplus_r = electrolysis.columns[el_mask_Yplus_r]
+
+                el_input_Yplus_r = None
+
+                if len(el_cols_Yplus_r) > 0:
+                    weY = weightings_electrolysis.loc[:, el_cols_Yplus_r]
+                    pelY = electrolysis[el_cols_Yplus_r]
+                    el_input_Yplus_r = linexpr(
+                        (-allowed_excess * weY, pelY)
+                    ).sum(axis=1)
+
+                if el_input_Yplus_r is None:
+                    el_input_Yplus_r = pd.Series(0.0, index=n.snapshots)
+
+                # Aggregate by time_period
+                res_Y_r_agg = _agg_by_period(res_Y_r, time_period)
+                el_input_Yplus_r_agg = _agg_by_period(el_input_Yplus_r, time_period)
+
+                # One constraint per threshold Y and per time bucket
+                for i in range(len(res_Y_r_agg.index)):
+                    lhs = res_Y_r_agg.iloc[i] + el_input_Yplus_r_agg.iloc[i]
+                    define_constraints(
+                        n, lhs, ">=", 0.0,
+                        f"RESconstraints_additionality_threshold_{r}_{Y}_{i}",
+                        f"REStarget_additionality_threshold_{r}_{Y}_{i}",
+                    )
 
 
 def add_chp_constraints(n):
@@ -1663,6 +1838,10 @@ def extra_functionality(n, snapshots):
     """
     opts = n.opts
     config = n.config
+
+    # Add flexible electrolyzers before hydrogen constraints are applied
+    add_flexible_electrolyzers(n, pd.read_csv(snakemake.input.costs, index_col=0))
+
     if "BAU" in opts and n.generators.p_nom_extendable.any():
         add_BAU_constraints(n, config)
     if "SAFE" in opts and n.generators.p_nom_extendable.any():
@@ -1784,6 +1963,13 @@ if __name__ == "__main__":
     overrides = override_component_attrs(snakemake.input.overrides)
     n = pypsa.Network(snakemake.input.network,
                       override_component_attrs=overrides)
+
+    n = attach_grid_region_to_buses(
+        n,
+        path_shapes=snakemake.input.grid_regions_shape_path,
+        grid_region_field=snakemake.params.grid_region_field,
+        distance_crs=snakemake.params.distance_crs,
+    )
 
     if snakemake.params.augmented_line_connection.get("add_to_snakefile"):
         n.lines.loc[n.lines.index.str.contains("new"), "s_nom_min"] = (

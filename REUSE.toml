@@ -180,3 +180,8 @@ path = "doc/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+[[annotations]]
+path = "data/temporal_matching/needs_grid_regions_aggregated.geojson"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "AGPL-3.0-or-later"

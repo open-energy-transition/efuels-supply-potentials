@@ -828,7 +828,9 @@ if config["foresight"] == "myopic":
                 "co2_sequestration_potential", 200
             ),
             augmented_line_connection=config["augmented_line_connection"],
-            temporal_matching_carriers=config["policy_config"]["hydrogen"]["temporal_matching_carriers"],
+            temporal_matching_carriers=config["policy_config"]["hydrogen"][
+                "temporal_matching_carriers"
+            ],
             distance_crs="EPSG:3857",
             grid_region_field="Grid Region",
         input:
@@ -911,7 +913,9 @@ if config["foresight"] == "overnight" and config["state_policy"] != "off":
         params:
             solving=config["solving"],
             augmented_line_connection=config["augmented_line_connection"],
-            temporal_matching_carriers=config["policy_config"]["hydrogen"]["temporal_matching_carriers"],
+            temporal_matching_carriers=config["policy_config"]["hydrogen"][
+                "temporal_matching_carriers"
+            ],
             distance_crs="EPSG:3857",
             grid_region_field="Grid Region",
         input:

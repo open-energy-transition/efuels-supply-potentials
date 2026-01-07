@@ -88,10 +88,17 @@ import pandas as pd
 import pypsa
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../submodules/pypsa-earth/scripts/")))
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
+sys.path.append(
+    os.path.abspath(os.path.join(__file__, "../../submodules/pypsa-earth/scripts/"))
+)
 
-from scripts._helper import configure_logging, create_logger, mock_snakemake, attach_grid_region_to_buses, update_config_from_wildcards
+from scripts._helper import (
+    configure_logging,
+    create_logger,
+    mock_snakemake,
+    attach_grid_region_to_buses,
+)
 from _helpers import override_component_attrs
 from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 from pypsa.linopf import (
@@ -231,15 +238,19 @@ def apply_tax_credits_to_network(
     # Select correct regime (IRA 2022 or OB3) if present
     pre_ob3_tax_credits = None
     if config_file is not None:
-        pre_ob3_tax_credits = config_file.get("policies", {}).get("pre_ob3_tax_credits", None)
+        pre_ob3_tax_credits = config_file.get("policies", {}).get(
+            "pre_ob3_tax_credits", None
+        )
 
     regime = "IRA 2022" if pre_ob3_tax_credits else "OB3"
 
     # Filter PTC by regime if column exists
     if "regime" in ptc_df.columns:
         ptc_active = ptc_df[
-            (ptc_df["regime"] == regime) | (ptc_df["regime"].isna()) | (ptc_df["regime"] == "")
-            ]
+            (ptc_df["regime"] == regime)
+            | (ptc_df["regime"].isna())
+            | (ptc_df["regime"] == "")
+        ]
     else:
         ptc_active = ptc_df
 
@@ -248,7 +259,6 @@ def apply_tax_credits_to_network(
 
     # Load ITC file and dictionary
     itc_df = pd.read_csv(itc_path)
-    itc_credits = dict(zip(itc_df["carrier"], itc_df["credit"]))
 
     biomass_aliases = {
         "biomass",
@@ -438,10 +448,8 @@ def apply_tax_credits_to_network(
         # Carbon capture with CO2 storage
         elif carrier in cc_credit_on_co2_stored:
             if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
-
                 # Detect efficiency toward eligible CO2 buses (only buffer co2)
                 def get_co2_eligible_efficiency(row):
-                    co2_bus_patterns = ("buffer co2",)
                     for key, val in row.items():
                         if (
                             key.startswith("bus")
@@ -1498,10 +1506,11 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
     hydrogen_cfg = snakemake.config["policy_config"]["hydrogen"]
     allowed_excess = hydrogen_cfg["allowed_excess"]
 
-    deliverability_enabled = hydrogen_cfg.get("deliverability", True)
     deliverability_period = hydrogen_cfg.get("deliverability_period", "yearly")
     if deliverability_period not in ("yearly", "no_deliverability"):
-        raise ValueError("deliverability_period must be 'yearly' or 'no_deliverability'")
+        raise ValueError(
+            "deliverability_period must be 'yearly' or 'no_deliverability'"
+        )
 
     # Helper: temporal aggregation supporting "hourly"/"monthly"/"yearly"
     def _agg_by_period(series, period):
@@ -1533,15 +1542,14 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
         "SOEC",
     ]
 
-    electrolyzers = n.links.index[
-        n.links.carrier.isin(electrolysis_carriers)
-    ]
+    electrolyzers = n.links.index[n.links.carrier.isin(electrolysis_carriers)]
 
     electrolysis = get_var(n, "Link", "p")[electrolyzers]
 
     weightings_electrolysis = pd.DataFrame(
-        np.outer(n.snapshot_weightings["generators"],
-                 [1.0] * len(electrolysis.columns)),
+        np.outer(
+            n.snapshot_weightings["generators"], [1.0] * len(electrolysis.columns)
+        ),
         index=n.snapshots,
         columns=electrolysis.columns,
     )
@@ -1582,8 +1590,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
 
     if len(res_stor_index) > 0:
         weightings_stor = pd.DataFrame(
-            np.outer(n.snapshot_weightings["generators"],
-                     [1.0] * len(res_stor_index)),
+            np.outer(n.snapshot_weightings["generators"], [1.0] * len(res_stor_index)),
             index=n.snapshots,
             columns=res_stor_index,
         )
@@ -1597,11 +1604,13 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
 
     gen_region = (
         n.buses.loc[n.generators.loc[res_gen_index, "bus"], region_col].values
-        if len(res_gen_index) > 0 else np.array([])
+        if len(res_gen_index) > 0
+        else np.array([])
     )
     stor_region = (
         n.buses.loc[n.storage_units.loc[res_stor_index, "bus"], region_col].values
-        if len(res_stor_index) > 0 else np.array([])
+        if len(res_stor_index) > 0
+        else np.array([])
     )
     el_region = n.buses.loc[n.links.loc[electrolyzers, "bus0"], region_col].values
 
@@ -1610,11 +1619,10 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
     # REGIONAL TEMPORAL MATCHING CARRIERS CALCULATION
     if not additionality:
         for r in regions:
-
             # masks for this region
-            gen_mask = (gen_region == r)
-            stor_mask = (stor_region == r)
-            el_mask = (el_region == r)
+            gen_mask = gen_region == r
+            stor_mask = stor_region == r
+            el_mask = el_region == r
 
             # RES in region
             res_r = None
@@ -1626,7 +1634,9 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
 
             if stor_mask.any() and weightings_stor is not None:
                 ws = weightings_stor.loc[:, weightings_stor.columns[stor_mask]]
-                pdisp = get_var(n, "StorageUnit", "p_dispatch")[res_stor_index[stor_mask]]
+                pdisp = get_var(n, "StorageUnit", "p_dispatch")[
+                    res_stor_index[stor_mask]
+                ]
                 term = linexpr((ws, pdisp)).sum(axis=1)
                 res_r = term if res_r is None else res_r + term
 
@@ -1635,7 +1645,9 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
 
             # Electrolyzer input in region
             if el_mask.any():
-                we = weightings_electrolysis.loc[:, weightings_electrolysis.columns[el_mask]]
+                we = weightings_electrolysis.loc[
+                    :, weightings_electrolysis.columns[el_mask]
+                ]
                 pel = electrolysis.loc[:, electrolysis.columns[el_mask]]
                 el_r = linexpr((-allowed_excess * we, pel)).sum(axis=1)
             else:
@@ -1649,36 +1661,38 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
             for i in range(len(res_r_agg.index)):
                 lhs = res_r_agg.iloc[i] + el_r_agg.iloc[i]
                 define_constraints(
-                    n, lhs, ">=", 0.0,
+                    n,
+                    lhs,
+                    ">=",
+                    0.0,
                     f"RESconstraints_tm_reg_{r}_{i}",
                     f"REStarget_tm_reg_{r}_{i}",
                 )
 
     # REGIONAL ADDITIONALITY CONSTRAINTS (CUMULATIVE / THRESHOLD FORMULATION)
     if additionality and len(cohorts) > 0:
-
         # Sort cohorts ascending (e.g. 2030, 2035, 2040)
         cohorts_sorted = np.sort(cohorts)
 
         for r in regions:
-
-            gen_mask_r = (gen_region == r)
-            stor_mask_r = (stor_region == r)
-            el_mask_r = (el_region == r)
+            gen_mask_r = gen_region == r
+            stor_mask_r = stor_region == r
+            el_mask_r = el_region == r
 
             for Y in cohorts_sorted:
-
                 # RES with build_year >= Y in this region
                 gens_Y = allowed_RES[Y]["gen"].intersection(res_gen_index[gen_mask_r])
-                stor_Y = allowed_RES[Y]["stor"].intersection(res_stor_index[stor_mask_r])
+                stor_Y = allowed_RES[Y]["stor"].intersection(
+                    res_stor_index[stor_mask_r]
+                )
 
                 res_Y_r = None
 
                 if len(gens_Y) > 0:
                     wgY = weightings_gen.loc[:, gens_Y]
-                    res_Y_r = linexpr(
-                        (wgY, get_var(n, "Generator", "p")[gens_Y])
-                    ).sum(axis=1)
+                    res_Y_r = linexpr((wgY, get_var(n, "Generator", "p")[gens_Y])).sum(
+                        axis=1
+                    )
 
                 if len(stor_Y) > 0 and weightings_stor is not None:
                     wsY = weightings_stor.loc[:, stor_Y]
@@ -1699,9 +1713,9 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
                 if len(el_cols_Yplus_r) > 0:
                     weY = weightings_electrolysis.loc[:, el_cols_Yplus_r]
                     pelY = electrolysis[el_cols_Yplus_r]
-                    el_input_Yplus_r = linexpr(
-                        (-allowed_excess * weY, pelY)
-                    ).sum(axis=1)
+                    el_input_Yplus_r = linexpr((-allowed_excess * weY, pelY)).sum(
+                        axis=1
+                    )
 
                 if el_input_Yplus_r is None:
                     el_input_Yplus_r = pd.Series(0.0, index=n.snapshots)
@@ -1714,7 +1728,10 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
                 for i in range(len(res_Y_r_agg.index)):
                     lhs = res_Y_r_agg.iloc[i] + el_input_Yplus_r_agg.iloc[i]
                     define_constraints(
-                        n, lhs, ">=", 0.0,
+                        n,
+                        lhs,
+                        ">=",
+                        0.0,
                         f"RESconstraints_additionality_threshold_{r}_{Y}_{i}",
                         f"REStarget_additionality_threshold_{r}_{Y}_{i}",
                     )

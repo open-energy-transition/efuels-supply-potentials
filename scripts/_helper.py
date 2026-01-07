@@ -19,8 +19,8 @@ from pypsa.descriptors import Dict
 from snakemake.script import Snakemake
 
 import googledrivedownloader as gdd
-import warnings
 import geopandas as gpd
+
 warnings.filterwarnings("ignore")
 
 
@@ -365,7 +365,9 @@ def get_colors(n):
     return ["#%06x" % random.randint(0, 0xFFFFFF) for _ in range(n)]
 
 
-def attach_grid_region_to_buses(network, path_shapes, grid_region_field="Grid Region", distance_crs="EPSG:3857"):
+def attach_grid_region_to_buses(
+    network, path_shapes, grid_region_field="Grid Region", distance_crs="EPSG:3857"
+):
     """
     Attach each bus in the network to a grid region defined in a shapefile.
     """
@@ -376,15 +378,14 @@ def attach_grid_region_to_buses(network, path_shapes, grid_region_field="Grid Re
         raise ValueError(f"Field '{grid_region_field}' not found in {path_shapes}")
 
     if not {"x", "y"}.issubset(network.buses.columns):
-        ac_dc = ["AC", "DC"]
-        locmap = network.buses.query("carrier in @ac_dc")[["x", "y"]]
+        locmap = network.buses.query("carrier in ['AC', 'DC']")[["x", "y"]]
         network.buses["x"] = network.buses["location"].map(locmap["x"]).fillna(0)
         network.buses["y"] = network.buses["location"].map(locmap["y"]).fillna(0)
 
     buses_gdf = gpd.GeoDataFrame(
         network.buses.copy(),
         geometry=gpd.points_from_xy(network.buses.x, network.buses.y),
-        crs="EPSG:4326"
+        crs="EPSG:4326",
     )
 
     if shapes.crs is None:
@@ -392,12 +393,22 @@ def attach_grid_region_to_buses(network, path_shapes, grid_region_field="Grid Re
     if buses_gdf.crs != shapes.crs:
         buses_gdf = buses_gdf.to_crs(shapes.crs)
 
-    joined = gpd.sjoin(buses_gdf, shapes[[grid_region_field, "geometry"]], how="left", predicate="within")[[grid_region_field]]
+    joined = gpd.sjoin(
+        buses_gdf,
+        shapes[[grid_region_field, "geometry"]],
+        how="left",
+        predicate="within",
+    )[[grid_region_field]]
     miss = joined[grid_region_field].isna()
     if miss.any():
         buses_m = buses_gdf.loc[miss].to_crs(distance_crs)
         shapes_m = shapes.to_crs(distance_crs)
-        near = gpd.sjoin_nearest(buses_m, shapes_m[[grid_region_field, "geometry"]], how="left", distance_col="dist_m")[[grid_region_field]]
+        near = gpd.sjoin_nearest(
+            buses_m,
+            shapes_m[[grid_region_field, "geometry"]],
+            how="left",
+            distance_col="dist_m",
+        )[[grid_region_field]]
         joined.loc[miss, grid_region_field] = near[grid_region_field].values
 
     if "region" in network.buses.columns and "emm_region" not in network.buses.columns:

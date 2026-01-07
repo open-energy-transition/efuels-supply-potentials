@@ -373,8 +373,10 @@ def add_steel(n):
             bus5=nodes,
             p_nom_extendable=True,
             carrier="DRI CC",
-            efficiency=x_dri/costs.at["natural gas direct iron reduction furnace", "gas-input"],
-            efficiency2=-x_dri*costs.at["natural gas direct iron reduction furnace", "ore-input"]
+            efficiency=x_dri
+            / costs.at["natural gas direct iron reduction furnace", "gas-input"],
+            efficiency2=-x_dri
+            * costs.at["natural gas direct iron reduction furnace", "ore-input"]
             / costs.at["natural gas direct iron reduction furnace", "gas-input"],
             efficiency3=costs.at["gas", "CO2 intensity"]
             * (1 - costs.at["steel carbon capture retrofit", "capture_rate"]),
@@ -519,17 +521,19 @@ def add_steel(n):
             costs.at["steel carbon capture retrofit", "gas-input"]
             * costs.at["steel carbon capture retrofit", "capture_rate"]
             * costs.at["coal", "CO2 intensity"]
-            / (1 - (
-                costs.at["steel carbon capture retrofit", "gas-input"]
-                * costs.at["steel carbon capture retrofit", "capture_rate"]
-                * costs.at["gas", "CO2 intensity"])
+            / (
+                1
+                - (
+                    costs.at["steel carbon capture retrofit", "gas-input"]
+                    * costs.at["steel carbon capture retrofit", "capture_rate"]
+                    * costs.at["gas", "CO2 intensity"]
+                )
             )
         )
 
         # compute CO2 output
         co2_output = (
-            costs.at["coal", "CO2 intensity"]
-            + k * costs.at["gas", "CO2 intensity"]
+            costs.at["coal", "CO2 intensity"] + k * costs.at["gas", "CO2 intensity"]
         )
 
         # add BF-BOF CC
@@ -759,7 +763,7 @@ def add_cement(n):
             bus4=nodes + " co2 stored",
             p_nom_extendable=True,
             carrier="dry clinker CC",
-            efficiency=x_clinker/costs.at["cement dry clinker", "gas-input"],
+            efficiency=x_clinker / costs.at["cement dry clinker", "gas-input"],
             efficiency2=elec_clinker + elec_cc,
             efficiency3=costs.at["gas", "CO2 intensity"]
             * (1 - costs.at["cement carbon capture retrofit", "capture_rate"]),
@@ -926,10 +930,7 @@ def define_grid_H2(n):
         pipelines_df = pd.read_csv(snakemake.input.pipelines)
 
         pipelines_df["buses_idx"] = (
-            "grid H2 pipeline "
-            + pipelines_df["bus0"]
-            + " -> "
-            + pipelines_df["bus1"]
+            "grid H2 pipeline " + pipelines_df["bus0"] + " -> " + pipelines_df["bus1"]
         )
 
         grid_h2_links = pipelines_df.groupby("buses_idx").agg(
@@ -952,6 +953,7 @@ def define_grid_H2(n):
         )
 
         logger.info("Added separate grid H2 pipeline network")
+
 
 def add_other_electricity(n):
     """
@@ -1136,10 +1138,9 @@ def add_co2_storage_tanks(n):
     ft_links = n.links[n.links.carrier == "Fischer-Tropsch"]
     if not ft_links.empty and "bus2" in n.links.columns:
         ft_co2_mask = ft_links["bus2"].str.contains("co2 stored", na=False)
-        n.links.loc[ft_links.index[ft_co2_mask], "bus2"] = (
-            ft_links.loc[ft_co2_mask, "bus2"]
-            .str.replace("co2 stored", "co2 storage steel tank", regex=False)
-        )
+        n.links.loc[ft_links.index[ft_co2_mask], "bus2"] = ft_links.loc[
+            ft_co2_mask, "bus2"
+        ].str.replace("co2 stored", "co2 storage steel tank", regex=False)
     logger.info("Updated Fischer-Tropsch connections to CO2 storage steel tanks")
 
     # -------------------------------------------------------------------------
@@ -1289,9 +1290,9 @@ def add_co2_storage_tanks(n):
             "Link",
             co2_storage_tank_buses.index + " geological sequestration",
             bus0=co2_storage_tank_buses.index,
-            bus1=co2_storage_tank_buses.index.str.replace(
-                "biogenic ", ""
-            ).str.replace("storage steel tank", "geological sequestration"),
+            bus1=co2_storage_tank_buses.index.str.replace("biogenic ", "").str.replace(
+                "storage steel tank", "geological sequestration"
+            ),
             p_nom_extendable=True,
             carrier=f"{c} geological sequestration",
             efficiency=1,

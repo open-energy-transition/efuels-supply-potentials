@@ -61,7 +61,7 @@ demand_projection:
 policies:
   state: ["CES", "RES"] # "CES" to adopt State-wise clean electricity generation constraints from currently stated policies, "RES" to adopt State-wise renewable electricity generation constraints from currently stated policies, both to apply both kinds of constraintsAdd commentMore actions
   country: ["CES"] # "CES" to adopt country-wise clean electricity generation constraint (90% clean electricity by 2040), otherwise empty
-  pre_ob3_tax_credits: true
+  pre_ob3_tax_credits: True
 
 custom_industry:
   biogenic_co2: true
@@ -104,8 +104,8 @@ costs:
 
 policy_config:
   hydrogen:
-    temporal_matching: "hourly" # either "hourly", "monthly", "yearly", "no_temporal_matching"
-    additionality: true
+    temporal_matching: "no_temporal_matching" # either "hourly", "monthly", "yearly", "no_temporal_matching"
+    additionality: false
     temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro, nuclear]
 
 demand_data:

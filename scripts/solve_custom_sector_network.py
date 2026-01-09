@@ -385,7 +385,11 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                         )
 
         # Electrolyzers
-        elif carrier in electrolyzer_carriers and pre_ob3_tax_credits:
+        elif carrier in electrolyzer_carriers:
+            # Policy switch: electrolyzers only eligible under pre-OB3 logic
+            if not pre_ob3_tax_credits:
+                continue
+
             if 2025 <= build_year <= 2032 and planning_horizon <= build_year + 10:
                 credit_per_mwh_h2 = ptc_credits.get(carrier, 0.0)
                 h2_efficiency = link.get("efficiency", 0.0)

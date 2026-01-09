@@ -2019,7 +2019,7 @@ if __name__ == "__main__":
         costs=pd.read_csv(snakemake.input.costs, index_col=0),
         config_file=snakemake.config,
         log_path=f"logs/tax_credit_modifications_{snakemake.wildcards.planning_horizons}.csv",
-        verbose=True
+        verbose=False
     )
 
     n = solve_network(

@@ -17,10 +17,8 @@ def add_ekerosene_buses(n):
     """
         Adds e-kerosene buses and stores, and adds links between e-kerosene and oil bus
     """
-    # get oil bus names
     oil_buses = n.buses.query("carrier in 'oil'")
 
-    # add e-kerosene bus
     ekerosene_buses = [x.replace("oil", "e-kerosene") for x in oil_buses.index]
     n.madd(
         "Bus",
@@ -29,10 +27,12 @@ def add_ekerosene_buses(n):
         carrier="e-kerosene",
     )
 
-    # add e-kerosene carrier
-    n.add("Carrier", "e-kerosene", co2_emissions=n.carriers.loc["oil", "co2_emissions"])
+    n.add(
+        "Carrier",
+        "e-kerosene",
+        co2_emissions=n.carriers.loc["oil", "co2_emissions"],
+    )
 
-    # add e-kerosene stores
     n.madd(
         "Store",
         [ekerosene_bus + " Store" for ekerosene_bus in ekerosene_buses],
@@ -43,7 +43,6 @@ def add_ekerosene_buses(n):
     )
     logger.info("Added E-kerosene buses, carrier, and stores")
 
-    # add links between E-kerosene and Oil buses so excess synthetic oil can be used
     n.madd(
         "Link",
         [x + "-to-oil" for x in ekerosene_buses],
@@ -55,7 +54,6 @@ def add_ekerosene_buses(n):
     )
     logger.info("Added links between E-kerosene and Oil buses")
 
-    # link all e-kerosene buses with E-kerosene-main bus if set in config
     if snakemake.params.non_spatial_ekerosene:
         ekerosene_main_bus = ["E-kerosene-main"]
         n.madd(
@@ -92,24 +90,25 @@ def reroute_FT_output(n):
     ft_carrier = "Fischer-Tropsch"
     ft_links = n.links.query("carrier in @ft_carrier").index
 
-    # switch bus1 of FT from oil to E-kerosene
-    n.links.loc[ft_links, "bus1"] = n.links.loc[ft_links, "bus1"].str.replace("oil","e-kerosene")
+    n.links.loc[ft_links, "bus1"] = (
+        n.links.loc[ft_links, "bus1"].str.replace("oil", "e-kerosene")
+    )
     logger.info("Rerouted Fischer-Tropsch output from Oil buses to E-kerosene buses")
+
 
 def get_dynamic_blending_rate(config):
     """
-    Extract the blending rate from data/saf_blending_rates/saf_scenarios.csv based on the planning horizon
-    and the scenario specified in the config file (EU, EU+ or EU-)
+    Extract the blending rate from data/saf_blending_rates/saf_scenarios.csv
     """
     saf_scenario = snakemake.params.saf_scenario
-    year = str(snakemake.wildcards.planning_horizons)          # e.g. 2030 -> "2030"
+    year = str(snakemake.wildcards.planning_horizons)
     csv_path = snakemake.input.saf_scenarios
     df = pd.read_csv(csv_path, index_col=0)
 
     rate = df.loc[saf_scenario, year]
-
     logger.info(f"Blending rate for scenario {saf_scenario} in {year}: {rate}")
     return float(rate)
+
 
 def redistribute_aviation_demand(n, rate):
     """
@@ -118,11 +117,9 @@ def redistribute_aviation_demand(n, rate):
     aviation_demand_carrier = "kerosene for aviation"
     total_aviation_demand = n.loads.query("carrier in @aviation_demand_carrier")
 
-    # new kerosene for aviation demand = total * (1 - rate)
     n.loads.loc[total_aviation_demand.index, "p_set"] *= (1 - rate)
     logger.info(f"Set kerosene for aviation to {(1-rate)*100:.1f}% of total aviation demand")
 
-    # add e-kerosene for aviation load
     n.madd(
         "Load",
         total_aviation_demand.index.str.replace("kerosene", "e-kerosene"),
@@ -150,22 +147,33 @@ if __name__ == "__main__":
 
     configure_logging(snakemake)
 
-    # update config based on wildcards
     config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
 
-    # load the network
     n = load_network(snakemake.input.network)
 
-    # add e-kerosene buses with store, and connect e-kerosene and oil buses
-    add_ekerosene_buses(n)
+    pre_ob3 = config.get("policies", {}).get("pre_ob3_tax_credits", False)
+    mandate_enabled = config["saf_mandate"]["enable_mandate"]
 
-    # reroute FT from oil buses to e-kerosene buses
-    reroute_FT_output(n)
+    if pre_ob3:
+        if mandate_enabled:
+            add_ekerosene_buses(n)
+            reroute_FT_output(n)
 
-    # split aviation demand to e-kerosene to kerosene for aviation based on blending rate
-    if config["saf_mandate"]["enable_mandate"]:
-        rate = get_dynamic_blending_rate(config)
-        redistribute_aviation_demand(n, rate)
+            rate = get_dynamic_blending_rate(config)
+            redistribute_aviation_demand(n, rate)
 
-    # save the modified network
+            ft_links = n.links.query("carrier == 'Fischer-Tropsch'").index
+            n.links.loc[ft_links, "p_nom_extendable"] = False
+
+            n.links = n.links[
+                ~n.links.carrier.isin(["e-kerosene-to-oil"])
+            ]
+    else:
+        add_ekerosene_buses(n)
+        reroute_FT_output(n)
+
+        if mandate_enabled:
+            rate = get_dynamic_blending_rate(config)
+            redistribute_aviation_demand(n, rate)
+
     n.export_to_netcdf(snakemake.output.modified_network)

@@ -156,16 +156,26 @@ if __name__ == "__main__":
     # load the network
     n = load_network(snakemake.input.network)
 
-    # add e-kerosene buses with store, and connect e-kerosene and oil buses
-    add_ekerosene_buses(n)
-
-    # reroute FT from oil buses to e-kerosene buses
-    reroute_FT_output(n)
-
-    # split aviation demand to e-kerosene to kerosene for aviation based on blending rate
     if config["saf_mandate"]["enable_mandate"]:
+        # add e-kerosene buses with store, and connect e-kerosene and oil buses
+        add_ekerosene_buses(n)
+
+        # reroute FT from oil buses to e-kerosene buses
+        reroute_FT_output(n)
+
+        # split aviation demand to e-kerosene to kerosene for aviation based on blending rate
         rate = get_dynamic_blending_rate(config)
         redistribute_aviation_demand(n, rate)
+
+    else:
+        # No-policy baseline:
+        # - no e-kerosene buses or stores
+        # - no FT rerouting
+        # - no e-kerosene aviation demand
+        logger.info(
+            "SAF mandate disabled: e-kerosene fully removed from the model "
+            "(no production, no demand, no buses)."
+        )
 
     # save the modified network
     n.export_to_netcdf(snakemake.output.modified_network)

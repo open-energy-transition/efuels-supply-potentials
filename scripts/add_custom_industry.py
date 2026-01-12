@@ -1338,7 +1338,7 @@ if __name__ == "__main__":
 
     # define electrolysis output as grid H2 to be used in Fischer-Tropsch
     if snakemake.params.grid_h2:
-        define_grid_H2(n)
+        define_grid_H2(n, config_file=snakemake.config)
 
     # add other electricity load
     if snakemake.params.other_electricity:

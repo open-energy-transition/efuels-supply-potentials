@@ -782,21 +782,27 @@ def split_biogenic_CO2(n):
 
 def define_grid_H2(n, config_file=None):
     """
-        Marks output of electrolysis as grid H2 and connects only grid H2 to Fischer-Tropsch
+    Route electrolysis output to 'grid H2' and enforce a closed grid-H2 balance:
+    grid H2 can ONLY be consumed by Fischer-Tropsch (and optional cyclic storage).
+    No dumping to generic H2 buses when pre-OB3 tax credits are active.
     """
 
-    pre_ob3_tax_credits = None
+    # Read policy flag
+    pre_ob3_tax_credits = False
     if config_file is not None:
-        pre_ob3_tax_credits = config_file.get(
-            "policies", {}
-        ).get("pre_ob3_tax_credits", False)
+        pre_ob3_tax_credits = (
+            config_file.get("policies", {})
+            .get("pre_ob3_tax_credits", False)
+        )
 
-    # add grid H2 carrier
-    n.add("Carrier", "grid H2")
+    # Add grid H2 carrier
+    if "grid H2" not in n.carriers.index:
+        n.add("Carrier", "grid H2")
 
-    # add grid H2 buses
-    h2_buses = n.buses.query("carrier in 'H2'")
-    grid_h2_buses = [x.replace("H2", "grid H2") for x in h2_buses.index]
+    # Create grid H2 buses
+    h2_buses = n.buses.query("carrier == 'H2'")
+    grid_h2_buses = h2_buses.index.str.replace(" H2", " grid H2")
+
     n.madd(
         "Bus",
         grid_h2_buses,
@@ -805,37 +811,53 @@ def define_grid_H2(n, config_file=None):
         x=h2_buses.x.values,
         y=h2_buses.y.values,
     )
-    logger.info("Added grid H2 carrier and buses")
 
-    # get electrolyzers
-    electrolysis_carriers = ["Alkaline electrolyzer large", "PEM electrolyzer", "SOEC"]
+    logger.info("Added grid H2 buses")
+
+    # Reroute electrolyzers: electricity to grid H2
+    electrolysis_carriers = [
+        "Alkaline electrolyzer large",
+        "PEM electrolyzer",
+        "SOEC",
+    ]
+
     electrolyzers = n.links.query("carrier in @electrolysis_carriers")
 
-    # reroute output of electrolyzers from H2 to grid H2
-    n.links.loc[electrolyzers.index, "bus1"] = n.links.loc[electrolyzers.index, "bus1"].str.replace("H2", "grid H2")
-    logger.info(f"Rerouted output of {electrolyzers.carrier.unique()} from 'H2' buses to 'grid H2' buses")
-
-    # make sure Fischer-Tropsch uses grid H2 instead of H2
-    ft_carrier = "Fischer-Tropsch"
-    ft_links = n.links.query("carrier in @ft_carrier").index
-    n.links.loc[ft_links, "bus0"] = n.links.loc[ft_links, "bus0"].str.replace("H2", "grid H2")
-    logger.info(f"Rerouted input of {ft_carrier} from 'H2' buses to 'grid H2' buses")
-
-    # add H2 Store Tank for grid H2
-    h2_store_tanks = n.stores.query("carrier in 'H2 Store Tank'")
-    n.madd(
-        "Store",
-        h2_store_tanks.index.str.replace("H2", "grid H2"),
-        bus=h2_store_tanks.bus.str.replace("H2", "grid H2").values,
-        e_nom_extendable=True,
-        e_cyclic=True,
-        carrier="grid H2 Store Tank",
-        capital_cost=h2_store_tanks.capital_cost.values,
-        lifetime=h2_store_tanks.lifetime.values,
+    n.links.loc[electrolyzers.index, "bus1"] = (
+        n.links.loc[electrolyzers.index, "bus1"]
+        .str.replace(" H2", " grid H2")
     )
-    logger.info("Added grid H2 Store Tank for grid H2")
 
-    # connect grid H2 buses to H2 buses so H2 can be supplied
+    logger.info("Rerouted electrolyzer output to grid H2")
+
+    # Enforce FT as the ONLY consumer of grid H2
+    ft_links = n.links.query("carrier == 'Fischer-Tropsch'").index
+
+    n.links.loc[ft_links, "bus0"] = (
+        n.links.loc[ft_links, "bus0"]
+        .str.replace(" H2", " grid H2")
+    )
+
+    logger.info("Rerouted FT input to grid H2")
+
+    # Grid H2 storage (cyclic, no dumping)
+    h2_store_tanks = n.stores.query("carrier == 'H2 Store Tank'")
+
+    if not h2_store_tanks.empty:
+        n.madd(
+            "Store",
+            h2_store_tanks.index.str.replace(" H2", " grid H2"),
+            bus=h2_store_tanks.bus.str.replace(" H2", " grid H2").values,
+            e_nom_extendable=True,
+            e_cyclic=True,
+            carrier="grid H2 Store Tank",
+            capital_cost=h2_store_tanks.capital_cost.values,
+            lifetime=h2_store_tanks.lifetime.values,
+        )
+
+        logger.info("Added cyclic grid H2 storage")
+
+    # Forbid grid H2 to H2 dumping under pre-OB3
     if not pre_ob3_tax_credits:
         n.madd(
             "Link",
@@ -844,29 +866,34 @@ def define_grid_H2(n, config_file=None):
             bus1=h2_buses.index,
             p_nom_extendable=True,
             carrier="grid H2",
-            efficiency=1,
-            capital_cost=0,
+            efficiency=1.0,
+            capital_cost=0.0,
         )
-        logger.info("Connection grid H2 - H2 link enabled (no pre-OB3 credits)")
+
+        logger.info("grid H2 -> H2 link enabled (post-OB3)")
     else:
         logger.info(
-            "Connection grid H2 - H2 link disabled (pre-OB3 tax credits active: no H2 dumping allowed)"
+            "grid H2 -> H2 link DISABLED (pre-OB3: no H2 dumping allowed)"
         )
 
-    # add transport network for grid H2
-
+    # Grid H2 transport network
     if "pipelines" in snakemake.input:
         pipelines_df = pd.read_csv(snakemake.input.pipelines)
 
-        pipelines_df["buses_idx"] = (
+        pipelines_df["idx"] = (
             "grid H2 pipeline "
             + pipelines_df["bus0"]
             + " -> "
             + pipelines_df["bus1"]
         )
 
-        grid_h2_links = pipelines_df.groupby("buses_idx").agg(
-            {"bus0": "first", "bus1": "first", "length": "mean", "capacity": "sum"}
+        grid_h2_links = pipelines_df.groupby("idx").agg(
+            {
+                "bus0": "first",
+                "bus1": "first",
+                "length": "mean",
+                "capacity": "sum",
+            }
         )
 
         n.madd(
@@ -874,17 +901,19 @@ def define_grid_H2(n, config_file=None):
             grid_h2_links.index,
             bus0=grid_h2_links.bus0.values + " grid H2",
             bus1=grid_h2_links.bus1.values + " grid H2",
-            p_min_pu=-1,
+            p_min_pu=-1.0,
             p_nom_extendable=True,
             p_nom_max=grid_h2_links.capacity.values,
             length=grid_h2_links.length.values,
-            capital_cost=costs.at["H2 (g) pipeline", "fixed"]
-            * grid_h2_links.length.values,
+            capital_cost=(
+                costs.at["H2 (g) pipeline", "fixed"]
+                * grid_h2_links.length.values
+            ),
             carrier="grid H2 pipeline",
             lifetime=costs.at["H2 (g) pipeline", "lifetime"],
         )
 
-        logger.info("Added separate grid H2 pipeline network")
+        logger.info("Added grid H2 pipeline network")
 
 def add_other_electricity(n):
     """

@@ -15,9 +15,9 @@ logger = create_logger(__name__)
 
 def add_ekerosene_buses(n):
     """
-        Adds e-kerosene buses and stores, and adds links between e-kerosene and oil bus
+    Adds e-kerosene buses and stores, and adds links between e-kerosene and oil bus
     """
-    oil_buses = n.buses.query("carrier in 'oil'")
+    oil_buses = n.buses.query("carrier == 'oil'")
 
     ekerosene_buses = [x.replace("oil", "e-kerosene") for x in oil_buses.index]
     n.madd(
@@ -27,21 +27,22 @@ def add_ekerosene_buses(n):
         carrier="e-kerosene",
     )
 
-    n.add(
-        "Carrier",
-        "e-kerosene",
-        co2_emissions=n.carriers.loc["oil", "co2_emissions"],
-    )
+    if "e-kerosene" not in n.carriers.index:
+        n.add(
+            "Carrier",
+            "e-kerosene",
+            co2_emissions=n.carriers.loc["oil", "co2_emissions"],
+        )
 
     n.madd(
         "Store",
-        [ekerosene_bus + " Store" for ekerosene_bus in ekerosene_buses],
+        [bus + " Store" for bus in ekerosene_buses],
         bus=ekerosene_buses,
         e_nom_extendable=True,
         e_cyclic=True,
         carrier="e-kerosene",
     )
-    logger.info("Added E-kerosene buses, carrier, and stores")
+    logger.info("Added e-kerosene buses, carrier, and stores")
 
     n.madd(
         "Link",
@@ -52,48 +53,19 @@ def add_ekerosene_buses(n):
         p_nom_extendable=True,
         efficiency=1.0,
     )
-    logger.info("Added links between E-kerosene and Oil buses")
-
-    if snakemake.params.non_spatial_ekerosene:
-        ekerosene_main_bus = ["E-kerosene-main"]
-        n.madd(
-            "Bus",
-            ekerosene_main_bus,
-            location="E-kerosene-main",
-            carrier="e-kerosene-main",
-        )
-        n.madd(
-            "Link",
-            [x + "-to-main" for x in ekerosene_buses],
-            bus0=ekerosene_buses,
-            bus1=ekerosene_main_bus,
-            carrier="e-kerosene-to-main",
-            p_nom_extendable=True,
-            efficiency=1.0,
-        )
-        n.madd(
-            "Link",
-            [x.replace("e-kerosene", "main-to-e-kerosene") for x in ekerosene_buses],
-            bus0=ekerosene_main_bus,
-            bus1=ekerosene_buses,
-            carrier="main-to-e-kerosene",
-            p_nom_extendable=True,
-            efficiency=1.0,
-        )
-        logger.info("Added links between E-kerosene buses and E-kerosene main bus")
+    logger.info("Added links between e-kerosene and oil buses")
 
 
 def reroute_FT_output(n):
     """
-        Reroutes output of Fischer-Tropsch from Oil to E-kerosene bus
+    Reroutes output of Fischer-Tropsch from oil to e-kerosene bus
     """
-    ft_carrier = "Fischer-Tropsch"
-    ft_links = n.links.query("carrier in @ft_carrier").index
+    ft_links = n.links.query("carrier == 'Fischer-Tropsch'").index
 
     n.links.loc[ft_links, "bus1"] = (
         n.links.loc[ft_links, "bus1"].str.replace("oil", "e-kerosene")
     )
-    logger.info("Rerouted Fischer-Tropsch output from Oil buses to E-kerosene buses")
+    logger.info("Rerouted Fischer-Tropsch output from oil buses to e-kerosene buses")
 
 
 def get_dynamic_blending_rate(config):
@@ -102,23 +74,25 @@ def get_dynamic_blending_rate(config):
     """
     saf_scenario = snakemake.params.saf_scenario
     year = str(snakemake.wildcards.planning_horizons)
-    csv_path = snakemake.input.saf_scenarios
-    df = pd.read_csv(csv_path, index_col=0)
+    df = pd.read_csv(snakemake.input.saf_scenarios, index_col=0)
 
-    rate = df.loc[saf_scenario, year]
+    rate = float(df.loc[saf_scenario, year])
     logger.info(f"Blending rate for scenario {saf_scenario} in {year}: {rate}")
-    return float(rate)
+    return rate
 
 
 def redistribute_aviation_demand(n, rate):
     """
-        Redistribute aviation demand to e-kerosene and kerosene based on blending rate
+    Redistribute aviation demand to e-kerosene and kerosene based on blending rate
     """
-    aviation_demand_carrier = "kerosene for aviation"
-    total_aviation_demand = n.loads.query("carrier in @aviation_demand_carrier")
+    total_aviation_demand = n.loads.query(
+        "carrier == 'kerosene for aviation'"
+    )
 
     n.loads.loc[total_aviation_demand.index, "p_set"] *= (1 - rate)
-    logger.info(f"Set kerosene for aviation to {(1-rate)*100:.1f}% of total aviation demand")
+    logger.info(
+        f"Set kerosene for aviation to {(1 - rate) * 100:.1f}% of total aviation demand"
+    )
 
     n.madd(
         "Load",
@@ -127,7 +101,9 @@ def redistribute_aviation_demand(n, rate):
         carrier="e-kerosene for aviation",
         p_set=total_aviation_demand.p_set.fillna(0).values * rate,
     )
-    logger.info(f"Added e-kerosene for aviation demand at the rate of {(rate*100):.1f}% of total aviation demand")
+    logger.info(
+        f"Added e-kerosene for aviation demand at {rate * 100:.1f}% of total aviation demand"
+    )
 
 
 if __name__ == "__main__":
@@ -148,7 +124,6 @@ if __name__ == "__main__":
     configure_logging(snakemake)
 
     config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
-
     n = load_network(snakemake.input.network)
 
     pre_ob3 = config.get("policies", {}).get("pre_ob3_tax_credits", False)
@@ -165,9 +140,11 @@ if __name__ == "__main__":
             ft_links = n.links.query("carrier == 'Fischer-Tropsch'").index
             n.links.loc[ft_links, "p_nom_extendable"] = False
 
-            n.links = n.links[
-                ~n.links.carrier.isin(["e-kerosene-to-oil"])
-            ]
+            n.links = n.links[~n.links.carrier.isin(["e-kerosene-to-oil"])]
+
+        else:
+            logger.info("Pre-OB3 without SAF mandate: e-kerosene disabled")
+
     else:
         add_ekerosene_buses(n)
         reroute_FT_output(n)

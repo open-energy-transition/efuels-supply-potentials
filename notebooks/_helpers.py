@@ -8357,7 +8357,7 @@ def display_grid_region_results_multiple_scenario(networks, ces, res, ces_carrie
             eia_region = preprocess_res_ces_share_grid_region()
 
             excel_df = pd.read_excel(
-                "./validation_data/generation_grid_regions.xlsx",
+                "./data/validation_data/generation_grid_regions.xlsx",
                 sheet_name="Generation (TWh)"
             )
             if "Region" in excel_df.columns and "Grid Region" not in excel_df.columns:

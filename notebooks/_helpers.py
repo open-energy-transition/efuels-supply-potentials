@@ -1584,7 +1584,7 @@ def plot_lcoh_maps_by_grid_region_marginal(
     networks, shapes, h2_carriers, regional_fees, emm_mapping,
     output_threshold=1.0,
     include_baseload=True,
-    baseload_charge_path="energy_charge_rate.csv",
+    baseload_charge_path="./data/energy_charge_rate.csv",
     customer_charge_mw=400.0,
     demand_charge_rate=9.0,
     baseload_percentages=None,
@@ -1756,7 +1756,7 @@ def calculate_weighted_lcoh_table_by_year(
     output_threshold=1.0,
     year_title=True,
     include_baseload=True,
-    baseload_charge_path="energy_charge_rate.csv",
+    baseload_charge_path="./data/energy_charge_rate.csv",
     customer_charge_mw=400.0,
     demand_charge_rate=9.0,
     baseload_percentages=None
@@ -4506,7 +4506,7 @@ def calculate_lcoh_by_region(
     electricity_price="marginal",
     grid_region_lcoe=None,
     include_baseload=False,
-    baseload_charge_path="energy_charge_rate.csv",
+    baseload_charge_path="./data/energy_charge_rate.csv",
     customer_charge_mw=400.0,
     demand_charge_rate=9.0,
     baseload_percentages=None
@@ -5239,7 +5239,7 @@ def get_us_from_eia(eia_generation_data):
 
 
 def preprocess_res_ces_share_grid_region(eia_gen_data=None, grid_regions=None,
-                                         file_path="./validation_data/generation_grid_regions.xlsx",
+                                         file_path="./data/validation_data/generation_grid_regions.xlsx",
                                          sheet_name="Generation (TWh)"):
     """
     Drop-in replacement for preprocess_res_ces_share_eia_region.
@@ -5303,7 +5303,7 @@ def display_grid_region_results(networks, ces, res, ces_carriers, res_carriers):
             eia_region = preprocess_res_ces_share_grid_region()
 
             excel_df = pd.read_excel(
-                "./validation_data/generation_grid_regions.xlsx",
+                "./data/validation_data/generation_grid_regions.xlsx",
                 sheet_name="Generation (TWh)"
             )
             if "Region" in excel_df.columns and "Grid Region" not in excel_df.columns:
@@ -7338,7 +7338,7 @@ def calculate_baseload_charge(
     networks: dict,
     h2_carriers: list,
     emm_mapping: dict,
-    energy_charge_path: str = "energy_charge_rate.csv",
+    energy_charge_path: str = "./data/energy_charge_rate.csv",
     customer_charge_mw: float = 400.0,
     demand_charge_rate: float = 9.0,
     baseload_percentages: dict = None,

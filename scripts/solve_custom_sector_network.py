@@ -420,7 +420,15 @@ def apply_tax_credits_to_network(
                         )
 
         # Electrolyzers
-        elif carrier in electrolyzer_carriers and pre_ob3_tax_credits:
+        elif carrier in electrolyzer_carriers:
+            if not pre_ob3_tax_credits:
+                continue
+
+            if verbose:
+                logger.info(
+                    f"[PTC LINK ELECTROLYZER] pre-OB3 active for {name}"
+                )
+
             if 2025 <= build_year <= 2032 and planning_horizon <= build_year + 10:
                 credit_per_mwh_h2 = ptc_credits.get(carrier, 0.0)
                 h2_efficiency = link.get("efficiency", 0.0)
@@ -442,7 +450,8 @@ def apply_tax_credits_to_network(
                     )
                     if verbose:
                         logger.info(
-                            f"[PTC LINK ELECTROLYZER] {name} | eff={h2_efficiency:.3f}, credit={credit:.2f}"
+                            f"[PTC LINK ELECTROLYZER] credit applied for {name} | "
+                            f"credit={credit:.2f}, marginal_cost={new_cost:.2f}"
                         )
 
         # Carbon capture with CO2 storage
@@ -2141,6 +2150,7 @@ if __name__ == "__main__":
         itc_path=snakemake.input.investment_tax_credits,
         planning_horizon=int(snakemake.wildcards.planning_horizons),
         costs=pd.read_csv(snakemake.input.costs, index_col=0),
+        config_file=snakemake.config,
         log_path=f"logs/tax_credit_modifications_{snakemake.wildcards.planning_horizons}.csv",
         verbose=False,
     )

@@ -15,11 +15,11 @@ logger = create_logger(__name__)
 
 def add_ekerosene_buses(n):
     """
-    Adds e-kerosene buses and stores, and adds links between e-kerosene and oil bus
+    Adds e-kerosene buses, carrier, stores, and links to oil buses
     """
     oil_buses = n.buses.query("carrier == 'oil'")
 
-    ekerosene_buses = [x.replace("oil", "e-kerosene") for x in oil_buses.index]
+    ekerosene_buses = [b.replace("oil", "e-kerosene") for b in oil_buses.index]
     n.madd(
         "Bus",
         ekerosene_buses,
@@ -36,74 +36,67 @@ def add_ekerosene_buses(n):
 
     n.madd(
         "Store",
-        [bus + " Store" for bus in ekerosene_buses],
+        [b + " Store" for b in ekerosene_buses],
         bus=ekerosene_buses,
         e_nom_extendable=True,
         e_cyclic=True,
         carrier="e-kerosene",
     )
-    logger.info("Added e-kerosene buses, carrier, and stores")
 
     n.madd(
         "Link",
-        [x + "-to-oil" for x in ekerosene_buses],
+        [b + "-to-oil" for b in ekerosene_buses],
         bus0=ekerosene_buses,
         bus1=oil_buses.index,
         carrier="e-kerosene-to-oil",
         p_nom_extendable=True,
         efficiency=1.0,
     )
-    logger.info("Added links between e-kerosene and oil buses")
+
+    logger.info("Added e-kerosene buses, carrier, stores, and oil backflow links")
 
 
 def reroute_FT_output(n):
     """
-    Reroutes output of Fischer-Tropsch from oil to e-kerosene bus
+    Reroutes Fischer-Tropsch output from oil buses to e-kerosene buses
     """
     ft_links = n.links.query("carrier == 'Fischer-Tropsch'").index
-
     n.links.loc[ft_links, "bus1"] = (
         n.links.loc[ft_links, "bus1"].str.replace("oil", "e-kerosene")
     )
-    logger.info("Rerouted Fischer-Tropsch output from oil buses to e-kerosene buses")
+    logger.info("Rerouted Fischer-Tropsch output to e-kerosene buses")
 
 
 def get_dynamic_blending_rate(config):
     """
-    Extract the blending rate from data/saf_blending_rates/saf_scenarios.csv
+    Read SAF blending rate from saf_scenarios.csv
     """
     saf_scenario = snakemake.params.saf_scenario
     year = str(snakemake.wildcards.planning_horizons)
     df = pd.read_csv(snakemake.input.saf_scenarios, index_col=0)
 
     rate = float(df.loc[saf_scenario, year])
-    logger.info(f"Blending rate for scenario {saf_scenario} in {year}: {rate}")
+    logger.info(f"Requested SAF blending rate: {rate:.3f}")
     return rate
 
 
 def redistribute_aviation_demand(n, rate):
     """
-    Redistribute aviation demand to e-kerosene and kerosene based on blending rate
+    Split aviation demand between kerosene and e-kerosene
     """
-    total_aviation_demand = n.loads.query(
-        "carrier == 'kerosene for aviation'"
-    )
+    aviation_loads = n.loads.query("carrier == 'kerosene for aviation'")
 
-    n.loads.loc[total_aviation_demand.index, "p_set"] *= (1 - rate)
-    logger.info(
-        f"Set kerosene for aviation to {(1 - rate) * 100:.1f}% of total aviation demand"
-    )
+    n.loads.loc[aviation_loads.index, "p_set"] *= (1.0 - rate)
 
     n.madd(
         "Load",
-        total_aviation_demand.index.str.replace("kerosene", "e-kerosene"),
-        bus=total_aviation_demand.bus.str.replace("oil", "e-kerosene").values,
+        aviation_loads.index.str.replace("kerosene", "e-kerosene"),
+        bus=aviation_loads.bus.str.replace("oil", "e-kerosene").values,
         carrier="e-kerosene for aviation",
-        p_set=total_aviation_demand.p_set.fillna(0).values * rate,
+        p_set=aviation_loads.p_set.fillna(0.0).values * rate,
     )
-    logger.info(
-        f"Added e-kerosene for aviation demand at {rate * 100:.1f}% of total aviation demand"
-    )
+
+    logger.info(f"Applied SAF share: {rate:.3f}")
 
 
 if __name__ == "__main__":
@@ -129,21 +122,39 @@ if __name__ == "__main__":
     pre_ob3 = config.get("policies", {}).get("pre_ob3_tax_credits", False)
     mandate_enabled = config["saf_mandate"]["enable_mandate"]
 
-    if pre_ob3:
-        if mandate_enabled:
-            add_ekerosene_buses(n)
-            reroute_FT_output(n)
+    if pre_ob3 and mandate_enabled:
+        add_ekerosene_buses(n)
+        reroute_FT_output(n)
 
-            rate = get_dynamic_blending_rate(config)
-            redistribute_aviation_demand(n, rate)
+        requested_rate = get_dynamic_blending_rate(config)
 
-            ft_links = n.links.query("carrier == 'Fischer-Tropsch'").index
-            n.links.loc[ft_links, "p_nom_extendable"] = False
+        total_aviation_demand = (
+            n.loads.query("carrier == 'kerosene for aviation'")["p_set"].sum()
+        )
 
-            n.links = n.links[~n.links.carrier.isin(["e-kerosene-to-oil"])]
+        ft_links = n.links.query("carrier == 'Fischer-Tropsch'")
 
-        else:
-            logger.info("Pre-OB3 without SAF mandate: e-kerosene disabled")
+        hours = n.snapshot_weightings.generators.sum()
+        ft_eff = ft_links.efficiency.mean()
+
+        max_ekerosene = ft_links.p_nom.sum() * hours * ft_eff
+        max_rate = (
+            max_ekerosene / total_aviation_demand
+            if total_aviation_demand > 0
+            else 0.0
+        )
+
+        effective_rate = min(requested_rate, max_rate)
+
+        logger.info(
+            f"Pre-OB3 SAF capped: requested={requested_rate:.3f}, "
+            f"max_feasible={max_rate:.3f}, applied={effective_rate:.3f}"
+        )
+
+        redistribute_aviation_demand(n, effective_rate)
+
+        n.links.loc[ft_links.index, "p_nom_extendable"] = False
+        n.links = n.links[~n.links.carrier.isin(["e-kerosene-to-oil"])]
 
     else:
         add_ekerosene_buses(n)

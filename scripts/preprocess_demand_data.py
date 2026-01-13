@@ -488,7 +488,9 @@ def map_demands_utilitywise(
     # Missing utilities in ERST shape files
     df_demand_utility = df_demand_utility.reset_index()
     df_demand_utility.rename(columns={"STATE": "State"}, inplace=True)
-    missing_utilities = list(set(df_demand_utility.NAME) - set(df_erst_gpd.NAME))
+    missing_utilities = sorted(
+        set(df_demand_utility.NAME) - set(df_erst_gpd.NAME)
+    )
     df_missing_utilities = df_demand_utility[
         df_demand_utility.NAME.isin(missing_utilities)
     ]

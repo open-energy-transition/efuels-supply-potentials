@@ -702,7 +702,7 @@ def add_RPS_constraints(network, config_file):
                     get_var(n, "Generator", "p")[res_generators_eligible.index].T,
                 )
             )
-            .T.groupby(res_generators_eligible.bus, axis=1)
+            .T.groupby(res_generators_eligible.bus, axis=1, sort=True)
             .apply(join_exprs)
         )
 
@@ -746,7 +746,7 @@ def add_RPS_constraints(network, config_file):
                             get_var(n, "Link", "p")[res_links_eligible.index].T,
                         )
                     )
-                    .T.groupby(res_links_eligible.bus1, axis=1)
+                    .T.groupby(res_links_eligible.bus1, axis=1, sort=True)
                     .apply(join_exprs)
                 )
                 .reindex(res_generation.index)
@@ -1075,7 +1075,7 @@ def add_EQ_constraints(n, o, scaling=1e-1):
         linexpr(
             (n.snapshot_weightings.generators * scaling, get_var(n, "Generator", "p").T)
         )
-        .T.groupby(ggrouper, axis=1)
+        .T.groupby(ggrouper, axis=1, sort=True)
         .apply(join_exprs)
     )
     lhs_spill = (

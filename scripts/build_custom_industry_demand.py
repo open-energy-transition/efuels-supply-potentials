@@ -387,7 +387,11 @@ if __name__ == "__main__":
     )
 
     # Save country associated to each bus
-    bus_to_country = custom_industrial_database.groupby("bus")["country"].first()
+    bus_to_country = (
+        custom_industrial_database
+        .groupby("bus", sort=True)["country"]
+        .agg(lambda x: x.mode().iloc[0])
+    )
 
     # Groupby buses and industry, and sum the production capacity
     industrial_demand = (

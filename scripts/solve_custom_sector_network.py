@@ -425,9 +425,7 @@ def apply_tax_credits_to_network(
                 continue
 
             if verbose:
-                logger.info(
-                    f"[PTC LINK ELECTROLYZER] pre-OB3 active for {name}"
-                )
+                logger.info(f"[PTC LINK ELECTROLYZER] pre-OB3 active for {name}")
 
             if 2025 <= build_year <= 2032 and planning_horizon <= build_year + 10:
                 credit_per_mwh_h2 = ptc_credits.get(carrier, 0.0)

@@ -4163,135 +4163,157 @@ def preprocess_res_ces_share_eia(eia_gen_data):
 
 def compute_links_only_costs(network, name_tag):
     """
-    Compute costs for power generation only:
-    - Include: Fossil fuel links + all other generators (solar, wind, nuclear, etc.)
-    - Exclude: Fossil fuel generators (coal, oil, gas, biomass) - these are end-uses
+    Compute costs for power generation:
+    - Links (incl. fossil power links)
+    - Non-fossil generators
+    - Battery storage (Store) + battery power components (Links)
+
+    Uses network.statistics(groupby=None) to stay consistent
+    with the rest of the plotting pipeline.
     """
     year_str = name_tag[-4:]
-
-    # Get statistics separated by component type
-    costs_detailed = network.statistics(
-        groupby=None)[['Capital Expenditure', 'Operational Expenditure']]
-
     fossil_carriers = ["coal", "gas", "oil", "biomass"]
 
-    # Build the final dataset by combining the right components
+    costs_detailed = network.statistics(groupby=None)[
+        ["Capital Expenditure", "Operational Expenditure"]
+    ]
+
     final_results = []
 
-    # 1. Add ALL Link costs (including fossil links for power generation)
+    # -------------------------------------------------
+    # 1. LINKS (incl. battery charger/discharger)
+    # -------------------------------------------------
     try:
-        link_costs = costs_detailed.loc['Link'].reset_index()
-        link_costs['tech_label'] = link_costs['carrier']
+        link_costs = costs_detailed.loc["Link"].reset_index()
+        link_costs["tech_label"] = link_costs["carrier"]
 
-        # CAPEX from links
-        link_capex = link_costs.groupby('tech_label', as_index=False).agg({
-            'Capital Expenditure': 'sum'
-        })
-        for _, row in link_capex.iterrows():
-            final_results.append({
-                'tech_label': row['tech_label'],
-                'cost_type': 'Capital expenditure',
-                'cost_billion': row['Capital Expenditure'] / 1e9,
-                'year': year_str,
-                'scenario': name_tag
-            })
-
-        # OPEX from links
-        link_opex = link_costs.groupby('tech_label', as_index=False).agg({
-            'Operational Expenditure': 'sum'
-        })
-        for _, row in link_opex.iterrows():
-            final_results.append({
-                'tech_label': row['tech_label'],
-                'cost_type': 'Operational expenditure',
-                'cost_billion': row['Operational Expenditure'] / 1e9,
-                'year': year_str,
-                'scenario': name_tag
-            })
-
-    except KeyError:
-        pass  # No links found
-
-    # 2. Add NON-FOSSIL Generator costs (solar, wind, nuclear, etc.)
-    try:
-        gen_costs = costs_detailed.loc['Generator'].reset_index()
-        gen_costs['tech_label'] = gen_costs['carrier']
-
-        # Filter out fossil generators (keep only non-fossil generators)
-        non_fossil_gen = gen_costs[~gen_costs['tech_label'].isin(
-            fossil_carriers)]
-
-        if len(non_fossil_gen) > 0:
-            # CAPEX from non-fossil generators
-            gen_capex = non_fossil_gen.groupby('tech_label', as_index=False).agg({
-                'Capital Expenditure': 'sum'
-            })
-            for _, row in gen_capex.iterrows():
+        # CAPEX
+        for tech, sub in link_costs.groupby("tech_label"):
+            capex = sub["Capital Expenditure"].sum()
+            if capex != 0:
                 final_results.append({
-                    'tech_label': row['tech_label'],
-                    'cost_type': 'Capital expenditure',
-                    'cost_billion': row['Capital Expenditure'] / 1e9,
-                    'year': year_str,
-                    'scenario': name_tag
+                    "tech_label": tech,
+                    "cost_type": "Capital expenditure",
+                    "cost_billion": capex / 1e9,
+                    "year": year_str,
+                    "scenario": name_tag,
                 })
 
-            # OPEX from non-fossil generators
-            gen_opex = non_fossil_gen.groupby('tech_label', as_index=False).agg({
-                'Operational Expenditure': 'sum'
-            })
-            for _, row in gen_opex.iterrows():
+        # OPEX
+        for tech, sub in link_costs.groupby("tech_label"):
+            opex = sub["Operational Expenditure"].sum()
+            if opex != 0:
                 final_results.append({
-                    'tech_label': row['tech_label'],
-                    'cost_type': 'Operational expenditure',
-                    'cost_billion': row['Operational Expenditure'] / 1e9,
-                    'year': year_str,
-                    'scenario': name_tag
+                    "tech_label": tech,
+                    "cost_type": "Operational expenditure",
+                    "cost_billion": opex / 1e9,
+                    "year": year_str,
+                    "scenario": name_tag,
+                })
+    except KeyError:
+        pass
+
+    # -------------------------------------------------
+    # 2. NON-FOSSIL GENERATORS
+    # -------------------------------------------------
+    try:
+        gen_costs = costs_detailed.loc["Generator"].reset_index()
+        gen_costs["tech_label"] = gen_costs["carrier"]
+
+        non_fossil = gen_costs[~gen_costs["tech_label"].isin(fossil_carriers)]
+
+        for tech, sub in non_fossil.groupby("tech_label"):
+            capex = sub["Capital Expenditure"].sum()
+            if capex != 0:
+                final_results.append({
+                    "tech_label": tech,
+                    "cost_type": "Capital expenditure",
+                    "cost_billion": capex / 1e9,
+                    "year": year_str,
+                    "scenario": name_tag,
                 })
 
+            opex = sub["Operational Expenditure"].sum()
+            if opex != 0:
+                final_results.append({
+                    "tech_label": tech,
+                    "cost_type": "Operational expenditure",
+                    "cost_billion": opex / 1e9,
+                    "year": year_str,
+                    "scenario": name_tag,
+                })
     except KeyError:
-        pass  # No generators found
+        pass
 
-    # 3. Calculate and add FUEL COSTS for fossil fuel links
+    # -------------------------------------------------
+    # 3. BATTERY STORAGE (Store)  <<< QUESTO È IL FIX
+    # -------------------------------------------------
+    try:
+        store_costs = costs_detailed.loc["Store"].reset_index()
+
+        # prendiamo SOLO battery
+        store_costs = store_costs[store_costs["carrier"] == "battery"]
+
+        capex = store_costs["Capital Expenditure"].sum()
+        if capex != 0:
+            final_results.append({
+                "tech_label": "battery",   # <-- fondamentale
+                "cost_type": "Capital expenditure",
+                "cost_billion": capex / 1e9,
+                "year": year_str,
+                "scenario": name_tag,
+            })
+
+        opex = store_costs["Operational Expenditure"].sum()
+        if opex != 0:
+            final_results.append({
+                "tech_label": "battery",
+                "cost_type": "Operational expenditure",
+                "cost_billion": opex / 1e9,
+                "year": year_str,
+                "scenario": name_tag,
+            })
+    except KeyError:
+        pass
+
+    # -------------------------------------------------
+    # 4. FUEL COST ADJUSTMENT FOR FOSSIL LINKS (COME PRIMA)
+    # -------------------------------------------------
     fuel_cost_adjustments = {}
 
     for carrier in fossil_carriers:
         links = network.links[network.links.carrier == carrier]
-        total_fuel_cost = 0
+        total_fuel_cost = 0.0
 
         for link_id in links.index:
             try:
                 p0 = network.links_t.p0[link_id]
-                fuel_bus = links.loc[link_id, 'bus0']
+                fuel_bus = links.loc[link_id, "bus0"]
                 fuel_price = network.buses_t.marginal_price[fuel_bus]
-                weightings = network.snapshot_weightings['objective']
+                weightings = network.snapshot_weightings["objective"]
 
-                # Calculate fuel cost (positive)
                 fuel_cost = (p0 * fuel_price * weightings).sum()
                 total_fuel_cost += fuel_cost
-
             except KeyError:
                 continue
 
         if total_fuel_cost > 0:
             fuel_cost_adjustments[carrier] = total_fuel_cost / 1e9
 
-    # 4. Modify fossil fuel link OPEX to add fuel costs and rename to (power)
     df_results = pd.DataFrame(final_results)
 
-    # Find fossil link OPEX entries and modify them
     for carrier in fossil_carriers:
         if carrier in fuel_cost_adjustments:
-            # Find the OPEX entry for this fossil carrier
-            mask = (df_results['tech_label'] == carrier) & (
-                df_results['cost_type'] == 'Operational expenditure')
+            mask = (
+                (df_results["tech_label"] == carrier)
+                & (df_results["cost_type"] == "Operational expenditure")
+            )
             if mask.any():
-                # Add fuel costs to existing OPEX
-                df_results.loc[mask,
-                               'cost_billion'] += fuel_cost_adjustments[carrier]
-                # Rename to (power) version
-                df_results.loc[mask, 'tech_label'] = f'{carrier} (power)'
+                df_results.loc[mask, "cost_billion"] += fuel_cost_adjustments[carrier]
+                df_results.loc[mask, "tech_label"] = f"{carrier} (power)"
 
     return df_results
+
 
 
 def identify_power_generation_technologies(rename_techs_capex, rename_techs_opex, categories_capex, categories_opex):
@@ -7665,147 +7687,118 @@ def compute_power_opex_with_tax_credits(network, name_tag):
 
 def compute_power_capex_with_tax_credits(network, name_tag):
     """
-    Compute power generation CAPEX broken down by:
-    - CAPEX without tax credits (original capital cost)
-    - Tax credits amount (ITC for batteries)
-    - CAPEX with tax credits (actual)
+    Compute power CAPEX with and without tax credits.
 
-    Returns a DataFrame with columns:
-    - tech_label: Technology carrier name
-    - capex_without_tax_credits: CAPEX using original capital costs (billion USD)
-    - tax_credits: Tax credit amount (billion USD, negative means subsidy)
-    - capex_with_tax_credits: CAPEX with tax credits applied (billion USD)
-    - year: Year
-    - scenario: Scenario name
+    Definitions (FINAL):
+    - Battery = Store (battery) + battery charger + battery discharger (+ inverter if present)
+    - ITC (30%) applies ONLY to Store (battery)
+    - Links are NEVER subsidized but MUST be included in totals
+    - Uses network.statistics() as single source of truth (annualized CAPEX)
 
-    Note: ITC (Investment Tax Credit) is only applied to battery storage (-30%).
-    For other components, capital_cost remains unchanged, so tax_credits = 0.
+    Output columns:
+    - tech_label
+    - with_tax_credits_billion
+    - without_tax_credits_billion
+    - tax_credits_billion
+    - year
+    - scenario
     """
+
     year_str = name_tag[-4:]
+    ITC_RATE = 0.30
     fossil_carriers = ["coal", "gas", "oil", "biomass"]
 
+    stats = network.statistics()
     results = []
 
-    # Process GENERATORS (solar, wind, nuclear, etc.)
+    # -------------------------------------------------
+    # 1. GENERATORS (no tax credits)
+    # -------------------------------------------------
     for carrier in network.generators.carrier.unique():
-        # Skip fossil fuel generators (they're end-uses, not power generation)
         if carrier in fossil_carriers:
             continue
 
-        gens = network.generators[network.generators.carrier == carrier]
+        key = ("Generator", carrier)
+        if key not in stats.index:
+            continue
 
-        # Calculate CAPEX (no tax credits for generators)
-        capex_total = 0
+        capex = stats.loc[key, "Capital Expenditure"]
+        if capex == 0:
+            continue
 
-        for gen_name in gens.index:
-            gen = network.generators.loc[gen_name]
+        results.append({
+            "tech_label": carrier,
+            "with_tax_credits_billion": capex / 1e9,
+            "without_tax_credits_billion": capex / 1e9,
+            "tax_credits_billion": 0.0,
+            "year": year_str,
+            "scenario": name_tag,
+        })
 
-            # Get optimal capacity
-            if gen.p_nom_extendable:
-                capacity = gen.p_nom_opt
-            else:
-                capacity = gen.p_nom
-
-            # Capital cost (no tax credit for generators)
-            capital_cost = gen.capital_cost
-
-            # Calculate CAPEX
-            capex_total += capacity * capital_cost
-
-        if capex_total != 0:
-            # No tax credits for generators
-            results.append({
-                'tech_label': carrier,
-                'without_tax_credits_billion': capex_total / 1e9,
-                'tax_credits_billion': 0.0,
-                'with_tax_credits_billion': capex_total / 1e9,
-                'year': year_str,
-                'scenario': name_tag
-            })
-
-    # Process LINKS (fossil fuel power, biomass, etc.)
+    # -------------------------------------------------
+    # 2. LINKS (power technologies, no tax credits)
+    # -------------------------------------------------
     for carrier in network.links.carrier.unique():
-        links = network.links[network.links.carrier == carrier]
+        key = ("Link", carrier)
+        if key not in stats.index:
+            continue
 
-        # Calculate CAPEX (no tax credits for links)
-        capex_total = 0
+        capex = stats.loc[key, "Capital Expenditure"]
+        if capex == 0:
+            continue
 
-        for link_name in links.index:
-            link = network.links.loc[link_name]
+        tech_name = f"{carrier} (power)" if carrier in fossil_carriers else carrier
 
-            # Get optimal capacity
-            if link.p_nom_extendable:
-                capacity = link.p_nom_opt
-            else:
-                capacity = link.p_nom
+        results.append({
+            "tech_label": tech_name,
+            "with_tax_credits_billion": capex / 1e9,
+            "without_tax_credits_billion": capex / 1e9,
+            "tax_credits_billion": 0.0,
+            "year": year_str,
+            "scenario": name_tag,
+        })
 
-            # Capital cost (no tax credit for links)
-            capital_cost = link.capital_cost
+    # -------------------------------------------------
+    # 3. BATTERY (Store + power components)
+    # -------------------------------------------------
+    battery_link_carriers = [
+        "battery charger",
+        "battery discharger",
+        "battery inverter",
+    ]
 
-            # Calculate CAPEX
-            capex_total += capacity * capital_cost
+    battery_link_capex = 0.0
 
-        if capex_total != 0:
-            # For fossil carriers, rename to (power)
-            tech_name = f"{carrier} (power)" if carrier in fossil_carriers else carrier
+    for carrier in battery_link_carriers:
+        key = ("Link", carrier)
+        if key in stats.index:
+            battery_link_capex += stats.loc[key, "Capital Expenditure"]
 
-            # No tax credits for links
-            results.append({
-                'tech_label': tech_name,
-                'without_tax_credits_billion': capex_total / 1e9,
-                'tax_credits_billion': 0.0,
-                'with_tax_credits_billion': capex_total / 1e9,
-                'year': year_str,
-                'scenario': name_tag
-            })
+    store_capex_with_tc = 0.0
+    store_capex_without_tc = 0.0
 
-    # Process STORES (batteries - these get ITC tax credits)
-    for carrier in network.stores.carrier.unique():
-        stores = network.stores[network.stores.carrier == carrier]
+    if ("Store", "battery") in stats.index:
+        store_capex_with_tc = stats.loc[
+            ("Store", "battery"), "Capital Expenditure"
+        ]
+        store_capex_without_tc = store_capex_with_tc / (1 - ITC_RATE)
 
-        # Calculate CAPEX with and without tax credits
-        capex_with_tc = 0
-        capex_without_tc = 0
+    battery_with_tc = store_capex_with_tc + battery_link_capex
+    battery_without_tc = store_capex_without_tc + battery_link_capex
+    battery_tax_credit = battery_with_tc - battery_without_tc
 
-        for store_name in stores.index:
-            store = network.stores.loc[store_name]
-
-            # Get optimal capacity
-            if store.e_nom_extendable:
-                capacity = store.e_nom_opt
-            else:
-                capacity = store.e_nom
-
-            # Current capital cost (with tax credits applied)
-            capital_cost_current = store.capital_cost
-
-            # Calculate what the original capital cost would have been
-            # ITC for batteries is -30%, so: new_cost = original_cost * (1 - 0.30)
-            # Therefore: original_cost = new_cost / (1 - 0.30) = new_cost / 0.70
-            if 'battery' == carrier.lower():
-                # Only batteries get ITC, apply reverse calculation
-                capital_cost_original = capital_cost_current / 0.70
-            else:
-                # No tax credit for other stores
-                capital_cost_original = capital_cost_current
-
-            # Calculate CAPEX
-            capex_with_tc += capacity * capital_cost_current
-            capex_without_tc += capacity * capital_cost_original
-
-        if capex_with_tc != 0 or capex_without_tc != 0:
-            tax_credit = capex_with_tc - capex_without_tc
-
-            results.append({
-                'tech_label': carrier,
-                'without_tax_credits_billion': capex_without_tc / 1e9,
-                'tax_credits_billion': tax_credit / 1e9,
-                'with_tax_credits_billion': capex_with_tc / 1e9,
-                'year': year_str,
-                'scenario': name_tag
-            })
+    if battery_with_tc != 0 or battery_without_tc != 0:
+        results.append({
+            "tech_label": "battery",
+            "with_tax_credits_billion": battery_with_tc / 1e9,
+            "without_tax_credits_billion": battery_without_tc / 1e9,
+            "tax_credits_billion": battery_tax_credit / 1e9,
+            "year": year_str,
+            "scenario": name_tag,
+        })
 
     return pd.DataFrame(results)
+
 
 
 def plot_tax_credit_cluster_bars(

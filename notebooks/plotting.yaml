@@ -917,6 +917,7 @@ nice_names_power:
   "battery inverter": "Battery"
   "battery charger": "Battery"
   "battery discharger": "Battery"
+  "battery": "Battery"
 
 tech_power_order:
   - "Gas CCGT"

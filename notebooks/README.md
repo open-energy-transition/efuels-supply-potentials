@@ -1,131 +1,237 @@
 # Notebooks Directory
 
-This directory contains Jupyter notebooks for analyzing PyPSA-Earth e-fuels scenarios and validating model results against historical data.
+This directory contains Jupyter notebooks for analyzing PyPSA-Earth-based scenarios for the **Grid modelling to assess electrofuels supply potential – The impact of electrofuels on the US electricity grid** study and for validating model results against historical data.
+
+Once you have cloned the `efuels-supply-potentials` repository, navigate to the `notebooks` directory. 
+
+The workflow supports **parameterized, reproducible scenario analysis** across multiple planning horizons and temporal resolutions.
+
+---
 
 ## Directory Structure
 
 ```
 notebooks/
-├── _helpers.py                         # Core analysis functions (~10K lines)
+├── _helpers.py                         # Core analysis functions
 ├── plotting.yaml                       # Visualization config (colors, names, categories)
 │
-├── scenario_analysis_single.ipynb      # Single scenario comprehensive analysis
+├── scenario_analysis_single.ipynb      # Single-scenario comprehensive analysis (parameterized)
 ├── multiple_scenario_analysis.ipynb    # Multi-scenario comparison
-├── validation_base_year.ipynb          # Validate 2023 base year vs EIA/Ember
-│
-├── run_single_scenario.py              # Automate single scenario analysis
-├── run_multiple_scenario.py            # Batch process multiple scenarios
+├── validation_base_year.ipynb          # Validate 2023 base year vs EIA / Ember data
 │
 ├── data/                               # Spatial and reference data
-│   ├── gadm41_USA_1.json               # US state boundaries (GADM format)
+│   ├── gadm41_USA_1.json               # US state boundaries (GADM)
 │   ├── needs_grid_regions_aggregated.geojson  # NERC grid region boundaries
-│   ├── energy_charge_rate.csv          # Electricity rate data for LCOH calculations
-│   ├── EIA_market_module_regions/      # EIA EMM region definitions
+│   ├── energy_charge_rate.csv          # US-specific Energy charge rate data for LCOH calculations
+│   ├── EIA_market_module_regions/      # EIA Electricity Market Modules (EMM) regions definitions
 │   └── validation_data/                # EIA and Ember reference datasets
 │
 ├── results/                            # Solved PyPSA networks and analysis outputs
 │   ├── base_year/                      # 2023 base year networks
-│   ├── scenarios/                      # Scenario results (01-10)
+│   ├── scenarios/                      # Scenario results (01–10)
 │   │   ├── scenario_01/
 │   │   ├── scenario_02/
 │   │   ├── scenario_03/
-│   │   ├── scenario_04/ ... scenario_10/
-│   │       ├── *_2030_*.nc             # Planning horizon networks
+│   │   ├── scenario_04/
+│   │   └── scenario_05/ ... scenario_10/
+│   │       ├── *_2030_*.nc
 │   │       ├── *_2035_*.nc
 │   │       └── *_2040_*.nc
-│   └── tables/                         # Exported result tables (Excel/CSV)
+│   └── tables/                         # Exported result tables (Excel / CSV)
 ```
+
+---
 
 ## Quick Start
 
+
 ### Prerequisites
 
-1. **Conda environment** (from parent directory):
+1. **Conda environment** (from parent repository):
    ```bash
    mamba env create -f submodules/pypsa-earth/envs/environment.yaml
    conda activate pypsa-earth
    ```
 
-2. **Solved networks**: Ensure networks exist in `results/scenarios/` directory (generated via Snakemake workflow in parent directory)
+2. **Solved networks**:
 
-3. **Spatial data files**: Verify presence in `data/`:
-   - `gadm41_USA_1.json` (US state boundaries)
-   - `needs_grid_regions_aggregated.geojson` (Grid regions)
+Ensure PyPSA networks exist in `results/scenarios/` (generated via the Snakemake workflow in the parent directory).
 
-### Running Analysis
+3. **Spatial data files**:
 
-#### Option 1: Interactive Notebook
+Verify the presence of:
 
-Open and run any notebook in Jupyter:
+* `data/gadm41_USA_1.json`
+* `data/needs_grid_regions_aggregated.geojson`
+
+---
+
+## Running the Analysis: single scenario notebook
+
+The notebook `scenario_analysis_single.ipynb` performs the **analysis for a single, selected scenario** based on the solved networks available in `results/scenarios/`.
+
+The recommended way to run this notebook is via the provided CLI wrapper
+`run_single_scenario.py`, which handles:
+
+- scenario selection
+- temporal resolution
+- scenario metadata injection
+- consistent output notebook naming
+
+---
+
+### Prerequisites
+
+Ensure that:
+
+- solved PyPSA networks exist in `results/scenarios/`
+- the `pypsa-earth` conda environment is activated
+
+---
+
+### Running one or more scenarios via CLI (recommended)
+
+The script `run_single_scenario.py` executes
+`scenario_analysis_single.ipynb` for one or more scenarios sequentially.
+
+Example: run scenarios **1, 2, 5, 6 and 10** at **3-hour resolution**:
+
+```bash
+python run_single_scenario.py \
+  --scenario-id 1 2 5 6 10 \
+  --resolution 3H
+```
+
+This generates one output notebook per scenario:
+
+```
+scenario_01_3H.ipynb
+scenario_02_3H.ipynb
+scenario_05_3H.ipynb
+scenario_06_3H.ipynb
+scenario_10_3H.ipynb
+```
+
+Execution is sequential by design to avoid memory issues.
+If required networks for a given scenario and resolution are missing,
+the notebook will fail fast.
+
+---
+
+### CLI Parameters
+
+| Parameter        | Description                            | Examples              |
+|-----------------|----------------------------------------|-----------------------|
+| `--scenario-id` | Scenario IDs to run (1–10)             | `1 2 5 6 10`          |
+| `--resolution`  | Temporal resolution of solved networks | `1H`, `3H`, `24H`, `196H` |
+
+---
+
+### Interactive use (development only)
+
+The notebook can still be opened interactively for development or debugging:
+
 ```bash
 jupyter notebook scenario_analysis_single.ipynb
 ```
 
-Edit the scenario folder parameter in the first code cell:
+In this case, the parameters at the top of the notebook are used:
+
 ```python
-scenario_folder = "scenario_02"  # Change to desired scenario (01-10)
+# Parameters
+SCENARIO_ID = "02"
+RESOLUTION = "3H"
 ```
 
-#### Option 2: Automated Execution with Papermill
+These values are defaults for interactive use only and are overridden
+when running via `run_single_scenario.py`.
 
-**Single scenario:**
+
+## Running the Analysis: multiple scenario notebook
+
+The notebook `multiple_scenario_analysis.ipynb` performs **cross-scenario comparisons** based on the solved PyPSA-Earth networks available in `results/scenarios/`.
+
+Unlike `scenario_analysis_single.ipynb`, this notebook is designed to load **multiple scenarios simultaneously**, aggregate results, and produce comparative analyses across scenarios. Consolidated results are also exported to Excel.
+
+---
+
+### Parameters
+
+The notebook is fully parameterized. Parameters are defined at the top of the notebook and can be overridden when running non-interactively.
+
+```python
+# Parameters
+SCENARIO_IDS = ["01", "02", "03", "04", "07", "08", "09", "10"]
+RESOLUTION = "3H"
+```
+
+* `SCENARIO_IDS` selects the scenarios included in the comparison  
+* `RESOLUTION` selects which solved networks are loaded (e.g. `1H`, `3H`, `24H`, `196H`)
+
+---
+
+### Option 1: Interactive execution (development / debugging)
+
+For exploratory analysis or debugging, the notebook can be executed interactively:
+
 ```bash
-python run_single_scenario.py
+jupyter notebook multiple_scenario_analysis.ipynb
 ```
-Executes `scenario_analysis_single.ipynb` for each scenario, generating parameterized output notebooks:
-- `scenario_analysis_single_01.ipynb`
-- `scenario_analysis_single_02.ipynb`
-- etc.
 
-**Multiple scenarios across planning horizons:**
+In this case, the parameter values defined directly in the notebook are used.
+
+---
+
+### Option 2: Automated execution via CLI (recommended)
+
+For reproducible and non-interactive execution, use the CLI wrapper `run_multiple_scenario.py`, which handles:
+
+- scenario selection
+- temporal resolution
+- consistent output notebook naming
+
+Example: run scenarios **1, 2, 5, 6 and 10** at **3-hour resolution**:
+
 ```bash
-python run_multiple_scenario.py
+python run_multiple_scenario.py \
+  --scenario-id 1 2 5 6 10 \
+  --resolution 3H
 ```
-Executes `multiple_scenario_analysis.ipynb` for each year, generating:
-- `multiple_scenario_analysis_2030.ipynb`
-- `multiple_scenario_analysis_2035.ipynb`
-- `multiple_scenario_analysis_2040.ipynb`
 
-## Key Files
+This generates a single output notebook:
 
-### Core Modules
+```
+multiple_scenario_analysis_3H.ipynb
+```
 
-| File | Purpose |
-|------|---------|
-| `_helpers.py` | **Main analysis library** - network loading, data extraction, visualization, regional aggregation, cost calculations |
-| `plotting.yaml` | Technology colors, nice names, visualization categories |
+Execution is sequential by design to avoid memory issues.  
+If required networks for a given scenario or resolution are missing, the notebook will fail fast.
 
-### Data Files
+---
 
-| File | Purpose | Used For |
-|------|---------|----------|
-| `data/gadm41_USA_1.json` | US state boundaries (GADM format) | Regional aggregation by state |
-| `data/needs_grid_regions_aggregated.geojson` | NERC grid regions | Regional aggregation by grid region |
-| `data/energy_charge_rate.csv` | Electricity rate data by EMM region | LCOH baseload charge calculations |
-| `data/validation_data/` | Historical EIA/Ember datasets | Base year validation |
-| `data/EIA_market_module_regions/` | EIA EMM region definitions | Regional analysis and mapping |
+### CLI Parameters
+
+| Parameter        | Description                            | Examples                    |
+|------------------|----------------------------------------|-----------------------------|
+| `--scenario-id`  | Scenario IDs to include (1–10)         | `1 2 5 6 10`                |
+| `--resolution`   | Temporal resolution of solved networks | `1H`, `3H`, `24H`, `196H`   |
 
 ## Notebook Descriptions
 
 ### Primary Analysis Notebooks
 
 **[scenario_analysis_single.ipynb](scenario_analysis_single.ipynb)** - Comprehensive single scenario analysis including:
-- System costs (CAPEX/OPEX breakdown with tax credits)
-- Generation capacity and energy by technology
-- Regional generation maps (state and grid region)
+- System costs (CAPEX/OPEX breakdown with analysis on the impact of tax credits)
+- Electricity demand breakdown (including data center demand) and profiles
+- Power generation capacity and dispatch analysis by technology
 - Transmission expansion analysis
-- Emissions analysis
-- E-fuels production costs (LCOH, LCOK)
+- Power generation emissions analysis
 - Aviation demand by state and grid region
-- Electricity dispatch and demand profiles
-- Marginal price analysis by region
+- Levelized cost analysis for electricity, hydrogen, CO2 and e-kerosene
+- Analysis of the industrial sector
 
 **[multiple_scenario_analysis.ipynb](multiple_scenario_analysis.ipynb)** - Cross-scenario comparison:
-- Compare scenarios across planning horizons (2030, 2035, 2040)
-- System cost comparisons
-- Technology deployment differences
-- Capacity factor analysis
-- Sensitivity analysis across scenarios
+- Compare the results above for all the selected scenarios
 
 ### Validation Notebooks
 
@@ -137,48 +243,22 @@ Executes `multiple_scenario_analysis.ipynb` for each year, generating:
 
 ## Scenario Structure
 
-10 scenarios with varying assumptions:
+| #  | Scenario name                                               |
+| -- | ----------------------------------------------------------- |
+| 1  | Reference - No e-kerosene mandate                           |
+| 2  | Reference - ReFuel EU                                       |
+| 3  | Reference - ReFuel EU+                                      |
+| 4  | Reference - ReFuel EU-                                      |
+| 5  | Sensitivity - High climate ambition & No e-kerosene mandate |
+| 6  | Sensitivity - High climate ambition & ReFuel EU             |
+| 7  | Sensitivity - Optimistic electricity generation costs       |
+| 8  | Sensitivity - Optimistic electrolyzer costs                 |
+| 9  | Sensitivity - Conservative electrolyzer costs               |
+| 10 | Sensitivity - Biogenic point-source CO2 only                |
 
-| # | Description | e-kerosene Mandate | Demand | Electricity Costs | Electrolyzer Costs | Line Volume |
-|---|-------------|-------------------|---------|-------------------|-------------------|-------------|
-| 1 | No mandate | None | Medium | Moderate + credits | Medium | lv1 |
-| 2 | ReFuel EU | ReFuel EU | Medium | Moderate + credits | Medium | lv1 |
-| 3 | ReFuel EU+ | ReFuel EU+ | Medium | Moderate + credits | Medium | lv1 |
-| 4 | ReFuel EU- | ReFuel EU- | Medium | Moderate + credits | Medium | lv1 |
-| 5 | High ambition, no mandate | None | High | Moderate + credits | Medium + credits | lcopt |
-| 6 | High ambition + ReFuel EU | ReFuel EU | High | Moderate + credits | Medium + credits | lcopt |
-| 7 | Optimistic elec costs | ReFuel EU | Medium | Advanced + credits | Medium | lv1 |
-| 8 | Optimistic electrolyzer | ReFuel EU | Medium | Moderate + credits | Low + credits | lv1 |
-| 9 | Conservative electrolyzer | ReFuel EU | Medium | Moderate + credits | High + credits | lv1 |
-| 10 | Biogenic CO2 only | ReFuel EU | Medium | Moderate + credits | Medium + credits | lv1 |
-
-**Key differences:**
-- Scenarios 5-6 use `lcopt` (line volume optimization), others use `lv1`
-- Planning horizons: 2030, 2035, 2040
-
-## Network File Naming Convention
-
-```
-elec_s_{clusters}_ec_{lv1|lcopt}_{constraint}_{resolution}_{year}_{co2limit}_{policy}_{export}.nc
-```
-
-**Example:**
-```
-elec_s_100_ec_lv1_CCL-3H_3H_2035_0.07_AB_0export.nc
-```
-
-- `s_100` - 100 spatial clusters
-- `ec` - with energy components
-- `lv1` - line volume optimization level 1 (or `lcopt` for optimal)
-- `CCL-3H` - constraint type and resolution
-- `3H` - 3-hour temporal resolution
-- `2035` - planning horizon year
-- `0.07` - CO2 limit (fraction of baseline)
-- `AB` - policy scenario code
-- `0export` - no electricity exports
 
 ## Additional Resources
 
-- **Main Project README**: `../README.md` - Installation, Snakemake workflow, scenario configuration
-- **PyPSA Documentation**: https://pypsa.readthedocs.io/ - PyPSA framework reference
-- **PyPSA-Earth Documentation**: https://pypsa-meets-earth.readthedocs.io/ - PyPSA-Earth workflow documentation
+* Main Project README: `../README.md`
+* PyPSA documentation: [https://pypsa.readthedocs.io/](https://pypsa.readthedocs.io/)
+* PyPSA-Earth documentation: [https://pypsa-meets-earth.readthedocs.io/](https://pypsa-meets-earth.readthedocs.io/)

@@ -1,105 +1,180 @@
-# SPDX-FileCopyrightText:  Open Energy Transition gGmbH
+# SPDX-FileCopyrightText: Open Energy Transition gGmbH
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-try:
-    import papermill as pm
-except ImportError:
-    import subprocess
-    import sys
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "papermill"])
-    import papermill as pm
+import argparse
+import textwrap
+import papermill as pm
 
+# -----------------------------
+# CLI arguments
+# -----------------------------
+parser = argparse.ArgumentParser(
+    description="Run scenario_analysis_single.ipynb for selected scenarios"
+)
+parser.add_argument(
+    "--scenario-id",
+    type=int,
+    nargs="+",
+    required=True,
+    help="Scenario IDs to run (1–10)",
+)
+parser.add_argument(
+    "--resolution",
+    type=str,
+    default="3H",
+    help="Temporal resolution (e.g. 1H, 3H, 24H, 196H)",
+)
 
-"""
-TODO: Change directory stucture to account for path of networks
-scenario 5 and 6 will have the lcopt wildcard
-other scenarios will have lv1
-"""
+args = parser.parse_args()
+chosen_scenarios = args.scenario_id
+RESOLUTION = args.resolution
 
+# -----------------------------
+# Scenario metadata
+# -----------------------------
 scenario_data = {
-    "Scenarios": [
-        "Reference: No e-kerosene mandate",
-        "Reference: ReFuel EU",
-        "Reference: ReFuel EU+",
-        "Reference: ReFuel EU-",
-        "Reference: High climate ambition & No e-kerosene mandate",
-        "Reference: High climate ambition & ReFuel EU",
-        "Reference: Optimistic electricity generation costs",
-        "Reference: Optimistic electrolyzer costs",
-        "Reference: Conservative electrolyzer costs",
-        "Reference: Biogenic point-source CO2 only"
-    ],
-    "Temporal matching": ["Yes"] * 10,
-    "Aviation sector - Demand": ["Central"] * 10,
-    "e-kerosene blending mandates": [
-        "No e-kerosene mandate",
-        "ReFuel EU",
-        "ReFuel EU +",
-        "ReFuel EU -",
-        "No e-kerosene mandate",
-        "ReFuel EU",
-        "ReFuel EU",
-        "ReFuel EU",
-        "ReFuel EU",
-        "ReFuel EU"
-    ],
-    "Demand projections - Electricity demand + EV share": [
-        "Medium", "Medium", "Medium", "Medium",
-        "High", "High", "Medium", "Medium", "Medium", "Medium"
-    ],
-    "Costs - Electricity generation (NREL ATB)": [
-        "Moderate + tax credits"] * 6 + ["Advanced + tax credits"] + ["Moderate + tax credits"] * 3,
-    "Costs - Electrolysis (ICCT)": [
-        "Medium (no tax credits)"] * 4 + ["Medium + Tax credits"] * 3 + ["Low + tax credits", "High + tax credits", "Medium + Tax credits"
-                                                                         ],
-    "Costs - DAC": ["Medium + Tax credits"] * 10,
-    "Costs - Point-source CO2 capture": ["High + Tax credits"] * 10,
-    "Supply constraint - CO2 supply": [
-        "Biogenic & non-biogenic point sources & DAC"] * 4 +
-    ["Biogenic point sources & DAC"] * 2 +
-    ["Biogenic & non-biogenic point sources & DAC"] * 3 +
-    ["Biogenic point sources & DAC"],
-    "Power sector development - Transmission expansion": [
-        "No new expansion"] * 4 + ["Optimal transmission expansion"] * 2 + ["No new expansion *"] * 4,
-    "State policies for electricity generation": [
-        "Current policies"] * 4 + ["Current policies + 90% clean electricity by 2040"] * 2 + ["Current policies"] * 4,
-    "Hourly Resolution": [
-        "3-hour"] * 10
+    "Hydrogen policy": {
+        "Application of 45V pillars": [
+            "Yes*", "Yes", "Yes", "Yes", "Yes*", "Yes", "Yes", "Yes", "Yes", "No",
+        ],
+    },
+    "Aviation sector": {
+        "Demand": ["Central"] * 10,
+        "e-kerosene mandate": [
+            "No", "ReFuel EU", "ReFuel EU +", "ReFuel EU -",
+            "No", "ReFuel EU", "ReFuel EU", "ReFuel EU", "ReFuel EU", "ReFuel EU",
+        ],
+    },
+    "Demand projections": {
+        "Electrification": [
+            "Medium", "Medium", "Medium", "Medium",
+            "High", "High", "Medium", "Medium", "Medium", "Medium",
+        ],
+        "Sectoral demand": [
+            "Reference", "Reference", "Reference", "Reference",
+            "High Economic Growth", "High Economic Growth",
+            "Reference", "Reference", "Reference", "Reference",
+        ],
+    },
+    "Technology costs": {
+        "Electricity generation and storage": [
+            "Moderate + tax credits",
+            "Moderate + tax credits",
+            "Moderate + tax credits",
+            "Moderate + tax credits",
+            "Moderate + tax credits (IRA 2022)",
+            "Moderate + tax credits (IRA 2022)",
+            "Advanced + tax credits",
+            "Moderate + tax credits",
+            "Moderate + tax credits",
+            "Moderate + tax credits",
+        ],
+        "Electrolysis": [
+            "Medium", "Medium", "Medium", "Medium",
+            "Medium + tax credits (IRA 2022)",
+            "Medium + tax credits (IRA 2022)",
+            "Medium", "Low", "High", "Medium",
+        ],
+        "DAC": ["Medium + tax credits"] * 10,
+        "Point-source CO2 capture": ["High + tax credits"] * 10,
+    },
+    "CO2 supply constraint": {
+        "CO2 supply": [
+            "All point sources & DAC",
+            "All point sources & DAC",
+            "All point sources & DAC",
+            "All point sources & DAC",
+            "Biogenic point sources & DAC",
+            "Biogenic point sources & DAC",
+            "All point sources & DAC",
+            "All point sources & DAC",
+            "All point sources & DAC",
+            "Biogenic point sources & DAC",
+        ],
+    },
+    "Power sector development": {
+        "Transmission capacity expansion": [
+            "No new expansion",
+            "No new expansion",
+            "No new expansion",
+            "No new expansion",
+            "Cost-optimal",
+            "Cost-optimal",
+            "No new expansion",
+            "No new expansion",
+            "No new expansion",
+            "No new expansion",
+        ],
+        "Policies for electricity generation": [
+            "Current State policies",
+            "Current State policies",
+            "Current State policies",
+            "Current State policies",
+            "Current State policies + 90% clean electricity by 2040",
+            "Current State policies + 90% clean electricity by 2040",
+            "Current State policies",
+            "Current State policies",
+            "Current State policies",
+            "Current State policies",
+        ],
+    },
 }
 
-# scenarios_folder = ['scenario_01'] #, 'scenario_02', 'scenario_06', 'scenario_10']  # List of scenarios to analyze
-# horizon_list = [2030, 2035, 2040]  # List of horizons to analyze
+# -----------------------------
+# Helpers
+# -----------------------------
+def build_scenario_info(scenario_id: int) -> str:
+    i = scenario_id - 1
 
-# Define chosen scenario numbers (1-based)
-chosen_scenarios = [1, 2, 5, 6, 10]  # You can modify this list as needed
+    scenario_name = {
+        1: "Reference - No e-kerosene mandate",
+        2: "Reference - ReFuel EU",
+        3: "Reference - ReFuel EU+",
+        4: "Reference - ReFuel EU-",
+        5: "Sensitivity - High climate ambition & No e-kerosene mandate",
+        6: "Sensitivity - High climate ambition & ReFuel EU",
+        7: "Sensitivity - Optimistic electricity generation costs",
+        8: "Sensitivity - Optimistic electrolyzer costs",
+        9: "Sensitivity - Conservative electrolyzer costs",
+        10: "Sensitivity - Biogenic point-source CO2 only",
+    }[scenario_id]
 
-# Loop through only the chosen scenario indices
+    md = f"""
+# Grid modelling to assess electrofuels supply potential  
+## The impact of electrofuels on the US electricity grid
+
+### Scenario {scenario_id}: {scenario_name}
+
+| **Category** | **Item** | **Value** |
+|-------------|----------|-----------|
+"""
+
+    for category, items in scenario_data.items():
+        for item, values in items.items():
+            md += f"| **{category}** | **{item}** | {values[i]} |\n"
+
+    return md
+
+# -----------------------------
+# Execution (Papermill)
+# -----------------------------
+INPUT_NOTEBOOK = "scenario_analysis_single.ipynb"
+
 for num in chosen_scenarios:
-    i = num - 1  # Convert to 0-based index
-    scenario_title = scenario_data["Scenarios"][i]
+    if not (1 <= num <= 10):
+        raise ValueError(f"Invalid scenario ID: {num}")
 
-    # Start markdown table for this scenario
-    table = f"""## Scenario {num}: {scenario_title}
-    \n This notebook reports the results of preliminary runs for the scenario {num} 
-    defined in the table [here](https://docs.google.com/document/d/1ssc5ilxEhEYYjFDCo5cIAgP7zSRcO4uVUXjxbyfR88Q/edit?tab=t.0). 
-    In this notebook, a single scenario is analyzed. Another notebook will be available for multi-scenario comparison.
-    \n"""
-    table += "| "" | "" |\n"
-    table += "|-----------|-------|\n"
+    output_nb = f"scenario_{num:02d}_{RESOLUTION}.ipynb"
 
-    # Loop through each parameter (excluding 'Scenarios')
-    for param, values in scenario_data.items():
-        if param != "Scenarios":
-            table += f"| {param} | {values[i]} |\n"
+    print(f"[run] scenario_{num:02d}_{RESOLUTION}")
 
     pm.execute_notebook(
-        input_path='./scenario_analysis_single.ipynb',
-        output_path=f'./scenario_analysis_single_{num:02d}.ipynb',
+        input_path=INPUT_NOTEBOOK,
+        output_path=output_nb,
         parameters={
-            'scenario_folder': f"scenario_{num:02d}",
-            'scenario_info': table,
-
-        }
+            "SCENARIO_ID": f"{num:02d}",
+            "RESOLUTION": RESOLUTION,
+            "SCENARIO_INFO": build_scenario_info(num),
+        },
     )

@@ -1,25 +1,26 @@
+# -*- coding: utf-8 -*-
 # SPDX-FileCopyrightText:  Open Energy Transition gGmbH
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-import os
-import sys
-from pathlib import Path
-import yaml
-import pypsa
-import pandas as pd
 import logging
+import os
 import random
+import re
+import sys
+import warnings
+from pathlib import Path
+from zipfile import ZipFile
+
+import pypsa
 import snakemake as sm
+import yaml
 from pypsa.descriptors import Dict
 from snakemake.script import Snakemake
-import re
-from pathlib import Path 
-from zipfile import ZipFile
-from pypsa.components import component_attrs, components
+
 import googledrivedownloader as gdd
-import warnings
 import geopandas as gpd
+
 warnings.filterwarnings("ignore")
 
 
@@ -34,10 +35,10 @@ LINE_OPTS = {"2021": "copt"}
 
 
 def load_network(filepath):
-    """ Input:
-            filepath - full path to the network
-        Output:
-            n - PyPSA network
+    """Input:
+        filepath - full path to the network
+    Output:
+        n - PyPSA network
     """
     try:
         n = pypsa.Network(filepath)
@@ -72,11 +73,14 @@ def mock_snakemake(rule_name, configfile=None, **wildcards):
             snakefile = p
             break
     if isinstance(configfile, str):
-        with open(configfile, 'r') as file:
+        with open(configfile, "r") as file:
             configfile = yaml.safe_load(file)
 
     workflow = sm.Workflow(
-        snakefile, overwrite_configfiles=[], rerun_triggers=[], overwrite_config=configfile
+        snakefile,
+        overwrite_configfiles=[],
+        rerun_triggers=[],
+        overwrite_config=configfile,
     )  # overwrite_config=config
     workflow.include(snakefile)
     workflow.global_resources = {}
@@ -173,12 +177,13 @@ def get_solved_network_path(scenario_folder):
         str: Full path to the network file.
     """
     results_dir = os.path.join(
-        BASE_PATH, f"submodules/pypsa-earth/results/{scenario_folder}/networks")
+        BASE_PATH, f"submodules/pypsa-earth/results/{scenario_folder}/networks"
+    )
     filenames = os.listdir(results_dir)
 
     # Ensure only one network file exists
     if len(filenames) != 1:
-        logging.warning(f"Only 1 network per scenario is allowed currently!")
+        logging.warning("Only 1 network per scenario is allowed currently!")
     filepath = os.path.join(results_dir, filenames[0])
 
     return filepath
@@ -196,14 +201,6 @@ def load_pypsa_network(scenario_folder):
     """
     network_path = get_solved_network_path(scenario_folder)
     network = pypsa.Network(network_path)
-    return network
-
-
-def load_network(path):
-    """
-    Loads a PyPSA network from a path
-    """
-    network = pypsa.Network(path)
     return network
 
 
@@ -233,7 +230,7 @@ def configure_logging(snakemake, skip_handlers=False):
         logfile = snakemake.log.get(
             "python", snakemake.log[0] if snakemake.log else fallback_path
         )
-        formatter = logging.Formatter('%(levelname)s - %(message)s')
+        formatter = logging.Formatter("%(levelname)s - %(message)s")
 
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
@@ -254,9 +251,11 @@ def configure_logging(snakemake, skip_handlers=False):
     logging.basicConfig(**kwargs, force=True)
 
 
-def download_and_unzip_gdrive(config, destination, logger, disable_progress=False, url=None):
+def download_and_unzip_gdrive(
+    config, destination, logger, disable_progress=False, url=None
+):
     """
-        Downloads and unzips data from custom bundle config
+    Downloads and unzips data from custom bundle config
     """
     resource = config["category"]
     file_path = os.path.join(PYPSA_EARTH_DIR, f"tempfile_{resource}.zip")
@@ -313,7 +312,7 @@ def download_and_unzip_gdrive(config, destination, logger, disable_progress=Fals
     except Exception as e:
         logger.error(f"Failed to download or extract the file: {str(e)}")
         return False
-    
+
 
 def osm_raw_outputs():
     outputs = [
@@ -321,7 +320,7 @@ def osm_raw_outputs():
         "osm/raw/all_raw_generators.geojson",
         "osm/raw/all_raw_generators.csv",
         "osm/raw/all_raw_lines.geojson",
-        "osm/raw/all_raw_substations.geojson"
+        "osm/raw/all_raw_substations.geojson",
     ]
     return outputs
 
@@ -331,7 +330,7 @@ def osm_clean_outputs():
         "osm/clean/all_clean_generators.geojson",
         "osm/clean/all_clean_generators.csv",
         "osm/clean/all_clean_lines.geojson",
-        "osm/clean/all_clean_substations.geojson"
+        "osm/clean/all_clean_substations.geojson",
     ]
     return outputs
 
@@ -341,7 +340,7 @@ def shapes_outputs():
         "shapes/country_shapes.geojson",
         "shapes/offshore_shapes.geojson",
         "shapes/africa_shape.geojson",
-        "shapes/gadm_shapes.geojson"
+        "shapes/gadm_shapes.geojson",
     ]
     return outputs
 
@@ -351,16 +350,14 @@ def osm_network_outputs():
         "base_network/all_lines_build_network.csv",
         "base_network/all_converters_build_network.csv",
         "base_network/all_transformers_build_network.csv",
-        "base_network/all_buses_build_network.csv"
+        "base_network/all_buses_build_network.csv",
     ]
     return outputs
 
 
 def renewable_profiles_outputs():
     carriers = ["csp", "hydro", "offwind-ac", "offwind-dc", "onwind", "solar"]
-    outputs = [
-        "renewable_profiles/profile_" + x + ".nc" for x in carriers
-    ]
+    outputs = ["renewable_profiles/profile_" + x + ".nc" for x in carriers]
     return outputs
 
 
@@ -368,7 +365,9 @@ def get_colors(n):
     return ["#%06x" % random.randint(0, 0xFFFFFF) for _ in range(n)]
 
 
-def attach_grid_region_to_buses(network, path_shapes, grid_region_field="Grid Region", distance_crs="EPSG:3857"):
+def attach_grid_region_to_buses(
+    network, path_shapes, grid_region_field="Grid Region", distance_crs="EPSG:3857"
+):
     """
     Attach each bus in the network to a grid region defined in a shapefile.
     """
@@ -379,15 +378,14 @@ def attach_grid_region_to_buses(network, path_shapes, grid_region_field="Grid Re
         raise ValueError(f"Field '{grid_region_field}' not found in {path_shapes}")
 
     if not {"x", "y"}.issubset(network.buses.columns):
-        ac_dc = ["AC", "DC"]
-        locmap = network.buses.query("carrier in @ac_dc")[["x", "y"]]
+        locmap = network.buses.query("carrier in ['AC', 'DC']")[["x", "y"]]
         network.buses["x"] = network.buses["location"].map(locmap["x"]).fillna(0)
         network.buses["y"] = network.buses["location"].map(locmap["y"]).fillna(0)
 
     buses_gdf = gpd.GeoDataFrame(
         network.buses.copy(),
         geometry=gpd.points_from_xy(network.buses.x, network.buses.y),
-        crs="EPSG:4326"
+        crs="EPSG:4326",
     )
 
     if shapes.crs is None:
@@ -395,12 +393,22 @@ def attach_grid_region_to_buses(network, path_shapes, grid_region_field="Grid Re
     if buses_gdf.crs != shapes.crs:
         buses_gdf = buses_gdf.to_crs(shapes.crs)
 
-    joined = gpd.sjoin(buses_gdf, shapes[[grid_region_field, "geometry"]], how="left", predicate="within")[[grid_region_field]]
+    joined = gpd.sjoin(
+        buses_gdf,
+        shapes[[grid_region_field, "geometry"]],
+        how="left",
+        predicate="within",
+    )[[grid_region_field]]
     miss = joined[grid_region_field].isna()
     if miss.any():
         buses_m = buses_gdf.loc[miss].to_crs(distance_crs)
         shapes_m = shapes.to_crs(distance_crs)
-        near = gpd.sjoin_nearest(buses_m, shapes_m[[grid_region_field, "geometry"]], how="left", distance_col="dist_m")[[grid_region_field]]
+        near = gpd.sjoin_nearest(
+            buses_m,
+            shapes_m[[grid_region_field, "geometry"]],
+            how="left",
+            distance_col="dist_m",
+        )[[grid_region_field]]
         joined.loc[miss, grid_region_field] = near[grid_region_field].values
 
     if "region" in network.buses.columns and "emm_region" not in network.buses.columns:

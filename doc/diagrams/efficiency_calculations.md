@@ -1,6 +1,6 @@
 ## Efficiency calculations for industry with CCS
 
-The efficiency calculations for steel and cement industries are not straighforward. It is because we have *gas-input* values which defined gas needs for capturing 1 $\text{tCO}_2$. At the same time, captured amount of $\text{CO}_2$ depends on gas requirement of the process.
+The efficiency calculations for steel and cement industries are not straightforward. It is because we have *gas-input* values which defined gas needs for capturing 1 $\text{tCO}_2$. At the same time, captured amount of $\text{CO}_2$ depends on gas requirement of the process.
 
 Below, we provide equations for defining efficiencies of the links in PyPSA-Earth for cement and steel industries.
 
@@ -16,7 +16,7 @@ Here is the information about the buses of DRI industry.
 |bus4 |-             |co2 captured  |
 |bus5 |-             |electricity   |
 
-### DRI 
+### DRI
 |parameter  |equation|values|detail|
 |-----------|--------|------|------|
 |efficiency |$1/gas_{input,DRI}$|$1/2.78(t_{DRI}/MWh_{gas})$|ton of DRI produced per MWh of gas|

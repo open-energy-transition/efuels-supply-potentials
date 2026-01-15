@@ -15,9 +15,9 @@ from io import StringIO
 
 # Define paths
 BASE_DIR = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = BASE_DIR / "data/consolidated_costs"
+OUTPUT_DIR = BASE_DIR / "notebooks/data/input_costs"
 SCRIPTS_DIRS = [
-    BASE_DIR / "scripts",
+    BASE_DIR / "scripts/non_workflow",
     BASE_DIR / "submodules/pypsa-earth/scripts",
 ]
 

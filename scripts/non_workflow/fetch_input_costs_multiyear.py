@@ -14,10 +14,10 @@ import requests
 from io import StringIO
 
 # Define paths
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parents[2]
 OUTPUT_DIR = BASE_DIR / "notebooks/data/input_costs"
 SCRIPTS_DIRS = [
-    BASE_DIR / "scripts/non_workflow",
+    BASE_DIR / "scripts",
     BASE_DIR / "submodules/pypsa-earth/scripts",
 ]
 

@@ -162,37 +162,19 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 9. [PR #65](https://github.com/open-energy-transition/pypsa-earth/pull/65): Remove lignite from default conventional carriers.
 10. [PR #69](https://github.com/open-energy-transition/pypsa-earth/pull/69): Extend lifetime of nuclear power plants to 60 years
 11. [PR #71](https://github.com/open-energy-transition/pypsa-earth/pull/71): Enable selection of custom busmap.
-<<<<<<< HEAD
-
-=======
 12. [PR #76](https://github.com/open-energy-transition/pypsa-earth/pull/76): Add functionality to overwrite cost attributes in sector model.
 13. [PR #84](https://github.com/open-energy-transition/pypsa-earth/pull/84): Add possibility to overwrite discount rate.
 14. [PR #86](https://github.com/open-energy-transition/pypsa-earth/pull/86): Use H2 Store Tank costs without compressor and add lifetime.
 15. [PR #89](https://github.com/open-energy-transition/pypsa-earth/pull/89): Align cost conversion with reference year for costs in input files.
 15. [PR #91](https://github.com/open-energy-transition/pypsa-earth/pull/91): Include existing batteries from `powerplants.csv`.
+ 
+## 5. Checking techno-economic input data
 
->>>>>>> origin/main
-## 5. Validation
+To check techno-economic input data for selected sectors (power generation, hydrogen and e-kerosene production, CO2 capture) it is not necessarily needed to run the entire workflow and check input cost data files.
 
-### 5.1. Country-level validation for the base scenario
-To run country-level validation of the U.S. for the base scenario, navigate to the working directory (`.../efuels-supply-potentials/`) and use the following command:
+To generate Excel files reporting techno-economic input data (for the Moderate and the Advanced cost scenarios adopted in the model), navigate to the working directory (`.../efuels-supply-potentials/`) and use the following command:
 ```bash
-snakemake -call validate_all --configfile configs/calibration/config.base.yaml
+python scripts/non_workflow/fetch_input_costs_multiyear.py 
 ```
-or base scenario with alternative clustering option (AC):
-```bash
-snakemake -call validate_all --configfile configs/calibration/config.base_AC.yaml
-```
-* **Note:** Ensure that `planning_horizon` in `configs/config.main.yaml` corresponds to a horizon of the base scenario. By default, `planning_horizon` is set to 2020, which means that results are benchmarked agains 2020's historical data.
 
-It is possible to run validation by specifying the output file with wildcards:
-``` bash
-snakemake -call plots/results/US_2023/demand_validation_s_10_ec_lcopt_Co2L-24H.png --configfile configs/calibration/config.base.yaml
-```
-Validation results are stored in `plots/results/` directory under scenario run name (e.g. `US_2023`).
-
-### 5.2. State-wise validation
-To run state-wise validation, run:
-```bash
-snakemake -call statewise_validate_all --configfile configs/calibration/config.base_AC.yaml
-```
+The Excel files will be written to the `.../efuels-supply-potentials_emmanuel_fork/notebooks/data/input_costs/` folder.

@@ -140,3 +140,13 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 15. [PR #89](https://github.com/open-energy-transition/pypsa-earth/pull/89): Align cost conversion with reference year for costs in input files.
 15. [PR #91](https://github.com/open-energy-transition/pypsa-earth/pull/91): Include existing batteries from `powerplants.csv`.
  
+## 5. Checking techno-economic input data
+
+To check techno-economic input data for selected sectors (power generation, hydrogen and e-kerosene production, CO2 capture) it is not necessarily needed to run the entire workflow and check input cost data files.
+
+To generate Excel files reporting techno-economic input data (for the Moderate and the Advanced cost scenarios adopted in the model), navigate to the working directory (`.../efuels-supply-potentials/`) and use the following command:
+```bash
+python scripts/non_workflow/fetch_input_costs_multiyear.py 
+```
+
+The Excel files will be written to the `.../efuels-supply-potentials_emmanuel_fork/notebooks/data/input_costs/` folder.

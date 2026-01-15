@@ -100,6 +100,159 @@ def load_all_years_costs_data():
     df_combined = pd.concat(all_dfs, ignore_index=True)
     return df_combined
 
+def _norm(s):
+    """Normalize strings for robust matching (case-insensitive, ignore separators)."""
+    return re.sub(r"[\s_\-]+", "", str(s).strip().lower())
+
+
+def apply_hardcoded_model_assumptions(df):
+    """
+    Apply hard-coded model assumptions on top of technology-data.
+    Overrides are applied to all existing scenario/financial_case rows.
+    """
+    df = df.copy()
+
+    if "value_origin" not in df.columns:
+        df["value_origin"] = "technology-data"
+
+    # Normalized columns for robust matching
+    df["_tech_norm"] = df["technology"].apply(_norm)
+    df["_param_norm"] = df["parameter"].apply(_norm)
+
+    def replace_all_existing(tech, parameter, value, unit=None, note=None):
+        tech_n = _norm(tech)
+        param_n = _norm(parameter)
+
+        mask = (df["_tech_norm"] == tech_n) & (df["_param_norm"] == param_n)
+
+        if not mask.any():
+            raise ValueError(
+                f"Override failed: technology='{tech}', parameter='{parameter}' not found"
+            )
+
+        df.loc[mask, "value"] = value
+        if unit is not None:
+            df.loc[mask, "unit"] = unit
+
+        df.loc[mask, "value_origin"] = "model-override"
+
+        if note:
+            df.loc[mask, "source"] = (
+                    df.loc[mask, "source"].astype(str)
+                    + " | Model assumption: "
+                    + note
+            )
+
+    def replace_or_add(tech, parameter, value, unit=None, note=None):
+        tech_n = _norm(tech)
+        param_n = _norm(parameter)
+
+        mask = (df["_tech_norm"] == tech_n) & (df["_param_norm"] == param_n)
+
+        if mask.any():
+            # Case 1: parameter exists → replace
+            df.loc[mask, "value"] = value
+            if unit is not None:
+                df.loc[mask, "unit"] = unit
+            df.loc[mask, "value_origin"] = "model-override"
+            if note:
+                df.loc[mask, "source"] = (
+                        df.loc[mask, "source"].astype(str)
+                        + " | Model assumption: "
+                        + note
+                )
+            return
+
+        # Case 2: parameter does NOT exist → add rows
+        tech_mask = df["_tech_norm"] == tech_n
+        if not tech_mask.any():
+            raise ValueError(
+                f"Override failed: technology='{tech}' not found in technology-data"
+            )
+
+        base_rows = df.loc[tech_mask].drop_duplicates(
+            subset=["scenario", "financial_case", "year"]
+        )
+
+        new_rows = []
+        for _, r in base_rows.iterrows():
+            new_row = r.copy()
+            new_row["parameter"] = parameter
+            new_row["value"] = value
+            if unit is not None:
+                new_row["unit"] = unit
+            new_row["value_origin"] = "model-override"
+            new_row["source"] = (
+                    (str(r.get("source", "")) + " | " if note else str(r.get("source", "")))
+                    + (note if note else "")
+            )
+            new_rows.append(new_row)
+
+        if not new_rows:
+            raise ValueError(
+                f"Override failed: no scenario/financial_case rows found for technology='{tech}'"
+            )
+
+        df.loc[df["_tech_norm"].isna(), "_tech_norm"] = df["technology"].apply(_norm)
+        df.loc[df["_param_norm"].isna(), "_param_norm"] = df["parameter"].apply(_norm)
+
+    # Discount rate overrides (scenario- and financial-case aware)
+
+    discount_rate_techs = [
+        "direct air capture",
+        "Fischer-Tropsch",
+        "Alkaline electrolyzer large size",
+        "Alkaline electrolyzer medium size",
+        "Alkaline electrolyzer small size",
+        "PEM electrolyzer small size",
+        "SOEC",
+    ]
+
+    for tech in discount_rate_techs:
+        replace_or_add(
+            tech=tech,
+            parameter="discount rate",
+            value=0.10,
+            unit="per unit",
+            note="Uniform 10% discount rate applied across all scenarios and financial cases",
+        )
+
+    # Lifetime overrides
+
+    for tech in ["CCGT", "OCGT"]:
+        replace_all_existing(
+            tech=tech,
+            parameter="lifetime",
+            value=45,
+            note="Lifetime fixed to 45 years for project assumptions",
+        )
+
+    # Direct Air Capture inputs
+
+    replace_all_existing(
+        tech="direct air capture",
+        parameter="electricity-input",
+        value=1.4,
+        note="DAC electricity input fixed to 1.4 MWh/tCO2",
+    )
+
+    for param in [
+        "heat-input",
+        "heat-output",
+        "compression-heat-output",
+    ]:
+        replace_all_existing(
+            tech="direct air capture",
+            parameter=param,
+            value=0.0,
+            note=f"DAC {param} set to zero by model assumption",
+        )
+
+    # Clean up helper columns
+    df.drop(columns=["_tech_norm", "_param_norm"], inplace=True)
+
+    return df
+
 
 def filter_to_long_format(df, used_technologies, scenario='Moderate', financial_case='Market'):
     """
@@ -122,8 +275,10 @@ def filter_to_long_format(df, used_technologies, scenario='Moderate', financial_
         used_technologies)].copy()
 
     # Select columns for long format (including year)
-    df_long = df_filtered[['technology', 'parameter', 'value',
-                           'unit', 'source', 'currency_year', 'year']].copy()
+    df_long = df_filtered[
+        ['technology', 'parameter', 'value', 'unit',
+         'source', 'currency_year', 'year', 'value_origin']
+    ].copy()
 
     # Clean up
     df_long['currency_year'] = df_long['currency_year'].apply(
@@ -449,8 +604,11 @@ def main():
     # 1. Extract technologies used in the model
     used_technologies = extract_used_technologies()
 
-    # 2. Load data from multiple years (download from GitHub)
+    # 2.1. Load data from multiple years (download from GitHub)
     df_costs = load_all_years_costs_data()
+
+    # 2.2. Overwrite custom data
+    df_costs = apply_hardcoded_model_assumptions(df_costs)
 
     # Process both scenarios
     scenarios = ['Moderate', 'Advanced']

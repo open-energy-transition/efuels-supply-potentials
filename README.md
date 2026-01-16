@@ -69,34 +69,34 @@ snakemake -call solve_sector_networks_myopic --configfile configs/scenarios/conf
 
 |Rule name                |Config file                              |Description        |
 |-------------------------|-----------------------------------------|-------------------|
-|`validate_all`           |`config.base.yaml`, `config.base_AC.yaml`|Performs country-level validation comparing with EIA and Ember data|
-|`statewise_validate_all` |`config.base_AC.yaml`                    |Performs statewise validation comparing with EIA data|
-|`get_capacity_factors`   |Any base or scenario config file         |Estimates capacity factors for renewables|
-|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand| 
-|`generate_aviation_scenario` |Any base or scenario config file         |Generates aviation demand csv file with different future scenario| 
-|`modify_aviation_demand` |Any base or scenario config file         |Switches aviation demand in energy_total to custom demand|
+|`validate_all`           |`config.base.yaml`, `config.base_AC.yaml`|Perform country-level validation comparing with EIA and Ember data|
+|`statewise_validate_all` |`config.base_AC.yaml`                    |Perform statewise validation comparing with EIA data|
+|`get_capacity_factors`   |Any base or scenario config file         |Estimate capacity factors for renewables|
+|`process_airport_data`   | -                                       |Perform analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand| 
+|`generate_aviation_scenario` |Any base or scenario config file         |Generate aviation demand csv file with different future scenario| 
+|`modify_aviation_demand` |Any base or scenario config file         |Switch aviation demand in energy_total to custom demand|
 |`preprocess_demand_data` |Any base or scenario config file         |Preprocess utlities demand data into geojson|
 |`build_demand_profiles_from_eia` |Any base or scenario config file         |Build custom demand data from eia and bypass build_demand_profiles|
-|`set_saf_mandate`        |Any base or scenario config file         |Adds e-kerosene buses to enable split of aviation demand and sets SAF mandate if enabled|
-|`build_custom_industry_demand` |Any base or scenario config file   |Estimates node level demands for selected custom industries (e.g. ammonia, ethanol, cement, and steel)|
-|`add_custom_industry`    |Any base or scenario config file         |Adds selected custom industries into the network|
-|`prepare_growth_rate_scenarios`  | Any base or scenario config file          | Allows automatic fetching of correct growth rate files according to the demand_projection scenario name                                                                |
-|`solve_custom_sector_network`  | Any base or scenario config file          | Allows state/country-wise clean/RES polices to be applied as constraints. The constraints is turned on by default.                                                                |
+|`set_saf_mandate`        |Any base or scenario config file         |Add e-kerosene buses to enable split of aviation demand and sets SAF mandate if enabled|
+|`build_custom_industry_demand` |Any base or scenario config file   |Estimate node-level demands for selected custom industries (e.g. ammonia, ethanol, cement, and steel)|
+|`add_custom_industry`    |Any base or scenario config file         |Add selected custom industries into the network|
+|`prepare_growth_rate_scenarios`  | Any base or scenario config file          | Allow automatic fetching of correct growth rate files according to the demand_projection scenario name                                                                |
+|`solve_custom_sector_network`  | Any base or scenario config file          | Allow application of state/country-wise clean/RES electricity generation polices and apply tax credits to selected sectors. The constraints are turned on by default.                                                                |
 
 
 ### Retrieve rules
 |Rule name                |Config file                              |Description        |
 |-------------------------|-----------------------------------------|-------------------|
-|`retrieve_cutouts`       |Any base or scenario config file         |Retrieves US cutouts from google drive|
-|`retrieve_osm_raw`       |Any base or scenario config file         |Retrieves `resources/{RDIR}/osm/raw/` data from google drive and bypasses `download_osm_data` rule|
-|`retrieve_osm_clean`     |Any base or scenario config file         |Retrieves `resources/{RDIR}/osm/clean/` data from google drive and bypasses `clean_osm_data` rule|
-|`retrieve_shapes`        |Any base or scenario config file         |Retrieves `resources/{RDIR}/shapes/` data from google drive and bypasses `build_shapes` rule|
-|`retrieve_osm_network`   |Any base or scenario config file         |Retrieves `resources/{RDIR}/base_network/` data from google drive and bypasses `build_osm_network` rule|
-|`retrieve_base_network`  |Any base or scenario config file         |Retrieves `base.nc` data from google drive and bypasses `base_network` rule|
-|`retrieve_renewable_profiles`  |Any base or scenario config file         |Retrieves `resources/{RDIR}/renewable_profiles/` data from google drive and bypasses `build_renewable_profiles` rule|
-|`retrieve_custom_powerplants`  |Any base or scenario config file         |Copies `data/custom_powerplants.csv` to `submodules/pypsa-earth/data/` folder|
-|`retrieve_ssp2`          |Any base or scenario config file         |Copies `data/NorthAmerica.csv` to `submodules/pypsa-earth/data/ssp2-2.6/.` directory|
-|`retrieve_demand_data`          |Any base or scenario config file         |Retrieves utility demand data from google drive to `data/demand_data/*`|
+|`retrieve_cutouts`       |Any base or scenario config file         |Retrieve US cutouts from google drive|
+|`retrieve_osm_raw`       |Any base or scenario config file         |Retrieve `resources/{RDIR}/osm/raw/` data from google drive and bypasses `download_osm_data` rule|
+|`retrieve_osm_clean`     |Any base or scenario config file         |Retrieve `resources/{RDIR}/osm/clean/` data from google drive and bypasses `clean_osm_data` rule|
+|`retrieve_shapes`        |Any base or scenario config file         |Retrieve `resources/{RDIR}/shapes/` data from google drive and bypasses `build_shapes` rule|
+|`retrieve_osm_network`   |Any base or scenario config file         |Retrieve `resources/{RDIR}/base_network/` data from google drive and bypasses `build_osm_network` rule|
+|`retrieve_base_network`  |Any base or scenario config file         |Retrieve `base.nc` data from google drive and bypasses `base_network` rule|
+|`retrieve_renewable_profiles`  |Any base or scenario config file         |Retrieve `resources/{RDIR}/renewable_profiles/` data from google drive and bypasses `build_renewable_profiles` rule|
+|`retrieve_custom_powerplants`  |Any base or scenario config file         |Copy `data/custom_powerplants.csv` to `submodules/pypsa-earth/data/` folder|
+|`retrieve_ssp2`          |Any base or scenario config file         |Copy `data/NorthAmerica.csv` to `submodules/pypsa-earth/data/ssp2-2.6/.` directory|
+|`retrieve_demand_data`          |Any base or scenario config file         |Retrieve utility demand data from google drive to `data/demand_data/*`|
 
 * `RDIR` - scenario folder
 
@@ -125,7 +125,7 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 1. [PR #32](https://github.com/open-energy-transition/pypsa-earth/pull/34): Disable implicit calculations and assigning of industry demands for steel and cement industries, because they are added explicitly.
 2. [PR #36](https://github.com/open-energy-transition/pypsa-earth/pull/36): Introduce custom H2 production technologies.
 2. [PR #38](https://github.com/open-energy-transition/pypsa-earth/pull/38): Enable correct functioning of myopic optimization.
-3. [PR #40](https://github.com/open-energy-transition/pypsa-earth/pull/40): Adjusts calculation of `no_years` to properly run 2023 scenario.
+3. [PR #40](https://github.com/open-energy-transition/pypsa-earth/pull/40): Adjust calculation of `no_years` to properly run 2023 scenario.
 4. [PR #50](https://github.com/open-energy-transition/pypsa-earth/pull/50): Introduce Universal Currency Conversion to use USD as reference currency.
 5. [PR #51](https://github.com/open-energy-transition/pypsa-earth/pull/51): Add US cost configurations and split scenarios per technology group.
 6. [PR #56](https://github.com/open-energy-transition/pypsa-earth/pull/56): Introduce currency conversion in `simplify_network`.

@@ -63,21 +63,24 @@ def get_dynamic_blending_rate(config):
 
 def redistribute_aviation_demand(n, rate):
     """
-    Split aviation demand between kerosene and e-kerosene
+    Split aviation demand between kerosene and e-kerosene.
     """
     aviation_loads = n.loads.query("carrier == 'kerosene for aviation'")
 
-    n.loads.loc[aviation_loads.index, "p_set"] *= (1.0 - rate)
+    # store original demand
+    original_p_set = aviation_loads.p_set.copy()
 
+    # fossil share
+    n.loads.loc[aviation_loads.index, "p_set"] = original_p_set * (1.0 - rate)
+
+    # SAF share
     n.madd(
         "Load",
         aviation_loads.index.str.replace("kerosene", "e-kerosene"),
         bus=aviation_loads.bus.str.replace("oil", "e-kerosene").values,
         carrier="e-kerosene for aviation",
-        p_set=aviation_loads.p_set.values * rate,
+        p_set=original_p_set.values * rate,
     )
-
-    logger.info(f"Applied SAF share: {rate:.3f}")
 
 
 if __name__ == "__main__":

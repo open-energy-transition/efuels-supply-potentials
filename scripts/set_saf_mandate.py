@@ -23,12 +23,15 @@ def add_ekerosene_buses(n, config_file=None):
     """
     Adds e-kerosene buses, carrier, stores and (optionally) links to oil buses.
 
-    If pre-OB3 tax credits are active:
-      - no e-kerosene -> oil backflow is added
-      - avoids structural overproduction
-
-    Otherwise:
-      - behaviour identical to main
+    Policy logic:
+      - Always create e-kerosene buses + carrier + stores.
+      - If pre-OB3 tax credits are active:
+          * Disable e-kerosene to oil backflow (prevents overproduction).
+          * Enable non-spatial pooling via a main e-kerosene bus (avoids regional infeasibilities
+            when SAF demand > 0).
+      - If not pre-OB3:
+          * Keep main-style behaviour, including e-kerosene to oil backflow.
+          * Do not force pooling (unless you decide to enable it elsewhere).
     """
 
     pre_ob3 = (
@@ -38,8 +41,16 @@ def add_ekerosene_buses(n, config_file=None):
         else False
     )
 
-    oil_buses = n.buses.query("carrier in 'oil'")
+    # Read pooling switch (only applied under pre-OB3)
+    non_spatial_ekerosene = False
+    if pre_ob3 and config_file is not None:
+        non_spatial_ekerosene = (
+            config_file.get("custom_industry", {})
+            .get("non_spatial_ekerosene", False)
+        )
 
+    # Oil buses
+    oil_buses = n.buses.query("carrier in 'oil'")
     ekerosene_buses = [b.replace("oil", "e-kerosene") for b in oil_buses.index]
 
     # e-kerosene buses
@@ -50,7 +61,7 @@ def add_ekerosene_buses(n, config_file=None):
         carrier="e-kerosene",
     )
 
-    # carrier
+    # e-kerosene carrier
     if "e-kerosene" not in n.carriers.index:
         n.add(
             "Carrier",
@@ -58,7 +69,7 @@ def add_ekerosene_buses(n, config_file=None):
             co2_emissions=n.carriers.loc["oil", "co2_emissions"],
         )
 
-    # Stores
+    # e-kerosene stores (temporal buffer; does not create dumping)
     n.madd(
         "Store",
         [b + " Store" for b in ekerosene_buses],
@@ -68,7 +79,42 @@ def add_ekerosene_buses(n, config_file=None):
         carrier="e-kerosene",
     )
 
-    # backflow only if not pre-OB3
+    # Optional non-spatial pooling (ONLY pre-OB3)
+    if non_spatial_ekerosene:
+        ekerosene_main_bus = ["e-kerosene-main"]
+
+        n.madd(
+            "Bus",
+            ekerosene_main_bus,
+            location="e-kerosene-main",
+            carrier="e-kerosene-main",
+        )
+
+        # regional to main
+        n.madd(
+            "Link",
+            [b + "-to-main" for b in ekerosene_buses],
+            bus0=ekerosene_buses,
+            bus1=ekerosene_main_bus,
+            carrier="e-kerosene-to-main",
+            p_nom_extendable=True,
+            efficiency=1.0,
+        )
+
+        # main to regional
+        n.madd(
+            "Link",
+            [b.replace("e-kerosene", "main-to-e-kerosene") for b in ekerosene_buses],
+            bus0=ekerosene_main_bus,
+            bus1=ekerosene_buses,
+            carrier="main-to-e-kerosene",
+            p_nom_extendable=True,
+            efficiency=1.0,
+        )
+
+        logger.info("Pre-OB3: enabled non-spatial e-kerosene pooling via e-kerosene-main")
+
+    # e-kerosene to oil backflow (dumping valve): only post-OB3
     if not pre_ob3:
         n.madd(
             "Link",

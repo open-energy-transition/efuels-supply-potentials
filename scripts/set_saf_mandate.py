@@ -7,19 +7,42 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
 import pandas as pd
 import numpy as np
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            configure_logging, load_network
+
+from scripts._helper import (
+    mock_snakemake,
+    update_config_from_wildcards,
+    create_logger,
+    configure_logging,
+    load_network,
+)
 
 logger = create_logger(__name__)
 
 
-def add_ekerosene_buses(n):
+def add_ekerosene_buses(n, config_file=None):
     """
-    Adds e-kerosene buses and carrier.
+    Adds e-kerosene buses, carrier, stores and (optionally) links to oil buses.
+
+    If pre-OB3 tax credits are active:
+      - no e-kerosene -> oil backflow is added
+      - avoids structural overproduction
+
+    Otherwise:
+      - behaviour identical to main
     """
-    oil_buses = n.buses.query("carrier == 'oil'")
+
+    pre_ob3 = (
+        config_file.get("policies", {})
+        .get("pre_ob3_tax_credits", False)
+        if config_file is not None
+        else False
+    )
+
+    oil_buses = n.buses.query("carrier in 'oil'")
 
     ekerosene_buses = [b.replace("oil", "e-kerosene") for b in oil_buses.index]
+
+    # e-kerosene buses
     n.madd(
         "Bus",
         ekerosene_buses,
@@ -27,6 +50,7 @@ def add_ekerosene_buses(n):
         carrier="e-kerosene",
     )
 
+    # carrier
     if "e-kerosene" not in n.carriers.index:
         n.add(
             "Carrier",
@@ -34,12 +58,37 @@ def add_ekerosene_buses(n):
             co2_emissions=n.carriers.loc["oil", "co2_emissions"],
         )
 
-    logger.info("Added e-kerosene buses and carrier")
+    # Stores
+    n.madd(
+        "Store",
+        [b + " Store" for b in ekerosene_buses],
+        bus=ekerosene_buses,
+        e_nom_extendable=True,
+        e_cyclic=True,
+        carrier="e-kerosene",
+    )
+
+    # backflow only if not pre-OB3
+    if not pre_ob3:
+        n.madd(
+            "Link",
+            [b + "-to-oil" for b in ekerosene_buses],
+            bus0=ekerosene_buses,
+            bus1=oil_buses.index,
+            carrier="e-kerosene-to-oil",
+            p_nom_extendable=True,
+            efficiency=1.0,
+        )
+        logger.info("Added e-kerosene -> oil backflow links (post-OB3)")
+    else:
+        logger.info("Pre-OB3: e-kerosene dumping to oil DISABLED")
+
+    logger.info("Added e-kerosene buses, carrier and stores")
 
 
 def reroute_FT_output(n):
     """
-    Reroutes Fischer-Tropsch output from oil buses to e-kerosene buses
+    Reroute Fischer-Tropsch output from oil buses to e-kerosene buses.
     """
     ft_links = n.links.query("carrier == 'Fischer-Tropsch'").index
     n.links.loc[ft_links, "bus1"] = (
@@ -82,6 +131,8 @@ def redistribute_aviation_demand(n, rate):
         p_set=original_p_set.values * rate,
     )
 
+    logger.info(f"Applied SAF share: {rate:.3f}")
+
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -105,7 +156,7 @@ if __name__ == "__main__":
 
     mandate_enabled = config["saf_mandate"]["enable_mandate"]
 
-    add_ekerosene_buses(n)
+    add_ekerosene_buses(n, config_file=config)
     reroute_FT_output(n)
 
     if mandate_enabled:

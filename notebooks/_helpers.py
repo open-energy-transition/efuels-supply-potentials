@@ -10298,3 +10298,133 @@ def plot_wind_cf_from_network(network, wind_type='onwind', cmap='viridis', figsi
     ax.set_title(f"{wind_label} capacity factor", fontsize=16, pad=20)
 
     return fig, ax, wind_gens
+
+
+import pandas as pd
+import numpy as np
+import re
+
+def summarize_h2_and_ekerosene_flows(networks):
+    """
+    Returns two tables (in TWh / year):
+
+    1) Hydrogen flows
+    2) e-kerosene flows
+
+    Conventions:
+    - Units: TWh / year
+    - Positive values = flow INTO the listed process or sink
+    - Storage = net annual change of state of charge
+    """
+
+    pd.options.display.float_format = "{:.3f}".format
+
+    def get_year(name):
+        m = re.search(r"(20\d{2})", name)
+        return int(m.group(1)) if m else None
+
+    h2_rows = {}
+    eker_rows = {}
+
+    for name, n in networks.items():
+        year = get_year(name)
+        if year is None:
+            continue
+
+        w = n.snapshot_weightings.generators
+        scale = 1e-6  # MWh → TWh
+
+        # HYDROGEN
+        h2 = {}
+
+        # H2 production (electrolysis)
+        el = n.links[n.links.carrier.str.contains("electrolyzer", case=False, na=False)]
+        if not el.empty:
+            h2["H2 production (electrolysis)"] = - (
+                n.links_t.p1[el.index].mul(w, axis=0).sum().sum() * scale
+            )
+
+        # H2 to links (by carrier, bus0 = H2)
+        h2_links = n.links[n.links.bus0.str.contains("H2", na=False)]
+
+        for carrier in sorted(h2_links.carrier.unique()):
+            idx = h2_links.index[h2_links.carrier == carrier]
+            val = (
+                n.links_t.p0[idx]
+                .abs()
+                .mul(w, axis=0)
+                .sum()
+                .sum()
+                * scale
+            )
+
+            label = (
+                carrier
+                .replace("Pem", "PEM")
+                .replace("Soec", "SOEC")
+                .replace("Smr Cc", "SMR CC")
+                .replace("Smr", "SMR")
+                .replace("Cc", "CC")
+            )
+
+            h2[f"H2 → {label}"] = val
+
+        # H2 storage (net)
+        h2_stores = n.stores[n.stores.carrier.str.contains("H2", na=False)]
+        if not h2_stores.empty:
+            h2["H2 storage (net)"] = (
+                n.stores_t.e[h2_stores.index]
+                .iloc[-1]
+                .sub(n.stores_t.e[h2_stores.index].iloc[0])
+                .sum()
+                * scale
+            )
+
+        h2_rows[year] = h2
+
+        # e-kerosene
+        ek = {}
+
+        # Production (Fischer–Tropsch output only)
+        ft = n.links[n.links.carrier == "Fischer-Tropsch"]
+        if not ft.empty:
+            ek["E-kerosene production (FT)"] = - (
+                n.links_t.p1[ft.index].mul(w, axis=0).sum().sum() * scale
+            )
+
+        # Dumping to oil
+        dump = n.links[n.links.carrier == "e-kerosene-to-oil"]
+        if not dump.empty:
+            ek["E-kerosene → oil"] = (
+                n.links_t.p0[dump.index].abs().mul(w, axis=0).sum().sum() * scale
+            )
+
+        # Storage (net)
+        ek_stores = n.stores[n.stores.carrier == "e-kerosene"]
+        if not ek_stores.empty:
+            ek["E-kerosene storage (net)"] = (
+                n.stores_t.e[ek_stores.index]
+                .iloc[-1]
+                .sub(n.stores_t.e[ek_stores.index].iloc[0])
+                .sum()
+                * scale
+            )
+
+        eker_rows[year] = ek
+
+    h2_table = pd.DataFrame(h2_rows).T.sort_index().round(3)
+    eker_table = pd.DataFrame(eker_rows).T.sort_index().round(3)
+
+    h2_table.index.name = "Year"
+    eker_table.index.name = "Year"
+
+    return h2_table, eker_table
+
+def print_h2_and_ekerosene_tables(h2_flows, ekerosene_flows):
+    print("Hydrogen flows (TWh H2 / year)")
+    print("Positive values indicate hydrogen flowing INTO the listed process.")
+    display(h2_flows)
+
+    print("e-kerosene flows (TWh e-kerosene / year)")
+    print("Positive values indicate e-kerosene flowing INTO the listed bus.")
+    display(ekerosene_flows)

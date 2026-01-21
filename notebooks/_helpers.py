@@ -10388,21 +10388,21 @@ def summarize_h2_and_ekerosene_flows(networks):
         # Production (Fischer–Tropsch output only)
         ft = n.links[n.links.carrier == "Fischer-Tropsch"]
         if not ft.empty:
-            ek["E-kerosene production (FT)"] = - (
+            ek["e-kerosene production (FT)"] = - (
                 n.links_t.p1[ft.index].mul(w, axis=0).sum().sum() * scale
             )
 
         # Dumping to oil
         dump = n.links[n.links.carrier == "e-kerosene-to-oil"]
         if not dump.empty:
-            ek["E-kerosene → oil"] = (
+            ek["e-kerosene → oil"] = (
                 n.links_t.p0[dump.index].abs().mul(w, axis=0).sum().sum() * scale
             )
 
         # Storage (net)
         ek_stores = n.stores[n.stores.carrier == "e-kerosene"]
         if not ek_stores.empty:
-            ek["E-kerosene storage (net)"] = (
+            ek["e-kerosene storage (net)"] = (
                 n.stores_t.e[ek_stores.index]
                 .iloc[-1]
                 .sub(n.stores_t.e[ek_stores.index].iloc[0])

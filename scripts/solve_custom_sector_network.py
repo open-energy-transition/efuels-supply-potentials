@@ -1828,10 +1828,28 @@ def add_lossy_bidirectional_link_constraints(n: pypsa.components.Network) -> Non
 
     # define the lefthand side of the constrain p_nom (forward) - p_nom (backward) = 0
     # this ensures that the forward links always have the same maximum nominal power as their backward counterpart
+    links_p_nom = get_var(n, "Link", "p_nom")
+
+    subset_forward = forward_i.intersection(links_p_nom.index)
+    subset_backward = get_backward_i(subset_forward)
+
+    # safety check
+    missing = subset_backward.difference(links_p_nom.index)
+    if len(missing):
+        raise ValueError(
+            f"Missing backward links for bidirectional constraint: {missing.tolist()}"
+        )
+
+    # enforce identical ordering
+    subset_forward = subset_forward.sort_values()
+    subset_backward = get_backward_i(subset_forward)
+
     lhs = linexpr(
-        (1, get_var(n, "Link", "p_nom")[backward_i].to_numpy()),
-        (-1, get_var(n, "Link", "p_nom")[forward_i].to_numpy()),
+        (1, links_p_nom.loc[subset_backward].to_numpy()),
+        (-1, links_p_nom.loc[subset_forward].to_numpy()),
     )
+
+    define_constraints(n, lhs, "=", 0, "Link-bidirectional_sync")
 
     # add the constraint to the PySPA model
     define_constraints(n, lhs, "=", 0, "Link-bidirectional_sync")

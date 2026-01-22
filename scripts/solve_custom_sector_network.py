@@ -624,7 +624,7 @@ def add_RPS_constraints(network, config_file):
                     get_var(n, "Generator", "p")[res_generators_eligible.index].T
                 )
             )
-            .T.groupby(res_generators_eligible.bus, axis=1)
+            .T.groupby(res_generators_eligible.bus, axis=1, sort=True)
             .apply(join_exprs)
         )
 
@@ -637,7 +637,7 @@ def add_RPS_constraints(network, config_file):
                             res_storages_eligible.index].T,
                     )
                 )
-                .T.groupby(res_storages_eligible.bus, axis=1)
+                .T.groupby(res_storages_eligible.bus, axis=1, sort=True)
                 .apply(join_exprs)
             )
 
@@ -662,7 +662,7 @@ def add_RPS_constraints(network, config_file):
                             get_var(n, "Link", "p")[res_links_eligible.index].T
                         )
                     )
-                    .T.groupby(res_links_eligible.bus1, axis=1)
+                    .T.groupby(res_links_eligible.bus1, axis=1, sort=True)
                     .apply(join_exprs)
                 )
                 .reindex(res_generation.index)
@@ -678,7 +678,7 @@ def add_RPS_constraints(network, config_file):
                         ces_generators_eligible.index].T
                 )
             )
-            .T.groupby(ces_generators_eligible.bus, axis=1)
+            .T.groupby(ces_generators_eligible.bus, axis=1, sort=True)
             .apply(join_exprs)
         )
 
@@ -691,7 +691,7 @@ def add_RPS_constraints(network, config_file):
                         get_var(n, "Link", "p")[conventional_links_eligible.index].T
                     )
                 )
-                .T.groupby(conventional_links_eligible.bus1, axis=1)
+                .T.groupby(conventional_links_eligible.bus1, axis=1, sort=True)
                 .apply(join_exprs)
             )
             .reindex(res_generation.index)
@@ -704,9 +704,9 @@ def add_RPS_constraints(network, config_file):
 
         # group buses
         if state != "US":
-            lhs_grouped = lhs.groupby(n.buses.state).sum()
+            lhs_grouped = lhs.groupby(n.buses.state, axis=1, sort=True).sum()
         else:
-            lhs_grouped = lhs.groupby(n.buses.country).sum()
+            lhs_grouped = lhs.groupby(n.buses.country, axis=1, sort=True).sum()
 
         define_constraints(
             n, lhs_grouped, ">=", 0, f"{constraints_type}_{state}", "rps_limit")
@@ -929,11 +929,11 @@ def add_EQ_constraints(n, o, scaling=1e-1):
         sgrouper = n.storage_units.bus
     load = (
         n.snapshot_weightings.generators
-        @ n.loads_t.p_set.groupby(lgrouper, axis=1).sum()
+        @ n.loads_t.p_set.groupby(lgrouper, axis=1, sort=True).sum()
     )
     inflow = (
         n.snapshot_weightings.stores
-        @ n.storage_units_t.inflow.groupby(sgrouper, axis=1).sum()
+        @ n.storage_units_t.inflow.groupby(sgrouper, axis=1, sort=True).sum()
     )
     inflow = inflow.reindex(load.index).fillna(0.0)
     rhs = scaling * (level * load - inflow)
@@ -942,7 +942,7 @@ def add_EQ_constraints(n, o, scaling=1e-1):
             (n.snapshot_weightings.generators *
              scaling, get_var(n, "Generator", "p").T)
         )
-        .T.groupby(ggrouper, axis=1)
+        .T.groupby(ggrouper, axis=1, sort=True)
         .apply(join_exprs)
     )
     lhs_spill = (
@@ -952,7 +952,7 @@ def add_EQ_constraints(n, o, scaling=1e-1):
                 get_var(n, "StorageUnit", "spill").T,
             )
         )
-        .T.groupby(sgrouper, axis=1)
+        .T.groupby(sgrouper, axis=1, sort=True)
         .apply(join_exprs)
     )
     lhs_spill = lhs_spill.reindex(lhs_gen.index).fillna("")
@@ -1124,7 +1124,7 @@ def add_RES_constraints(n, res_share):
 
     load = (
         n.snapshot_weightings.generators
-        @ n.loads_t.p_set.groupby(lgrouper, axis=1).sum()
+        @ n.loads_t.p_set.groupby(lgrouper, axis=1, sort=True).sum()
     )
 
     rhs = res_share * load
@@ -1152,7 +1152,7 @@ def add_RES_constraints(n, res_share):
             (n.snapshot_weightings.generators,
              get_var(n, "Generator", "p")[gens_i].T)
         )
-        .T.groupby(ggrouper, axis=1)
+        .T.groupby(ggrouper, axis=1, sort=True)
         .apply(join_exprs)
     )
 
@@ -1165,7 +1165,7 @@ def add_RES_constraints(n, res_share):
                     get_var(n, "StorageUnit", "p_dispatch")[stores_i].T,
                 )
             )
-            .T.groupby(sgrouper, axis=1)
+            .T.groupby(sgrouper, axis=1, sort=True)
             .apply(join_exprs)
         )
         .reindex(lhs_gen.index)
@@ -1180,7 +1180,7 @@ def add_RES_constraints(n, res_share):
                     get_var(n, "StorageUnit", "p_store")[stores_i].T,
                 )
             )
-            .T.groupby(sgrouper, axis=1)
+            .T.groupby(sgrouper, axis=1, sort=True)
             .apply(join_exprs)
         )
         .reindex(lhs_gen.index)
@@ -1198,7 +1198,7 @@ def add_RES_constraints(n, res_share):
                     get_var(n, "Link", "p")[charger_i].T,
                 )
             )
-            .T.groupby(cgrouper, axis=1)
+            .T.groupby(cgrouper, axis=1, sort=True)
             .apply(join_exprs)
         )
         .reindex(lhs_gen.index)
@@ -1215,7 +1215,7 @@ def add_RES_constraints(n, res_share):
                     get_var(n, "Link", "p")[discharger_i],
                 )
             )
-            .groupby(cgrouper, axis=1)
+            .groupby(cgrouper, axis=1, sort=True)
             .apply(join_exprs)
         )
         .reindex(lhs_gen.index)

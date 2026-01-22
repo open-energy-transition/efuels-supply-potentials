@@ -716,7 +716,7 @@ def add_RPS_constraints(network, config_file):
                     ].T,
                 )
             )
-            .T.groupby(res_storages_eligible.bus, axis=1)
+            .T.groupby(res_storages_eligible.bus, axis=1, sort=True)
             .apply(join_exprs)
         )
 
@@ -761,7 +761,7 @@ def add_RPS_constraints(network, config_file):
                     get_var(n, "Generator", "p")[ces_generators_eligible.index].T,
                 )
             )
-            .T.groupby(ces_generators_eligible.bus, axis=1)
+            .T.groupby(ces_generators_eligible.bus, axis=1, sort=True)
             .apply(join_exprs)
         )
 
@@ -781,7 +781,7 @@ def add_RPS_constraints(network, config_file):
                         get_var(n, "Link", "p")[conventional_links_eligible.index].T,
                     )
                 )
-                .T.groupby(conventional_links_eligible.bus1, axis=1)
+                .T.groupby(conventional_links_eligible.bus1, axis=1, sort=True)
                 .apply(join_exprs)
             )
             .reindex(res_generation.index)
@@ -1063,11 +1063,11 @@ def add_EQ_constraints(n, o, scaling=1e-1):
         sgrouper = n.storage_units.bus
     load = (
         n.snapshot_weightings.generators
-        @ n.loads_t.p_set.groupby(lgrouper, axis=1).sum()
+        @ n.loads_t.p_set.groupby(lgrouper, axis=1, sort=True).sum()
     )
     inflow = (
         n.snapshot_weightings.stores
-        @ n.storage_units_t.inflow.groupby(sgrouper, axis=1).sum()
+        @ n.storage_units_t.inflow.groupby(sgrouper, axis=1, sort=True).sum()
     )
     inflow = inflow.reindex(load.index).fillna(0.0)
     rhs = scaling * (level * load - inflow)
@@ -1085,7 +1085,7 @@ def add_EQ_constraints(n, o, scaling=1e-1):
                 get_var(n, "StorageUnit", "spill").T,
             )
         )
-        .T.groupby(sgrouper, axis=1)
+        .T.groupby(sgrouper, axis=1, sort=True)
         .apply(join_exprs)
     )
     lhs_spill = lhs_spill.reindex(lhs_gen.index).fillna("")
@@ -1258,7 +1258,7 @@ def add_RES_constraints(n, res_share):
 
     load = (
         n.snapshot_weightings.generators
-        @ n.loads_t.p_set.groupby(lgrouper, axis=1).sum()
+        @ n.loads_t.p_set.groupby(lgrouper, axis=1, sort=True).sum()
     )
 
     rhs = res_share * load
@@ -1285,7 +1285,7 @@ def add_RES_constraints(n, res_share):
         linexpr(
             (n.snapshot_weightings.generators, get_var(n, "Generator", "p")[gens_i].T)
         )
-        .T.groupby(ggrouper, axis=1)
+        .T.groupby(ggrouper, axis=1, sort=True)
         .apply(join_exprs)
     )
 
@@ -1298,7 +1298,7 @@ def add_RES_constraints(n, res_share):
                     get_var(n, "StorageUnit", "p_dispatch")[stores_i].T,
                 )
             )
-            .T.groupby(sgrouper, axis=1)
+            .T.groupby(sgrouper, axis=1, sort=True)
             .apply(join_exprs)
         )
         .reindex(lhs_gen.index)
@@ -1313,7 +1313,7 @@ def add_RES_constraints(n, res_share):
                     get_var(n, "StorageUnit", "p_store")[stores_i].T,
                 )
             )
-            .T.groupby(sgrouper, axis=1)
+            .T.groupby(sgrouper, axis=1, sort=True)
             .apply(join_exprs)
         )
         .reindex(lhs_gen.index)
@@ -1331,7 +1331,7 @@ def add_RES_constraints(n, res_share):
                     get_var(n, "Link", "p")[charger_i].T,
                 )
             )
-            .T.groupby(cgrouper, axis=1)
+            .T.groupby(cgrouper, axis=1, sort=True)
             .apply(join_exprs)
         )
         .reindex(lhs_gen.index)
@@ -1348,7 +1348,7 @@ def add_RES_constraints(n, res_share):
                     get_var(n, "Link", "p")[discharger_i],
                 )
             )
-            .groupby(cgrouper, axis=1)
+            .groupby(cgrouper, axis=1, sort=True)
             .apply(join_exprs)
         )
         .reindex(lhs_gen.index)
@@ -1621,7 +1621,7 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
     )
     el_region = n.buses.loc[n.links.loc[electrolyzers, "bus0"], region_col].values
 
-    regions = pd.Index(pd.unique(el_region))
+    regions = pd.Index(pd.unique(el_region)).sort_values()
 
     # REGIONAL TEMPORAL MATCHING CARRIERS CALCULATION
     if not additionality:
@@ -1957,12 +1957,30 @@ def add_lossy_bidirectional_link_constraints(n: pypsa.components.Network) -> Non
     if len(subset_forward) != len(subset_backward):
         raise ValueError("Mismatch between forward and backward links.")
 
-    # define the lefthand side of the constrain p_nom (forward) - p_nom (backward) = 0
+    # define the left-hand side of the constraint p_nom (forward) - p_nom (backward) = 0
     # this ensures that the forward links always have the same maximum nominal power as their backward counterpart
+    links_p_nom = get_var(n, "Link", "p_nom")
+
+    subset_forward = forward_i.intersection(links_p_nom.index)
+    subset_backward = get_backward_i(subset_forward)
+
+    # safety check
+    missing = subset_backward.difference(links_p_nom.index)
+    if len(missing):
+        raise ValueError(
+            f"Missing backward links for bidirectional constraint: {missing.tolist()}"
+        )
+
+    # enforce identical ordering
+    subset_forward = subset_forward.sort_values()
+    subset_backward = get_backward_i(subset_forward)
+
     lhs = linexpr(
-        (1, get_var(n, "Link", "p_nom")[backward_i].to_numpy()),
-        (-1, get_var(n, "Link", "p_nom")[forward_i].to_numpy()),
+        (1, links_p_nom.loc[subset_backward].to_numpy()),
+        (-1, links_p_nom.loc[subset_forward].to_numpy()),
     )
+
+    define_constraints(n, lhs, "=", 0, "Link-bidirectional_sync")
 
     # add the constraint to the PySPA model
     define_constraints(n, lhs, "=", 0, "Link-bidirectional_sync")

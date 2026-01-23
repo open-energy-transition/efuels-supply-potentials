@@ -702,6 +702,8 @@ def add_RPS_constraints(network, config_file):
             res_link_dispatch_with_coefficient + ces_generation_with_target + \
             conventional_generation_with_target
 
+        lhs = lhs if isinstance(lhs, pd.DataFrame) else lhs.to_frame()
+
         # group buses
         if state != "US":
             lhs_grouped = lhs.groupby(n.buses.state, axis=1, sort=True).sum()
@@ -957,6 +959,7 @@ def add_EQ_constraints(n, o, scaling=1e-1):
     )
     lhs_spill = lhs_spill.reindex(lhs_gen.index).fillna("")
     lhs = lhs_gen + lhs_spill
+    lhs = lhs if isinstance(lhs, pd.DataFrame) else lhs.to_frame()
     define_constraints(n, lhs, ">=", rhs, "equity", "min")
 
 
@@ -1225,6 +1228,8 @@ def add_RES_constraints(n, res_share):
     # signs of resp. terms are coded in the linexpr.
     # todo: for links (lhs_charge and lhs_discharge), account for snapshot weightings
     lhs = lhs_gen + lhs_dispatch + lhs_store + lhs_charge + lhs_discharge
+
+    lhs = lhs if isinstance(lhs, pd.DataFrame) else lhs.to_frame()
 
     define_constraints(n, lhs, "=", rhs, "RES share")
 

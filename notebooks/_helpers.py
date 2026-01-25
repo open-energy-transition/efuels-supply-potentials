@@ -10595,6 +10595,7 @@ def plot_marginal_h2_price_maps_by_grid_region(
     demand_charge_rate=9.0,
     baseload_percentages=None,
     year_title=True,
+    return_dataframe=True,
 ):
     """
     Plot weighted average marginal hydrogen price by grid region (USD/kg H2),
@@ -10604,6 +10605,13 @@ def plot_marginal_h2_price_maps_by_grid_region(
         Marginal H2 price
       + Transmission fees
       + Baseload charges
+      
+    Returns:
+    --------
+    pd.DataFrame with MultiIndex columns:
+        - Level 0: Scenario name (from networks.keys())
+        - Level 1: ["Marginal H2 price (USD/kg H2)", "H2 output (MWh)", "Year"]
+        Index: grid_region
     """
 
     # -----------------------------
@@ -10642,6 +10650,7 @@ def plot_marginal_h2_price_maps_by_grid_region(
         )
 
     all_results = []
+    scenario_data = {}  # For MultiIndex DataFrame
 
     # -----------------------------
     # Loop over networks
@@ -10754,7 +10763,7 @@ def plot_marginal_h2_price_maps_by_grid_region(
 
     if not all_results:
         print("No valid data.")
-        return
+        return None
 
     # -----------------------------
     # Aggregate by region
@@ -10767,7 +10776,8 @@ def plot_marginal_h2_price_maps_by_grid_region(
             "weighted_price": (
                 g["Marginal H2 price incl. Transmission + Baseload"]
                 * g["h2_out"]
-            ).sum() / g["h2_out"].sum()
+            ).sum() / g["h2_out"].sum(),
+            "total_h2_output": g["h2_out"].sum(),
         }))
         .reset_index()
     )
@@ -10809,6 +10819,55 @@ def plot_marginal_h2_price_maps_by_grid_region(
         )
 
         showfig()
+    
+    # -----------------------------
+    # Build MultiIndex DataFrame
+    # -----------------------------
+    if return_dataframe:
+        # Pivot to get scenarios as columns
+        result_dfs = {}
+        
+        for year_key in networks.keys():
+            # Extract year
+            match = re.search(r"\d{4}", str(year_key))
+            if not match:
+                continue
+            scen_year = int(match.group())
+            if scen_year == 2023:
+                continue
+                
+            key = scen_year if year_title else year_key
+            
+            # Filter data for this scenario
+            scenario_data_subset = region_price[region_price["year"] == key]
+            
+            if scenario_data_subset.empty:
+                continue
+            
+            # Create DataFrame for this scenario
+            scenario_df = scenario_data_subset.set_index("grid_region")[[
+                "weighted_price", "total_h2_output"
+            ]].copy()
+            # scenario_df["year"] = key
+            
+            # Rename columns for clarity
+            scenario_df.columns = [
+                "Marginal H2 price (USD/kg H2)", 
+                "H2 output (MWh)", 
+                # "Year"
+            ]
+            
+            result_dfs[year_key] = scenario_df
+        
+        if result_dfs:
+            # Create MultiIndex DataFrame
+            final_df = pd.concat(result_dfs, axis=1)
+            final_df.index.name = "grid_region"
+            return final_df
+        else:
+            return None
+    
+    return None
 
 # Regional Dispatch Plot for Mid-Atlantic
 def plot_regional_dispatch(network, tech_colors, nice_names, region="Mid-Atlantic", year_str=None):

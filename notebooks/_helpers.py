@@ -10809,3 +10809,221 @@ def plot_marginal_h2_price_maps_by_grid_region(
         )
 
         showfig()
+
+# Regional Dispatch Plot for Mid-Atlantic
+def plot_regional_dispatch(network, tech_colors, nice_names, region="Mid-Atlantic", year_str=None):
+    """
+    Plot electricity dispatch for Mid-Atlantic region with total demand and data center demand.
+    
+    Parameters:
+    -----------
+    network : pypsa.Network
+        PyPSA network object
+    tech_colors : dict
+        Technology color mapping from plotting.yaml
+    nice_names : dict
+        Technology name mapping from plotting.yaml
+    year_str : str, optional
+        Year for title (if None, extracted from network)
+    """
+    
+    # Filter for Mid-Atlantic region buses
+    mid_atlantic_buses = network.buses[network.buses.grid_region == region].index
+    
+    if len(mid_atlantic_buses) == 0:
+        print("No buses found in Mid-Atlantic region")
+        return
+    
+    # Calculate dispatch for Mid-Atlantic region
+    gen_and_sto_carriers = {
+        'csp', 'solar', 'onwind', 'offwind-dc', 'offwind-ac',
+        'nuclear', 'geothermal', 'ror', 'hydro', 'solar rooftop',
+    }
+    link_carriers = ['coal', 'oil', 'OCGT', 'CCGT',
+                     'biomass', "biomass CHP", "gas CHP"]
+    
+    # Generators in Mid-Atlantic
+    gen = network.generators[network.generators.bus.isin(mid_atlantic_buses) & 
+                            network.generators.carrier.isin(gen_and_sto_carriers)]
+    gen_p = network.generators_t.p[gen.index].clip(lower=0)
+    gen_dispatch = gen_p.groupby(gen['carrier'], axis=1).sum()
+    
+    # Storage units in Mid-Atlantic
+    sto = network.storage_units[network.storage_units.bus.isin(mid_atlantic_buses) & 
+                                network.storage_units.carrier.isin(gen_and_sto_carriers)]
+    sto_p = network.storage_units_t.p[sto.index].clip(lower=0)
+    sto_dispatch = sto_p.groupby(sto['carrier'], axis=1).sum()
+    
+    # Links in Mid-Atlantic
+    link_frames = []
+    for carrier in link_carriers:
+        links = network.links[(network.links.carrier == carrier) &
+                             (network.links.bus1.isin(mid_atlantic_buses))]
+        if links.empty:
+            continue
+        p1 = network.links_t.p1[links.index].clip(upper=0)
+        p1_positive = -p1
+        df = p1_positive.groupby(links['carrier'], axis=1).sum()
+        link_frames.append(df)
+    
+    # Battery in Mid-Atlantic
+    battery_links = network.links[(network.links.carrier == "battery discharger") &
+                                 (network.links.bus1.isin(mid_atlantic_buses))]
+    if not battery_links.empty:
+        p1 = network.links_t.p1[battery_links.index].clip(upper=0)
+        battery_dispatch = -p1.groupby(battery_links['carrier'], axis=1).sum()
+        battery_dispatch.columns = ["battery discharger"]
+        link_frames.append(battery_dispatch)
+    
+    link_dispatch = pd.concat(link_frames, axis=1) if link_frames else pd.DataFrame(index=network.snapshots)
+    
+    # Combine all generation
+    supply_gw = pd.concat([gen_dispatch, sto_dispatch, link_dispatch], axis=1)
+    supply_gw = supply_gw.groupby(supply_gw.columns, axis=1).sum().clip(lower=0) / 1000  # Convert to GW
+    
+    # Calculate total demand for Mid-Atlantic
+    mid_atlantic_loads = network.loads[network.loads.bus.isin(mid_atlantic_buses)]
+    
+    # AC loads
+    ac_loads = mid_atlantic_loads[mid_atlantic_loads.carrier == "AC"]
+    ac_demand = network.loads_t.p_set[ac_loads.index.intersection(network.loads_t.p_set.columns)].sum(axis=1)
+    
+    # Services and EVs
+    serv_idx = [i for i in mid_atlantic_loads[mid_atlantic_loads.carrier == "services electricity"].index
+                if i in network.loads_t.p_set.columns]
+    ev_idx = [i for i in mid_atlantic_loads[mid_atlantic_loads.carrier == "land transport EV"].index
+              if i in network.loads_t.p_set.columns]
+    other_idx = [i for i in mid_atlantic_loads[mid_atlantic_loads.carrier == "other electricity"].index
+                 if i in network.loads_t.p_set.columns]
+    
+    serv_demand = network.loads_t.p_set[serv_idx].sum(axis=1) if serv_idx else 0
+    ev_demand = network.loads_t.p_set[ev_idx].sum(axis=1) if ev_idx else 0
+    other_demand = network.loads_t.p_set[other_idx].sum(axis=1) if other_idx else 0
+    
+    # Data center demand
+    dc_loads = mid_atlantic_loads[mid_atlantic_loads.carrier == "data center"]
+    data_center_demand = dc_loads.p_set.sum()  # Constant profile
+    dc_profile = pd.Series(data_center_demand, index=network.snapshots)
+    
+    # Static loads
+    static_load_carriers = ["rail transport electricity", "agriculture electricity", "industry electricity"]
+    static_loads = mid_atlantic_loads[mid_atlantic_loads.carrier.isin(static_load_carriers)]
+    static_demand = static_loads.p_set.sum()
+    static_profile = pd.Series(static_demand, index=network.snapshots)
+    
+    # Industrial AC links
+    target_processes = [
+        "SMR CC", "Haber-Bosch", "ethanol from starch", "ethanol from starch CC",
+        "DRI", "DRI CC", "DRI H2", "BF-BOF", "BF-BOF CC", "EAF",
+        "dry clinker", "cement finishing", "dry clinker CC"
+    ]
+    process_links = network.links[network.links.carrier.isin(target_processes)]
+    ac_input_links = process_links[process_links.bus0.isin(mid_atlantic_buses)].index
+    ind_ac_demand = network.links_t.p0[ac_input_links].sum(axis=1) if len(ac_input_links) > 0 else 0
+    
+    # Total demand (convert to GW)
+    total_demand = (ac_demand + serv_demand + ev_demand + other_demand + 
+                   dc_profile + static_profile + abs(ind_ac_demand)) / 1000
+    data_center_demand_gw = dc_profile / 1000
+    
+    # Resample to daily averages
+    supply_gw.index = pd.to_datetime(supply_gw.index)
+    total_demand.index = pd.to_datetime(total_demand.index)
+    data_center_demand_gw.index = pd.to_datetime(data_center_demand_gw.index)
+    
+    supply_daily = supply_gw.resample('24H').mean()
+    demand_daily = total_demand.resample('24H').mean()
+    dc_demand_daily = data_center_demand_gw.resample('24H').mean()
+    
+    # Define technology order
+    ordered_columns = [
+        'nuclear', 'coal', 'biomass', 'CCGT', 'OCGT', 'oil',
+        'hydro', 'ror', 'geothermal', 'gas CHP', 'biomass CHP',
+        'solar', 'solar rooftop', 'csp', 'onwind', 'offwind-ac', 'offwind-dc',
+        'battery discharger'
+    ]
+    
+    # Filter and order columns
+    supply_daily = supply_daily[[c for c in ordered_columns if c in supply_daily.columns]]
+    
+    # Create plot
+    fig, ax = plt.subplots(figsize=(22, 6))
+    
+    # Stacked area for generation
+    supply_daily.plot.area(
+        ax=ax,
+        stacked=True,
+        linewidth=0,
+        color=[tech_colors.get(c, 'gray') for c in supply_daily.columns],
+        legend=False
+    )
+    
+    # Plot total demand line
+    demand_daily.plot(
+        ax=ax,
+        color='red',
+        linewidth=2.5,
+        linestyle='-',
+        label='Total Demand',
+        alpha=0.9
+    )
+    
+    # Plot data center demand line
+    dc_demand_daily.plot(
+        ax=ax,
+        color='purple',
+        linewidth=2,
+        linestyle='--',
+        label='Data Center Demand',
+        alpha=0.8
+    )
+    
+    # Add horizontal line at zero
+    ax.axhline(y=0, color='black', linewidth=1.5, linestyle='-', alpha=0.8)
+    
+    # Set title
+    if year_str is None:
+        year_match = re.search(r'\d{4}', str(network))
+        year_str = year_match.group() if year_match else "Unknown Year"
+    
+    ax.set_title(f"Mid-Atlantic Electricity Dispatch & Demand – {year_str}", fontsize=14)
+    ax.set_ylabel("Power (GW)", fontsize=12)
+    ax.set_ylim(0, max(supply_daily.sum(axis=1).max(), demand_daily.max()) * 1.05)
+    ax.grid(True, alpha=0.3)
+    
+    # Set x-axis formatting
+    start = supply_daily.index.min().replace(day=1)
+    end = supply_daily.index.max()
+    month_starts = pd.date_range(start=start, end=end, freq='MS')
+    
+    ax.set_xlim(start, end)
+    ax.set_xticks(month_starts)
+    ax.set_xticklabels(month_starts.strftime('%b'))
+    ax.tick_params(axis='x', which='both', labelbottom=True)
+    ax.set_xlabel("Time (months)", fontsize=12)
+    
+    # Create legend
+    handles, labels = ax.get_legend_handles_labels()
+    sums = supply_daily.sum()
+    
+    # Filter out zero generation technologies but keep demand lines
+    filtered = [(h, l) for h, l in zip(handles, labels)
+                if sums.get(l, 0) > 0 or l in ['Total Demand', 'Data Center Demand']]
+    
+    if filtered:
+        handles, labels = zip(*filtered)
+        pretty_labels = [nice_names.get(label, label) if label not in ['Total Demand', 'Data Center Demand']
+                        else label for label in labels]
+        
+        ax.legend(
+            handles, pretty_labels,
+            loc='center left',
+            bbox_to_anchor=(1.02, 0.5),
+            title='Technology',
+            fontsize=11,
+            title_fontsize=12
+        )
+    
+    plt.tight_layout(rect=[0, 0.05, 0.85, 1])
+    showfig()
+

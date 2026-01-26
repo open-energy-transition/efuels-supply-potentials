@@ -27,21 +27,32 @@ parser.add_argument(
     default=[2030, 2035, 2040],
     help="Planning horizons to run",
 )
+parser.add_argument(
+    "--mode",
+    type=str,
+    choices=["all", "each"],
+    default="each",
+    help="Execution mode: 'all' runs all years together in one notebook execution, 'each' runs each year separately",
+)
 
 args = parser.parse_args()
 
 SCENARIO_IDS = [f"{i:02d}" for i in args.scenario_id]
 RESOLUTION = args.resolution
-YEARS = args.years
+YEARS = [str(year) for year in args.years]
+MODE = args.mode
 
 INPUT_NOTEBOOK = "multiple_scenario_analysis.ipynb"
 
-for year in YEARS:
-    output_nb = f"multiple_scenario_analysis_{year}_{RESOLUTION}.ipynb"
+if MODE == "all":
+    # Run once with all years as a list
+    output_nb = f"multiple_scenario_analysis_{RESOLUTION}_{'_'.join(YEARS)}.ipynb"
 
     print(
         f"[run] multiple scenarios {', '.join(SCENARIO_IDS)} "
-        f"| year={year} | resolution={RESOLUTION}"
+        f"years={', '.join(YEARS)} "
+        f"resolution={RESOLUTION} "
+        f"mode=all"
     )
 
     pm.execute_notebook(
@@ -50,7 +61,27 @@ for year in YEARS:
         parameters={
             "SCENARIO_IDS": SCENARIO_IDS,
             "RESOLUTION": RESOLUTION,
-            "YEAR": year,
+            "YEARS": YEARS,
         },
     )
+else:  # MODE == "each"
+    # Run separately for each year
+    for year in YEARS:
+        output_nb = f"multiple_scenario_analysis_{RESOLUTION}_{year}.ipynb"
 
+        print(
+            f"[run] multiple scenarios {', '.join(SCENARIO_IDS)} "
+            f"year={year} "
+            f"resolution={RESOLUTION} "
+            f"mode=each"
+        )
+
+        pm.execute_notebook(
+            input_path=INPUT_NOTEBOOK,
+            output_path=output_nb,
+            parameters={
+                "SCENARIO_IDS": SCENARIO_IDS,
+                "RESOLUTION": RESOLUTION,
+                "YEARS": [year],
+            },
+        )

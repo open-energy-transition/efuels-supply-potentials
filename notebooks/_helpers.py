@@ -11086,3 +11086,213 @@ def plot_regional_dispatch(network, tech_colors, nice_names, region="Mid-Atlanti
     plt.tight_layout(rect=[0, 0.05, 0.85, 1])
     showfig()
 
+def compute_marginal_CO2_price_by_region(
+    networks: dict,
+    regional_fees: pd.DataFrame,
+    emm_mapping: dict,
+    ft_carrier: str = "Fischer-Tropsch",
+    year_title: bool = True,
+    co2_use_threshold_mt: float = 1e-3,
+    elec_use_threshold_mwh: float = 1e-3,
+    verbose: bool = True,
+):
+    """
+    Marginal CO2 price for FT, by grid region, incl. T&D fees.
+
+    - CO2 marginal price: dual of the CO2 bus feeding Fischer-Tropsch,
+      averaged over time weighted by CO2 used (t).
+    - T&D add-on: (Transmission + Distribution) [USD/MWh] * electricity_rate_capture [MWh/tCO2]
+      where electricity_rate_capture is computed from capture techs (DAC/CCS).
+
+    Output units: USD/tCO2.
+    """
+
+    results = {}
+
+    cc_carriers = {
+        "ethanol from starch CC",
+        "SMR CC",
+        "DRI CC",
+        "BF-BOF CC",
+        "dry clinker CC",
+        "DAC",
+    }
+
+    for name, net in networks.items():
+        scen_year = int(re.search(r"\d{4}", str(name)).group())
+
+        dt_h = (
+            (net.snapshots[1] - net.snapshots[0]).total_seconds() / 3600.0
+            if len(net.snapshots) > 1 else 1.0
+        )
+
+        # Electricity rate of CO2 capture by Grid Region
+        # rate_r = sum(MWh_el_capture) / sum(tCO2_captured)
+        rate_rows = []
+
+        ccs = net.links[net.links.carrier.isin(cc_carriers)]
+        for link in ccs.index:
+            carrier = str(ccs.at[link, "carrier"]).upper()
+            captured_t = 0.0
+            elec_mwh = 0.0
+
+            for j in range(8):
+                pcol = f"p{j}"
+                if pcol not in net.links_t or link not in net.links_t[pcol]:
+                    continue
+
+                series = net.links_t[pcol][link]
+                bus = net.links.at[link, f"bus{j}"]
+
+                # CO2 captured (same sign convention as your LCOC)
+                if isinstance(bus, str) and "co2" in bus.lower():
+                    flow = series.sum()
+                    if flow < 0:
+                        captured_t += -flow * dt_h
+                    continue
+
+                # electricity consumption on AC buses (same DAC vs CCS logic as your LCOC)
+                if bus in net.buses.index and str(net.buses.at[bus, "carrier"]) == "AC":
+                    if "DAC" in carrier:
+                        cons = (-series).clip(lower=0).sum() * dt_h
+                    else:
+                        cons = (series).clip(lower=0).sum() * dt_h
+                    elec_mwh += cons
+
+            if captured_t <= 0:
+                continue
+
+            # per-link electricity threshold (LIKE LCOC)
+            if elec_mwh <= elec_use_threshold_mwh:
+                continue
+
+            try:
+                region = net.buses.at[ccs.at[link, "bus0"], "grid_region"]
+            except KeyError:
+                continue
+
+            rate_rows.append({
+                "Grid Region": region,
+                "Captured CO2 (t)": captured_t,
+                "Electricity (MWh)": elec_mwh,
+            })
+
+        if rate_rows:
+            df_rate = pd.DataFrame(rate_rows)
+            elec_rate_by_region = (
+                df_rate.groupby("Grid Region")
+                       .apply(lambda x: x["Electricity (MWh)"].sum() / x["Captured CO2 (t)"].sum())
+            )
+        else:
+            elec_rate_by_region = pd.Series(dtype=float)
+
+        # Marginal CO2 price at FT bus by Grid Region
+        rows = []
+
+        ft_links = net.links[net.links.carrier == ft_carrier].index
+        if len(ft_links) == 0:
+            # fallback: case-insensitive contains, but keep it deterministic
+            ft_links = net.links[net.links.carrier.str.contains("Fischer", case=False)].index
+
+        for ft in ft_links:
+            # find which bus_i is CO2
+            co2_bus = None
+            co2_i = None
+            for i in range(8):
+                bus = net.links.at[ft, f"bus{i}"]
+                if isinstance(bus, str) and "co2" in bus.lower():
+                    co2_bus = bus
+                    co2_i = i
+                    break
+            if co2_bus is None:
+                continue
+
+            mu = net.buses_t.marginal_price[co2_bus]  # USD/tCO2 (PyPSA convention)
+            eff = abs(float(net.links.at[ft, f"efficiency{co2_i}"]))
+            p = net.links_t[f"p{co2_i}"][ft]
+
+            # CO2 used (t)
+            co2_used_t = eff * p * dt_h
+            mask = co2_used_t > 0
+            if not mask.any():
+                continue
+
+            try:
+                region = net.buses.at[net.links.at[ft, "bus0"], "grid_region"]
+            except KeyError:
+                continue
+
+            rows.append(pd.DataFrame({
+                "Grid Region": region,
+                "CO2 used (t)": co2_used_t[mask],
+                "Marginal CO2 price (USD/tCO2)": mu[mask],
+            }))
+
+        if not rows:
+            continue
+
+        df = pd.concat(rows)
+
+        g = (
+            df.groupby("Grid Region")
+              .apply(lambda x: pd.Series({
+                  "CO2 used (Mt)": x["CO2 used (t)"].sum() / 1e6,
+                  "Marginal CO2 price (USD/tCO2)": (
+                      (x["Marginal CO2 price (USD/tCO2)"] * x["CO2 used (t)"]).sum()
+                      / x["CO2 used (t)"].sum()
+                  ),
+              }))
+              .reset_index()
+        )
+
+        g = g[g["CO2 used (Mt)"] > co2_use_threshold_mt]
+        if g.empty:
+            continue
+
+        # Add T&D fees
+        fee_map = regional_fees.loc[
+            regional_fees["Year"] == scen_year,
+            ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"]
+        ].set_index("region")
+
+        g["Transmission fee (USD/MWh)"] = g["Grid Region"].map(
+            lambda r: fee_map.loc[emm_mapping[r], "Transmission nom USD/MWh"]
+        )
+        g["Distribution fee (USD/MWh)"] = g["Grid Region"].map(
+            lambda r: fee_map.loc[emm_mapping[r], "Distribution nom USD/MWh"]
+        )
+
+        g["Electricity rate (MWh el / tCO2)"] = g["Grid Region"].map(elec_rate_by_region)
+
+        g["Transmission cost (USD/tCO2)"] = g["Transmission fee (USD/MWh)"] * g["Electricity rate (MWh el / tCO2)"]
+        g["Distribution cost (USD/tCO2)"] = g["Distribution fee (USD/MWh)"] * g["Electricity rate (MWh el / tCO2)"]
+
+        g["Marginal CO2 price incl. T&D (USD/tCO2)"] = (
+            g["Marginal CO2 price (USD/tCO2)"]
+            + g["Transmission cost (USD/tCO2)"]
+            + g["Distribution cost (USD/tCO2)"]
+        )
+
+        results[scen_year if year_title else str(name)] = g
+
+        if verbose:
+            valid = g["Marginal CO2 price incl. T&D (USD/tCO2)"].notna()
+            if valid.any():
+                wavg = (
+                    g.loc[valid, "Marginal CO2 price incl. T&D (USD/tCO2)"]
+                    * g.loc[valid, "CO2 used (Mt)"]
+                ).sum() / g.loc[valid, "CO2 used (Mt)"].sum()
+                wavg_str = f"{wavg:.2f} USD/tCO2"
+            else:
+                wavg_str = "n/a"
+
+            title = scen_year if year_title else str(name)
+            print(f"\nYear: {title}")
+            print(f"Total CO2 used by FT: {g['CO2 used (Mt)'].sum():.2f} Mt")
+            print(f"Weighted average marginal CO2 price incl. T&D: {wavg_str}\n")
+
+            numeric_cols = g.select_dtypes(include="number").columns
+            fmt = {col: "{:.2f}" for col in numeric_cols}
+            display(g.style.format(fmt).hide(axis="index"))
+
+    return results

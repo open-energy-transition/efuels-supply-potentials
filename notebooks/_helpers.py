@@ -6068,6 +6068,7 @@ def compute_LCO_ekerosene_by_region(
     lcoe_by_region=None,                  # Series or dict
     lcoh_by_region: dict = None,          # required if hydrogen_price in {"lcoh", "marginal"} for fees
     lcoc_by_region: dict = None,          # required if co2_price="lcoc"
+    marginal_co2_by_region: dict = None,  # required if co2_price="marginal"
     verbose=True,
 ):
     """
@@ -6250,11 +6251,19 @@ def compute_LCO_ekerosene_by_region(
 
             # --- CO2 price ---
             if co2_price == "marginal":
-                p_co2 = net.buses_t.marginal_price[ft.at[link, "bus2"]]
-                avg_p_co2 = (
-                    (co2_cons * p_co2).sum() / co2_cons.sum()
-                    if co2_cons.sum() > 0 else 0.0
-                )
+                if not marginal_co2_by_region:
+                    avg_p_co2 = 0.0
+                else:
+                    y = get_year(marginal_co2_by_region, scen_year)
+                    df_co2 = marginal_co2_by_region[y].set_index("Grid Region")
+            
+                    if region in df_co2.index:
+                        avg_p_co2 = df_co2.at[
+                            region,
+                            "Marginal CO2 price incl. T&D (USD/tCO2)"
+                        ]
+                    else:
+                        avg_p_co2 = 0.0
             elif co2_price == "lcoc":
                 if not lcoc_by_region or scen_year == 2023:
                     avg_p_co2 = 0.0
@@ -11144,14 +11153,14 @@ def compute_marginal_CO2_price_by_region(
                 series = net.links_t[pcol][link]
                 bus = net.links.at[link, f"bus{j}"]
 
-                # CO2 captured (same sign convention as your LCOC)
+                # CO2 captured
                 if isinstance(bus, str) and "co2" in bus.lower():
                     flow = series.sum()
                     if flow < 0:
                         captured_t += -flow * dt_h
                     continue
 
-                # electricity consumption on AC buses (same DAC vs CCS logic as your LCOC)
+                # Electricity consumption on AC buses
                 if bus in net.buses.index and str(net.buses.at[bus, "carrier"]) == "AC":
                     if "DAC" in carrier:
                         cons = (-series).clip(lower=0).sum() * dt_h
@@ -11162,7 +11171,6 @@ def compute_marginal_CO2_price_by_region(
             if captured_t <= 0:
                 continue
 
-            # per-link electricity threshold (LIKE LCOC)
             if elec_mwh <= elec_use_threshold_mwh:
                 continue
 
@@ -11181,7 +11189,8 @@ def compute_marginal_CO2_price_by_region(
             df_rate = pd.DataFrame(rate_rows)
             elec_rate_by_region = (
                 df_rate.groupby("Grid Region")
-                       .apply(lambda x: x["Electricity (MWh)"].sum() / x["Captured CO2 (t)"].sum())
+                       .apply(lambda x: x["Electricity (MWh)"].sum()
+                                      / x["Captured CO2 (t)"].sum())
             )
         else:
             elec_rate_by_region = pd.Series(dtype=float)
@@ -11191,11 +11200,11 @@ def compute_marginal_CO2_price_by_region(
 
         ft_links = net.links[net.links.carrier == ft_carrier].index
         if len(ft_links) == 0:
-            # fallback: case-insensitive contains, but keep it deterministic
-            ft_links = net.links[net.links.carrier.str.contains("Fischer", case=False)].index
+            ft_links = net.links[
+                net.links.carrier.str.contains("Fischer", case=False)
+            ].index
 
         for ft in ft_links:
-            # find which bus_i is CO2
             co2_bus = None
             co2_i = None
             for i in range(8):
@@ -11207,11 +11216,10 @@ def compute_marginal_CO2_price_by_region(
             if co2_bus is None:
                 continue
 
-            mu = net.buses_t.marginal_price[co2_bus]  # USD/tCO2 (PyPSA convention)
+            mu = net.buses_t.marginal_price[co2_bus]
             eff = abs(float(net.links.at[ft, f"efficiency{co2_i}"]))
             p = net.links_t[f"p{co2_i}"][ft]
 
-            # CO2 used (t)
             co2_used_t = eff * p * dt_h
             mask = co2_used_t > 0
             if not mask.any():
@@ -11252,20 +11260,32 @@ def compute_marginal_CO2_price_by_region(
         # Add T&D fees
         fee_map = regional_fees.loc[
             regional_fees["Year"] == scen_year,
-            ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"]
+            ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"],
         ].set_index("region")
 
+        def safe_fee(region, col):
+            try:
+                return fee_map.loc[emm_mapping[region], col]
+            except KeyError:
+                return np.nan
+
         g["Transmission fee (USD/MWh)"] = g["Grid Region"].map(
-            lambda r: fee_map.loc[emm_mapping[r], "Transmission nom USD/MWh"]
+            lambda r: safe_fee(r, "Transmission nom USD/MWh")
         )
         g["Distribution fee (USD/MWh)"] = g["Grid Region"].map(
-            lambda r: fee_map.loc[emm_mapping[r], "Distribution nom USD/MWh"]
+            lambda r: safe_fee(r, "Distribution nom USD/MWh")
         )
 
         g["Electricity rate (MWh el / tCO2)"] = g["Grid Region"].map(elec_rate_by_region)
 
-        g["Transmission cost (USD/tCO2)"] = g["Transmission fee (USD/MWh)"] * g["Electricity rate (MWh el / tCO2)"]
-        g["Distribution cost (USD/tCO2)"] = g["Distribution fee (USD/MWh)"] * g["Electricity rate (MWh el / tCO2)"]
+        g["Transmission cost (USD/tCO2)"] = (
+            g["Transmission fee (USD/MWh)"]
+            * g["Electricity rate (MWh el / tCO2)"]
+        )
+        g["Distribution cost (USD/tCO2)"] = (
+            g["Distribution fee (USD/MWh)"]
+            * g["Electricity rate (MWh el / tCO2)"]
+        )
 
         g["Marginal CO2 price incl. T&D (USD/tCO2)"] = (
             g["Marginal CO2 price (USD/tCO2)"]
@@ -11273,7 +11293,7 @@ def compute_marginal_CO2_price_by_region(
             + g["Distribution cost (USD/tCO2)"]
         )
 
-        results[scen_year if year_title else str(name)] = g
+        results[str(scen_year) if year_title else str(name)] = g
 
         if verbose:
             valid = g["Marginal CO2 price incl. T&D (USD/tCO2)"].notna()

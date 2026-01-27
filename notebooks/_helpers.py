@@ -11218,7 +11218,11 @@ def compute_marginal_CO2_price_by_region(
 
             mu = net.buses_t.marginal_price[co2_bus]
             eff = abs(float(net.links.at[ft, f"efficiency{co2_i}"]))
-            p = net.links_t[f"p{co2_i}"][ft]
+            p_col = f"p{co2_i}"
+            if p_col not in net.links_t or ft not in net.links_t[p_col].columns:
+                continue
+            
+            p = net.links_t[p_col][ft]
 
             co2_used_t = eff * p * dt_h
             mask = co2_used_t > 0

@@ -188,33 +188,71 @@ For reproducible and non-interactive execution, use the CLI wrapper `run_multipl
 
 - scenario selection
 - temporal resolution
+- planning horizon years
+- execution mode (all years together or separately)
 - consistent output notebook naming
 
-Example: run scenarios **1, 2, 5, 6 and 10** at **3-hour resolution**:
+#### Example 1: Run all years together in one notebook
+
+Run scenarios **1, 2, 5, 6 and 10** at **3-hour resolution** for **all years** (2030, 2035, 2040) in a single notebook execution:
 
 ```bash
 python run_multiple_scenario.py \
   --scenario-id 1 2 5 6 10 \
-  --resolution 3H
+  --resolution 3H \
+  --mode all
 ```
 
 This generates a single output notebook:
 
 ```
-multiple_scenario_analysis_3H.ipynb
+multiple_scenario_analysis_3H_2030_2035_2040.ipynb
+```
+
+#### Example 2: Run each year separately
+
+Run the same scenarios but execute each year in a separate notebook:
+
+```bash
+python run_multiple_scenario.py \
+  --scenario-id 1 2 5 6 10 \
+  --resolution 3H \
+  --mode each
+```
+
+This generates one output notebook per year:
+
+```
+multiple_scenario_analysis_3H_2030.ipynb
+multiple_scenario_analysis_3H_2035.ipynb
+multiple_scenario_analysis_3H_2040.ipynb
+```
+
+#### Example 3: Custom year selection
+
+Run scenarios for specific planning horizons only (e.g., 2030 and 2040):
+
+```bash
+python run_multiple_scenario.py \
+  --scenario-id 1 2 5 6 10 \
+  --resolution 3H \
+  --years 2030 2040 \
+  --mode each
 ```
 
 Execution is sequential by design to avoid memory issues.  
-If required networks for a given scenario or resolution are missing, the notebook will fail fast.
+If required networks for a given scenario, year, or resolution are missing, the notebook will fail fast.
 
 ---
 
 ### CLI Parameters
 
-| Parameter        | Description                            | Examples                    |
-|------------------|----------------------------------------|-----------------------------|
-| `--scenario-id`  | Scenario IDs to include (1–10)         | `1 2 5 6 10`                |
-| `--resolution`   | Temporal resolution of solved networks | `1H`, `3H`, `24H`, `196H`   |
+| Parameter        | Required | Description                                                  | Examples                    |
+|------------------|----------|--------------------------------------------------------------|-----------------------------|
+| `--scenario-id`  | Yes      | Scenario IDs to include (1–10)                               | `1 2 5 6 10`                |
+| `--resolution`   | Yes      | Temporal resolution of solved networks                       | `1H`, `3H`, `24H`, `196H`   |
+| `--years`        | No       | Planning horizons to run (default: 2030 2035 2040)          | `2030 2035 2040` or `2040`  |
+| `--mode`         | No       | Execution mode: `all` (single notebook) or `each` (separate notebooks per year), default: `each` | `all` or `each` |
 
 ## Notebook Descriptions
 

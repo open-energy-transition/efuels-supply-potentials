@@ -19,6 +19,10 @@ notebooks/
 ├── multiple_scenario_analysis.ipynb    # Multi-scenario comparison
 ├── validation_base_year.ipynb          # Validate 2023 base year vs EIA / Ember data
 │
+├── run_single_scenario.py              # CLI script to run single scenario analysis
+├── run_multiple_scenario.py            # CLI script to run multi-scenario comparison
+├── run_validation.py                   # CLI script to run base year validation
+│
 ├── data/                               # Spatial and reference data
 │   ├── gadm41_USA_1.json               # US state boundaries (GADM)
 │   ├── needs_grid_regions_aggregated.geojson  # NERC grid region boundaries
@@ -278,6 +282,68 @@ If required networks for a given scenario, year, or resolution are missing, the 
 - EIA installed capacity by state
 - Ember climate data
 - Ensure model accuracy before scenario analysis
+
+---
+
+## Running the Validation Notebook
+
+The `validation_base_year.ipynb` notebook validates the base year (2023) model results against EIA and Ember datasets. It compares electricity demand, generation, and installed capacity to ensure model accuracy.
+
+### Prerequisites
+
+Ensure that:
+- a solved base year PyPSA network exists in `results/base_year/`
+- validation data files exist in `data/validation_data/` (EIA and Ember datasets)
+- the `pypsa-earth` conda environment is activated
+
+---
+
+### Running via CLI (recommended)
+
+The script `run_validation.py` executes the validation notebook with parameterized resolution.
+
+Example: run validation for **3-hour resolution** base year network:
+
+```bash
+python run_validation.py --resolution 3H
+```
+
+This generates an output notebook:
+
+```
+validation_base_year_3H.ipynb
+```
+
+If the required base year network for the specified resolution is missing, the notebook will fail fast.
+
+---
+
+### CLI Parameters
+
+| Parameter      | Required | Description                                    | Examples                  |
+|----------------|----------|------------------------------------------------|---------------------------|
+| `--resolution` | No       | Temporal resolution (default: 3H)              | `1H`, `3H`, `24H`, `196H` |
+
+---
+
+### Interactive use (development only)
+
+The notebook can also be opened interactively for development or debugging:
+
+```bash
+jupyter notebook validation_base_year.ipynb
+```
+
+In this case, the parameter at the top of the notebook is used:
+
+```python
+# Parameters
+RESOLUTION = "3H"
+```
+
+This value is the default for interactive use only and is overridden when running via `run_validation.py`.
+
+---
 
 ## Scenario Structure
 

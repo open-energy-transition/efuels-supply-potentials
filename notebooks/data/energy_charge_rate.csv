@@ -1,0 +1,776 @@
+Year,region,Generation 2021 cents/kWh
+2050,Florida Reliability Coordinating Council,5.117059
+2049,Florida Reliability Coordinating Council,5.12765
+2048,Florida Reliability Coordinating Council,5.112924
+2047,Florida Reliability Coordinating Council,5.162204
+2046,Florida Reliability Coordinating Council,5.196503
+2045,Florida Reliability Coordinating Council,5.252307
+2044,Florida Reliability Coordinating Council,5.319911
+2043,Florida Reliability Coordinating Council,5.399792
+2042,Florida Reliability Coordinating Council,5.4582
+2041,Florida Reliability Coordinating Council,5.597332
+2040,Florida Reliability Coordinating Council,5.739317
+2039,Florida Reliability Coordinating Council,5.797843
+2038,Florida Reliability Coordinating Council,5.863124
+2037,Florida Reliability Coordinating Council,5.9343
+2036,Florida Reliability Coordinating Council,6.043822
+2035,Florida Reliability Coordinating Council,6.124249
+2034,Florida Reliability Coordinating Council,6.167776
+2033,Florida Reliability Coordinating Council,6.161829
+2032,Florida Reliability Coordinating Council,6.12562
+2031,Florida Reliability Coordinating Council,6.092946
+2030,Florida Reliability Coordinating Council,6.123872
+2029,Florida Reliability Coordinating Council,6.148281
+2028,Florida Reliability Coordinating Council,6.046734
+2027,Florida Reliability Coordinating Council,6.054598
+2026,Florida Reliability Coordinating Council,6.077087
+2025,Florida Reliability Coordinating Council,6.180079
+2024,Florida Reliability Coordinating Council,6.445675
+2023,Florida Reliability Coordinating Council,6.738829
+2022,Florida Reliability Coordinating Council,6.995487
+2021,Florida Reliability Coordinating Council,7.891316
+2020,Florida Reliability Coordinating Council,7.473076251999999
+2050,NPCC/New England,7.176226
+2049,NPCC/New England,7.201815
+2048,NPCC/New England,7.193185
+2047,NPCC/New England,7.229437
+2046,NPCC/New England,7.273287
+2045,NPCC/New England,7.27668
+2044,NPCC/New England,7.325289
+2043,NPCC/New England,7.504922
+2042,NPCC/New England,7.566285
+2041,NPCC/New England,7.496704
+2040,NPCC/New England,7.474529
+2039,NPCC/New England,7.498573
+2038,NPCC/New England,7.501234
+2037,NPCC/New England,7.563375
+2036,NPCC/New England,7.599485
+2035,NPCC/New England,7.709905
+2034,NPCC/New England,7.858634
+2033,NPCC/New England,7.481464
+2032,NPCC/New England,7.420499
+2031,NPCC/New England,7.429082
+2030,NPCC/New England,7.309411
+2029,NPCC/New England,7.915237
+2028,NPCC/New England,7.816686
+2027,NPCC/New England,7.847971
+2026,NPCC/New England,7.920916
+2025,NPCC/New England,8.314021
+2024,NPCC/New England,8.468272
+2023,NPCC/New England,9.187647
+2022,NPCC/New England,10.035853
+2021,NPCC/New England,11.342675
+2020,NPCC/New England,10.741513224999998
+2050,WECC/Rockies,4.065359
+2049,WECC/Rockies,4.055351
+2048,WECC/Rockies,4.056578
+2047,WECC/Rockies,4.081138
+2046,WECC/Rockies,4.184521
+2045,WECC/Rockies,4.175186
+2044,WECC/Rockies,4.186525
+2043,WECC/Rockies,4.188044
+2042,WECC/Rockies,4.267919
+2041,WECC/Rockies,4.327055
+2040,WECC/Rockies,4.355863
+2039,WECC/Rockies,4.373811
+2038,WECC/Rockies,4.585495
+2037,WECC/Rockies,4.667594
+2036,WECC/Rockies,4.693965
+2035,WECC/Rockies,4.637029
+2034,WECC/Rockies,4.685896
+2033,WECC/Rockies,4.78599
+2032,WECC/Rockies,4.861189
+2031,WECC/Rockies,4.937121
+2030,WECC/Rockies,4.945976
+2029,WECC/Rockies,4.884302
+2028,WECC/Rockies,4.859168
+2027,WECC/Rockies,5.099304
+2026,WECC/Rockies,5.19445
+2025,WECC/Rockies,5.426834
+2024,WECC/Rockies,5.689748
+2023,WECC/Rockies,5.86439
+2022,WECC/Rockies,5.944911
+2021,WECC/Rockies,6.243247
+2020,WECC/Rockies,5.912354909
+2050,PJM/Commonwealth Edison,5.234913
+2049,PJM/Commonwealth Edison,5.253067
+2048,PJM/Commonwealth Edison,5.276533
+2047,PJM/Commonwealth Edison,5.224599
+2046,PJM/Commonwealth Edison,5.238939
+2045,PJM/Commonwealth Edison,5.23733
+2044,PJM/Commonwealth Edison,5.251363
+2043,PJM/Commonwealth Edison,5.321593
+2042,PJM/Commonwealth Edison,5.316118
+2041,PJM/Commonwealth Edison,5.339662
+2040,PJM/Commonwealth Edison,5.352802
+2039,PJM/Commonwealth Edison,5.325964
+2038,PJM/Commonwealth Edison,5.319074
+2037,PJM/Commonwealth Edison,5.318632
+2036,PJM/Commonwealth Edison,5.346338
+2035,PJM/Commonwealth Edison,5.397781
+2034,PJM/Commonwealth Edison,5.486214
+2033,PJM/Commonwealth Edison,5.451748
+2032,PJM/Commonwealth Edison,5.381479
+2031,PJM/Commonwealth Edison,5.403286
+2030,PJM/Commonwealth Edison,5.411582
+2029,PJM/Commonwealth Edison,4.884851
+2028,PJM/Commonwealth Edison,4.791912
+2027,PJM/Commonwealth Edison,4.684028
+2026,PJM/Commonwealth Edison,4.711783
+2025,PJM/Commonwealth Edison,4.881474
+2024,PJM/Commonwealth Edison,5.108518
+2023,PJM/Commonwealth Edison,5.493706
+2022,PJM/Commonwealth Edison,5.83209
+2021,PJM/Commonwealth Edison,6.949354
+2020,PJM/Commonwealth Edison,6.581038238
+2050,Southwest Power Pool/Central,4.134909
+2049,Southwest Power Pool/Central,4.141881
+2048,Southwest Power Pool/Central,4.193829
+2047,Southwest Power Pool/Central,4.277596
+2046,Southwest Power Pool/Central,4.303276
+2045,Southwest Power Pool/Central,4.333732
+2044,Southwest Power Pool/Central,4.372975
+2043,Southwest Power Pool/Central,4.420285
+2042,Southwest Power Pool/Central,4.517972
+2041,Southwest Power Pool/Central,4.643971
+2040,Southwest Power Pool/Central,4.756477
+2039,Southwest Power Pool/Central,4.788332
+2038,Southwest Power Pool/Central,4.787964
+2037,Southwest Power Pool/Central,4.963582
+2036,Southwest Power Pool/Central,4.992989
+2035,Southwest Power Pool/Central,4.960135
+2034,Southwest Power Pool/Central,5.064073
+2033,Southwest Power Pool/Central,5.180067
+2032,Southwest Power Pool/Central,5.212709
+2031,Southwest Power Pool/Central,5.21664
+2030,Southwest Power Pool/Central,5.227012
+2029,Southwest Power Pool/Central,5.260578
+2028,Southwest Power Pool/Central,5.317213
+2027,Southwest Power Pool/Central,5.341737
+2026,Southwest Power Pool/Central,5.284281
+2025,Southwest Power Pool/Central,5.272767
+2024,Southwest Power Pool/Central,5.239673
+2023,Southwest Power Pool/Central,5.206036
+2022,Southwest Power Pool/Central,5.135482
+2021,Southwest Power Pool/Central,5.40871
+2020,Southwest Power Pool/Central,5.12204837
+2050,NPCC/NYC & Long Island,6.825977
+2049,NPCC/NYC & Long Island,6.815038
+2048,NPCC/NYC & Long Island,6.707237
+2047,NPCC/NYC & Long Island,6.666549
+2046,NPCC/NYC & Long Island,6.735305
+2045,NPCC/NYC & Long Island,6.705382
+2044,NPCC/NYC & Long Island,6.748609
+2043,NPCC/NYC & Long Island,6.830846
+2042,NPCC/NYC & Long Island,5.993413
+2041,NPCC/NYC & Long Island,5.998983
+2040,NPCC/NYC & Long Island,5.977596
+2039,NPCC/NYC & Long Island,5.904325
+2038,NPCC/NYC & Long Island,5.854488
+2037,NPCC/NYC & Long Island,5.749482
+2036,NPCC/NYC & Long Island,5.722139
+2035,NPCC/NYC & Long Island,6.407768
+2034,NPCC/NYC & Long Island,6.298498
+2033,NPCC/NYC & Long Island,6.957726
+2032,NPCC/NYC & Long Island,6.063192
+2031,NPCC/NYC & Long Island,6.744244
+2030,NPCC/NYC & Long Island,6.452325
+2029,NPCC/NYC & Long Island,6.919113
+2028,NPCC/NYC & Long Island,6.620293
+2027,NPCC/NYC & Long Island,7.073744
+2026,NPCC/NYC & Long Island,7.02467
+2025,NPCC/NYC & Long Island,6.861286
+2024,NPCC/NYC & Long Island,6.50389
+2023,NPCC/NYC & Long Island,6.732553
+2022,NPCC/NYC & Long Island,7.853891
+2021,NPCC/NYC & Long Island,8.107903
+2020,NPCC/NYC & Long Island,7.678184141
+2050,Texas Reliability Entity,5.024194
+2049,Texas Reliability Entity,5.033172
+2048,Texas Reliability Entity,5.042887
+2047,Texas Reliability Entity,5.037302
+2046,Texas Reliability Entity,4.797247
+2045,Texas Reliability Entity,4.830368
+2044,Texas Reliability Entity,4.90357
+2043,Texas Reliability Entity,4.957229
+2042,Texas Reliability Entity,4.998693
+2041,Texas Reliability Entity,5.047557
+2040,Texas Reliability Entity,5.075018
+2039,Texas Reliability Entity,5.102083
+2038,Texas Reliability Entity,5.13458
+2037,Texas Reliability Entity,5.157278
+2036,Texas Reliability Entity,5.407871
+2035,Texas Reliability Entity,5.445795
+2034,Texas Reliability Entity,5.555501
+2033,Texas Reliability Entity,5.568165
+2032,Texas Reliability Entity,5.56068
+2031,Texas Reliability Entity,5.602309
+2030,Texas Reliability Entity,5.643888
+2029,Texas Reliability Entity,5.578842
+2028,Texas Reliability Entity,5.484969
+2027,Texas Reliability Entity,5.396928
+2026,Texas Reliability Entity,5.379749
+2025,Texas Reliability Entity,5.520772
+2024,Texas Reliability Entity,5.880179
+2023,Texas Reliability Entity,6.614637
+2022,Texas Reliability Entity,7.090576
+2021,Texas Reliability Entity,8.600463
+2020,Texas Reliability Entity,8.144638461
+2050,PJM/Dominion,4.725749
+2049,PJM/Dominion,4.796691
+2048,PJM/Dominion,4.743242
+2047,PJM/Dominion,4.781328
+2046,PJM/Dominion,4.778012
+2045,PJM/Dominion,4.759989
+2044,PJM/Dominion,4.786869
+2043,PJM/Dominion,4.81669
+2042,PJM/Dominion,4.840523
+2041,PJM/Dominion,4.863455
+2040,PJM/Dominion,4.867571
+2039,PJM/Dominion,4.88276
+2038,PJM/Dominion,4.893647
+2037,PJM/Dominion,4.92403
+2036,PJM/Dominion,4.968393
+2035,PJM/Dominion,5.023203
+2034,PJM/Dominion,5.121948
+2033,PJM/Dominion,5.10196
+2032,PJM/Dominion,5.039934
+2031,PJM/Dominion,5.075305
+2030,PJM/Dominion,5.083959
+2029,PJM/Dominion,5.125038
+2028,PJM/Dominion,5.114145
+2027,PJM/Dominion,5.137455
+2026,PJM/Dominion,5.180863
+2025,PJM/Dominion,5.288342
+2024,PJM/Dominion,5.408058
+2023,PJM/Dominion,5.598648
+2022,PJM/Dominion,5.787229
+2021,PJM/Dominion,6.396003
+2020,PJM/Dominion,6.057014841
+2050,SERC Reliability Corporation/East,5.217344
+2049,SERC Reliability Corporation/East,5.233249
+2048,SERC Reliability Corporation/East,5.255138
+2047,SERC Reliability Corporation/East,5.295692
+2046,SERC Reliability Corporation/East,5.318067
+2045,SERC Reliability Corporation/East,5.380055
+2044,SERC Reliability Corporation/East,5.388923
+2043,SERC Reliability Corporation/East,5.422765
+2042,SERC Reliability Corporation/East,5.487359
+2041,SERC Reliability Corporation/East,5.536714
+2040,SERC Reliability Corporation/East,5.581801
+2039,SERC Reliability Corporation/East,5.623532
+2038,SERC Reliability Corporation/East,5.66722
+2037,SERC Reliability Corporation/East,5.695304
+2036,SERC Reliability Corporation/East,5.740944
+2035,SERC Reliability Corporation/East,5.787108
+2034,SERC Reliability Corporation/East,5.81483
+2033,SERC Reliability Corporation/East,5.893798
+2032,SERC Reliability Corporation/East,5.949656
+2031,SERC Reliability Corporation/East,6.005329
+2030,SERC Reliability Corporation/East,6.056601
+2029,SERC Reliability Corporation/East,6.124276
+2028,SERC Reliability Corporation/East,6.202748
+2027,SERC Reliability Corporation/East,6.341825
+2026,SERC Reliability Corporation/East,6.525871
+2025,SERC Reliability Corporation/East,6.654583
+2024,SERC Reliability Corporation/East,6.78904
+2023,SERC Reliability Corporation/East,6.920906
+2022,SERC Reliability Corporation/East,7.151125
+2021,SERC Reliability Corporation/East,7.563163
+2020,SERC Reliability Corporation/East,7.162315361
+2050,WECC/CA North,6.351908
+2049,WECC/CA North,6.311643
+2048,WECC/CA North,6.274215
+2047,WECC/CA North,6.27495
+2046,WECC/CA North,6.299337
+2045,WECC/CA North,6.330613
+2044,WECC/CA North,6.339949
+2043,WECC/CA North,6.386098
+2042,WECC/CA North,6.452382
+2041,WECC/CA North,6.480828
+2040,WECC/CA North,6.55337
+2039,WECC/CA North,6.674726
+2038,WECC/CA North,6.740795
+2037,WECC/CA North,6.788713
+2036,WECC/CA North,6.849751
+2035,WECC/CA North,6.958431
+2034,WECC/CA North,7.078566
+2033,WECC/CA North,7.089148
+2032,WECC/CA North,7.103831
+2031,WECC/CA North,6.95998
+2030,WECC/CA North,6.675004
+2029,WECC/CA North,6.668982
+2028,WECC/CA North,6.814167
+2027,WECC/CA North,6.764342
+2026,WECC/CA North,6.726013
+2025,WECC/CA North,6.698355
+2024,WECC/CA North,6.891571
+2023,WECC/CA North,7.083157
+2022,WECC/CA North,7.427541
+2021,WECC/CA North,8.669227
+2020,WECC/CA North,8.209757968999998
+2050,WECC/CA South,7.233405
+2049,WECC/CA South,7.274009
+2048,WECC/CA South,7.294057
+2047,WECC/CA South,7.344076
+2046,WECC/CA South,7.401183
+2045,WECC/CA South,7.416286
+2044,WECC/CA South,7.449157
+2043,WECC/CA South,7.548631
+2042,WECC/CA South,7.634703
+2041,WECC/CA South,7.72768
+2040,WECC/CA South,7.861921
+2039,WECC/CA South,8.023334
+2038,WECC/CA South,8.184016
+2037,WECC/CA South,8.282771
+2036,WECC/CA South,8.358077
+2035,WECC/CA South,8.511886
+2034,WECC/CA South,8.659258
+2033,WECC/CA South,8.694194
+2032,WECC/CA South,8.754741
+2031,WECC/CA South,8.691199
+2030,WECC/CA South,8.574424
+2029,WECC/CA South,8.661565
+2028,WECC/CA South,8.662177
+2027,WECC/CA South,8.619964
+2026,WECC/CA South,8.613776
+2025,WECC/CA South,8.704139
+2024,WECC/CA South,8.918996
+2023,WECC/CA South,9.244971
+2022,WECC/CA South,9.383399
+2021,WECC/CA South,10.172847
+2020,WECC/CA South,9.633686109000001
+2050,WECC/Basin,5.011896
+2049,WECC/Basin,5.005835
+2048,WECC/Basin,5.053586
+2047,WECC/Basin,5.064271
+2046,WECC/Basin,5.065278
+2045,WECC/Basin,5.082884
+2044,WECC/Basin,5.10752
+2043,WECC/Basin,5.128552
+2042,WECC/Basin,5.175035
+2041,WECC/Basin,5.213586
+2040,WECC/Basin,5.252303
+2039,WECC/Basin,5.257212
+2038,WECC/Basin,5.25452
+2037,WECC/Basin,5.247862
+2036,WECC/Basin,5.210903
+2035,WECC/Basin,5.18758
+2034,WECC/Basin,5.14949
+2033,WECC/Basin,5.170734
+2032,WECC/Basin,5.187398
+2031,WECC/Basin,5.21663
+2030,WECC/Basin,5.373006
+2029,WECC/Basin,5.391294
+2028,WECC/Basin,5.422042
+2027,WECC/Basin,5.47925
+2026,WECC/Basin,5.546878
+2025,WECC/Basin,5.672212
+2024,WECC/Basin,5.857834
+2023,WECC/Basin,5.910478
+2022,WECC/Basin,5.890851
+2021,WECC/Basin,6.039548
+2020,WECC/Basin,5.7194519559999994
+2050,Midcontinent ISO/Central,4.45647
+2049,Midcontinent ISO/Central,4.481966
+2048,Midcontinent ISO/Central,4.518981
+2047,Midcontinent ISO/Central,4.540751
+2046,Midcontinent ISO/Central,4.56538
+2045,Midcontinent ISO/Central,4.588876
+2044,Midcontinent ISO/Central,4.627779
+2043,Midcontinent ISO/Central,4.677652
+2042,Midcontinent ISO/Central,4.711397
+2041,Midcontinent ISO/Central,4.756957
+2040,Midcontinent ISO/Central,4.765632
+2039,Midcontinent ISO/Central,4.753858
+2038,Midcontinent ISO/Central,4.793206
+2037,Midcontinent ISO/Central,4.840766
+2036,Midcontinent ISO/Central,4.898816
+2035,Midcontinent ISO/Central,4.948568
+2034,Midcontinent ISO/Central,5.025408
+2033,Midcontinent ISO/Central,5.154686
+2032,Midcontinent ISO/Central,5.283394
+2031,Midcontinent ISO/Central,5.312296
+2030,Midcontinent ISO/Central,5.335357
+2029,Midcontinent ISO/Central,5.359587
+2028,Midcontinent ISO/Central,5.388681
+2027,Midcontinent ISO/Central,5.456794
+2026,Midcontinent ISO/Central,5.596411
+2025,Midcontinent ISO/Central,5.859398
+2024,Midcontinent ISO/Central,6.014643
+2023,Midcontinent ISO/Central,6.175455
+2022,Midcontinent ISO/Central,6.365001
+2021,Midcontinent ISO/Central,6.831699
+2020,Midcontinent ISO/Central,6.469618953
+2050,Midcontinent ISO/East,5.415195
+2049,Midcontinent ISO/East,5.420617
+2048,Midcontinent ISO/East,5.398715
+2047,Midcontinent ISO/East,5.442041
+2046,Midcontinent ISO/East,5.482718
+2045,Midcontinent ISO/East,5.517005
+2044,Midcontinent ISO/East,5.566064
+2043,Midcontinent ISO/East,5.614318
+2042,Midcontinent ISO/East,5.694365
+2041,Midcontinent ISO/East,5.752588
+2040,Midcontinent ISO/East,5.80951
+2039,Midcontinent ISO/East,5.810928
+2038,Midcontinent ISO/East,5.859689
+2037,Midcontinent ISO/East,5.927693
+2036,Midcontinent ISO/East,5.998178
+2035,Midcontinent ISO/East,6.073705
+2034,Midcontinent ISO/East,6.182876
+2033,Midcontinent ISO/East,6.299416
+2032,Midcontinent ISO/East,6.338472
+2031,Midcontinent ISO/East,6.370306
+2030,Midcontinent ISO/East,6.41324
+2029,Midcontinent ISO/East,6.478783
+2028,Midcontinent ISO/East,6.482656
+2027,Midcontinent ISO/East,6.510923
+2026,Midcontinent ISO/East,6.567329
+2025,Midcontinent ISO/East,6.640123
+2024,Midcontinent ISO/East,6.673033
+2023,Midcontinent ISO/East,7.051761
+2022,Midcontinent ISO/East,7.46789
+2021,Midcontinent ISO/East,7.848297
+2020,Midcontinent ISO/East,7.432337259
+2050,Southwest Power Pool/North,3.344365
+2049,Southwest Power Pool/North,3.3371
+2048,Southwest Power Pool/North,3.325975
+2047,Southwest Power Pool/North,3.335154
+2046,Southwest Power Pool/North,3.32937
+2045,Southwest Power Pool/North,3.324593
+2044,Southwest Power Pool/North,3.33128
+2043,Southwest Power Pool/North,3.333957
+2042,Southwest Power Pool/North,3.360816
+2041,Southwest Power Pool/North,3.367015
+2040,Southwest Power Pool/North,3.38738
+2039,Southwest Power Pool/North,3.396561
+2038,Southwest Power Pool/North,3.397387
+2037,Southwest Power Pool/North,3.39865
+2036,Southwest Power Pool/North,3.401412
+2035,Southwest Power Pool/North,3.342122
+2034,Southwest Power Pool/North,3.36631
+2033,Southwest Power Pool/North,3.414921
+2032,Southwest Power Pool/North,3.417832
+2031,Southwest Power Pool/North,3.335376
+2030,Southwest Power Pool/North,3.212857
+2029,Southwest Power Pool/North,3.157042
+2028,Southwest Power Pool/North,3.150243
+2027,Southwest Power Pool/North,3.158227
+2026,Southwest Power Pool/North,3.281399
+2025,Southwest Power Pool/North,3.412983
+2024,Southwest Power Pool/North,3.298998
+2023,Southwest Power Pool/North,3.15509
+2022,Southwest Power Pool/North,3.138551
+2021,Southwest Power Pool/North,3.050742
+2020,Southwest Power Pool/North,2.8890526739999998
+2050,WECC/Southwest,4.790536
+2049,WECC/Southwest,4.699765
+2048,WECC/Southwest,4.693872
+2047,WECC/Southwest,4.705806
+2046,WECC/Southwest,4.6856
+2045,WECC/Southwest,4.672925
+2044,WECC/Southwest,4.677507
+2043,WECC/Southwest,4.6795
+2042,WECC/Southwest,4.762033
+2041,WECC/Southwest,4.809979
+2040,WECC/Southwest,4.825008
+2039,WECC/Southwest,4.782398
+2038,WECC/Southwest,4.779635
+2037,WECC/Southwest,4.816082
+2036,WECC/Southwest,4.802011
+2035,WECC/Southwest,4.710941
+2034,WECC/Southwest,4.755207
+2033,WECC/Southwest,4.835858
+2032,WECC/Southwest,4.862202
+2031,WECC/Southwest,4.819041
+2030,WECC/Southwest,4.883235
+2029,WECC/Southwest,4.919803
+2028,WECC/Southwest,4.988922
+2027,WECC/Southwest,5.065239
+2026,WECC/Southwest,5.174304
+2025,WECC/Southwest,5.430335
+2024,WECC/Southwest,5.577802
+2023,WECC/Southwest,5.692205
+2022,WECC/Southwest,5.754288
+2021,WECC/Southwest,6.393247
+2020,WECC/Southwest,6.054404909
+2050,Midcontinent ISO/West,4.220107
+2049,Midcontinent ISO/West,4.250992
+2048,Midcontinent ISO/West,4.275705
+2047,Midcontinent ISO/West,4.294914
+2046,Midcontinent ISO/West,4.310094
+2045,Midcontinent ISO/West,4.339164
+2044,Midcontinent ISO/West,4.366501
+2043,Midcontinent ISO/West,4.416654
+2042,Midcontinent ISO/West,4.503741
+2041,Midcontinent ISO/West,4.565361
+2040,Midcontinent ISO/West,4.658269
+2039,Midcontinent ISO/West,4.746244
+2038,Midcontinent ISO/West,4.824905
+2037,Midcontinent ISO/West,4.897869
+2036,Midcontinent ISO/West,4.995359
+2035,Midcontinent ISO/West,5.067926
+2034,Midcontinent ISO/West,5.1236
+2033,Midcontinent ISO/West,5.207026
+2032,Midcontinent ISO/West,5.301229
+2031,Midcontinent ISO/West,5.347086
+2030,Midcontinent ISO/West,5.356798
+2029,Midcontinent ISO/West,5.38653
+2028,Midcontinent ISO/West,5.481086
+2027,Midcontinent ISO/West,5.562644
+2026,Midcontinent ISO/West,5.738889
+2025,Midcontinent ISO/West,5.983973
+2024,Midcontinent ISO/West,6.003757
+2023,Midcontinent ISO/West,6.158164
+2022,Midcontinent ISO/West,6.323295
+2021,Midcontinent ISO/West,6.338284
+2020,Midcontinent ISO/West,6.002354948
+2050,PJM/West,4.579154
+2049,PJM/West,4.610523
+2048,PJM/West,4.658607
+2047,PJM/West,4.684387
+2046,PJM/West,4.713722
+2045,PJM/West,4.740154
+2044,PJM/West,4.792156
+2043,PJM/West,4.850685
+2042,PJM/West,4.891049
+2041,PJM/West,4.924914
+2040,PJM/West,4.936962
+2039,PJM/West,4.937913
+2038,PJM/West,4.955244
+2037,PJM/West,4.971978
+2036,PJM/West,5.015475
+2035,PJM/West,5.075502
+2034,PJM/West,5.145938
+2033,PJM/West,5.242483
+2032,PJM/West,5.321605
+2031,PJM/West,5.34501
+2030,PJM/West,5.406602
+2029,PJM/West,5.302146
+2028,PJM/West,5.535429
+2027,PJM/West,5.556371
+2026,PJM/West,5.606006
+2025,PJM/West,5.769365
+2024,PJM/West,6.02024
+2023,PJM/West,6.329007
+2022,PJM/West,6.803095
+2021,PJM/West,7.59065
+2020,PJM/West,7.18834555
+2050,Midcontinent ISO/South,4.725046
+2049,Midcontinent ISO/South,4.747737
+2048,Midcontinent ISO/South,4.784112
+2047,Midcontinent ISO/South,4.811818
+2046,Midcontinent ISO/South,4.858611
+2045,Midcontinent ISO/South,4.87854
+2044,Midcontinent ISO/South,4.901783
+2043,Midcontinent ISO/South,4.964229
+2042,Midcontinent ISO/South,5.029697
+2041,Midcontinent ISO/South,5.08496
+2040,Midcontinent ISO/South,5.116517
+2039,Midcontinent ISO/South,5.138887
+2038,Midcontinent ISO/South,5.179534
+2037,Midcontinent ISO/South,5.237472
+2036,Midcontinent ISO/South,5.279657
+2035,Midcontinent ISO/South,5.259602
+2034,Midcontinent ISO/South,5.374641
+2033,Midcontinent ISO/South,5.470164
+2032,Midcontinent ISO/South,5.320744
+2031,Midcontinent ISO/South,5.336726
+2030,Midcontinent ISO/South,5.353608
+2029,Midcontinent ISO/South,5.376762
+2028,Midcontinent ISO/South,5.336806
+2027,Midcontinent ISO/South,5.327847
+2026,Midcontinent ISO/South,5.245908
+2025,Midcontinent ISO/South,5.399748
+2024,Midcontinent ISO/South,5.534538
+2023,Midcontinent ISO/South,5.744066
+2022,Midcontinent ISO/South,6.045375
+2021,Midcontinent ISO/South,6.778811
+2020,Midcontinent ISO/South,6.419534017
+2050,NPCC/Upstate NY,5.216725
+2049,NPCC/Upstate NY,5.216763
+2048,NPCC/Upstate NY,5.168461
+2047,NPCC/Upstate NY,5.15062
+2046,NPCC/Upstate NY,5.197699
+2045,NPCC/Upstate NY,5.186896
+2044,NPCC/Upstate NY,5.200346
+2043,NPCC/Upstate NY,5.286098
+2042,NPCC/Upstate NY,5.289789
+2041,NPCC/Upstate NY,5.301578
+2040,NPCC/Upstate NY,4.835021
+2039,NPCC/Upstate NY,4.796221
+2038,NPCC/Upstate NY,4.734806
+2037,NPCC/Upstate NY,4.628383
+2036,NPCC/Upstate NY,4.618804
+2035,NPCC/Upstate NY,4.653751
+2034,NPCC/Upstate NY,4.894071
+2033,NPCC/Upstate NY,4.88743
+2032,NPCC/Upstate NY,4.693543
+2031,NPCC/Upstate NY,4.649314
+2030,NPCC/Upstate NY,4.530284
+2029,NPCC/Upstate NY,5.019199
+2028,NPCC/Upstate NY,4.985855
+2027,NPCC/Upstate NY,4.951257
+2026,NPCC/Upstate NY,4.932443
+2025,NPCC/Upstate NY,4.888287
+2024,NPCC/Upstate NY,5.008506
+2023,NPCC/Upstate NY,5.427607
+2022,NPCC/Upstate NY,6.225194
+2021,NPCC/Upstate NY,6.65616
+2020,NPCC/Upstate NY,6.30338352
+2050,PJM/East,4.753399
+2049,PJM/East,5.317254
+2048,PJM/East,5.280385
+2047,PJM/East,4.850334
+2046,PJM/East,5.368383
+2045,PJM/East,5.371776
+2044,PJM/East,4.973387
+2043,PJM/East,5.511228
+2042,PJM/East,5.511043
+2041,PJM/East,5.070163
+2040,PJM/East,5.5633
+2039,PJM/East,5.52554
+2038,PJM/East,5.039868
+2037,PJM/East,5.488898
+2036,PJM/East,5.495754
+2035,PJM/East,5.250672
+2034,PJM/East,5.694741
+2033,PJM/East,5.216308
+2032,PJM/East,5.138348
+2031,PJM/East,5.143442
+2030,PJM/East,5.208195
+2029,PJM/East,5.299283
+2028,PJM/East,5.290053
+2027,PJM/East,5.288717
+2026,PJM/East,5.284553
+2025,PJM/East,5.461097
+2024,PJM/East,5.701849
+2023,PJM/East,6.399387
+2022,PJM/East,6.372484
+2021,PJM/East,7.102471
+2020,PJM/East,6.726040037
+2050,SERC Reliability Corporation/Southeast,4.762481
+2049,SERC Reliability Corporation/Southeast,4.825271
+2048,SERC Reliability Corporation/Southeast,4.898171
+2047,SERC Reliability Corporation/Southeast,4.932483
+2046,SERC Reliability Corporation/Southeast,4.997663
+2045,SERC Reliability Corporation/Southeast,5.049803
+2044,SERC Reliability Corporation/Southeast,5.123325
+2043,SERC Reliability Corporation/Southeast,5.216069
+2042,SERC Reliability Corporation/Southeast,5.31746
+2041,SERC Reliability Corporation/Southeast,5.441232
+2040,SERC Reliability Corporation/Southeast,5.518263
+2039,SERC Reliability Corporation/Southeast,5.593747
+2038,SERC Reliability Corporation/Southeast,5.689033
+2037,SERC Reliability Corporation/Southeast,5.796471
+2036,SERC Reliability Corporation/Southeast,5.910886
+2035,SERC Reliability Corporation/Southeast,6.00698
+2034,SERC Reliability Corporation/Southeast,6.126632
+2033,SERC Reliability Corporation/Southeast,6.152944
+2032,SERC Reliability Corporation/Southeast,6.118642
+2031,SERC Reliability Corporation/Southeast,6.153022
+2030,SERC Reliability Corporation/Southeast,6.217978
+2029,SERC Reliability Corporation/Southeast,6.339326
+2028,SERC Reliability Corporation/Southeast,6.396489
+2027,SERC Reliability Corporation/Southeast,6.352041
+2026,SERC Reliability Corporation/Southeast,6.443353
+2025,SERC Reliability Corporation/Southeast,6.634881
+2024,SERC Reliability Corporation/Southeast,6.894535
+2023,SERC Reliability Corporation/Southeast,7.046071
+2022,SERC Reliability Corporation/Southeast,7.069373
+2021,SERC Reliability Corporation/Southeast,7.318378
+2020,SERC Reliability Corporation/Southeast,6.930503966
+2050,SERC Reliability Corporation/Central,3.703228
+2049,SERC Reliability Corporation/Central,3.719798
+2048,SERC Reliability Corporation/Central,3.768203
+2047,SERC Reliability Corporation/Central,3.743847
+2046,SERC Reliability Corporation/Central,3.758111
+2045,SERC Reliability Corporation/Central,3.780314
+2044,SERC Reliability Corporation/Central,3.818352
+2043,SERC Reliability Corporation/Central,3.880071
+2042,SERC Reliability Corporation/Central,3.881415
+2041,SERC Reliability Corporation/Central,3.951279
+2040,SERC Reliability Corporation/Central,3.966789
+2039,SERC Reliability Corporation/Central,3.988337
+2038,SERC Reliability Corporation/Central,4.038333
+2037,SERC Reliability Corporation/Central,4.080973
+2036,SERC Reliability Corporation/Central,4.149683
+2035,SERC Reliability Corporation/Central,4.322879
+2034,SERC Reliability Corporation/Central,4.310576
+2033,SERC Reliability Corporation/Central,4.354469
+2032,SERC Reliability Corporation/Central,4.382129
+2031,SERC Reliability Corporation/Central,4.468124
+2030,SERC Reliability Corporation/Central,4.564533
+2029,SERC Reliability Corporation/Central,4.67674
+2028,SERC Reliability Corporation/Central,4.4863
+2027,SERC Reliability Corporation/Central,4.462123
+2026,SERC Reliability Corporation/Central,4.445752
+2025,SERC Reliability Corporation/Central,4.54677
+2024,SERC Reliability Corporation/Central,4.624008
+2023,SERC Reliability Corporation/Central,4.771147
+2022,SERC Reliability Corporation/Central,4.990694
+2021,SERC Reliability Corporation/Central,5.324783
+2020,SERC Reliability Corporation/Central,5.042569501
+2050,Southwest Power Pool/South,4.076358
+2049,Southwest Power Pool/South,4.102048
+2048,Southwest Power Pool/South,4.085256
+2047,Southwest Power Pool/South,4.051675
+2046,Southwest Power Pool/South,4.07241
+2045,Southwest Power Pool/South,4.123883
+2044,Southwest Power Pool/South,4.098298
+2043,Southwest Power Pool/South,4.050581
+2042,Southwest Power Pool/South,4.104929
+2041,Southwest Power Pool/South,4.139932
+2040,Southwest Power Pool/South,4.098035
+2039,Southwest Power Pool/South,4.116579
+2038,Southwest Power Pool/South,4.171515
+2037,Southwest Power Pool/South,4.205474
+2036,Southwest Power Pool/South,4.201726
+2035,Southwest Power Pool/South,4.197625
+2034,Southwest Power Pool/South,4.217473
+2033,Southwest Power Pool/South,4.079525
+2032,Southwest Power Pool/South,4.059122
+2031,Southwest Power Pool/South,4.066264
+2030,Southwest Power Pool/South,4.017161
+2029,Southwest Power Pool/South,4.01612
+2028,Southwest Power Pool/South,4.00859
+2027,Southwest Power Pool/South,3.863859
+2026,Southwest Power Pool/South,3.780029
+2025,Southwest Power Pool/South,3.7693
+2024,Southwest Power Pool/South,3.956886
+2023,Southwest Power Pool/South,4.132912
+2022,Southwest Power Pool/South,4.237968
+2021,Southwest Power Pool/South,4.835434
+2020,Southwest Power Pool/South,4.579155998
+2050,WECC/Northwest Power Pool,2.723039
+2049,WECC/Northwest Power Pool,2.728246
+2048,WECC/Northwest Power Pool,2.721329
+2047,WECC/Northwest Power Pool,2.737049
+2046,WECC/Northwest Power Pool,2.736178
+2045,WECC/Northwest Power Pool,2.692742
+2044,WECC/Northwest Power Pool,2.746181
+2043,WECC/Northwest Power Pool,2.732774
+2042,WECC/Northwest Power Pool,2.70603
+2041,WECC/Northwest Power Pool,2.684454
+2040,WECC/Northwest Power Pool,2.688633
+2039,WECC/Northwest Power Pool,2.642026
+2038,WECC/Northwest Power Pool,2.613983
+2037,WECC/Northwest Power Pool,2.617392
+2036,WECC/Northwest Power Pool,2.697549
+2035,WECC/Northwest Power Pool,2.741324
+2034,WECC/Northwest Power Pool,2.767521
+2033,WECC/Northwest Power Pool,2.770343
+2032,WECC/Northwest Power Pool,2.813464
+2031,WECC/Northwest Power Pool,2.811909
+2030,WECC/Northwest Power Pool,2.866427
+2029,WECC/Northwest Power Pool,2.865351
+2028,WECC/Northwest Power Pool,2.882825
+2027,WECC/Northwest Power Pool,2.923775
+2026,WECC/Northwest Power Pool,2.985813
+2025,WECC/Northwest Power Pool,3.075916
+2024,WECC/Northwest Power Pool,3.327784
+2023,WECC/Northwest Power Pool,3.812248
+2022,WECC/Northwest Power Pool,3.86129
+2021,WECC/Northwest Power Pool,4.307323
+2020,WECC/Northwest Power Pool,4.079034881

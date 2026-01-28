@@ -1,17 +1,22 @@
+# -*- coding: utf-8 -*-
 # SPDX-FileCopyrightText:  Open Energy Transition gGmbH
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
-import pypsa
-import pandas as pd
+
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 import warnings
+import pypsa
+
+from scripts._helper import (
+    create_logger,
+    mock_snakemake,
+    update_config_from_wildcards,
+)
+
 warnings.filterwarnings("ignore")
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, PYPSA_EARTH_DIR
-
-
 logger = create_logger(__name__)
 
 

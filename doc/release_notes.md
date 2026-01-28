@@ -8,7 +8,11 @@
 
 Please list contributions, add reference to PRs if present.
 
-* Implemented **pre-commit hooks** in the repository: [PR #47](https://github.com/open-energy-transition/efuels-supply-potentials/pull/47)
+* Implement **pre-commit hooks** in the repository: [PR #47](https://github.com/open-energy-transition/efuels-supply-potentials/pull/47)
+
+* Enable **Git LFS** for large files [PR #137](https://github.com/open-energy-transition/efuels-supply-potentials/pull/137)
+
+* Add **licensing** [PR #135](https://github.com/open-energy-transition/efuels-supply-potentials/pull/135)
 
 * Implement **deliverability** constraint to allow use of electricity for hydrogen production only if produced within the same grid region. [PR #122](https://github.com/open-energy-transition/efuels-supply-potentials/pull/122)
 

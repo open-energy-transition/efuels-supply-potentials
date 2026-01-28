@@ -16,7 +16,7 @@ Here is the information about the buses of DRI industry.
 |bus4 |-             |co2 captured  |
 |bus5 |-             |electricity   |
 
-### DRI 
+### DRI
 |parameter  |equation|values|detail|
 |-----------|--------|------|------|
 |efficiency |$1/gas_{input,DRI}$|$1/2.78(t_{DRI}/MWh_{gas})$|ton of DRI produced per MWh of gas|

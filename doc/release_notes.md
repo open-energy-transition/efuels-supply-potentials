@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Enable **Git LFS** for large files [PR #137](https://github.com/open-energy-transition/efuels-supply-potentials/pull/137)
+
 * Add **licensing** [PR #135](https://github.com/open-energy-transition/efuels-supply-potentials/pull/135)
 
 * Implement **deliverability** constraint to allow use of electricity for hydrogen production only if produced within the same grid region. [PR #122](https://github.com/open-energy-transition/efuels-supply-potentials/pull/122)

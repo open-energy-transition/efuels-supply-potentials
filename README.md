@@ -6,6 +6,7 @@
 
 # efuels-supply-potentials
 
+[![CI](https://github.com/open-energy-transition/efuels-supply-potentials/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/open-energy-transition/efuels-supply-potentials/actions/workflows/ci.yml)
 
 ## 1. Installation
 Clone the repository including its submodules:
@@ -23,6 +24,33 @@ Activate `pypsa-earth-efuels` environment:
     conda activate pypsa-earth-efuels
 
 * **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit (`0fa2e39`) of `efuels-supply-potential` branch of [open-energy-transition/pypsa-earth](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials) repository. If OS-specific installation of conda environment does not succeed, it is recommended to install general pypsa-earth environment and activate as ` mamba env create -f submodules/pypsa-earth/envs/environment.yaml` and activate by `conda activate pypsa-earth`. The detailed instructions are provided in [PyPSA-Earth Documentation](https://pypsa-earth.readthedocs.io/en/latest/installation.html).
+
+### 1.1. Configure pre-commit
+
+To ensure that all team members can use the pre-commit hooks and maintain code quality across the project, follow these steps:
+
+1. Navigate to the root directory of the repository, where the .pre-commit-config.yaml file is located. Then, run the following command to install the hooks defined in the .pre-commit-config.yaml file:
+```bash
+pre-commit install
+```
+This command will set up the hooks in the `.git/hooks directory` (specifically the `pre-commit hook`), ensuring that the hooks are executed automatically before each commit.
+
+2. To ensure that all files comply with the defined hooks, users can run the following command manually to check and fix any issues with all files in the repository:
+```bash
+pre-commit run --a
+```
+This step is optional but recommended to make sure that any formatting or linting issues are fixed before starting to commit changes.
+
+3. Once the pre-commit hooks are installed and verified, you can proceed to make changes to the code, add them to your commit, and push them to the repository. From this point forward, pre-commit will automatically run checks on your files whenever you try to commit:
+```bash
+git add .
+git commit -m "Your commit message"
+```
+If any of the hooks (such as `black`, `isort`, or `reuse lint`) detect issues (for example, formatting issues or missing license headers), the commit will be blocked, and you'll be required to fix the issues before retrying.
+
+4. Some hooks, such as `black` and `isort`, will automatically fix code formatting issues during the commit process. If a file is not formatted correctly, the hook will fix it, and the user can reattempt the commit. If a hook fails (for example, the license linting hook or a formatting hook fails), the commit will not proceed. The user will see a message explaining the issue, and they will need to correct it before committing again.
+
+5. Every time a new hook is added, or changes to the configuration in the `.pre-commit-config.yaml` are performed, it is necessary to run `pre-commit install` again.
 
 ## 2. Running scenarios
 

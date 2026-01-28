@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Fix order-dependent behavior in constraint construction and mappings (`groupby` functions), `subset_backward` and `subset_forward`, transform `lhs` into a Dataframe  [PR #134](https://github.com/open-energy-transition/efuels-supply-potentials/pull/134)**
+
 * Implement **deliverability** constraint to allow use of electricity for hydrogen production only if produced within the same grid region. [PR #122](https://github.com/open-energy-transition/efuels-supply-potentials/pull/122)
 
 * Integrate **gas-input** of steel and cement carbon capture technologies. [PR #121](https://github.com/open-energy-transition/efuels-supply-potentials/pull/121)

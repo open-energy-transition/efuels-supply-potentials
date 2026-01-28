@@ -100,8 +100,8 @@ snakemake -call solve_sector_networks_myopic --configfile configs/scenarios/conf
 |`validate_all`           |`config.base.yaml`, `config.base_AC.yaml`|Performs country-level validation comparing with EIA and Ember data|
 |`statewise_validate_all` |`config.base_AC.yaml`                    |Performs statewise validation comparing with EIA data|
 |`get_capacity_factors`   |Any base or scenario config file         |Estimates capacity factors for renewables|
-|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand| 
-|`generate_aviation_scenario` |Any base or scenario config file         |Generates aviation demand csv file with different future scenario| 
+|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand|
+|`generate_aviation_scenario` |Any base or scenario config file         |Generates aviation demand csv file with different future scenario|
 |`modify_aviation_demand` |Any base or scenario config file         |Switches aviation demand in energy_total to custom demand|
 |`preprocess_demand_data` |Any base or scenario config file         |Preprocess utlities demand data into geojson|
 |`build_demand_profiles_from_eia` |Any base or scenario config file         |Build custom demand data from eia and bypass build_demand_profiles|
@@ -167,14 +167,14 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 14. [PR #86](https://github.com/open-energy-transition/pypsa-earth/pull/86): Use H2 Store Tank costs without compressor and add lifetime.
 15. [PR #89](https://github.com/open-energy-transition/pypsa-earth/pull/89): Align cost conversion with reference year for costs in input files.
 15. [PR #91](https://github.com/open-energy-transition/pypsa-earth/pull/91): Include existing batteries from `powerplants.csv`.
- 
+
 ## 5. Checking techno-economic input data
 
 To check techno-economic input data for selected sectors (power generation, hydrogen and e-kerosene production, CO2 capture) it is not necessarily needed to run the entire workflow and check input cost data files.
 
 To generate Excel files reporting techno-economic input data (for the Moderate and the Advanced cost scenarios adopted in the model), navigate to the working directory (`.../efuels-supply-potentials/`) and use the following command:
 ```bash
-python scripts/non_workflow/fetch_input_costs_multiyear.py 
+python scripts/non_workflow/fetch_input_costs_multiyear.py
 ```
 
 The Excel files will be written to the `.../efuels-supply-potentials_emmanuel_fork/notebooks/data/input_costs/` folder.

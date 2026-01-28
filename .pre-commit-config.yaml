@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText:  Open Energy Transition Open Energy Transition gGmbH
 #
 # SPDX-License-Identifier: CC0-1.0
-# Copied from https://github.com/PyPSA/pypsa-eur/pull/302/files
 
 exclude: ^(LICENSES)
 
@@ -16,29 +15,26 @@ repos:
   - id: check-added-large-files
     args: ['--maxkb=2000']
 
-# Find common spelling mistakes in comments, docstrings, and actions
+# Python formatting only (NO lint)
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.12.2
   hooks:
-  - id: ruff
-    types_or: [python, pyi, jupyter]
-    args: [--fix, --exit-non-zero-on-fix]
   - id: ruff-format
 
-# Do YAML formatting (before the linter checks it for misses)
+# YAML formatting (exclude legacy + CI)
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
   rev: v2.14.0
   hooks:
   - id: pretty-format-yaml
-    exclude: (pinned\.yaml|\.lock\.yaml)$
+    exclude: ^(\.github/workflows/|configs/scenarios/|envs/.*-pinned\.yaml|pinned\.yaml|\.lock\.yaml)$
     args: [--autofix, --indent, '2', --preserve-quotes]
 
-# Use yamllint to check for valid YAML files and list syntax errors
+# YAML linting (same exclusions)
 - repo: https://github.com/adrienverge/yamllint.git
   rev: v1.36.2
   hooks:
   - id: yamllint
-    exclude: pinned\.yaml$
+    exclude: ^(\.github/workflows/|configs/scenarios/|envs/.*-pinned\.yaml|pinned\.yaml)$
     args: [--format, parsable, -c=.yamllint]
 
 # Format Snakemake rule / workflow files

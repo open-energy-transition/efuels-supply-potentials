@@ -9,6 +9,9 @@ This directory contains Jupyter notebooks for analyzing PyPSA-Earth-based scenar
 Download solved PyPSA networks from Google Drive without running the Snakemake workflow:
 
 ```bash
+# Download base year (2023) network for validation
+python download_scenario_networks.py --base-year
+
 # Download single scenario
 python download_scenario_networks.py --scenario-id 2
 
@@ -18,6 +21,9 @@ python download_scenario_networks.py --scenario-id 1 2 5 10
 # Download all scenarios (1-10)
 python download_scenario_networks.py --all
 
+# Download base year and scenarios together
+python download_scenario_networks.py --base-year --scenario-id 1 2
+
 # Download specific years only
 python download_scenario_networks.py --scenario-id 2 --years 2030 2040
 
@@ -25,7 +31,7 @@ python download_scenario_networks.py --scenario-id 2 --years 2030 2040
 python download_scenario_networks.py --scenario-id 2 --force
 ```
 
-Files are saved to `results/scenarios/scenario_XX/`. Existing files are skipped by default.
+Files are saved to `results/base_year/` (base year) and `results/scenarios/scenario_XX/` (scenarios). Existing files are skipped by default.
 
 ---
 

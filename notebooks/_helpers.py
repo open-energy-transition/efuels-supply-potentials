@@ -11095,3 +11095,178 @@ def plot_regional_dispatch(network, tech_colors, nice_names, region="Mid-Atlanti
     plt.tight_layout(rect=[0, 0.05, 0.85, 1])
     showfig()
 
+def compute_regional_co2_production_capture_and_ft_price(
+    networks: dict,
+    ft_carrier: str = "Fischer-Tropsch",
+    cc_carriers: set = None,
+    year_title: bool = True,
+    verbose: bool = True,
+):
+    """
+    Regional CO2 accounting with marginal prices.
+
+    Outputs by Grid Region (per network/year):
+      - Captured CO2 (Mt)
+      - CO2 used by FT (Mt)
+      - Marginal CO2 price – captured (USD/tCO2)
+      - Marginal CO2 price – FT (USD/tCO2)
+
+    Marginal prices are computed as the mean shadow price of the CO2 bus
+    over snapshots where the corresponding activity is strictly positive.
+    """
+
+    if cc_carriers is None:
+        raise ValueError("cc_carriers must be provided")
+
+    results = {}
+
+    for name, net in networks.items():
+        # -------------------------
+        # Scenario year
+        # -------------------------
+        scen_year = int(re.search(r"\d{4}", str(name)).group())
+
+        # Snapshot duration [h]
+        if len(net.snapshots) > 1:
+            dt_h = (net.snapshots[1] - net.snapshots[0]).total_seconds() / 3600.0
+        else:
+            dt_h = 1.0
+
+        rows_cc = []
+        rows_ft = []
+
+        # -------------------------
+        # CO2 capture (CCS, DAC, etc.)
+        # -------------------------
+        ccs = net.links[net.links.carrier.isin(cc_carriers)]
+
+        for link in ccs.index:
+            captured_t = 0.0
+            mu_series = None
+            flow_series = None
+
+            for j in range(6):
+                p_col = f"p{j}"
+                if p_col not in net.links_t or link not in net.links_t[p_col]:
+                    continue
+
+                bus = net.links.at[link, f"bus{j}"]
+                if not isinstance(bus, str) or "co2" not in bus.lower():
+                    continue
+
+                series = net.links_t[p_col][link]
+
+                if series.sum() < 0:
+                    captured_t += -series.sum() * dt_h
+                    flow_series = -series.clip(upper=0) * dt_h
+                    if bus in net.buses_t.marginal_price.columns:
+                        mu_series = net.buses_t.marginal_price[bus]
+
+            if captured_t <= 0 or mu_series is None or flow_series is None:
+                continue
+
+            active = flow_series > 0
+            if not active.any():
+                continue
+
+            mu_captured = mu_series[active].mean()
+
+            try:
+                region = net.buses.at[ccs.at[link, "bus0"], "grid_region"]
+            except KeyError:
+                continue
+
+            rows_cc.append({
+                "Grid Region": region,
+                "Captured CO2 (Mt)": captured_t / 1e6,
+                "Marginal CO2 price – captured (USD/tCO2)": mu_captured,
+            })
+
+        # -------------------------
+        # CO2 used by Fischer–Tropsch
+        # -------------------------
+        ft_links = net.links.query("carrier == @ft_carrier").index
+
+        for ft in ft_links:
+            for i in range(8):
+                p_col = f"p{i}"
+                eff_col = f"efficiency{i}"
+                bus_col = f"bus{i}"
+
+                if (
+                    p_col not in net.links_t
+                    or ft not in net.links_t[p_col]
+                    or eff_col not in net.links.columns
+                ):
+                    continue
+
+                bus = net.links.at[ft, bus_col]
+                eff = net.links.at[ft, eff_col]
+
+                if not isinstance(bus, str) or pd.isna(eff) or "co2" not in bus.lower():
+                    continue
+
+                p = net.links_t[p_col][ft]
+                co2_used_t = abs(eff) * p * dt_h
+
+                if co2_used_t.sum() <= 0:
+                    continue
+                if bus not in net.buses_t.marginal_price.columns:
+                    continue
+
+                mu = net.buses_t.marginal_price[bus]
+                active = co2_used_t > 0
+                if not active.any():
+                    continue
+
+                mu_ft = mu[active].mean()
+
+                try:
+                    region = net.buses.at[net.links.at[ft, "bus0"], "grid_region"]
+                except KeyError:
+                    continue
+
+                rows_ft.append({
+                    "Grid Region": region,
+                    "CO2 used by FT (Mt)": co2_used_t.sum() / 1e6,
+                    "Marginal CO2 price – FT (USD/tCO2)": mu_ft,
+                })
+
+        # -------------------------
+        # Aggregate by region
+        # -------------------------
+        df_cc = pd.DataFrame(rows_cc)
+        df_ft = pd.DataFrame(rows_ft)
+
+        if df_cc.empty and df_ft.empty:
+            continue
+
+        g = (
+            df_cc.groupby("Grid Region").mean()
+            .join(df_ft.groupby("Grid Region").mean(), how="outer")
+            .fillna(0.0)
+            .sort_index()
+        )
+
+        results[scen_year if year_title else str(name)] = g
+
+    # -------------------------
+    # Unified display (safe for Papermill)
+    # -------------------------
+    if verbose:
+        for year, df in results.items():
+            print(f"\nYear: {year}")
+
+            df_disp = df.reset_index()
+
+            num_cols = df_disp.select_dtypes(include="number").columns
+            fmt = {col: "{:.2f}" for col in num_cols}
+
+            display(
+                df_disp
+                .style
+                .format(fmt)
+                .hide(axis="index")
+            )
+
+    return results

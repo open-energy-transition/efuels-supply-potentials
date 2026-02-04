@@ -10582,9 +10582,8 @@ def print_h2_and_ekerosene_tables(h2_flows, ekerosene_flows):
     print("Positive values indicate e-kerosene flowing INTO the listed bus.")
     display(ekerosene_flows)
 
-def plot_marginal_h2_price_maps_by_grid_region(
+def compute_marginal_h2_price_by_grid_region(
     networks,
-    grid_regions_shapes,
     h2_carriers,
     regional_fees,
     emm_mapping,
@@ -10594,46 +10593,25 @@ def plot_marginal_h2_price_maps_by_grid_region(
     customer_charge_mw=400.0,
     demand_charge_rate=9.0,
     baseload_percentages=None,
-    year_title=True,
-    return_dataframe=True,
 ):
     """
-    Plot weighted average marginal hydrogen price by grid region (USD/kg H2),
+    Compute weighted average marginal H2 price by grid region (USD/kg H2),
     including transmission fees and baseload charges.
 
-    Hydrogen price =
-        Marginal H2 price
-      + Transmission fees
-      + Baseload charges
-      
-    Returns:
-    --------
-    pd.DataFrame with MultiIndex columns:
-        - Level 0: Scenario name (from networks.keys())
-        - Level 1: ["Marginal H2 price (USD/kg H2)", "H2 output (MWh)", "Year"]
-        Index: grid_region
+    Returns
+    -------
+    pd.DataFrame with columns:
+        - grid_region
+        - year (int)
+        - weighted_price (USD/kg H2)
+        - total_h2_output (MWh)
     """
 
-    # -----------------------------
-    # Conversion (LHV)
-    # -----------------------------
-    conv = 1000.0 / 33.0   # kg H2 per MWh H2
+    conv = 1000.0 / 33.0  # kg H2 per MWh H2
 
-    # -----------------------------
-    # Shapes
-    # -----------------------------
-    shapes = grid_regions_shapes.copy()
-
-    for col in ["grid_region", "Grid Region", "GRID_REGIO"]:
-        if col in shapes.columns:
-            shapes = shapes.rename(columns={col: "grid_region"})
-            break
-    else:
-        raise KeyError("No grid_region column found in grid_regions_shapes")
-
-    # -----------------------------
-    # Baseload charges
-    # -----------------------------
+    # --------------------------------------------------
+    # Baseload charges (keyed by YEAR)
+    # --------------------------------------------------
     baseload_charges = {}
     if include_baseload:
         baseload_charges = calculate_baseload_charge(
@@ -10646,35 +10624,38 @@ def plot_marginal_h2_price_maps_by_grid_region(
             baseload_percentages=baseload_percentages,
             output_threshold=output_threshold,
             verbose=False,
-            year_title=year_title,
+            year_title=True,  # internal, but results must be keyed by year
         )
 
     all_results = []
-    scenario_data = {}  # For MultiIndex DataFrame
 
-    # -----------------------------
-    # Loop over networks
-    # -----------------------------
+    # --------------------------------------------------
+    # Loop over networks (one per year / scenario)
+    # --------------------------------------------------
     for year_key, net in networks.items():
-        scen_year = int(re.search(r"\d{4}", str(year_key)).group())
-    
-        # Exclude Base_2023
+        match = re.search(r"\d{4}", str(year_key))
+        if not match:
+            continue
+
+        scen_year = int(match.group())
+
+        # Skip base year explicitly if needed
         if scen_year == 2023:
             continue
-    
-        key = scen_year if year_title else year_key
 
         links = net.links[net.links.carrier.isin(h2_carriers)]
         if links.empty:
             continue
 
+        # --------------------------------------------------
         # Flows
-        p0 = net.links_t.p0[links.index]   # electricity input
-        p1 = net.links_t.p1[links.index]   # H2 output (negative)
+        # --------------------------------------------------
+        p0 = net.links_t.p0[links.index]
+        p1 = net.links_t.p1[links.index]
         w = net.snapshot_weightings.generators
 
-        cons = p0.clip(lower=0).multiply(w, axis=0)        # MWh_el
-        h2 = (-p1).clip(lower=0).multiply(w, axis=0)       # MWh_H2
+        cons = p0.clip(lower=0).multiply(w, axis=0)   # MWh_el
+        h2 = (-p1).clip(lower=0).multiply(w, axis=0)  # MWh_H2
         h2_out = h2.sum()
 
         valid = h2_out > output_threshold
@@ -10683,120 +10664,161 @@ def plot_marginal_h2_price_maps_by_grid_region(
 
         out_valid = h2_out[valid]
 
-        # -----------------------------
-        # Marginal H2 price
-        # -----------------------------
+        # --------------------------------------------------
+        # Marginal H2 price (from bus duals)
+        # --------------------------------------------------
         h2_price = {}
         for l in valid.index[valid]:
-            bus = links.at[l, "bus1"]  # H2 bus
+            bus = links.at[l, "bus1"]
             h2_price[l] = (
                 h2[l] * net.buses_t.marginal_price[bus]
             ).sum()
 
         h2_price_val = pd.Series(h2_price) / out_valid / conv  # USD/kg H2
 
-        # -----------------------------
-        # Base dataframe
-        # -----------------------------
         df = pd.DataFrame({
-            "Marginal H2 price (USD/kg H2)": h2_price_val,
+            "h2_price": h2_price_val,
             "h2_out": out_valid,
             "bus": links.loc[valid, "bus1"],
         })
 
         df["grid_region"] = df["bus"].map(net.buses["grid_region"])
-
-        # -----------------------------
-        # Transmission fees
-        # -----------------------------
-        fee_map = regional_fees.loc[
-            regional_fees["Year"] == scen_year,
-            ["region", "Transmission nom USD/MWh"]
-        ].set_index("region")
-
         df["EMM"] = df["grid_region"].map(emm_mapping)
 
-        fee_trans = df["EMM"].map(
-            fee_map["Transmission nom USD/MWh"]
-        ).fillna(0.0)
-
-        elec_rate = cons.loc[:, valid].sum(axis=0) / out_valid   # MWh_el / MWh_H2
-
-        df["Transmission (USD/kg H2)"] = (
-            fee_trans * elec_rate / conv
-        ).reindex(df.index).fillna(0.0)
-
-        # -----------------------------
-        # Baseload charges
-        # -----------------------------
-        if include_baseload and key in baseload_charges:
-            baseload_df = baseload_charges[key]
-
-            baseload_cost = (
-                baseload_df
-                .set_index("grid_region")["baseload_cost_per_mwh_h2"]
-            )
-
-            df["Baseload charges (USD/kg H2)"] = (
-                df["grid_region"].map(baseload_cost).fillna(0.0) / conv
-            )
-        else:
-            df["Baseload charges (USD/kg H2)"] = 0.0
-
-        # -----------------------------
-        # Final price
-        # -----------------------------
-        df["Marginal H2 price incl. Transmission + Baseload"] = (
-            df["Marginal H2 price (USD/kg H2)"]
-            + df["Transmission (USD/kg H2)"]
-            + df["Baseload charges (USD/kg H2)"]
+        # --------------------------------------------------
+        # Transmission fees
+        # --------------------------------------------------
+        fee_map = (
+            regional_fees.loc[
+                regional_fees["Year"] == scen_year,
+                ["region", "Transmission nom USD/MWh"],
+            ]
+            .set_index("region")
+            .squeeze()
         )
 
-        df["year"] = key
+        elec_rate = cons.loc[:, valid].sum(axis=0) / out_valid
+        df["transmission"] = (
+            df["EMM"].map(fee_map).fillna(0.0)
+            * elec_rate / conv
+        )
 
-        all_results.append(df[[
-            "grid_region",
-            "year",
-            "h2_out",
-            "Marginal H2 price incl. Transmission + Baseload",
-        ]])
+        # --------------------------------------------------
+        # Baseload charges (by YEAR)
+        # --------------------------------------------------
+        if include_baseload and scen_year in baseload_charges:
+            bl = (
+                baseload_charges[scen_year]
+                .set_index("grid_region")["baseload_cost_per_mwh_h2"]
+            )
+            df["baseload"] = df["grid_region"].map(bl).fillna(0.0) / conv
+        else:
+            df["baseload"] = 0.0
+
+        # --------------------------------------------------
+        # Final price and year (ALWAYS numeric)
+        # --------------------------------------------------
+        df["price"] = df["h2_price"] + df["transmission"] + df["baseload"]
+        df["year"] = int(scen_year)
+
+        all_results.append(df)
 
     if not all_results:
-        print("No valid data.")
         return None
 
-    # -----------------------------
-    # Aggregate by region
-    # -----------------------------
+    # --------------------------------------------------
+    # Aggregate by grid region and year
+    # --------------------------------------------------
     all_df = pd.concat(all_results, ignore_index=True)
 
     region_price = (
-        all_df.groupby(["grid_region", "year"])
+        all_df
+        .groupby(["grid_region", "year"])
         .apply(lambda g: pd.Series({
-            "weighted_price": (
-                g["Marginal H2 price incl. Transmission + Baseload"]
-                * g["h2_out"]
-            ).sum() / g["h2_out"].sum(),
+            "weighted_price": (g["price"] * g["h2_out"]).sum() / g["h2_out"].sum(),
             "total_h2_output": g["h2_out"].sum(),
         }))
         .reset_index()
     )
 
+    # --------------------------------------------------
+    # Final sanity check (fail fast)
+    # --------------------------------------------------
+    if not pd.api.types.is_numeric_dtype(region_price["year"]):
+        raise TypeError("Internal error: 'year' must be numeric")
+
+    return region_price
+
+def plot_marginal_h2_price_maps(
+    region_price: pd.DataFrame,
+    grid_regions_shapes: gpd.GeoDataFrame,
+):
+    """
+    Plot marginal hydrogen price maps by grid region, one map per year.
+
+    Parameters
+    ----------
+    region_price : pd.DataFrame
+        Must contain columns:
+            - grid_region
+            - year (int)
+            - weighted_price (USD/kg H2)
+
+    grid_regions_shapes : gpd.GeoDataFrame
+        GeoDataFrame with grid region geometries.
+        Must contain a column identifying the grid region.
+
+    Notes
+    -----
+    - One figure is produced per year.
+    - Color scale is shared across all years (5–95 percentile).
+    - Scenario names are never used; only numeric years appear.
+    """
+
+    # -----------------------------
+    # Normalize grid_region column
+    # -----------------------------
+    shapes = grid_regions_shapes.copy()
+
+    for col in shapes.columns:
+        if col.lower().startswith("grid"):
+            shapes = shapes.rename(columns={col: "grid_region"})
+            break
+    else:
+        raise KeyError("No grid_region column found in grid_regions_shapes")
+
+    # -----------------------------
+    # Sanity checks
+    # -----------------------------
+    required_cols = {"grid_region", "year", "weighted_price"}
+    missing = required_cols - set(region_price.columns)
+    if missing:
+        raise KeyError(f"region_price missing required columns: {missing}")
+
+    if not pd.api.types.is_numeric_dtype(region_price["year"]):
+        raise TypeError("region_price['year'] must be numeric (e.g. 2030, 2040)")
+
+    # -----------------------------
+    # Merge shapes with data
+    # -----------------------------
     plot_df = shapes.merge(region_price, on="grid_region", how="left")
 
+    # -----------------------------
+    # Shared color scale
+    # -----------------------------
     vmin = plot_df["weighted_price"].quantile(0.05)
     vmax = plot_df["weighted_price"].quantile(0.95)
 
     # -----------------------------
-    # Plot
+    # Plot one map per year
     # -----------------------------
-    for y in sorted(region_price.year.unique()):
+    for year in sorted(plot_df["year"].dropna().unique()):
         fig, ax = plt.subplots(
             figsize=(12, 10),
             subplot_kw={"projection": ccrs.PlateCarree()},
         )
 
-        year_df = plot_df[plot_df.year == y]
+        year_df = plot_df[plot_df["year"] == year]
 
         year_df.plot(
             column="weighted_price",
@@ -10805,7 +10827,7 @@ def plot_marginal_h2_price_maps_by_grid_region(
             edgecolor="0.8",
             legend=True,
             legend_kwds={
-                "label": "Marginal H2 price (incl. Transmission fees & Baseload charges) (USD/kg H2)"
+                "label": "Marginal H2 price (USD/kg H2)"
             },
             vmin=vmin,
             vmax=vmax,
@@ -10814,60 +10836,47 @@ def plot_marginal_h2_price_maps_by_grid_region(
 
         ax.set_extent([-130, -65, 20, 55])
         ax.axis("off")
+
         ax.set_title(
-            f"Hydrogen marginal price (incl. Transmission fees & Baseload charges) – {y}"
+            f"Hydrogen marginal price by grid region – {int(year)}"
         )
 
         showfig()
-    
-    # -----------------------------
-    # Build MultiIndex DataFrame
-    # -----------------------------
-    if return_dataframe:
-        # Pivot to get scenarios as columns
-        result_dfs = {}
-        
-        for year_key in networks.keys():
-            # Extract year
-            match = re.search(r"\d{4}", str(year_key))
-            if not match:
-                continue
-            scen_year = int(match.group())
-            if scen_year == 2023:
-                continue
-                
-            key = scen_year if year_title else year_key
-            
-            # Filter data for this scenario
-            scenario_data_subset = region_price[region_price["year"] == key]
-            
-            if scenario_data_subset.empty:
-                continue
-            
-            # Create DataFrame for this scenario
-            scenario_df = scenario_data_subset.set_index("grid_region")[[
-                "weighted_price", "total_h2_output"
-            ]].copy()
-            # scenario_df["year"] = key
-            
-            # Rename columns for clarity
-            scenario_df.columns = [
-                "Marginal H2 price (USD/kg H2)", 
-                "H2 output (MWh)", 
-                # "Year"
-            ]
-            
-            result_dfs[year_key] = scenario_df
-        
-        if result_dfs:
-            # Create MultiIndex DataFrame
-            final_df = pd.concat(result_dfs, axis=1)
-            final_df.index.name = "grid_region"
-            return final_df
-        else:
-            return None
-    
-    return None
+
+def build_marginal_h2_price_table(
+    region_price,
+):
+    """
+    Build one table per year for marginal H2 prices by grid region.
+
+    Returns
+    -------
+    dict[int, pd.DataFrame]
+        {year: DataFrame indexed by grid_region}
+    """
+
+    tables = {}
+
+    for year in sorted(region_price["year"].unique()):
+        df = region_price[region_price["year"] == year]
+
+        if df.empty:
+            continue
+
+        table = (
+            df
+            .set_index("grid_region")[["weighted_price", "total_h2_output"]]
+            .rename(columns={
+                "weighted_price": "Marginal H2 price (USD/kg H2)",
+                "total_h2_output": "H2 output (MWh)",
+            })
+            .sort_index()
+        )
+
+        tables[int(year)] = table
+
+    return tables
+
 
 # Regional Dispatch Plot for Mid-Atlantic
 def plot_regional_dispatch(network, tech_colors, nice_names, region="Mid-Atlantic", year_str=None):

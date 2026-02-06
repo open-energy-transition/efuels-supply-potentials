@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Implement **H2 production constraints** for scenarios 5 and 6 based on DOE U.S. National Clean Hydrogen Strategy and Roadmap (2023) [PR #139](https://github.com/open-energy-transition/efuels-supply-potentials/pull/139)
+
 * Implement **pre-commit hooks** [PR #138](https://github.com/open-energy-transition/efuels-supply-potentials/pull/138)
 
 * Enable **Git LFS** for large files [PR #137](https://github.com/open-energy-transition/efuels-supply-potentials/pull/137)

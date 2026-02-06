@@ -976,13 +976,10 @@ def add_RPS_constraints(network, config_file):
 
 def add_CCL_constraints(n, config):
     agg_p_nom_limits = config["electricity"].get("agg_p_nom_limits")
-
-    year = int(snakemake.wildcards.planning_horizons)
-
     try:
         agg_p_nom_minmax = pd.read_csv(
             agg_p_nom_limits, index_col=list(range(2)), header=[0, 1]
-        )[year]
+        )[snakemake.wildcards.planning_horizons]
     except IOError:
         logger.exception(
             "Need to specify the path to a .csv file containing "
@@ -1757,15 +1754,9 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
 def add_H2_production_constraints(n, config):
     """
     Add annual hydrogen production min/max constraints from electrolysis.
-
-    CSV format:
-      - index: [country, carrier]
-      - carrier is a logical category, expected: 'h2_electrolysis'
-      - columns: MultiIndex (year, {min,max})
-      - values in MWh_H2 / year
     """
 
-    year = int(snakemake.wildcards.planning_horizons)
+    year = snakemake.wildcards.planning_horizons
 
     try:
         path = snakemake.input.h2_cap_csv
@@ -1783,10 +1774,8 @@ def add_H2_production_constraints(n, config):
     except Exception as e:
         raise RuntimeError(f"Failed to read H2 production limits CSV: {path}") from e
 
-    # Logical carrier (policy category used in csv to set the constraint)
     logical_carrier = "h2_electrolysis"
 
-    # Physical carriers aggregated under h2_electrolysis
     ELECTROLYSIS_CARRIERS = [
         "Alkaline electrolyzer large",
         "Alkaline electrolyzer medium",
@@ -1800,23 +1789,18 @@ def add_H2_production_constraints(n, config):
     if el_links.empty or ("Link", "p") not in n.variables.index:
         return
 
-    # Power variable
     p_el = get_var(n, "Link", "p")[el_links]
 
-    # Snapshot weightings to annual energy
     w = pd.DataFrame(
         np.outer(n.snapshot_weightings["generators"], [1.0] * len(el_links)),
         index=n.snapshots,
         columns=el_links,
     )
 
-    # Electricity -> H2 conversion
     eff = n.links.loc[el_links, "efficiency"]
 
-    # Annual H2 output per link (MWh_H2/year)
     h2_out_links = linexpr((w * eff, p_el)).sum(axis=0)
 
-    # Aggregate by country (via electricity bus0)
     el_country = n.buses.loc[n.links.loc[el_links, "bus0"], "country"]
 
     h2_out_per_cc = (
@@ -1831,7 +1815,6 @@ def add_H2_production_constraints(n, config):
         .apply(join_exprs)
     )
 
-    # Apply MIN constraint if present
     if "min" in df.columns:
         mins = df["min"].dropna()
         idx = h2_out_per_cc.index.intersection(mins.index)
@@ -1845,7 +1828,6 @@ def add_H2_production_constraints(n, config):
                 "min",
             )
 
-    # Apply MAX constraint if present
     if "max" in df.columns:
         maxs = df["max"].dropna()
         idx = h2_out_per_cc.index.intersection(maxs.index)

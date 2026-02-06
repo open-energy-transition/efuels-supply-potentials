@@ -977,10 +977,12 @@ def add_RPS_constraints(network, config_file):
 def add_CCL_constraints(n, config):
     agg_p_nom_limits = config["electricity"].get("agg_p_nom_limits")
 
+    year = int(snakemake.wildcards.planning_horizons)
+
     try:
         agg_p_nom_minmax = pd.read_csv(
             agg_p_nom_limits, index_col=list(range(2)), header=[0, 1]
-        )[snakemake.wildcards.planning_horizons]
+        )[year]
     except IOError:
         logger.exception(
             "Need to specify the path to a .csv file containing "
@@ -1763,7 +1765,7 @@ def add_H2_production_constraints(n, config):
       - values in MWh_H2 / year
     """
 
-    year = snakemake.wildcards.planning_horizons
+    year = int(snakemake.wildcards.planning_horizons)
 
     try:
         path = snakemake.input.h2_cap_csv

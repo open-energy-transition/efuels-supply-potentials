@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Set **transmission expansion limits** for scenario 5 and 6 based on DOE NTL Study [PR #136](https://github.com/open-energy-transition/efuels-supply-potentials/pull/136)
+
 * Implement **pre-commit hooks** [PR #138](https://github.com/open-energy-transition/efuels-supply-potentials/pull/138)
 
 * Enable **Git LFS** for large files [PR #137](https://github.com/open-energy-transition/efuels-supply-potentials/pull/137)

@@ -1752,6 +1752,111 @@ def hydrogen_temporal_constraint(n, additionality, time_period):
                     )
 
 
+def add_H2_production_constraints(n, config):
+    """
+    Add annual hydrogen production min/max constraints from electrolysis.
+
+    CSV format:
+      - index: [country, carrier]
+      - carrier is a logical category, expected: 'h2_electrolysis'
+      - columns: MultiIndex (year, {min,max})
+      - values in MWh_H2 / year
+    """
+
+    path = config["policy_config"]["hydrogen"].get("agg_h2_production_limits")
+    if not path:
+        raise ValueError(
+            "Missing config['policy_config']['hydrogen']['agg_h2_production_limits']"
+        )
+
+    year = snakemake.wildcards.planning_horizons
+
+    try:
+        df = pd.read_csv(
+            path,
+            index_col=[0, 1],
+            header=[0, 1],
+        )[year]
+    except Exception as e:
+        raise RuntimeError(f"Failed to read H2 production limits CSV: {path}") from e
+
+    # Logical carrier (policy category used in csv to set the constraint)
+    logical_carrier = "h2_electrolysis"
+
+    # Physical carriers aggregated under h2_electrolysis
+    ELECTROLYSIS_CARRIERS = [
+        "Alkaline electrolyzer large",
+        "Alkaline electrolyzer medium",
+        "Alkaline electrolyzer small",
+        "PEM electrolyzer",
+        "SOEC",
+        "Flexible electrolyzer",
+    ]
+
+    el_links = n.links.index[n.links.carrier.isin(ELECTROLYSIS_CARRIERS)]
+    if el_links.empty or ("Link", "p") not in n.variables.index:
+        return
+
+    # Power variable
+    p_el = get_var(n, "Link", "p")[el_links]
+
+    # Snapshot weightings to annual energy
+    w = pd.DataFrame(
+        np.outer(n.snapshot_weightings["generators"], [1.0] * len(el_links)),
+        index=n.snapshots,
+        columns=el_links,
+    )
+
+    # Electricity -> H2 conversion
+    eff = n.links.loc[el_links, "efficiency"]
+
+    # Annual H2 output per link (MWh_H2/year)
+    h2_out_links = linexpr((w * eff, p_el)).sum(axis=0)
+
+    # Aggregate by country (via electricity bus0)
+    el_country = n.buses.loc[n.links.loc[el_links, "bus0"], "country"]
+
+    h2_out_per_cc = (
+        pd.DataFrame(
+            {
+                "expr": h2_out_links,
+                "country": el_country,
+                "carrier": logical_carrier,
+            }
+        )
+        .groupby(["country", "carrier"])["expr"]
+        .apply(join_exprs)
+    )
+
+    # Apply MIN constraint if present
+    if "min" in df.columns:
+        mins = df["min"].dropna()
+        idx = h2_out_per_cc.index.intersection(mins.index)
+        if not idx.empty:
+            define_constraints(
+                n,
+                h2_out_per_cc[idx],
+                ">=",
+                mins[idx],
+                "h2_prod",
+                "min",
+            )
+
+    # Apply MAX constraint if present
+    if "max" in df.columns:
+        maxs = df["max"].dropna()
+        idx = h2_out_per_cc.index.intersection(maxs.index)
+        if not idx.empty:
+            define_constraints(
+                n,
+                h2_out_per_cc[idx],
+                "<=",
+                maxs[idx],
+                "h2_prod",
+                "max",
+            )
+
+
 def add_chp_constraints(n):
     electric_bool = (
         n.links.index.str.contains("urban central")
@@ -1994,8 +2099,12 @@ def extra_functionality(n, snapshots):
         add_BAU_constraints(n, config)
     if "SAFE" in opts and n.generators.p_nom_extendable.any():
         add_SAFE_constraints(n, config)
+    # Annual capacity cap
     if "CCL" in opts and n.generators.p_nom_extendable.any():
         add_CCL_constraints(n, config)
+    # Annual H2 production cap
+    if "H2CAP" in opts:
+        add_H2_production_constraints(n, config)
     reserve = config["electricity"].get("operational_reserve", {})
     if reserve.get("activate"):
         add_operational_reserve_margin(n, snapshots, config)
@@ -2172,9 +2281,13 @@ if __name__ == "__main__":
     # Set transmission limits for scenario 5 and 6
     if snakemake.config.get("line_expansion_limits", None):
         # Get expansion limit for selected planning horizon
-        ll_expansion_limit = snakemake.config["line_expansion_limits"][int(snakemake.wildcards.planning_horizons)]
+        ll_expansion_limit = snakemake.config["line_expansion_limits"][
+            int(snakemake.wildcards.planning_horizons)
+        ]
         ll_type, factor = ll_expansion_limit[0], ll_expansion_limit[1:]
-        set_transmission_limit(n, ll_type=ll_type, factor=factor, costs=costs, Nyears=Nyears)
+        set_transmission_limit(
+            n, ll_type=ll_type, factor=factor, costs=costs, Nyears=Nyears
+        )
 
     n = solve_network(
         n,

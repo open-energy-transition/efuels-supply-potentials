@@ -4,11 +4,19 @@
 
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
+
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 import warnings
+
 warnings.filterwarnings("ignore")
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            download_and_unzip_gdrive, configure_logging, PYPSA_EARTH_DIR
+from scripts._helper import (
+    mock_snakemake,
+    update_config_from_wildcards,
+    create_logger,
+    download_and_unzip_gdrive,
+    configure_logging,
+    PYPSA_EARTH_DIR,
+)
 
 
 logger = create_logger(__name__)
@@ -33,6 +41,6 @@ if __name__ == "__main__":
     destination = "data"
 
     # download demand data
-    downloaded = download_and_unzip_gdrive(config_demand_data,
-                                           destination=destination,
-                                           logger=logger)
+    downloaded = download_and_unzip_gdrive(
+        config_demand_data, destination=destination, logger=logger
+    )

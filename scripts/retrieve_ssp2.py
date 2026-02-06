@@ -4,12 +4,18 @@
 
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
+
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 import shutil
 import warnings
+
 warnings.filterwarnings("ignore")
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            configure_logging
+from scripts._helper import (
+    mock_snakemake,
+    update_config_from_wildcards,
+    create_logger,
+    configure_logging,
+)
 
 logger = create_logger(__name__)
 

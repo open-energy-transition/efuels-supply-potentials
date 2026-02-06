@@ -1763,13 +1763,14 @@ def add_H2_production_constraints(n, config):
       - values in MWh_H2 / year
     """
 
-    path = config["policy_config"]["hydrogen"].get("agg_h2_production_limits")
-    if not path:
-        raise ValueError(
-            "Missing config['policy_config']['hydrogen']['agg_h2_production_limits']"
-        )
-
     year = snakemake.wildcards.planning_horizons
+
+    try:
+        path = snakemake.input.h2_cap_csv
+    except AttributeError:
+        raise RuntimeError(
+            "h2_cap_csv not provided in snakemake.input (check Snakefile input section)"
+        )
 
     try:
         df = pd.read_csv(

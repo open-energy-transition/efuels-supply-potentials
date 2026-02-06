@@ -834,6 +834,7 @@ if config["foresight"] == "myopic":
             investment_tax_credits="data/tax_credits/investment_tax_credits.csv",
             gadm_shape_path="data/demand_data/gadm41_USA_1.json",
             grid_regions_shape_path="data/temporal_matching/needs_grid_regions_aggregated.geojson",
+            h2_cap_csv="data/h2_production_minmax.csv",
             overrides="data/override_component_attrs",
             network=PYPSA_EARTH_DIR
             + RESDIR

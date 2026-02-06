@@ -2103,7 +2103,7 @@ def extra_functionality(n, snapshots):
     if "CCL" in opts and n.generators.p_nom_extendable.any():
         add_CCL_constraints(n, config)
     # Annual H2 production cap
-    if "H2CAP" in opts:
+    if config["policy_config"]["hydrogen"].get("h2_cap", False):
         add_H2_production_constraints(n, config)
     reserve = config["electricity"].get("operational_reserve", {})
     if reserve.get("activate"):

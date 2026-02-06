@@ -35,7 +35,7 @@ scenario:
   simpl: ['']
   ll: ['copt']
   clusters: [100]
-  opts: [CCL-H2CAP-3H]
+  opts: [CCL-3H]
   planning_horizons:
   - 2030
   - 2035
@@ -111,6 +111,7 @@ policy_config:
     temporal_matching: "hourly" # either "hourly", "monthly", "yearly", "no_temporal_matching"
     additionality: true
     temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro, nuclear]
+    h2_cap: true
     agg_h2_production_limits: data/h2_production_minmax.csv
 
 demand_data:

@@ -99,6 +99,9 @@ from scripts._helper import (
     attach_grid_region_to_buses,
     update_config_from_wildcards,
 )
+
+from prepare_network import set_transmission_limit
+from add_electricity import load_costs
 from _helpers import override_component_attrs
 from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 from pypsa.linopf import (
@@ -2107,6 +2110,14 @@ if __name__ == "__main__":
     overrides = override_component_attrs(snakemake.input.overrides)
     n = pypsa.Network(snakemake.input.network, override_component_attrs=overrides)
 
+    Nyears = n.snapshot_weightings.objective.sum() / 8760.0
+    costs = load_costs(
+        snakemake.input.costs,
+        snakemake.config["costs"],
+        snakemake.config["electricity"],
+        Nyears,
+    )
+
     n = attach_grid_region_to_buses(
         n,
         path_shapes=snakemake.input.grid_regions_shape_path,
@@ -2157,6 +2168,13 @@ if __name__ == "__main__":
         log_path=f"logs/tax_credit_modifications_{snakemake.wildcards.planning_horizons}.csv",
         verbose=False,
     )
+
+    # Set transmission limits for scenario 5 and 6
+    if snakemake.config.get("line_expansion_limits", None):
+        # Get expansion limit for selected planning horizon
+        ll_expansion_limit = snakemake.config["line_expansion_limits"][int(snakemake.wildcards.planning_horizons)]
+        ll_type, factor = ll_expansion_limit[0], ll_expansion_limit[1:]
+        set_transmission_limit(n, ll_type=ll_type, factor=factor, costs=costs, Nyears=Nyears)
 
     n = solve_network(
         n,

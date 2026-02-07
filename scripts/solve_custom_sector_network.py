@@ -986,20 +986,21 @@ def add_CCL_constraints(n, config):
             "aggregate capacity limits per country in "
             "config['electricity']['agg_p_nom_limit']."
         )
+        return
     logger.info(
         "Adding per carrier generation capacity constraints for individual countries"
     )
 
     gen_country = n.generators.bus.map(n.buses.country)
 
-    # Calculate existing (non-extendable) capacity per country and carrier
+    # Existing (non-extendable) capacity per country and carrier
     existing_capacity_per_cc = (
         n.generators.query("not p_nom_extendable")
         .groupby([gen_country, "carrier"])["p_nom"]
         .sum()
     )
 
-    # cc means country and carrier
+    # p_nom variables aggregated by country and carrier
     p_nom_per_cc = (
         pd.DataFrame(
             {
@@ -1013,52 +1014,52 @@ def add_CCL_constraints(n, config):
         .p_nom.apply(join_exprs)
     )
 
-    if "min" in agg_p_nom_minmax.columns:
+    # MIN constraint
+    if isinstance(agg_p_nom_minmax, pd.DataFrame) and "min" in agg_p_nom_minmax.columns:
         minimum = agg_p_nom_minmax["min"].dropna()
     else:
         minimum = pd.Series(dtype=float)
+
     if not minimum.empty:
-        # Subtract existing capacity from minimum limits
         adjusted_minimum = minimum.copy()
         for idx in minimum.index:
             existing_cap = existing_capacity_per_cc.get(idx, 0.0)
             adjusted_minimum[idx] = max(0.0, minimum[idx] - existing_cap)
 
-        # Only apply constraints where adjusted minimum > 0
         adjusted_minimum = adjusted_minimum[adjusted_minimum > 0]
         if not adjusted_minimum.empty:
-            available_indices = p_nom_per_cc.index.intersection(adjusted_minimum.index)
-            if not available_indices.empty:
-                minconstraint = define_constraints(
+            idx = p_nom_per_cc.index.intersection(adjusted_minimum.index)
+            if not idx.empty:
+                define_constraints(
                     n,
-                    p_nom_per_cc[available_indices],
+                    p_nom_per_cc[idx],
                     ">=",
-                    adjusted_minimum[available_indices],
+                    adjusted_minimum[idx],
                     "agg_p_nom",
                     "min",
                 )
 
-    if "max" in agg_p_nom_minmax.columns:
+    # MAX constraint (optional)
+    if isinstance(agg_p_nom_minmax, pd.DataFrame) and "max" in agg_p_nom_minmax.columns:
         maximum = agg_p_nom_minmax["max"].dropna()
     else:
         maximum = pd.Series(dtype=float)
+
     if not maximum.empty:
-        # Subtract existing capacity from maximum limits
         adjusted_maximum = maximum.copy()
         for idx in maximum.index:
             existing_cap = existing_capacity_per_cc.get(idx, 0.0)
             adjusted_maximum[idx] = max(0.0, maximum[idx] - existing_cap)
 
-        # Only apply constraints where adjusted maximum > 0
         adjusted_maximum = adjusted_maximum[adjusted_maximum > 0]
         if not adjusted_maximum.empty:
-            available_indices = p_nom_per_cc.index.intersection(adjusted_maximum.index)
-            if not available_indices.empty:
-                maxconstraint = define_constraints(
+            idx = p_nom_per_cc.index.intersection(adjusted_maximum.index)
+            if not idx.empty:
+                define_constraints(
                     n,
-                    p_nom_per_cc[available_indices],
+                    p_nom_per_cc[idx],
                     "<=",
-                    adjusted_maximum[available_indices],
+                    adjusted_maximum[idx],
                     "agg_p_nom",
                     "max",
                 )

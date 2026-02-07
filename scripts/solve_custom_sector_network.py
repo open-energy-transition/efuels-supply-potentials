@@ -1762,14 +1762,12 @@ def add_H2_production_constraints(n, config):
     Add annual hydrogen production min/max constraints from electrolysis.
     """
 
-    year = snakemake.wildcards.planning_horizons
+    year = int(snakemake.wildcards.planning_horizons)
 
     try:
         path = snakemake.input.h2_cap_csv
     except AttributeError:
-        raise RuntimeError(
-            "h2_cap_csv not provided in snakemake.input (check Snakefile input section)"
-        )
+        raise RuntimeError("h2_cap_csv not provided in snakemake.input")
 
     try:
         df = pd.read_csv(
@@ -1804,7 +1802,6 @@ def add_H2_production_constraints(n, config):
     )
 
     eff = n.links.loc[el_links, "efficiency"]
-
     h2_out_links = linexpr((w * eff, p_el)).sum(axis=0)
 
     el_country = n.buses.loc[n.links.loc[el_links, "bus0"], "country"]
@@ -1825,27 +1822,13 @@ def add_H2_production_constraints(n, config):
         mins = df["min"].dropna()
         idx = h2_out_per_cc.index.intersection(mins.index)
         if not idx.empty:
-            define_constraints(
-                n,
-                h2_out_per_cc[idx],
-                ">=",
-                mins[idx],
-                "h2_prod",
-                "min",
-            )
+            define_constraints(n, h2_out_per_cc[idx], ">=", mins[idx], "h2_prod", "min")
 
     if "max" in df.columns:
         maxs = df["max"].dropna()
         idx = h2_out_per_cc.index.intersection(maxs.index)
         if not idx.empty:
-            define_constraints(
-                n,
-                h2_out_per_cc[idx],
-                "<=",
-                maxs[idx],
-                "h2_prod",
-                "max",
-            )
+            define_constraints(n, h2_out_per_cc[idx], "<=", maxs[idx], "h2_prod", "max")
 
 
 def add_chp_constraints(n):

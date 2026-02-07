@@ -1013,7 +1013,10 @@ def add_CCL_constraints(n, config):
         .p_nom.apply(join_exprs)
     )
 
-    minimum = agg_p_nom_minmax["min"].dropna()
+    if "min" in agg_p_nom_minmax.columns:
+        minimum = agg_p_nom_minmax["min"].dropna()
+    else:
+        minimum = pd.Series(dtype=float)
     if not minimum.empty:
         # Subtract existing capacity from minimum limits
         adjusted_minimum = minimum.copy()
@@ -1035,7 +1038,10 @@ def add_CCL_constraints(n, config):
                     "min",
                 )
 
-    maximum = agg_p_nom_minmax["max"].dropna()
+    if "max" in agg_p_nom_minmax.columns:
+        maximum = agg_p_nom_minmax["max"].dropna()
+    else:
+        maximum = pd.Series(dtype=float)
     if not maximum.empty:
         # Subtract existing capacity from maximum limits
         adjusted_maximum = maximum.copy()

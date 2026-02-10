@@ -1154,10 +1154,11 @@ def add_h2_production_constraints(n, config):
     h2_out_per_cc = (
         pd.DataFrame(
             {
-                "expr": h2_out_links,
-                "country": el_country,
+                "expr": h2_out_links.values,
+                "country": el_country.values,
                 "carrier": logical_carrier,
-            }
+            },
+            index=el_links,
         )
         .groupby(["country", "carrier"])["expr"]
         .apply(join_exprs)

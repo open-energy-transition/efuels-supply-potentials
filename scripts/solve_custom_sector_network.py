@@ -1059,6 +1059,98 @@ def add_CCL_constraints(n, config):
                 )
 
 
+def add_h2_production_constraints(n, config):
+    """
+    Add aggregate hydrogen production constraints based on policy_config.
+
+    The constraint limits total annual H2 production from electrolyzers,
+    using a min/max table provided in an external CSV file.
+    """
+
+    h2_cfg = config.get("policy_config", {}).get("hydrogen", {})
+
+    # Switch OFF → no-op
+    if not h2_cfg.get("h2_production_constraint", False):
+        return
+
+    h2_prod_limits = h2_cfg.get("h2_production_limits")
+    if h2_prod_limits is None:
+        raise ValueError(
+            "h2_production_constraint is enabled but "
+            "config['policy_config']['hydrogen']['h2_production_limits'] is not set"
+        )
+
+    try:
+        h2_prod_minmax = pd.read_csv(
+            h2_prod_limits,
+            index_col=[0, 1],
+            header=[0, 1],
+        )[snakemake.wildcards.planning_horizons]
+    except IOError:
+        logger.exception(
+            f"Cannot read H2 production constraint file at {h2_prod_limits}"
+        )
+        return
+
+    logger.info("Adding aggregate H2 production constraints")
+
+    # Carriers defined in the CSV (e.g. 'h2_electrolysis')
+    carriers = h2_prod_minmax.index.get_level_values(1).unique()
+
+    el_links = n.links.index[n.links.carrier.isin(carriers)]
+    if el_links.empty:
+        logger.warning(
+            "H2 production constraint enabled, but no matching electrolyzer links found."
+        )
+        return
+
+    # Map electrolyzers to country via H2 bus (bus1)
+    link_country = n.links.loc[el_links, "bus1"].map(n.buses.country)
+
+    # Production expression: sum_t p * efficiency * snapshot_weight
+    p = get_var(n, "Link", "p")[el_links]
+    eff = n.links.loc[el_links, "efficiency"]
+
+    lhs = (
+        linexpr(
+            (
+                n.snapshot_weightings.generators,
+                p.mul(eff, axis=1).T,
+            )
+        )
+        .T.groupby([link_country, n.links.loc[el_links, "carrier"]], axis=1)
+        .apply(join_exprs)
+    )
+
+    # MIN constraint
+    minimum = h2_prod_minmax["min"].dropna()
+    if not minimum.empty:
+        available = lhs.columns.intersection(minimum.index)
+        if not available.empty:
+            define_constraints(
+                n,
+                lhs[available],
+                ">=",
+                minimum[available],
+                "h2_production",
+                "min",
+            )
+
+    # MAX constraint
+    maximum = h2_prod_minmax["max"].dropna()
+    if not maximum.empty:
+        available = lhs.columns.intersection(maximum.index)
+        if not available.empty:
+            define_constraints(
+                n,
+                lhs[available],
+                "<=",
+                maximum[available],
+                "h2_production",
+                "max",
+            )
+
+
 def add_EQ_constraints(n, o, scaling=1e-1):
     float_regex = "[0-9]*\.?[0-9]+"
     level = float(re.findall(float_regex, o)[0])
@@ -1996,6 +2088,8 @@ def extra_functionality(n, snapshots):
         add_SAFE_constraints(n, config)
     if "CCL" in opts and n.generators.p_nom_extendable.any():
         add_CCL_constraints(n, config)
+    # H2 production constraint
+    add_h2_production_constraints(n, config)
     reserve = config["electricity"].get("operational_reserve", {})
     if reserve.get("activate"):
         add_operational_reserve_margin(n, snapshots, config)
@@ -2172,9 +2266,13 @@ if __name__ == "__main__":
     # Set transmission limits for scenario 5 and 6
     if snakemake.config.get("line_expansion_limits", None):
         # Get expansion limit for selected planning horizon
-        ll_expansion_limit = snakemake.config["line_expansion_limits"][int(snakemake.wildcards.planning_horizons)]
+        ll_expansion_limit = snakemake.config["line_expansion_limits"][
+            int(snakemake.wildcards.planning_horizons)
+        ]
         ll_type, factor = ll_expansion_limit[0], ll_expansion_limit[1:]
-        set_transmission_limit(n, ll_type=ll_type, factor=factor, costs=costs, Nyears=Nyears)
+        set_transmission_limit(
+            n, ll_type=ll_type, factor=factor, costs=costs, Nyears=Nyears
+        )
 
     n = solve_network(
         n,

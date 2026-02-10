@@ -1061,12 +1061,12 @@ def add_CCL_constraints(n, config):
 
 def add_h2_production_constraints(n, config):
     """
-    Add annual H2 production min/max constraints for electrolysis.
+    Add annual aggregate H2 production min/max constraints for electrolysis.
 
-    CSV format:
-      - index: (country, logical_carrier)
-      - columns: MultiIndex (year, {min,max})
-      - values: MWh_H2 per year
+    CSV format (same as agg_p_nom_minmax):
+      - index: (country, carrier)
+      - columns: MultiIndex (year, {min, max})
+      - values: annual H2 production in MWh_H2
     """
 
     h2_cfg = config.get("policy_config", {}).get("hydrogen", {})
@@ -1077,16 +1077,18 @@ def add_h2_production_constraints(n, config):
     csv_path = h2_cfg.get("h2_production_limits")
     if csv_path is None:
         raise ValueError(
-            "h2_production_constraint is enabled but h2_production_limits is not set"
+            "h2_production_constraint is enabled but "
+            "no 'h2_production_limits' CSV is provided in config."
         )
+
+    logger.info("Adding aggregate H2 production constraints")
+    logger.info(f"Reading H2 production caps from {csv_path}")
 
     year = str(snakemake.wildcards.planning_horizons)
 
-    logger.info(f"Reading H2 production caps from {csv_path}")
-
     df = pd.read_csv(
         csv_path,
-        index_col=[0, 1],  # country, logical carrier
+        index_col=[0, 1],  # country, carrier
         header=[0, 1],  # year, min/max
     )
 
@@ -1099,8 +1101,10 @@ def add_h2_production_constraints(n, config):
         logger.info(f"Empty H2 production cap table for year {year}, skipping.")
         return
 
+    # Logical carrier used in the CSV
     logical_carrier = "h2_electrolysis"
 
+    # Physical electrolyzer carriers in the network
     ELECTROLYSIS_CARRIERS = [
         "Alkaline electrolyzer large",
         "Alkaline electrolyzer medium",
@@ -1110,32 +1114,43 @@ def add_h2_production_constraints(n, config):
         "Flexible electrolyzer",
     ]
 
-    el_links = n.links.index[n.links.carrier.isin(ELECTROLYSIS_CARRIERS)]
-    if el_links.empty or ("Link", "p") not in n.variables.index:
+    # 1) Select candidate electrolyzer links by carrier
+    el_links_all = n.links.index[n.links.carrier.isin(ELECTROLYSIS_CARRIERS)]
+
+    if el_links_all.empty:
         raise ValueError(
-            "H2 production constraint enabled but no electrolyzer links found."
+            "H2 production constraint enabled but no electrolyzer links "
+            "were found in the network."
         )
 
-    p_el = get_var(n, "Link", "p")[el_links]
+    # 2) Keep only links that actually have a dispatch variable `p`
+    p_vars = get_var(n, "Link", "p")
+    el_links = el_links_all.intersection(p_vars.columns)
 
+    if el_links.empty:
+        raise ValueError(
+            "H2 production constraint enabled but none of the electrolyzer links "
+            "have a dispatch variable 'p'."
+        )
+
+    # 3) Electrolyzer dispatch variables
+    p_el = p_vars[el_links]
+
+    # Snapshot weightings
     w = pd.DataFrame(
-        np.outer(
-            n.snapshot_weightings["generators"],
-            np.ones(len(el_links)),
-        ),
+        np.outer(n.snapshot_weightings["generators"], np.ones(len(el_links))),
         index=n.snapshots,
         columns=el_links,
     )
 
+    # H2 output = electricity input * efficiency
     eff = n.links.loc[el_links, "efficiency"]
-
-    # Annual H2 output per link
     h2_out_links = linexpr((w * eff, p_el)).sum(axis=0)
 
-    # Country via electrolyzer electricity bus (same as before)
+    # Map electrolyzers to country via bus0
     el_country = n.buses.loc[n.links.loc[el_links, "bus0"], "country"]
 
-    # Aggregate to (country, logical_carrier)
+    # Aggregate H2 production per (country, logical carrier)
     h2_out_per_cc = (
         pd.DataFrame(
             {
@@ -1153,14 +1168,28 @@ def add_h2_production_constraints(n, config):
         mins = df_y["min"].dropna()
         idx = h2_out_per_cc.index.intersection(mins.index)
         if not idx.empty:
-            define_constraints(n, h2_out_per_cc[idx], ">=", mins[idx], "h2_prod", "min")
+            define_constraints(
+                n,
+                h2_out_per_cc[idx],
+                ">=",
+                mins[idx],
+                "h2_prod",
+                "min",
+            )
 
-    # MAX constraint
+    # -MAX constraint
     if "max" in df_y.columns:
         maxs = df_y["max"].dropna()
         idx = h2_out_per_cc.index.intersection(maxs.index)
         if not idx.empty:
-            define_constraints(n, h2_out_per_cc[idx], "<=", maxs[idx], "h2_prod", "max")
+            define_constraints(
+                n,
+                h2_out_per_cc[idx],
+                "<=",
+                maxs[idx],
+                "h2_prod",
+                "max",
+            )
 
 
 def add_EQ_constraints(n, o, scaling=1e-1):

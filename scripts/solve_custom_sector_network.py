@@ -1106,9 +1106,9 @@ def add_h2_production_constraints(n, config):
 
     # Physical electrolyzer carriers in the network
     ELECTROLYSIS_CARRIERS = [
-        "Alkaline electrolyzer large",
-        "Alkaline electrolyzer medium",
-        "Alkaline electrolyzer small",
+        "Alkaline electrolyzer large size",
+        "Alkaline electrolyzer medium size",
+        "Alkaline electrolyzer small size",
         "PEM electrolyzer",
         "SOEC",
         "Flexible electrolyzer",

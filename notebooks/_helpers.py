@@ -10593,16 +10593,23 @@ def compute_marginal_h2_price_by_grid_region(
     customer_charge_mw=400.0,
     demand_charge_rate=9.0,
     baseload_percentages=None,
+    year_title=True,
 ):
     """
     Compute weighted average marginal H2 price by grid region (USD/kg H2),
     including transmission fees and baseload charges.
 
+    Parameters
+    ----------
+    year_title : bool, default True
+        If True, group results by extracted year (int, e.g. 2030).
+        If False, group results by the full network key (scenario name).
+
     Returns
     -------
     pd.DataFrame with columns:
         - grid_region
-        - year (int)
+        - year (int when year_title=True, str when year_title=False)
         - weighted_price (USD/kg H2)
         - total_h2_output (MWh)
     """
@@ -10624,7 +10631,7 @@ def compute_marginal_h2_price_by_grid_region(
             baseload_percentages=baseload_percentages,
             output_threshold=output_threshold,
             verbose=False,
-            year_title=True,  # internal, but results must be keyed by year
+            year_title=year_title,
         )
 
     all_results = []
@@ -10642,6 +10649,9 @@ def compute_marginal_h2_price_by_grid_region(
         # Skip base year explicitly if needed
         if scen_year == 2023:
             continue
+
+        # Determine the key for results based on year_title
+        key = scen_year if year_title else year_key
 
         links = net.links[net.links.carrier.isin(h2_carriers)]
         if links.empty:
@@ -10704,11 +10714,11 @@ def compute_marginal_h2_price_by_grid_region(
         )
 
         # --------------------------------------------------
-        # Baseload charges (by YEAR)
+        # Baseload charges (by key)
         # --------------------------------------------------
-        if include_baseload and scen_year in baseload_charges:
+        if include_baseload and key in baseload_charges:
             bl = (
-                baseload_charges[scen_year]
+                baseload_charges[key]
                 .set_index("grid_region")["baseload_cost_per_mwh_h2"]
             )
             df["baseload"] = df["grid_region"].map(bl).fillna(0.0) / conv
@@ -10716,10 +10726,10 @@ def compute_marginal_h2_price_by_grid_region(
             df["baseload"] = 0.0
 
         # --------------------------------------------------
-        # Final price and year (ALWAYS numeric)
+        # Final price and year/scenario key
         # --------------------------------------------------
         df["price"] = df["h2_price"] + df["transmission"] + df["baseload"]
-        df["year"] = int(scen_year)
+        df["year"] = key
 
         all_results.append(df)
 
@@ -10744,8 +10754,8 @@ def compute_marginal_h2_price_by_grid_region(
     # --------------------------------------------------
     # Final sanity check (fail fast)
     # --------------------------------------------------
-    if not pd.api.types.is_numeric_dtype(region_price["year"]):
-        raise TypeError("Internal error: 'year' must be numeric")
+    if year_title and not pd.api.types.is_numeric_dtype(region_price["year"]):
+        raise TypeError("Internal error: 'year' must be numeric when year_title=True")
 
     return region_price
 
@@ -10795,9 +10805,6 @@ def plot_marginal_h2_price_maps(
     if missing:
         raise KeyError(f"region_price missing required columns: {missing}")
 
-    if not pd.api.types.is_numeric_dtype(region_price["year"]):
-        raise TypeError("region_price['year'] must be numeric (e.g. 2030, 2040)")
-
     # -----------------------------
     # Merge shapes with data
     # -----------------------------
@@ -10810,9 +10817,9 @@ def plot_marginal_h2_price_maps(
     vmax = plot_df["weighted_price"].quantile(0.95)
 
     # -----------------------------
-    # Plot one map per year
+    # Plot one map per year/scenario
     # -----------------------------
-    for year in sorted(plot_df["year"].dropna().unique()):
+    for year in sorted(plot_df["year"].dropna().unique(), key=str):
         fig, ax = plt.subplots(
             figsize=(12, 10),
             subplot_kw={"projection": ccrs.PlateCarree()},
@@ -10837,8 +10844,10 @@ def plot_marginal_h2_price_maps(
         ax.set_extent([-130, -65, 20, 55])
         ax.axis("off")
 
+        # Use int formatting only for numeric years
+        title_label = int(year) if isinstance(year, (int, float, np.integer)) else year
         ax.set_title(
-            f"Hydrogen marginal price by grid region – {int(year)}"
+            f"Hydrogen marginal price by grid region \u2013 {title_label}"
         )
 
         showfig()
@@ -10847,17 +10856,17 @@ def build_marginal_h2_price_table(
     region_price,
 ):
     """
-    Build one table per year for marginal H2 prices by grid region.
+    Build one table per year/scenario for marginal H2 prices by grid region.
 
     Returns
     -------
-    dict[int, pd.DataFrame]
-        {year: DataFrame indexed by grid_region}
+    dict[int|str, pd.DataFrame]
+        {year_or_scenario: DataFrame indexed by grid_region}
     """
 
     tables = {}
 
-    for year in sorted(region_price["year"].unique()):
+    for year in sorted(region_price["year"].unique(), key=str):
         df = region_price[region_price["year"] == year]
 
         if df.empty:
@@ -10873,7 +10882,9 @@ def build_marginal_h2_price_table(
             .sort_index()
         )
 
-        tables[int(year)] = table
+        # Use int key for numeric years, string key for scenarios
+        key = int(year) if isinstance(year, (int, float, np.integer)) else year
+        tables[key] = table
 
     return tables
 

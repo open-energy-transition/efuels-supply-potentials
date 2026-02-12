@@ -1083,17 +1083,24 @@ def add_h2_production_constraints(n, config):
 
     logger.info("Adding aggregate H2 production constraints")
 
-    # EXACT SAME YEAR LOGIC AS CCL
     try:
-        df_y = pd.read_csv(
+        df_full = pd.read_csv(
             csv_path,
             index_col=[0, 1],
             header=[0, 1],
-        )[snakemake.wildcards.planning_horizons]
+        )
+        df_y = df_full[snakemake.wildcards.planning_horizons]
+
     except IOError:
         logger.exception(
-            "Need to specify a valid CSV file in "
-            "config['policy_config']['hydrogen']['h2_production_limits']."
+            "Need to specify the path to a .csv file containing "
+            "aggregate H2 production limits."
+        )
+        return
+    except KeyError:
+        logger.warning(
+            "No H2 production limits found for year %s. Skipping.",
+            snakemake.wildcards.planning_horizons,
         )
         return
 
@@ -1123,8 +1130,6 @@ def add_h2_production_constraints(n, config):
         raise ValueError("No Link.p variables found in network.")
 
     p_vars = get_var(n, "Link", "p")
-
-    # Remove duplicated columns if any
     p_vars = p_vars.loc[:, ~p_vars.columns.duplicated(keep="first")]
 
     el_links = el_links_all.intersection(p_vars.columns)
@@ -1146,7 +1151,6 @@ def add_h2_production_constraints(n, config):
     # Annual H2 output per link
     h2_out_links = linexpr((w * eff, p_el)).sum(axis=0)
 
-    # Country mapping
     el_country = n.buses.loc[n.links.loc[el_links, "bus0"], "country"].values
 
     h2_out_per_cc = (
@@ -1167,6 +1171,12 @@ def add_h2_production_constraints(n, config):
         mins = df_y["min"].dropna()
         idx = h2_out_per_cc.index.intersection(mins.index)
         if not idx.empty:
+            logger.info(
+                "Applying H2 MIN caps (MWh) for year %s: %s",
+                snakemake.wildcards.planning_horizons,
+                {k: float(mins.loc[k]) for k in idx},
+            )
+
             define_constraints(
                 n,
                 h2_out_per_cc.loc[idx],
@@ -1181,6 +1191,12 @@ def add_h2_production_constraints(n, config):
         maxs = df_y["max"].dropna()
         idx = h2_out_per_cc.index.intersection(maxs.index)
         if not idx.empty:
+            logger.info(
+                "Applying H2 MAX caps (MWh) for year %s: %s",
+                snakemake.wildcards.planning_horizons,
+                {k: float(maxs.loc[k]) for k in idx},
+            )
+
             define_constraints(
                 n,
                 h2_out_per_cc.loc[idx],

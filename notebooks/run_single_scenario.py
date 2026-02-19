@@ -36,25 +36,57 @@ RESOLUTION = args.resolution
 scenario_data = {
     "Hydrogen policy": {
         "Application of 45V pillars": [
-            "Yes*", "Yes", "Yes", "Yes", "Yes*", "Yes", "Yes", "Yes", "Yes", "No",
+            "Yes*",
+            "Yes",
+            "Yes",
+            "Yes",
+            "Yes*",
+            "Yes",
+            "Yes",
+            "Yes",
+            "Yes",
+            "No",
         ],
     },
     "Aviation sector": {
         "Demand": ["Central"] * 10,
         "e-kerosene mandate": [
-            "No", "ReFuel EU", "ReFuel EU +", "ReFuel EU -",
-            "No", "ReFuel EU", "ReFuel EU", "ReFuel EU", "ReFuel EU", "ReFuel EU",
+            "No",
+            "ReFuel EU",
+            "ReFuel EU +",
+            "ReFuel EU -",
+            "No",
+            "ReFuel EU",
+            "ReFuel EU",
+            "ReFuel EU",
+            "ReFuel EU",
+            "ReFuel EU",
         ],
     },
     "Demand projections": {
         "Electrification": [
-            "Medium", "Medium", "Medium", "Medium",
-            "High", "High", "Medium", "Medium", "Medium", "Medium",
+            "Medium",
+            "Medium",
+            "Medium",
+            "Medium",
+            "High",
+            "High",
+            "Medium",
+            "Medium",
+            "Medium",
+            "Medium",
         ],
         "Sectoral demand": [
-            "Reference", "Reference", "Reference", "Reference",
-            "High Economic Growth", "High Economic Growth",
-            "Reference", "Reference", "Reference", "Reference",
+            "Reference",
+            "Reference",
+            "Reference",
+            "Reference",
+            "High Economic Growth",
+            "High Economic Growth",
+            "Reference",
+            "Reference",
+            "Reference",
+            "Reference",
         ],
     },
     "Technology costs": {
@@ -71,10 +103,16 @@ scenario_data = {
             "Moderate + tax credits",
         ],
         "Electrolysis": [
-            "Medium", "Medium", "Medium", "Medium",
+            "Medium",
+            "Medium",
+            "Medium",
+            "Medium",
             "Medium + tax credits (IRA 2022)",
             "Medium + tax credits (IRA 2022)",
-            "Medium", "Low", "High", "Medium",
+            "Medium",
+            "Low",
+            "High",
+            "Medium",
         ],
         "DAC": ["Medium + tax credits"] * 10,
         "Point-source CO2 capture": ["High + tax credits"] * 10,
@@ -121,6 +159,7 @@ scenario_data = {
     },
 }
 
+
 # -----------------------------
 # Helpers
 # -----------------------------
@@ -141,7 +180,7 @@ def build_scenario_info(scenario_id: int) -> str:
     }[scenario_id]
 
     md = f"""
-# Grid modelling to assess electrofuels supply potential  
+# Grid modelling to assess electrofuels supply potential
 ## The impact of electrofuels on the US electricity grid
 
 ### Scenario {scenario_id}: {scenario_name}
@@ -155,6 +194,7 @@ def build_scenario_info(scenario_id: int) -> str:
             md += f"| **{category}** | **{item}** | {values[i]} |\n"
 
     return md
+
 
 # -----------------------------
 # Execution (Papermill)

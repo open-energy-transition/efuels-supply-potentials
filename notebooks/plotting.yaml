@@ -258,8 +258,8 @@ tech_colors:
   buffer co2 storage steel tank geological sequestration: '#f2385a'
   biogenic co2 storage steel tank geological sequestration: '#f2385a'
   buffer biogenic co2 storage steel tank geological sequestration: '#f2385a'
-  buffer co2 storage steel tank to tank: '#f2385a'  
-  buffer biogenic co2 storage steel tank to tank: '#f2385a'  
+  buffer co2 storage steel tank to tank: '#f2385a'
+  buffer biogenic co2 storage steel tank to tank: '#f2385a'
   process emissions CC: '#000000'
   process emissions: '#222222'
   process emissions to stored: '#444444'
@@ -392,8 +392,7 @@ nice_names:
   services rural solar thermal: Services Rural Solar Thermal
   residential urban decentral heat: Residential Urban Decentralized Heat
   residential urban decentral water tanks: Residential Urban Decentralized Water Tanks
-  residential urban decentral solar thermal: Residential Urban Decentralized Solar
-    Thermal
+  residential urban decentral solar thermal: Residential Urban Decentralized Solar Thermal
   services urban decentral heat: Services Urban Decentralized Heat
   services urban decentral water tanks: Services Urban Decentralized Water Tanks
   services urban decentral solar thermal: Services Urban Decentralized Solar Thermal
@@ -447,7 +446,7 @@ rename_tech_capex:
   solid biomass: Biomass generators
   biogas: Biomass generators
 
-  # Industry 
+  # Industry
   ethanol from starch: Industry
   ethanol from starch CC: Industry CC
   BF-BOF: Industry
@@ -458,7 +457,7 @@ rename_tech_capex:
   cement finishing: Industry
   dry clinker: Industry
   dry clinker CC: Industry CC
-  process emissions: Industry
+  # process emissions: Industry
   scrap steel: Industry
   clinker: Industry
   iron ore: Industry
@@ -471,7 +470,7 @@ rename_tech_capex:
   SMR: Industry
   SMR CC: Industry CC
   bioethanol crop: Industry
-  
+
   # Hydro
   Run of River: Hydropower
   Pumped Hydro Storage: Hydropower
@@ -562,7 +561,7 @@ rename_tech_capex:
   buffer biogenic co2 storage steel tank geological sequestration: CO2 Storage
   buffer co2 storage steel tank to tank: CO2 Storage
   buffer biogenic co2 storage steel tank to tank: CO2 Storage
-  
+
   # Hydrogen & Electrolyzers
   SOEC: Hydrogen
   PEM electrolyzer: Hydrogen
@@ -609,7 +608,7 @@ rename_tech_opex:
   oil: Fossil fuels (end uses)
   gas (power): Fossil fuels
   coal (power): Fossil fuels
-  oil (power): Fossil fuels 
+  oil (power): Fossil fuels
   Oil: Fossil fuels
   CCGT: Fossil fuels
   OCGT: Fossil fuels
@@ -641,8 +640,8 @@ rename_tech_opex:
   clinker store: Industry
   solid biomass for industry: Industry
   bioethanol crop store: Industry
-  SMR: Industry
-  SMR CC: Industry CC (incl. tax credits)
+  # SMR: Industry
+  # SMR CC: Industry CC (incl. tax credits)
   ethanol from starch: Industry
   ethanol from starch CC: Industry CC (incl. tax credits)
   bioethanol crop: Industry
@@ -653,7 +652,7 @@ rename_tech_opex:
   Reservoir & Dam: Hydropower (incl. tax credits)
 
   # Nuclear OPEX (incl. tax credit)
-  Nuclear: Nuclear (incl. tax credits)  
+  Nuclear: Nuclear (incl. tax credits)
   Geothermal: Geothermal (incl. tax credits)
 
   # Storage
@@ -677,7 +676,7 @@ rename_tech_opex:
   co2 geological sequestration: CO2 Storage
   co2 storage steel tank: CO2 Storage
   co2 storage steel tank geological sequestration: CO2 Storage
-  buffer co2 storage steel tank geological sequestration: CO2 Storage  
+  buffer co2 storage steel tank geological sequestration: CO2 Storage
   biogenic co2 storage steel tank geological sequestration: CO2 Storage
   buffer biogenic co2 storage steel tank geological sequestration: CO2 Storage
   buffer co2 storage steel tank to tank: CO2 Storage
@@ -809,7 +808,7 @@ categories_capex:
   Geothermal: Power & heat generation
   Wind: Power & heat generation
   Solar: Power & heat generation
-  Heating: Power & heat generation  
+  Heating: Power & heat generation
 
   Electricity Storage: Storage
   CO2 Storage: Storage
@@ -817,19 +816,19 @@ categories_capex:
 
   Industry: Industry
   Industry CC: Industry
-  
+
   DAC: DAC
 
   Power transmission: Transmission & distribution
   Power distribution: Transmission & distribution
   CO2 transport: Transmission & distribution
   Biomass transport: Transmission & distribution
-  
+
   Emissions: Emissions
 
   Hydrogen: Hydrogen & e-fuels
   e-fuels synthesis: Hydrogen & e-fuels
-  
+
   Biofuels synthesis: Biofuels synthesis
 
 categories_opex:
@@ -838,7 +837,7 @@ categories_opex:
   Biomass fuels (end uses): End-uses
 
   Fossil fuels: Power & heat generation
-  Biomass fuels: Power & heat generation  
+  Biomass fuels: Power & heat generation
   Hydropower (incl. tax credits): Power & heat generation
   Nuclear (incl. tax credits): Power & heat generation
   Geothermal (incl. tax credits): Power & heat generation
@@ -920,24 +919,24 @@ nice_names_power:
   "battery": "Battery"
 
 tech_power_order:
-  - "Gas CCGT"
-  - "Gas OCGT"
-  - "Gas CHP"
-  - "Coal"
-  - "Oil"
-  - "Conventional hydro"
-  - "Pumped hydro storage"
-  - "Run-of-River hydro"
-  - "Biomass"
-  - "Biomass CHP"
-  - "Nuclear"
-  - "Geothermal"
-  - "Onshore wind"
-  - "Offshore wind"
-  - "Utility-scale solar"
-  - "Solar rooftop"
-  - "CSP"
-  - "Battery"
+- "Gas CCGT"
+- "Gas OCGT"
+- "Gas CHP"
+- "Coal"
+- "Oil"
+- "Conventional hydro"
+- "Pumped hydro storage"
+- "Run-of-River hydro"
+- "Biomass"
+- "Biomass CHP"
+- "Nuclear"
+- "Geothermal"
+- "Onshore wind"
+- "Offshore wind"
+- "Utility-scale solar"
+- "Solar rooftop"
+- "CSP"
+- "Battery"
 
 emm_mapping:
   Alaska: WECC/Northwest Power Pool

@@ -2,7 +2,7 @@
 
 This directory contains Jupyter notebooks for analyzing PyPSA-Earth-based scenarios for the **Grid modelling to assess electrofuels supply potential – The impact of electrofuels on the US electricity grid** study and for validating model results against historical data.
 
-Once you have cloned the `efuels-supply-potentials` repository, navigate to the `notebooks` directory. 
+Once you have cloned the `efuels-supply-potentials` repository, navigate to the `notebooks` directory.
 
 The workflow supports **parameterized, reproducible scenario analysis** across multiple planning horizons and temporal resolutions.
 
@@ -169,7 +169,7 @@ SCENARIO_IDS = ["01", "02", "03", "04", "07", "08", "09", "10"]
 RESOLUTION = "3H"
 ```
 
-* `SCENARIO_IDS` selects the scenarios included in the comparison  
+* `SCENARIO_IDS` selects the scenarios included in the comparison
 * `RESOLUTION` selects which solved networks are loaded (e.g. `1H`, `3H`, `24H`, `196H`)
 
 ---
@@ -244,7 +244,7 @@ python run_multiple_scenario.py \
   --mode each
 ```
 
-Execution is sequential by design to avoid memory issues.  
+Execution is sequential by design to avoid memory issues.
 If required networks for a given scenario, year, or resolution are missing, the notebook will fail fast.
 
 ---

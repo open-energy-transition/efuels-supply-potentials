@@ -21,10 +21,7 @@ RESOLUTION = args.resolution
 INPUT_NOTEBOOK = "validation_base_year.ipynb"
 OUTPUT_NOTEBOOK = f"validation_base_year_{RESOLUTION}.ipynb"
 
-print(
-    f"[run] base year validation "
-    f"resolution={RESOLUTION}"
-)
+print(f"[run] base year validation resolution={RESOLUTION}")
 
 pm.execute_notebook(
     input_path=INPUT_NOTEBOOK,

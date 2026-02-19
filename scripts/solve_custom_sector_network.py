@@ -2172,9 +2172,13 @@ if __name__ == "__main__":
     # Set transmission limits for scenario 5 and 6
     if snakemake.config.get("line_expansion_limits", None):
         # Get expansion limit for selected planning horizon
-        ll_expansion_limit = snakemake.config["line_expansion_limits"][int(snakemake.wildcards.planning_horizons)]
+        ll_expansion_limit = snakemake.config["line_expansion_limits"][
+            int(snakemake.wildcards.planning_horizons)
+        ]
         ll_type, factor = ll_expansion_limit[0], ll_expansion_limit[1:]
-        set_transmission_limit(n, ll_type=ll_type, factor=factor, costs=costs, Nyears=Nyears)
+        set_transmission_limit(
+            n, ll_type=ll_type, factor=factor, costs=costs, Nyears=Nyears
+        )
 
     n = solve_network(
         n,

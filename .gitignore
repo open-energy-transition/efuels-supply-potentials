@@ -11,3 +11,4 @@ data/demand_data/
 data/icct/aviation_demand.csv
 .idea/
 notebooks/results/
+.pytest_cache/

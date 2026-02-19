@@ -77,6 +77,7 @@ Details (and errors made through this heuristic) are discussed in the paper
     for all ``scenario`` s in the configuration file
     the rule :mod:`solve_network`.
 """
+
 import logging
 import os
 import re
@@ -86,9 +87,21 @@ import numpy as np
 import pandas as pd
 import pypsa
 import sys
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../submodules/pypsa-earth/scripts/")))
-from scripts._helper import configure_logging, create_logger, mock_snakemake, update_config_from_wildcards
+
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
+sys.path.append(
+    os.path.abspath(os.path.join(__file__, "../../submodules/pypsa-earth/scripts/"))
+)
+from scripts._helper import (
+    configure_logging,
+    create_logger,
+    mock_snakemake,
+    attach_grid_region_to_buses,
+    update_config_from_wildcards,
+)
+
+from prepare_network import set_transmission_limit
+from add_electricity import load_costs
 from _helpers import override_component_attrs
 from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 from pypsa.linopf import (
@@ -162,6 +175,7 @@ def prepare_network(n, solve_opts):
 
     return n
 
+
 def propagate_base_year_efficiencies(network, base_year=2020, cutoff_year=2025):
     """
     Set efficiency values for all generators and links built in or before `cutoff_year`
@@ -184,20 +198,33 @@ def propagate_base_year_efficiencies(network, base_year=2020, cutoff_year=2025):
 
     # Apply efficiencies to existing links
     for name, link in network.links.iterrows():
-        if link.carrier in base_efficiencies and getattr(link, "build_year", float("inf")) <= cutoff_year:
+        if (
+            link.carrier in base_efficiencies
+            and getattr(link, "build_year", float("inf")) <= cutoff_year
+        ):
             network.links.at[name, "efficiency"] = base_efficiencies[link.carrier]
 
     # Apply efficiencies to existing nuclear generators
     for name, gen in network.generators.iterrows():
-        if gen.carrier == "nuclear" and getattr(gen, "build_year", float("inf")) <= cutoff_year:
+        if (
+            gen.carrier == "nuclear"
+            and getattr(gen, "build_year", float("inf")) <= cutoff_year
+        ):
             network.generators.at[name, "efficiency"] = base_efficiencies["nuclear"]
 
-def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, costs, log_path=None, verbose=False):
+
+def apply_tax_credits_to_network(
+    network,
+    ptc_path,
+    itc_path,
+    planning_horizon,
+    costs,
+    config_file=None,
+    log_path=None,
+    verbose=False,
+):
     """
     Apply production and investment tax credits to the network.
-
-    - PTC (Production Tax Credit) reduces marginal_cost for eligible generators and links.
-    - ITC (Investment Tax Credit) reduces capital_cost for eligible stores (batteries).
 
     Parameters:
         network: PyPSA network object
@@ -205,20 +232,46 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         itc_path: Path to CSV file with ITC (columns: carrier, credit)
         planning_horizon: Current planning year (int)
         costs: DataFrame containing the full cost structure, including capital_cost
+        config_file: Dict loaded from YAML config file
         log_path: Optional path to save a log of applied modifications
         verbose: If True, print detailed logging of applied credits
     """
 
     modifications = []
 
-    # Load PTC file
+    # Load PTC and ITC file
     ptc_df = pd.read_csv(ptc_path)
-    ptc_credits = dict(zip(ptc_df["carrier"], ptc_df["credit"]))
+
+    # Select correct regime (IRA 2022 or OB3) if present
+    pre_ob3_tax_credits = None
+    if config_file is not None:
+        pre_ob3_tax_credits = config_file.get("policies", {}).get(
+            "pre_ob3_tax_credits", None
+        )
+
+    regime = "IRA 2022" if pre_ob3_tax_credits else "OB3"
+
+    # Filter PTC by regime if column exists
+    if "regime" in ptc_df.columns:
+        ptc_active = ptc_df[
+            (ptc_df["regime"] == regime)
+            | (ptc_df["regime"].isna())
+            | (ptc_df["regime"] == "")
+        ]
+    else:
+        ptc_active = ptc_df
+
+    # Build dictionary for active credits
+    ptc_credits = dict(zip(ptc_active["carrier"], ptc_active["credit"]))
+
+    # Load ITC file and dictionary
+    itc_df = pd.read_csv(itc_path)
+    itc_credits = dict(zip(itc_df["carrier"], itc_df["credit"]))
 
     biomass_aliases = {
         "biomass",
         "urban central solid biomass CHP",
-        "urban central solid biomass CHP CC"
+        "urban central solid biomass CHP CC",
     }
 
     cc_credit_on_co2_stored = {
@@ -226,18 +279,12 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         "SMR CC",
         "DRI CC",
         "BF-BOF CC",
-        "dry clinker CC"
+        "dry clinker CC",
     }
 
-    cc_credit_on_co2_atmosphere = {
-        "DAC"
-    }
+    cc_credit_on_co2_atmosphere = {"DAC"}
 
-    electrolyzer_carriers = {
-        "Alkaline electrolyzer large",
-        "PEM electrolyzer",
-        "SOEC"
-    }
+    electrolyzer_carriers = {"Alkaline electrolyzer large", "PEM electrolyzer", "SOEC"}
 
     # Apply Production Tax Credits to GENERATORS
     for name, gen in network.generators.iterrows():
@@ -252,34 +299,82 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         credit = ptc_credits.get(carrier_key, 0.0)
         apply, scale = False, 1.0
 
+        # Nuclear
         if carrier_key == "nuclear":
+            # Existing nuclear (fixed window 2024–2032)
             if build_year <= 2024 and 2024 <= planning_horizon <= 2032:
                 credit = ptc_credits.get("nuclear_existing", 0.0)
                 apply = True
-            elif 2030 <= build_year < 2033 and planning_horizon <= build_year + 10:
-                credit = ptc_credits.get("nuclear_new", 0.0)
-                apply = True
-        elif carrier_key == "geothermal":
-            if planning_horizon <= build_year + 10:
-                if 2030 <= build_year < 2033:
-                    apply = True
-                elif build_year == 2034:
-                    apply, scale = True, 0.75
-                elif build_year == 2035:
-                    apply, scale = True, 0.5
-        # elif carrier_key in {"solar", "onwind", "offwind-ac", "offwind-dc"}:
-        #     if planning_horizon <= build_year + 10 and 2025 <= build_year <= 2027:
-        #         credit = ptc_credits.get(carrier_key, 0.0)
-        #         apply = True
 
+            # New nuclear
+            elif 2030 <= build_year < 2033:
+                horizon_limit = 2040 if pre_ob3_tax_credits else build_year + 10
+                full_end = 2040 if pre_ob3_tax_credits else 2033
+
+                if planning_horizon <= horizon_limit:
+                    if planning_horizon <= full_end:
+                        scale = 1.0
+                        credit = ptc_credits.get("nuclear_new", 0.0)
+                        apply = True
+                    elif planning_horizon == full_end + 1:
+                        scale = 0.75
+                        credit = ptc_credits.get("nuclear_new", 0.0)
+                        apply = True
+                    elif planning_horizon == full_end + 2:
+                        scale = 0.5
+                        credit = ptc_credits.get("nuclear_new", 0.0)
+                        apply = True
+
+        # Geothermal
+        elif carrier_key == "geothermal":
+            horizon_limit = 2040 if pre_ob3_tax_credits else build_year + 10
+            full_end = 2040 if pre_ob3_tax_credits else 2033
+
+            if 2030 <= build_year <= 2035 and planning_horizon <= horizon_limit:
+                if planning_horizon <= full_end:
+                    scale = 1.0
+                    apply = True
+                elif planning_horizon == full_end + 1:
+                    scale = 0.75
+                    apply = True
+                elif planning_horizon == full_end + 2:
+                    scale = 0.5
+                    apply = True
+
+        # Solar and wind (only with pre-OB3 tax credits)
+        elif (
+            carrier_key in {"solar", "onwind", "offwind-ac", "offwind-dc"}
+            and pre_ob3_tax_credits
+        ):
+            horizon_limit = build_year + 10
+            full_end = 2033
+
+            if 2030 <= build_year <= 2035 and planning_horizon <= horizon_limit:
+                if planning_horizon <= full_end:
+                    scale = 1.0
+                    apply = True
+                elif planning_horizon == full_end + 1:
+                    scale = 0.75
+                    apply = True
+                elif planning_horizon == full_end + 2:
+                    scale = 0.5
+                    apply = True
+
+        # Apply modification if valid
         if apply:
             new_cost = base_cost + scale * credit
             network.generators.at[name, "marginal_cost"] = new_cost
-            modifications.append({
-                "component": "generator", "name": name,
-                "carrier": carrier, "build_year": build_year,
-                "original": base_cost, "credit": scale * credit, "final": new_cost
-            })
+            modifications.append(
+                {
+                    "component": "generator",
+                    "name": name,
+                    "carrier": carrier,
+                    "build_year": build_year,
+                    "original": base_cost,
+                    "credit": scale * credit,
+                    "final": new_cost,
+                }
+            )
             if verbose:
                 logger.info(f"[PTC GEN] {name} | +{scale * credit:.2f}")
 
@@ -289,19 +384,22 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
         build_year = getattr(link, "build_year", planning_horizon)
         base_cost = link["_marginal_cost_original"]
 
-        # Biomass (PTC applied per unit of electricity output)
+        # Biomass
         if carrier in biomass_aliases:
             carrier_key = "biomass"
             if carrier_key not in ptc_credits:
                 continue
 
-            if planning_horizon <= build_year + 10:
+            horizon_limit = 2040 if pre_ob3_tax_credits else build_year + 10
+            full_end = 2040 if pre_ob3_tax_credits else 2033
+
+            if 2030 <= build_year <= 2035 and planning_horizon <= horizon_limit:
                 scale = 0.0
-                if 2030 <= build_year < 2033:
+                if planning_horizon <= full_end:
                     scale = 1.0
-                elif build_year == 2034:
+                elif planning_horizon == full_end + 1:
                     scale = 0.75
-                elif build_year == 2035:
+                elif planning_horizon == full_end + 2:
                     scale = 0.5
 
                 if scale > 0:
@@ -311,83 +409,125 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
                     new_cost = base_cost + credit
 
                     network.links.at[name, "marginal_cost"] = new_cost
-                    modifications.append({
-                        "component": "link", "name": name,
-                        "carrier": carrier, "build_year": build_year,
-                        "original": base_cost, "credit": credit, "final": new_cost,
-                        "efficiency": elec_eff
-                    })
+                    modifications.append(
+                        {
+                            "component": "link",
+                            "name": name,
+                            "carrier": carrier,
+                            "build_year": build_year,
+                            "original": base_cost,
+                            "credit": credit,
+                            "final": new_cost,
+                            "efficiency": elec_eff,
+                        }
+                    )
 
                     if verbose:
                         logger.info(
-                            f"[PTC LINK Biomass] {name} | eff: {elec_eff:.3f} × credit: {scale * credit_per_mwh:.2f} → {credit:.2f}"
+                            f"[PTC LINK Biomass] {name} | year={planning_horizon}, scale={scale:.2f}, eff={elec_eff:.3f}, credit={credit:.2f}"
                         )
 
-#        # Electrolyzers
-#        elif carrier in electrolyzer_carriers:
-#            if 2025 <= build_year <= 2025 and planning_horizon <= build_year + 10:
-#
-#                credit_per_mwh_h2 = ptc_credits.get(carrier, 0.0)
-#                h2_efficiency = link.get("efficiency", 0.0)
-#
-#                if h2_efficiency > 0 and credit_per_mwh_h2 != 0.0:
-#                    credit = credit_per_mwh_h2 * h2_efficiency
-#                    new_cost = base_cost + credit
-#                    network.links.at[name, "marginal_cost"] = new_cost
-#                    modifications.append({
-#                        "component": "link", "name": name,
-#                        "carrier": carrier, "build_year": build_year,
-#                        "original": base_cost, "credit": credit, "final": new_cost
-#                    })
-#                    if verbose:
-#                        logger.info(
-#                            f"[PTC LINK ELECTROLYZER] {name} | H₂ eff: {h2_efficiency:.3f} × {credit_per_mwh_h2:.2f} → credit: {credit:.2f}")
+        # Electrolyzers
+        elif carrier in electrolyzer_carriers:
+            if not pre_ob3_tax_credits:
+                continue
 
+            if verbose:
+                logger.info(f"[PTC LINK ELECTROLYZER] pre-OB3 active for {name}")
 
-        # Carbon Capture - CO2 stored
+            if 2025 <= build_year <= 2032 and planning_horizon <= build_year + 10:
+                credit_per_mwh_h2 = ptc_credits.get(carrier, 0.0)
+                h2_efficiency = link.get("efficiency", 0.0)
+
+                if h2_efficiency > 0 and credit_per_mwh_h2 != 0.0:
+                    credit = credit_per_mwh_h2 * h2_efficiency
+                    new_cost = base_cost + credit
+                    network.links.at[name, "marginal_cost"] = new_cost
+                    modifications.append(
+                        {
+                            "component": "link",
+                            "name": name,
+                            "carrier": carrier,
+                            "build_year": build_year,
+                            "original": base_cost,
+                            "credit": credit,
+                            "final": new_cost,
+                        }
+                    )
+                    if verbose:
+                        logger.info(
+                            f"[PTC LINK ELECTROLYZER] credit applied for {name} | "
+                            f"credit={credit:.2f}, marginal_cost={new_cost:.2f}"
+                        )
+
+        # Carbon capture with CO2 storage
         elif carrier in cc_credit_on_co2_stored:
             if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
-
-                def get_co2_stored_efficiency(row):
+                # Detect efficiency toward eligible CO2 buses (only buffer co2)
+                def get_co2_eligible_efficiency(row):
+                    co2_bus_patterns = ("buffer co2",)
                     for key, val in row.items():
-                        if key.startswith("bus") and isinstance(val, str) and "co2 stored" in val.lower():
-                            eff_key = "efficiency" + key[3:]
-                            return row.get(eff_key, 0.0)
+                        if key.startswith("bus") and isinstance(val, str):
+                            name = val.lower()
+                            if any(pat in name for pat in co2_bus_patterns):
+                                eff_key = "efficiency" + key[3:]
+                                return float(row.get(eff_key, 0.0))
                     return 0.0
 
-                tco2 = get_co2_stored_efficiency(link)
+                tco2 = get_co2_eligible_efficiency(link)
                 credit_per_t = ptc_credits.get(carrier, 0.0)
 
+                # Always apply usage credit
                 if tco2 > 0 and credit_per_t != 0.0:
                     credit = credit_per_t * tco2
                     new_cost = base_cost + credit
                     network.links.at[name, "marginal_cost"] = new_cost
-                    modifications.append({
-                        "component": "link", "name": name,
-                        "carrier": carrier, "build_year": build_year,
-                        "original": base_cost, "credit": credit, "final": new_cost
-                    })
+                    modifications.append(
+                        {
+                            "component": "link",
+                            "name": name,
+                            "carrier": carrier,
+                            "build_year": build_year,
+                            "original": base_cost,
+                            "credit": credit,
+                            "final": new_cost,
+                            "assumption": "usage-only credit",
+                        }
+                    )
+
                     if verbose:
-                        logger.info(f"[PTC LINK CC-stored] {name} | CO₂: {tco2:.3f} × {credit_per_t:.2f} → credit: {credit:.2f}")
+                        logger.info(
+                            f"[PTC LINK CC-stored] {name} | CO2={tco2:.3f}, credit={credit:.2f} (usage-only)"
+                        )
 
         # DAC - CO2 atmosphere
         elif carrier in cc_credit_on_co2_atmosphere:
             if 2030 <= build_year <= 2033 and planning_horizon <= build_year + 12:
-
                 tco2 = link.efficiency
                 credit_per_t = ptc_credits.get(carrier, 0.0)
 
+                # Apply usage credit
                 if tco2 > 0 and credit_per_t != 0.0:
                     credit = credit_per_t * tco2
                     new_cost = base_cost + credit
                     network.links.at[name, "marginal_cost"] = new_cost
-                    modifications.append({
-                        "component": "link", "name": name,
-                        "carrier": carrier, "build_year": build_year,
-                        "original": base_cost, "credit": credit, "final": new_cost
-                    })
+                    modifications.append(
+                        {
+                            "component": "link",
+                            "name": name,
+                            "carrier": carrier,
+                            "build_year": build_year,
+                            "original": base_cost,
+                            "credit": credit,
+                            "final": new_cost,
+                            "assumption": "usage-only credit",
+                        }
+                    )
+
                     if verbose:
-                        logger.info(f"[PTC LINK DAC] {name} | CO₂: {tco2:.3f} × {credit_per_t:.2f} → credit: {credit:.2f}")
+                        logger.info(
+                            f"[PTC LINK DAC] {name} | CO2={tco2:.3f}, credit={credit:.2f} (usage-only)"
+                        )
 
     # Apply Investment Tax Credits to STORAGE UNITS (batteries)
     if os.path.exists(itc_path):
@@ -403,34 +543,91 @@ def apply_tax_credits_to_network(network, ptc_path, itc_path, planning_horizon, 
             for idx, su in affected.iterrows():
                 build_year = su.get("build_year", planning_horizon)
 
-                if planning_horizon <= build_year + 10:
+                horizon_limit = 2040 if pre_ob3_tax_credits else build_year + 10
+                full_end = 2040 if pre_ob3_tax_credits else 2033
+
+                if 2030 <= build_year <= 2035 and planning_horizon <= horizon_limit:
                     scale = 0.0
-                    if 2030 <= build_year <= 2033:
+                    if planning_horizon <= full_end:
                         scale = 1.0
-                    elif build_year == 2034:
+                    elif planning_horizon == full_end + 1:
                         scale = 0.75
-                    elif build_year == 2035:
+                    elif planning_horizon == full_end + 2:
                         scale = 0.5
 
                     if scale > 0:
                         orig = su.capital_cost
                         new = orig * (1 - scale * credit_factor)
                         network.stores.at[idx, "capital_cost"] = new
-                        modifications.append({
-                            "component": "store", "name": idx,
-                            "carrier": carrier, "build_year": build_year,
-                            "original": orig, "credit_factor": scale * credit_factor,
-                            "final": new
-                        })
+                        modifications.append(
+                            {
+                                "component": "store",
+                                "name": idx,
+                                "carrier": carrier,
+                                "build_year": build_year,
+                                "original": orig,
+                                "credit_factor": scale * credit_factor,
+                                "final": new,
+                            }
+                        )
                         if verbose:
-                            logger.info(f"[ITC STORAGE] {idx} | -{scale * credit_factor:.0%} capital_cost")
+                            logger.info(
+                                f"[ITC STORAGE] {idx} | year={planning_horizon}, scale={scale:.2f}"
+                            )
 
+    # Apply Investment Tax Credits to LINKS (battery chargers)
+    if os.path.exists(itc_path):
+        itc_df = pd.read_csv(itc_path, index_col=0)
+
+        if (
+            "battery" in itc_df.index
+            and "battery charger" in network.links.carrier.values
+        ):
+            credit_factor = -itc_df.loc["battery", "credit"] / 100
+
+            affected = network.links.query("carrier == 'battery charger'")
+            for idx, lk in affected.iterrows():
+                build_year = lk.get("build_year", planning_horizon)
+
+                horizon_limit = 2040 if pre_ob3_tax_credits else build_year + 10
+                full_end = 2040 if pre_ob3_tax_credits else 2033
+
+                if 2030 <= build_year <= 2035 and planning_horizon <= horizon_limit:
+                    scale = 0.0
+                    if planning_horizon <= full_end:
+                        scale = 1.0
+                    elif planning_horizon == full_end + 1:
+                        scale = 0.75
+                    elif planning_horizon == full_end + 2:
+                        scale = 0.5
+
+                    if scale > 0 and lk.capital_cost > 0:
+                        orig = lk.capital_cost
+                        new = orig * (1 - scale * credit_factor)
+                        network.links.at[idx, "capital_cost"] = new
+                        modifications.append(
+                            {
+                                "component": "link",
+                                "name": idx,
+                                "carrier": lk.carrier,
+                                "build_year": build_year,
+                                "original": orig,
+                                "credit_factor": scale * credit_factor,
+                                "final": new,
+                            }
+                        )
+                        if verbose:
+                            logger.info(
+                                f"[ITC LINK BATTERY] {idx} | year={planning_horizon}, scale={scale:.2f}"
+                            )
+
+    # Save modifications log
     if modifications and log_path:
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
         pd.DataFrame(modifications).to_csv(log_path, index=False)
 
-def add_RPS_constraints(network, config_file):
 
+def add_RPS_constraints(network, config_file):
     def process_targets_data(path, carrier, policy):
         df = pd.read_csv(path)
         df.rename(columns={"Unnamed: 0": "state"}, inplace=True)
@@ -450,18 +647,19 @@ def add_RPS_constraints(network, config_file):
         shapes.rename(columns={"ISO_1": "State"}, inplace=True)
 
         ac_dc_carriers = ["AC", "DC"]
-        location_mapping = network.buses.query(
-            "carrier in @ac_dc_carriers")[["x", "y"]]
+        location_mapping = network.buses.query("carrier in @ac_dc_carriers")[["x", "y"]]
 
-        network.buses["x"] = network.buses["location"].map(
-            location_mapping["x"]).fillna(0)
-        network.buses["y"] = network.buses["location"].map(
-            location_mapping["y"]).fillna(0)
+        network.buses["x"] = (
+            network.buses["location"].map(location_mapping["x"]).fillna(0)
+        )
+        network.buses["y"] = (
+            network.buses["location"].map(location_mapping["y"]).fillna(0)
+        )
 
         pypsa_gpd = gpd.GeoDataFrame(
             network.buses,
             geometry=gpd.points_from_xy(network.buses.x, network.buses.y),
-            crs=4326
+            crs=4326,
         )
 
         bus_cols = network.buses.columns
@@ -480,25 +678,37 @@ def add_RPS_constraints(network, config_file):
             & (df["state"].isin(n.buses[f"{coverage}"].unique()))
         ]
 
-    def add_constraints_to_network(res_generators_eligible, res_storages_eligible, res_links_eligible,
-                                   ces_generators_eligible, conventional_links_eligible,
-                                   state, policy_data, constraints_type):
-
-        target = policy_data[policy_data.policy ==
-                             f"{constraints_type}"]["target"].item()
-        target_year = policy_data[policy_data.policy ==
-                                  f"{constraints_type}"]["year"].item()
+    def add_constraints_to_network(
+        res_generators_eligible,
+        res_storages_eligible,
+        res_links_eligible,
+        ces_generators_eligible,
+        conventional_links_eligible,
+        state,
+        policy_data,
+        constraints_type,
+    ):
+        target = policy_data[policy_data.policy == f"{constraints_type}"][
+            "target"
+        ].item()
+        target_year = policy_data[policy_data.policy == f"{constraints_type}"][
+            "year"
+        ].item()
 
         # remove `low voltage` from bus name to account for solar rooftop (e.g. US0 0 low voltage to US0 0)
-        res_generators_eligible["bus"] = res_generators_eligible.bus.str.replace(" low voltage", "", regex=False)
-        ces_generators_eligible["bus"] = ces_generators_eligible.bus.str.replace(" low voltage", "", regex=False)
+        res_generators_eligible["bus"] = res_generators_eligible.bus.str.replace(
+            " low voltage", "", regex=False
+        )
+        ces_generators_eligible["bus"] = ces_generators_eligible.bus.str.replace(
+            " low voltage", "", regex=False
+        )
 
         # get RES generation
         res_generation = (
             linexpr(
                 (
                     n.snapshot_weightings.generators,
-                    get_var(n, "Generator", "p")[res_generators_eligible.index].T
+                    get_var(n, "Generator", "p")[res_generators_eligible.index].T,
                 )
             )
             .T.groupby(res_generators_eligible.bus, axis=1)
@@ -507,36 +717,42 @@ def add_RPS_constraints(network, config_file):
 
         # hydro dispatch with coefficient of (1 - target)
         hydro_dispatch_with_coefficient = (
-                linexpr(
-                    (
-                        n.snapshot_weightings.stores * (1 - target),
-                        get_var(n, "StorageUnit", "p_dispatch")[
-                            res_storages_eligible.index].T,
-                    )
+            linexpr(
+                (
+                    n.snapshot_weightings.stores * (1 - target),
+                    get_var(n, "StorageUnit", "p_dispatch")[
+                        res_storages_eligible.index
+                    ].T,
                 )
-                .T.groupby(res_storages_eligible.bus, axis=1)
-                .apply(join_exprs)
             )
+            .T.groupby(res_storages_eligible.bus, axis=1)
+            .apply(join_exprs)
+        )
 
         # if not empty, reindex to generation index and fill NaN with empty string
         if not hydro_dispatch_with_coefficient.empty:
-            hydro_dispatch_with_coefficient = (
-                hydro_dispatch_with_coefficient
-                .reindex(res_generation.index)
-                .fillna("")
-            )
+            hydro_dispatch_with_coefficient = hydro_dispatch_with_coefficient.reindex(
+                res_generation.index
+            ).fillna("")
 
         # RES dispatch from links with coefficient (biomass)
         if res_links_eligible.empty:
-            res_link_dispatch_with_coefficient = pd.Series("", index=res_generation.index)
+            res_link_dispatch_with_coefficient = pd.Series(
+                "", index=res_generation.index
+            )
         else:
             res_link_dispatch_with_coefficient = (
                 (
                     linexpr(
                         (
-                            (n.snapshot_weightings.stores.apply(
-                                lambda r: r * n.links.loc[res_links_eligible.index].efficiency) * (1 - target)).T,
-                            get_var(n, "Link", "p")[res_links_eligible.index].T
+                            (
+                                n.snapshot_weightings.stores.apply(
+                                    lambda r: r
+                                    * n.links.loc[res_links_eligible.index].efficiency
+                                )
+                                * (1 - target)
+                            ).T,
+                            get_var(n, "Link", "p")[res_links_eligible.index].T,
                         )
                     )
                     .T.groupby(res_links_eligible.bus1, axis=1)
@@ -551,8 +767,7 @@ def add_RPS_constraints(network, config_file):
             linexpr(
                 (
                     -n.snapshot_weightings.generators * target,
-                    get_var(n, "Generator", "p")[
-                        ces_generators_eligible.index].T
+                    get_var(n, "Generator", "p")[ces_generators_eligible.index].T,
                 )
             )
             .T.groupby(ces_generators_eligible.bus, axis=1)
@@ -563,9 +778,16 @@ def add_RPS_constraints(network, config_file):
             (
                 linexpr(
                     (
-                        (-n.snapshot_weightings.generators.apply(
-                            lambda r: r * n.links.loc[conventional_links_eligible.index].efficiency) * target).T,
-                        get_var(n, "Link", "p")[conventional_links_eligible.index].T
+                        (
+                            -n.snapshot_weightings.generators.apply(
+                                lambda r: r
+                                * n.links.loc[
+                                    conventional_links_eligible.index
+                                ].efficiency
+                            )
+                            * target
+                        ).T,
+                        get_var(n, "Link", "p")[conventional_links_eligible.index].T,
                     )
                 )
                 .T.groupby(conventional_links_eligible.bus1, axis=1)
@@ -575,9 +797,13 @@ def add_RPS_constraints(network, config_file):
             .fillna("")
         )
 
-        lhs = res_generation + hydro_dispatch_with_coefficient + \
-            res_link_dispatch_with_coefficient + ces_generation_with_target + \
-            conventional_generation_with_target
+        lhs = (
+            res_generation
+            + hydro_dispatch_with_coefficient
+            + res_link_dispatch_with_coefficient
+            + ces_generation_with_target
+            + conventional_generation_with_target
+        )
 
         # group buses
         if state != "US":
@@ -586,11 +812,12 @@ def add_RPS_constraints(network, config_file):
             lhs_grouped = lhs.groupby(n.buses.country).sum()
 
         define_constraints(
-            n, lhs_grouped, ">=", 0, f"{constraints_type}_{state}", "rps_limit")
+            n, lhs_grouped, ">=", 0, f"{constraints_type}_{state}", "rps_limit"
+        )
         logger.info(
-            f"Added {constraints_type} constraint for {state} in {target_year}.")
-        
-        
+            f"Added {constraints_type} constraint for {state} in {target_year}."
+        )
+
     # define carriers for RES and CES sources
     res_generator_carriers = [
         "solar",
@@ -599,24 +826,24 @@ def add_RPS_constraints(network, config_file):
         "solar rooftop",
         "offwind-dc",
         "ror",
-        "geothermal"
-        ]
+        "geothermal",
+    ]
     res_link_carriers = []
     res_storage_carriers = ["hydro"]
     ces_generator_carriers = res_generator_carriers + ["nuclear"]
 
     # list of carriers for conventional generation
     conventional_link_carriers = [
-        'OCGT',
-        'CCGT',
-        'oil',
-        'coal',
-        'lignite',
-        'urban central gas CHP',
-        'urban central gas CHP CC',
+        "OCGT",
+        "CCGT",
+        "oil",
+        "coal",
+        "lignite",
+        "urban central gas CHP",
+        "urban central gas CHP CC",
         "biomass",
         "urban central solid biomass CHP",
-        "urban central solid biomass CHP CC"
+        "urban central solid biomass CHP CC",
     ]
 
     # read state policies on CES constraints
@@ -646,7 +873,6 @@ def add_RPS_constraints(network, config_file):
     country_policies = config_file["policies"]["country"]
 
     if state_policies:
-
         # select eligible RES/CES policies based on planning horizon, presense of target and state
         state_policy_data = filter_policy_data(policy_data, "state", planning_horizon)
 
@@ -665,57 +891,87 @@ def add_RPS_constraints(network, config_file):
             region_policy = state_policy_data[state_policy_data.state == state]
 
             # select eligible generators for RES and CES
-            region_generators = network.generators[network.generators.bus.isin(
-                region_buses.index)]
-            res_generators_eligible = region_generators[region_generators.carrier.isin(
-                res_generator_carriers)]
-            ces_generators_eligible = region_generators[region_generators.carrier.isin(
-                ces_generator_carriers)]
+            region_generators = network.generators[
+                network.generators.bus.isin(region_buses.index)
+            ]
+            res_generators_eligible = region_generators[
+                region_generators.carrier.isin(res_generator_carriers)
+            ]
+            ces_generators_eligible = region_generators[
+                region_generators.carrier.isin(ces_generator_carriers)
+            ]
 
             # select eligible links for RES
-            region_links = network.links[network.links.bus1.isin(
-                region_buses.index)]
-            res_links_eligible = region_links[region_links.carrier.isin(
-                res_link_carriers)]
+            region_links = network.links[network.links.bus1.isin(region_buses.index)]
+            res_links_eligible = region_links[
+                region_links.carrier.isin(res_link_carriers)
+            ]
 
             # select eligible storage_units (hydro, not PHS) for RES
-            region_storages = network.storage_units[network.storage_units.bus.isin(
-                region_buses.index)]
-            res_storages_eligible = region_storages[region_storages.carrier.isin(
-                res_storage_carriers)]
+            region_storages = network.storage_units[
+                network.storage_units.bus.isin(region_buses.index)
+            ]
+            res_storages_eligible = region_storages[
+                region_storages.carrier.isin(res_storage_carriers)
+            ]
 
             # select eligible conventional links
-            conventional_links_eligible = region_links[region_links.carrier.isin(
-                conventional_link_carriers)]
+            conventional_links_eligible = region_links[
+                region_links.carrier.isin(conventional_link_carriers)
+            ]
 
             # add RES constraint
             if "RES" in region_policy.policy.values and "RES" in state_policies:
-                add_constraints_to_network(res_generators_eligible, res_storages_eligible, res_links_eligible,
-                                           ces_generators_eligible, conventional_links_eligible,
-                                           state, region_policy, "RES")
+                add_constraints_to_network(
+                    res_generators_eligible,
+                    res_storages_eligible,
+                    res_links_eligible,
+                    ces_generators_eligible,
+                    conventional_links_eligible,
+                    state,
+                    region_policy,
+                    "RES",
+                )
 
             # add CES constraint
             if "CES" in region_policy.policy.values and "CES" in state_policies:
-                add_constraints_to_network(ces_generators_eligible, res_storages_eligible, res_links_eligible,
-                                           ces_generators_eligible, conventional_links_eligible,
-                                           state, region_policy, "CES")
+                add_constraints_to_network(
+                    ces_generators_eligible,
+                    res_storages_eligible,
+                    res_links_eligible,
+                    ces_generators_eligible,
+                    conventional_links_eligible,
+                    state,
+                    region_policy,
+                    "CES",
+                )
 
     if country_policies:
-        country_policy_data = filter_policy_data(policy_data, "country", planning_horizon)
-        country_ces_generators = network.generators[network.generators.carrier.isin(
-            ces_generator_carriers)]
-        country_res_storages = network.storage_units[network.storage_units.carrier.isin(
-            res_storage_carriers)]
-        country_res_links = network.links[network.links.carrier.isin(
-            res_link_carriers)]
-        country_conventional_links = network.links[network.links.carrier.isin(
-            conventional_link_carriers)]
+        country_policy_data = filter_policy_data(
+            policy_data, "country", planning_horizon
+        )
+        country_ces_generators = network.generators[
+            network.generators.carrier.isin(ces_generator_carriers)
+        ]
+        country_res_storages = network.storage_units[
+            network.storage_units.carrier.isin(res_storage_carriers)
+        ]
+        country_res_links = network.links[network.links.carrier.isin(res_link_carriers)]
+        country_conventional_links = network.links[
+            network.links.carrier.isin(conventional_link_carriers)
+        ]
 
         if "CES" in country_policy_data.policy.values and "CES" in country_policies:
-
-            add_constraints_to_network(country_ces_generators, country_res_storages, country_res_links,
-                                       country_ces_generators, country_conventional_links,
-                                       "US", country_policy_data, "CES")
+            add_constraints_to_network(
+                country_ces_generators,
+                country_res_storages,
+                country_res_links,
+                country_ces_generators,
+                country_conventional_links,
+                "US",
+                country_policy_data,
+                "CES",
+            )
 
 
 def add_CCL_constraints(n, config):
@@ -732,18 +988,18 @@ def add_CCL_constraints(n, config):
             "config['electricity']['agg_p_nom_limit']."
         )
     logger.info(
-        "Adding per carrier generation capacity constraints for " "individual countries"
+        "Adding per carrier generation capacity constraints for individual countries"
     )
 
     gen_country = n.generators.bus.map(n.buses.country)
-    
+
     # Calculate existing (non-extendable) capacity per country and carrier
     existing_capacity_per_cc = (
         n.generators.query("not p_nom_extendable")
         .groupby([gen_country, "carrier"])["p_nom"]
         .sum()
     )
-    
+
     # cc means country and carrier
     p_nom_per_cc = (
         pd.DataFrame(
@@ -757,7 +1013,7 @@ def add_CCL_constraints(n, config):
         .groupby(["country", "carrier"])
         .p_nom.apply(join_exprs)
     )
-    
+
     minimum = agg_p_nom_minmax["min"].dropna()
     if not minimum.empty:
         # Subtract existing capacity from minimum limits
@@ -765,16 +1021,21 @@ def add_CCL_constraints(n, config):
         for idx in minimum.index:
             existing_cap = existing_capacity_per_cc.get(idx, 0.0)
             adjusted_minimum[idx] = max(0.0, minimum[idx] - existing_cap)
-        
+
         # Only apply constraints where adjusted minimum > 0
         adjusted_minimum = adjusted_minimum[adjusted_minimum > 0]
         if not adjusted_minimum.empty:
             available_indices = p_nom_per_cc.index.intersection(adjusted_minimum.index)
             if not available_indices.empty:
                 minconstraint = define_constraints(
-                    n, p_nom_per_cc[available_indices], ">=", adjusted_minimum[available_indices], "agg_p_nom", "min"
+                    n,
+                    p_nom_per_cc[available_indices],
+                    ">=",
+                    adjusted_minimum[available_indices],
+                    "agg_p_nom",
+                    "min",
                 )
-    
+
     maximum = agg_p_nom_minmax["max"].dropna()
     if not maximum.empty:
         # Subtract existing capacity from maximum limits
@@ -782,14 +1043,19 @@ def add_CCL_constraints(n, config):
         for idx in maximum.index:
             existing_cap = existing_capacity_per_cc.get(idx, 0.0)
             adjusted_maximum[idx] = max(0.0, maximum[idx] - existing_cap)
-        
+
         # Only apply constraints where adjusted maximum > 0
         adjusted_maximum = adjusted_maximum[adjusted_maximum > 0]
         if not adjusted_maximum.empty:
             available_indices = p_nom_per_cc.index.intersection(adjusted_maximum.index)
             if not available_indices.empty:
                 maxconstraint = define_constraints(
-                    n, p_nom_per_cc[available_indices], "<=", adjusted_maximum[available_indices], "agg_p_nom", "max"
+                    n,
+                    p_nom_per_cc[available_indices],
+                    "<=",
+                    adjusted_maximum[available_indices],
+                    "agg_p_nom",
+                    "max",
                 )
 
 
@@ -816,8 +1082,7 @@ def add_EQ_constraints(n, o, scaling=1e-1):
     rhs = scaling * (level * load - inflow)
     lhs_gen = (
         linexpr(
-            (n.snapshot_weightings.generators *
-             scaling, get_var(n, "Generator", "p").T)
+            (n.snapshot_weightings.generators * scaling, get_var(n, "Generator", "p").T)
         )
         .T.groupby(ggrouper, axis=1)
         .apply(join_exprs)
@@ -840,28 +1105,24 @@ def add_EQ_constraints(n, o, scaling=1e-1):
 def add_BAU_constraints(n, config):
     ext_c = n.generators.query("p_nom_extendable").carrier.unique()
     mincaps = pd.Series(
-        config["electricity"].get("BAU_mincapacities", {
-                                  key: 0 for key in ext_c})
+        config["electricity"].get("BAU_mincapacities", {key: 0 for key in ext_c})
     )
     lhs = (
         linexpr((1, get_var(n, "Generator", "p_nom")))
         .groupby(n.generators.carrier)
         .apply(join_exprs)
     )
-    define_constraints(
-        n, lhs, ">=", mincaps[lhs.index], "Carrier", "bau_mincaps")
+    define_constraints(n, lhs, ">=", mincaps[lhs.index], "Carrier", "bau_mincaps")
 
     maxcaps = pd.Series(
-        config["electricity"].get("BAU_maxcapacities", {
-                                  key: np.inf for key in ext_c})
+        config["electricity"].get("BAU_maxcapacities", {key: np.inf for key in ext_c})
     )
     lhs = (
         linexpr((1, get_var(n, "Generator", "p_nom")))
         .groupby(n.generators.carrier)
         .apply(join_exprs)
     )
-    define_constraints(
-        n, lhs, "<=", maxcaps[lhs.index], "Carrier", "bau_maxcaps")
+    define_constraints(n, lhs, "<=", maxcaps[lhs.index], "Carrier", "bau_maxcaps")
 
 
 def add_SAFE_constraints(n, config):
@@ -872,8 +1133,7 @@ def add_SAFE_constraints(n, config):
     exist_conv_caps = n.generators.query(
         "~p_nom_extendable & carrier in @conv_techs"
     ).p_nom.sum()
-    ext_gens_i = n.generators.query(
-        "carrier in @conv_techs & p_nom_extendable").index
+    ext_gens_i = n.generators.query("carrier in @conv_techs & p_nom_extendable").index
     lhs = linexpr((1, get_var(n, "Generator", "p_nom")[ext_gens_i])).sum()
     rhs = peakdemand - exist_conv_caps
     define_constraints(n, lhs, ">=", rhs, "Safe", "mintotalcap")
@@ -935,11 +1195,9 @@ def update_capacity_constraint(n):
             columns=gen_i, fill_value=""
         )
 
-    rhs = (p_max_pu[fix_i] *
-           capacity_fixed).reindex(columns=gen_i, fill_value=0)
+    rhs = (p_max_pu[fix_i] * capacity_fixed).reindex(columns=gen_i, fill_value=0)
 
-    define_constraints(n, lhs, "<=", rhs, "Generators",
-                       "updated_capacity_constraint")
+    define_constraints(n, lhs, "<=", rhs, "Generators", "updated_capacity_constraint")
 
 
 def add_operational_reserve_margin(n, sns, config):
@@ -948,8 +1206,7 @@ def add_operational_reserve_margin(n, sns, config):
     https://genxproject.github.io/GenX/dev/core/#Reserves.
     """
 
-    define_variables(n, 0, np.inf, "Generator", "r",
-                     axes=[sns, n.generators.index])
+    define_variables(n, 0, np.inf, "Generator", "r", axes=[sns, n.generators.index])
 
     add_operational_reserve_margin_constraint(n, config)
 
@@ -962,22 +1219,32 @@ def add_battery_constraints(n):
         return
     link_p_nom = get_var(n, "Link", "p_nom")
 
-    chargers_bool = link_p_nom.index.str.contains("battery charger")
-    dischargers_bool = link_p_nom.index.str.contains("battery discharger")
-
     if snakemake.config["foresight"] == "myopic":
         name_suffix = f"-{snakemake.wildcards.planning_horizons}"
     else:
         name_suffix = ""
 
+    chargers_bool = link_p_nom.index.str.contains(f"battery charger{name_suffix}")
+    dischargers_bool = link_p_nom.index.str.contains(f"battery discharger{name_suffix}")
+
+    # Align charger/discharger sets to the same names
+    ch_names = link_p_nom.index[chargers_bool]
+    dc_names = link_p_nom.index[dischargers_bool]
+
+    # Map chargers to expected dischargers and take intersection
+    map_to_dc = ch_names.str.replace(
+        "battery charger", "battery discharger", regex=False
+    )
+    common_dc = dc_names.intersection(map_to_dc)
+    common_ch = common_dc.str.replace(
+        "battery discharger", "battery charger", regex=False
+    )
+
     lhs = linexpr(
-        (1, link_p_nom[chargers_bool]),
+        (1.0, link_p_nom.reindex(common_ch).values),
         (
-            -n.links.loc[
-                n.links.index.str.contains(f"battery discharger{name_suffix}"),
-                "efficiency",
-            ].values,
-            link_p_nom[dischargers_bool].values,
+            -n.links.loc[common_dc, "efficiency"].values,
+            link_p_nom.reindex(common_dc).values,
         ),
     )
     define_constraints(n, lhs, "=", 0, "Link", "charger_ratio")
@@ -1023,8 +1290,7 @@ def add_RES_constraints(n, res_share):
     # Generators
     lhs_gen = (
         linexpr(
-            (n.snapshot_weightings.generators,
-             get_var(n, "Generator", "p")[gens_i].T)
+            (n.snapshot_weightings.generators, get_var(n, "Generator", "p")[gens_i].T)
         )
         .T.groupby(ggrouper, axis=1)
         .apply(join_exprs)
@@ -1153,8 +1419,7 @@ def _add_land_use_constraint_m(n):
             ind2 = [
                 i for i in ind if i + " " + carrier + "-" + p_year in existing.index
             ]
-            sel_current = [i + " " + carrier +
-                           "-" + current_horizon for i in ind2]
+            sel_current = [i + " " + carrier + "-" + current_horizon for i in ind2]
             sel_p_year = [i + " " + carrier + "-" + p_year for i in ind2]
             n.generators.loc[sel_current, "p_nom_max"] -= existing.loc[
                 sel_p_year
@@ -1177,119 +1442,314 @@ def add_h2_network_cap(n, cap):
     define_constraints(n, lhs, "<=", rhs, "h2_network_cap")
 
 
-def hydrogen_temporal_constraint(n, additionality, time_period):
+def add_flexible_electrolyzers(n, costs):
     """
-    Enforces temporal matching constraints for hydrogen production based on renewable energy sources.
-
-    Parameters:
-    -----------
-    n : pypsa.Network
-        The PyPSA network object containing the energy system model.
-    additionality : bool
-        If True, only new renewable energy sources built in the current planning horizon are considered.
-    time_period : str
-        Specifies the temporal matching period. Valid options are "hour", "month", "year", or "no_temporal_matching".
-
-    Description:
-    ------------
-    This function calculates the renewable energy generation and storage dispatch over the specified time period
-    and ensures that hydrogen production via electrolysis does not exceed the allowed excess of renewable energy.
-    It adds constraints to the PyPSA model to enforce this temporal matching.
-
-    Raises:
-    -------
-    ValueError:
-        If the `time_period` is invalid or not supported.
+    Add a 'Flexible electrolyzer' technology:
+    - Same technical and cost parameters as the existing Alkaline electrolyzer (large size)
+    - Very high marginal cost so it is used only as last-resort hydrogen production
+    - Not subject to 45V constraints (temporal matching, additionality, deliverability)
     """
-    temporal_matching_carriers = snakemake.params.temporal_matching_carriers
+    logger.info("Adding flexible electrolyzers")
 
-    allowed_excess = snakemake.config["policy_config"]["hydrogen"]["allowed_excess"]
+    flex_carrier = "Flexible electrolyzer"
+    if flex_carrier not in n.carriers.index:
+        n.add("Carrier", flex_carrier)
 
-    res_gen_index = n.generators.loc[n.generators.carrier.isin(temporal_matching_carriers)].index
-    res_stor_index = n.storage_units.loc[
-        n.storage_units.carrier.isin(temporal_matching_carriers)
-    ].index
-
-    if additionality:
-        # get newly built generators and storage_units only
-        new_gens = n.generators.loc[
-            n.generators.build_year == int(snakemake.wildcards.planning_horizons)
-        ].index
-        new_stor = n.storage_units.loc[
-            n.storage_units.build_year == int(snakemake.wildcards.planning_horizons)
-        ].index
-        # keep only new RES generators and storage units
-        res_gen_index = res_gen_index.intersection(new_gens)
-        res_stor_index = res_stor_index.intersection(new_stor)
-
-    logger.info(
-        "setting h2 export to {}ly matching constraint {} additionality".format(
-            time_period, "with" if additionality else "without"
+    ref = "Alkaline electrolyzer large"
+    ref_links = n.links[n.links.carrier == ref]
+    if ref_links.empty:
+        raise ValueError(
+            f"Reference electrolyzer '{ref}' not found in the network. "
+            f"add_hydrogen() must run before add_flexible_electrolyzers()."
         )
+
+    efficiency = float(ref_links["efficiency"].iloc[0])
+    capital_cost = float(ref_links["capital_cost"].iloc[0])
+    lifetime = int(ref_links["lifetime"].iloc[0])
+
+    marginal_cost = 1e6
+
+    ac_nodes = ref_links["bus0"].values
+    h2_nodes = ref_links["bus1"].values
+
+    # make link names unique
+    names = [f"{bus0} {flex_carrier} #{i}" for i, bus0 in enumerate(ac_nodes)]
+
+    n.madd(
+        "Link",
+        names,
+        bus0=ac_nodes,
+        bus1=h2_nodes,
+        p_nom_extendable=True,
+        carrier=flex_carrier,
+        efficiency=efficiency,
+        capital_cost=capital_cost,
+        lifetime=lifetime,
+        marginal_cost=marginal_cost,
     )
 
+    # CHECK: fail fast if nothing was added
+    if (n.links.carrier == flex_carrier).sum() == 0:
+        raise RuntimeError(
+            "Flexible electrolyzers were not added (zero links after madd)."
+        )
+
+    logger.info(
+        f"Flexible electrolyzers added with parameters copied from '{ref}' "
+        f"and marginal cost={marginal_cost}"
+    )
+
+
+def hydrogen_temporal_constraint(n, additionality, time_period):
+    """
+    Enforces temporal matching and additionality
+    for hydrogen production.
+
+    Temporal matching:
+        - Resolution given by `time_period` ("hourly", "monthly", "yearly",
+          or "no_temporal_matching").
+        - Uses only renewable carriers within the same region of the electrolyzers if listed in temporal_matching_carriers.
+
+    Additionality:
+        - Each electrolyzer cohort (defined by build_year) can only be matched
+          with RES whose build_year >= cohort build_year.
+        - Implemented as separate cohort-level matching constraints.
+    """
+
+    temporal_matching_carriers = snakemake.params.temporal_matching_carriers
+    hydrogen_cfg = snakemake.config["policy_config"]["hydrogen"]
+    allowed_excess = hydrogen_cfg["allowed_excess"]
+
+    deliverability_enabled = hydrogen_cfg.get("deliverability", True)
+    deliverability_period = hydrogen_cfg.get("deliverability_period", "yearly")
+    if deliverability_period not in ("yearly", "no_deliverability"):
+        raise ValueError(
+            "deliverability_period must be 'yearly' or 'no_deliverability'"
+        )
+
+    # Helper: temporal aggregation supporting "hourly"/"monthly"/"yearly"
+    def _agg_by_period(series, period):
+        if period in ("hour", "hourly"):
+            return series
+        if period in ("month", "monthly"):
+            return series.groupby(series.index.month).sum()
+        if period in ("year", "yearly"):
+            return series.groupby(series.index.year).sum()
+        if period == "no_temporal_matching":
+            s = series.copy()
+            s.index = pd.Index([0] * len(s))
+            return s.groupby(level=0).sum()
+        raise ValueError(f"Unsupported time period: {period}")
+
+    # Select all RES generators and storage eligible for matching
+    res_gen_index = n.generators.index[
+        n.generators.carrier.isin(temporal_matching_carriers)
+    ]
+    res_stor_index = n.storage_units.index[
+        n.storage_units.carrier.isin(temporal_matching_carriers)
+    ]
+
+    electrolysis_carriers = [
+        "Alkaline electrolyzer large",
+        "Alkaline electrolyzer medium",
+        "Alkaline electrolyzer small",
+        "PEM electrolyzer",
+        "SOEC",
+    ]
+
+    electrolyzers = n.links.index[n.links.carrier.isin(electrolysis_carriers)]
+
+    electrolysis = get_var(n, "Link", "p")[electrolyzers]
+
+    weightings_electrolysis = pd.DataFrame(
+        np.outer(
+            n.snapshot_weightings["generators"], [1.0] * len(electrolysis.columns)
+        ),
+        index=n.snapshots,
+        columns=electrolysis.columns,
+    )
+
+    # Prepare additionality structures (cohort-based)
+    if additionality:
+        el_build_year = n.links.loc[electrolyzers, "build_year"]
+        cohorts = el_build_year.unique()
+
+        gen_by_year = n.generators.build_year
+        stor_by_year = n.storage_units.build_year
+
+        allowed_RES = {}
+        for Y in cohorts:
+            allowed_gen = res_gen_index.intersection(
+                gen_by_year.index[gen_by_year >= Y]
+            )
+            allowed_stor = res_stor_index.intersection(
+                stor_by_year.index[stor_by_year >= Y]
+            )
+            allowed_RES[Y] = {"gen": allowed_gen, "stor": allowed_stor}
+    else:
+        el_build_year = None
+        cohorts = []
+
+    logger.info(
+        f"setting h2 export to {time_period}ly matching constraint "
+        f"{'with' if additionality else 'without'} additionality "
+        f"(deliverability period={deliverability_period})"
+    )
+
+    # Snapshot weightings for RES (used everywhere below)
     weightings_gen = pd.DataFrame(
         np.outer(n.snapshot_weightings["generators"], [1.0] * len(res_gen_index)),
         index=n.snapshots,
         columns=res_gen_index,
     )
 
-    res = linexpr((weightings_gen, get_var(n, "Generator", "p")[res_gen_index])).sum(
-        axis=1
-    )
-
-    if not res_stor_index.empty:
+    if len(res_stor_index) > 0:
         weightings_stor = pd.DataFrame(
             np.outer(n.snapshot_weightings["generators"], [1.0] * len(res_stor_index)),
             index=n.snapshots,
             columns=res_stor_index,
         )
-        res += linexpr(
-            (weightings_stor, get_var(n, "StorageUnit", "p_dispatch")[res_stor_index])
-        ).sum(axis=1)
+    else:
+        weightings_stor = None
 
-    if time_period == "month":
-        res = res.groupby(res.index.month).sum()
-    elif time_period == "year":
-        res = res.groupby(res.index.year).sum()
+    # Map RES generators, storage, and electrolyzers to regions
+    region_col = "grid_region"
+    if region_col not in n.buses.columns:
+        raise ValueError(f"'{region_col}' missing in n.buses")
 
-    electrolysis_carriers = [
-        'H2 Electrolysis',
-        'Alkaline electrolyzer large',
-        'Alkaline electrolyzer medium',
-        'Alkaline electrolyzer small',
-        'PEM electrolyzer',
-        'SOEC'
-    ]
-    electrolyzers = n.links[n.links.carrier.isin(electrolysis_carriers)].index
-    electrolysis = get_var(n, "Link", "p")[
-        n.links.loc[electrolyzers].index
-    ]
-    weightings_electrolysis = pd.DataFrame(
-        np.outer(
-            n.snapshot_weightings["generators"], [
-                1.0] * len(electrolysis.columns)
-        ),
-        index=n.snapshots,
-        columns=electrolysis.columns,
+    gen_region = (
+        n.buses.loc[n.generators.loc[res_gen_index, "bus"], region_col].values
+        if len(res_gen_index) > 0
+        else np.array([])
     )
-
-    elec_input = linexpr((-allowed_excess * weightings_electrolysis, electrolysis)).sum(
-        axis=1
+    stor_region = (
+        n.buses.loc[n.storage_units.loc[res_stor_index, "bus"], region_col].values
+        if len(res_stor_index) > 0
+        else np.array([])
     )
+    el_region = n.buses.loc[n.links.loc[electrolyzers, "bus0"], region_col].values
 
-    if time_period == "month":
-        elec_input = elec_input.groupby(elec_input.index.month).sum()
-    elif time_period == "year":
-        elec_input = elec_input.groupby(elec_input.index.year).sum()
+    regions = pd.Index(pd.unique(el_region))
 
-    # add temporal matching constraints
-    for i in range(len(res.index)):
-        lhs = res.iloc[i] + "\n" + elec_input.iloc[i]
+    # REGIONAL TEMPORAL MATCHING CARRIERS CALCULATION
+    if not additionality:
+        for r in regions:
+            # masks for this region
+            gen_mask = gen_region == r
+            stor_mask = stor_region == r
+            el_mask = el_region == r
 
-        con = define_constraints(
-            n, lhs, ">=", 0.0, f"RESconstraints_{i}", f"REStarget_{i}"
-        )
+            # RES in region
+            res_r = None
+
+            if gen_mask.any():
+                wg = weightings_gen.loc[:, weightings_gen.columns[gen_mask]]
+                pgen = get_var(n, "Generator", "p")[res_gen_index[gen_mask]]
+                res_r = linexpr((wg, pgen)).sum(axis=1)
+
+            if stor_mask.any() and weightings_stor is not None:
+                ws = weightings_stor.loc[:, weightings_stor.columns[stor_mask]]
+                pdisp = get_var(n, "StorageUnit", "p_dispatch")[
+                    res_stor_index[stor_mask]
+                ]
+                term = linexpr((ws, pdisp)).sum(axis=1)
+                res_r = term if res_r is None else res_r + term
+
+            if res_r is None:
+                res_r = pd.Series(0.0, index=n.snapshots)
+
+            # Electrolyzer input in region
+            if el_mask.any():
+                we = weightings_electrolysis.loc[
+                    :, weightings_electrolysis.columns[el_mask]
+                ]
+                pel = electrolysis.loc[:, electrolysis.columns[el_mask]]
+                el_r = linexpr((-allowed_excess * we, pel)).sum(axis=1)
+            else:
+                el_r = pd.Series(0.0, index=n.snapshots)
+
+            # Aggregate by time_period
+            res_r_agg = _agg_by_period(res_r, time_period)
+            el_r_agg = _agg_by_period(el_r, time_period)
+
+            # Impose constraint for each period
+            for i in range(len(res_r_agg.index)):
+                lhs = res_r_agg.iloc[i] + el_r_agg.iloc[i]
+                define_constraints(
+                    n,
+                    lhs,
+                    ">=",
+                    0.0,
+                    f"RESconstraints_tm_reg_{r}_{i}",
+                    f"REStarget_tm_reg_{r}_{i}",
+                )
+
+    # REGIONAL ADDITIONALITY CONSTRAINTS (CUMULATIVE / THRESHOLD FORMULATION)
+    if additionality and len(cohorts) > 0:
+        # Sort cohorts ascending (e.g. 2030, 2035, 2040)
+        cohorts_sorted = np.sort(cohorts)
+
+        for r in regions:
+            gen_mask_r = gen_region == r
+            stor_mask_r = stor_region == r
+            el_mask_r = el_region == r
+
+            for Y in cohorts_sorted:
+                # RES with build_year >= Y in this region
+                gens_Y = allowed_RES[Y]["gen"].intersection(res_gen_index[gen_mask_r])
+                stor_Y = allowed_RES[Y]["stor"].intersection(
+                    res_stor_index[stor_mask_r]
+                )
+
+                res_Y_r = None
+
+                if len(gens_Y) > 0:
+                    wgY = weightings_gen.loc[:, gens_Y]
+                    res_Y_r = linexpr((wgY, get_var(n, "Generator", "p")[gens_Y])).sum(
+                        axis=1
+                    )
+
+                if len(stor_Y) > 0 and weightings_stor is not None:
+                    wsY = weightings_stor.loc[:, stor_Y]
+                    term = linexpr(
+                        (wsY, get_var(n, "StorageUnit", "p_dispatch")[stor_Y])
+                    ).sum(axis=1)
+                    res_Y_r = term if res_Y_r is None else res_Y_r + term
+
+                if res_Y_r is None:
+                    res_Y_r = pd.Series(0.0, index=n.snapshots)
+
+                # Electrolyzers with build_year >= Y in this region
+                el_mask_Yplus_r = ((el_build_year >= Y).values) & el_mask_r
+                el_cols_Yplus_r = electrolysis.columns[el_mask_Yplus_r]
+
+                el_input_Yplus_r = None
+
+                if len(el_cols_Yplus_r) > 0:
+                    weY = weightings_electrolysis.loc[:, el_cols_Yplus_r]
+                    pelY = electrolysis[el_cols_Yplus_r]
+                    el_input_Yplus_r = linexpr((-allowed_excess * weY, pelY)).sum(
+                        axis=1
+                    )
+
+                if el_input_Yplus_r is None:
+                    el_input_Yplus_r = pd.Series(0.0, index=n.snapshots)
+
+                # Aggregate by time_period
+                res_Y_r_agg = _agg_by_period(res_Y_r, time_period)
+                el_input_Yplus_r_agg = _agg_by_period(el_input_Yplus_r, time_period)
+
+                # One constraint per threshold Y and per time bucket
+                for i in range(len(res_Y_r_agg.index)):
+                    lhs = res_Y_r_agg.iloc[i] + el_input_Yplus_r_agg.iloc[i]
+                    define_constraints(
+                        n,
+                        lhs,
+                        ">=",
+                        0.0,
+                        f"RESconstraints_additionality_threshold_{r}_{Y}_{i}",
+                        f"REStarget_additionality_threshold_{r}_{Y}_{i}",
+                    )
 
 
 def add_chp_constraints(n):
@@ -1325,8 +1785,7 @@ def add_chp_constraints(n):
                 * n.links.loc[electric_ext, "p_nom_ratio"],
                 link_p_nom[electric_ext],
             ),
-            (-n.links.loc[heat_ext, "efficiency"].values,
-             link_p_nom[heat_ext].values),
+            (-n.links.loc[heat_ext, "efficiency"].values, link_p_nom[heat_ext].values),
         )
 
         define_constraints(n, lhs, "=", 0, "chplink", "fix_p_nom_ratio")
@@ -1346,26 +1805,23 @@ def add_chp_constraints(n):
 
         rhs = n.links.loc[electric_fix, "p_nom"].values
 
-        define_constraints(n, lhs, "<=", rhs, "chplink",
-                           "top_iso_fuel_line_fix")
+        define_constraints(n, lhs, "<=", rhs, "chplink", "top_iso_fuel_line_fix")
 
     if not electric.empty:
         # backpressure
         lhs = linexpr(
             (
-                n.links.loc[electric, "c_b"].values *
-                n.links.loc[heat, "efficiency"],
+                n.links.loc[electric, "c_b"].values * n.links.loc[heat, "efficiency"],
                 link_p[heat],
             ),
-            (-n.links.loc[electric, "efficiency"].values,
-             link_p[electric].values),
+            (-n.links.loc[electric, "efficiency"].values, link_p[electric].values),
         )
 
         define_constraints(n, lhs, "<=", 0, "chplink", "backpressure")
 
 
 def add_co2_sequestration_limit(n, sns):
-    co2_stores = n.stores.loc[n.stores.carrier == "co2 stored"].index
+    co2_stores = n.stores.loc[n.stores.carrier == "co2 geological sequestration"].index
 
     if co2_stores.empty or ("Store", "e") not in n.variables.index:
         return
@@ -1401,8 +1857,7 @@ def set_h2_colors(n):
     ].index
 
     load_fuelcell = (
-        n.loads_t.p_set[fuelcell_ind].sum(
-            axis=1) * n.snapshot_weightings["generators"]
+        n.loads_t.p_set[fuelcell_ind].sum(axis=1) * n.snapshot_weightings["generators"]
     ).sum()
 
     load_other_h2 = n.loads.loc[other_ind].p_set.sum() * 8760
@@ -1410,15 +1865,13 @@ def set_h2_colors(n):
     load_h2 = load_fuelcell + load_other_h2
 
     weightings_blue = pd.DataFrame(
-        np.outer(n.snapshot_weightings["generators"], [
-                 1.0] * len(blue_h2.columns)),
+        np.outer(n.snapshot_weightings["generators"], [1.0] * len(blue_h2.columns)),
         index=n.snapshots,
         columns=blue_h2.columns,
     )
 
     weightings_pink = pd.DataFrame(
-        np.outer(n.snapshot_weightings["generators"], [
-                 1.0] * len(pink_h2.columns)),
+        np.outer(n.snapshot_weightings["generators"], [1.0] * len(pink_h2.columns)),
         index=n.snapshots,
         columns=pink_h2.columns,
     )
@@ -1449,8 +1902,7 @@ def add_existing(n):
             .replace("_presec", "")
             .replace(".nc", ".csv")
         )
-        df = pd.read_csv(directory + "/electrolyzer_caps_" +
-                         n_name, index_col=0)
+        df = pd.read_csv(directory + "/electrolyzer_caps_" + n_name, index_col=0)
         existing_electrolyzers = df.p_nom_opt.values
 
         h2_index = n.links[n.links.carrier == "H2 Electrolysis"].index
@@ -1463,8 +1915,7 @@ def add_existing(n):
         for tech in snakemake.config["custom_data"]["renewables"]:
             # df = pd.read_csv(snakemake.config["custom_data"]["existing_renewables"], index_col=0)
             existing_res = df.loc[tech]
-            existing_res.index = existing_res.index.str.apply(
-                lambda x: x + tech)
+            existing_res.index = existing_res.index.str.apply(lambda x: x + tech)
             tech_index = n.generators[n.generators.carrier == tech].index
             n.generators.loc[tech_index, tech] = existing_res
 
@@ -1483,8 +1934,7 @@ def add_lossy_bidirectional_link_constraints(n: pypsa.components.Network) -> Non
 
     # get the indices of all forward links (non-reversed), that have a reversed counterpart
     forward_i = n.links.loc[
-        n.links.carrier.isin(
-            carriers) & ~n.links.reversed & n.links.p_nom_extendable
+        n.links.carrier.isin(carriers) & ~n.links.reversed & n.links.p_nom_extendable
     ].index
 
     # function to get backward (reversed) indices corresponding to forward links
@@ -1536,6 +1986,10 @@ def extra_functionality(n, snapshots):
     """
     opts = n.opts
     config = n.config
+
+    # Add flexible electrolyzers before hydrogen constraints are applied
+    add_flexible_electrolyzers(n, pd.read_csv(snakemake.input.costs, index_col=0))
+
     if "BAU" in opts and n.generators.p_nom_extendable.any():
         add_BAU_constraints(n, config)
     if "SAFE" in opts and n.generators.p_nom_extendable.any():
@@ -1592,8 +2046,7 @@ def solve_network(n, config, solving={}, opts="", **kwargs):
     set_of_options = solving["solver"]["options"]
     cf_solving = solving["options"]
 
-    solver_options = solving["solver_options"][set_of_options] if set_of_options else {
-    }
+    solver_options = solving["solver_options"][set_of_options] if set_of_options else {}
     solver_name = solving["solver"]["name"]
 
     track_iterations = cf_solving.get("track_iterations", False)
@@ -1655,8 +2108,22 @@ if __name__ == "__main__":
     is_sector_coupled = "sopts" in snakemake.wildcards.keys()
 
     overrides = override_component_attrs(snakemake.input.overrides)
-    n = pypsa.Network(snakemake.input.network,
-                      override_component_attrs=overrides)
+    n = pypsa.Network(snakemake.input.network, override_component_attrs=overrides)
+
+    Nyears = n.snapshot_weightings.objective.sum() / 8760.0
+    costs = load_costs(
+        snakemake.input.costs,
+        snakemake.config["costs"],
+        snakemake.config["electricity"],
+        Nyears,
+    )
+
+    n = attach_grid_region_to_buses(
+        n,
+        path_shapes=snakemake.input.grid_regions_shape_path,
+        grid_region_field=snakemake.params.grid_region_field,
+        distance_crs=snakemake.params.distance_crs,
+    )
 
     if snakemake.params.augmented_line_connection.get("add_to_snakefile"):
         n.lines.loc[n.lines.index.str.contains("new"), "s_nom_min"] = (
@@ -1681,7 +2148,9 @@ if __name__ == "__main__":
         else:
             # Set original marginal cost only for newly added rows (with NaN)
             new_rows = comp_df["_marginal_cost_original"].isna()
-            comp_df.loc[new_rows, "_marginal_cost_original"] = comp_df.loc[new_rows, "marginal_cost"]
+            comp_df.loc[new_rows, "_marginal_cost_original"] = comp_df.loc[
+                new_rows, "marginal_cost"
+            ]
 
     # Restore marginal cost to original before applying new tax credits
     for comp_name, comp_df in [("generators", n.generators), ("links", n.links)]:
@@ -1695,9 +2164,17 @@ if __name__ == "__main__":
         itc_path=snakemake.input.investment_tax_credits,
         planning_horizon=int(snakemake.wildcards.planning_horizons),
         costs=pd.read_csv(snakemake.input.costs, index_col=0),
+        config_file=snakemake.config,
         log_path=f"logs/tax_credit_modifications_{snakemake.wildcards.planning_horizons}.csv",
-        verbose=False
+        verbose=False,
     )
+
+    # Set transmission limits for scenario 5 and 6
+    if snakemake.config.get("line_expansion_limits", None):
+        # Get expansion limit for selected planning horizon
+        ll_expansion_limit = snakemake.config["line_expansion_limits"][int(snakemake.wildcards.planning_horizons)]
+        ll_type, factor = ll_expansion_limit[0], ll_expansion_limit[1:]
+        set_transmission_limit(n, ll_type=ll_type, factor=factor, costs=costs, Nyears=Nyears)
 
     n = solve_network(
         n,
@@ -1707,8 +2184,7 @@ if __name__ == "__main__":
         solver_dir=tmpdir,
         solver_logfile=snakemake.log.solver,
     )
-    n.meta = dict(snakemake.config, **
-                  dict(wildcards=dict(snakemake.wildcards)))
+    n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.export_to_netcdf(snakemake.output[0])
     logger.info(f"Objective function: {n.objective}")
     logger.info(f"Objective constant: {n.objective_constant}")

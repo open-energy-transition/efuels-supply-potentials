@@ -6,21 +6,51 @@
 
 # efuels-supply-potentials
 
+[![CI](https://github.com/open-energy-transition/efuels-supply-potentials/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/open-energy-transition/efuels-supply-potentials/actions/workflows/ci.yml)
 
 ## 1. Installation
 Clone the repository including its submodules:
 
     git clone --recurse-submodules https://github.com/open-energy-transition/efuels-supply-potentials.git
 
-Install the necessary dependencies using `conda` or `mamba`:
+Install the necessary dependencies using `conda` or `mamba` based on the Operating System (OS) of the machine:
 
-    mamba env create -f submodules/pypsa-earth/envs/environment.yaml
+    mamba env create -f envs/environment.{os}-64-pinned.yaml
 
-Activate `pypsa-earth` environment:
+* **Note!** Please check for `envs/` directory for names of pinned environment files. Supported OS list are `windows`, `linux` and `macos`.
 
-    conda activate pypsa-earth
+Activate `pypsa-earth-efuels` environment:
 
-* **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit (`ee14fa5`) of `efuels-supply-potential` branch of [open-energy-transition/pypsa-earth](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials) repository.
+    conda activate pypsa-earth-efuels
+
+* **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit (`0fa2e39`) of `efuels-supply-potential` branch of [open-energy-transition/pypsa-earth](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials) repository. If OS-specific installation of conda environment does not succeed, it is recommended to install general pypsa-earth environment and activate as ` mamba env create -f submodules/pypsa-earth/envs/environment.yaml` and activate by `conda activate pypsa-earth`. The detailed instructions are provided in [PyPSA-Earth Documentation](https://pypsa-earth.readthedocs.io/en/latest/installation.html).
+
+### 1.1. Configure pre-commit
+
+To ensure that all team members can use the pre-commit hooks and maintain code quality across the project, follow these steps:
+
+1. Navigate to the root directory of the repository, where the .pre-commit-config.yaml file is located. Then, run the following command to install the hooks defined in the .pre-commit-config.yaml file:
+```bash
+pre-commit install
+```
+This command will set up the hooks in the `.git/hooks directory` (specifically the `pre-commit hook`), ensuring that the hooks are executed automatically before each commit.
+
+2. To ensure that all files comply with the defined hooks, users can run the following command manually to check and fix any issues with all files in the repository:
+```bash
+pre-commit run --a
+```
+This step is optional but recommended to make sure that any formatting or linting issues are fixed before starting to commit changes.
+
+3. Once the pre-commit hooks are installed and verified, you can proceed to make changes to the code, add them to your commit, and push them to the repository. From this point forward, pre-commit will automatically run checks on your files whenever you try to commit:
+```bash
+git add .
+git commit -m "Your commit message"
+```
+If any of the hooks (such as `black`, `isort`, or `reuse lint`) detect issues (for example, formatting issues or missing license headers), the commit will be blocked, and you'll be required to fix the issues before retrying.
+
+4. Some hooks, such as `black` and `isort`, will automatically fix code formatting issues during the commit process. If a file is not formatted correctly, the hook will fix it, and the user can reattempt the commit. If a hook fails (for example, the license linting hook or a formatting hook fails), the commit will not proceed. The user will see a message explaining the issue, and they will need to correct it before committing again.
+
+5. Every time a new hook is added, or changes to the configuration in the `.pre-commit-config.yaml` are performed, it is necessary to run `pre-commit install` again.
 
 ## 2. Running scenarios
 
@@ -70,8 +100,8 @@ snakemake -call solve_sector_networks_myopic --configfile configs/scenarios/conf
 |`validate_all`           |`config.base.yaml`, `config.base_AC.yaml`|Performs country-level validation comparing with EIA and Ember data|
 |`statewise_validate_all` |`config.base_AC.yaml`                    |Performs statewise validation comparing with EIA data|
 |`get_capacity_factors`   |Any base or scenario config file         |Estimates capacity factors for renewables|
-|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand| 
-|`generate_aviation_scenario` |Any base or scenario config file         |Generates aviation demand csv file with different future scenario| 
+|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand|
+|`generate_aviation_scenario` |Any base or scenario config file         |Generates aviation demand csv file with different future scenario|
 |`modify_aviation_demand` |Any base or scenario config file         |Switches aviation demand in energy_total to custom demand|
 |`preprocess_demand_data` |Any base or scenario config file         |Preprocess utlities demand data into geojson|
 |`build_demand_profiles_from_eia` |Any base or scenario config file         |Build custom demand data from eia and bypass build_demand_profiles|
@@ -132,28 +162,19 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 9. [PR #65](https://github.com/open-energy-transition/pypsa-earth/pull/65): Remove lignite from default conventional carriers.
 10. [PR #69](https://github.com/open-energy-transition/pypsa-earth/pull/69): Extend lifetime of nuclear power plants to 60 years
 11. [PR #71](https://github.com/open-energy-transition/pypsa-earth/pull/71): Enable selection of custom busmap.
- 
-## 5. Validation
+12. [PR #76](https://github.com/open-energy-transition/pypsa-earth/pull/76): Add functionality to overwrite cost attributes in sector model.
+13. [PR #84](https://github.com/open-energy-transition/pypsa-earth/pull/84): Add possibility to overwrite discount rate.
+14. [PR #86](https://github.com/open-energy-transition/pypsa-earth/pull/86): Use H2 Store Tank costs without compressor and add lifetime.
+15. [PR #89](https://github.com/open-energy-transition/pypsa-earth/pull/89): Align cost conversion with reference year for costs in input files.
+15. [PR #91](https://github.com/open-energy-transition/pypsa-earth/pull/91): Include existing batteries from `powerplants.csv`.
 
-### 5.1. Country-level validation for the base scenario
-To run country-level validation of the U.S. for the base scenario, navigate to the working directory (`.../efuels-supply-potentials/`) and use the following command:
-```bash
-snakemake -call validate_all --configfile configs/calibration/config.base.yaml
-```
-or base scenario with alternative clustering option (AC):
-```bash
-snakemake -call validate_all --configfile configs/calibration/config.base_AC.yaml
-```
-* **Note:** Ensure that `planning_horizon` in `configs/config.main.yaml` corresponds to a horizon of the base scenario. By default, `planning_horizon` is set to 2020, which means that results are benchmarked agains 2020's historical data.
+## 5. Checking techno-economic input data
 
-It is possible to run validation by specifying the output file with wildcards:
-``` bash
-snakemake -call plots/results/US_2023/demand_validation_s_10_ec_lcopt_Co2L-24H.png --configfile configs/calibration/config.base.yaml
-```
-Validation results are stored in `plots/results/` directory under scenario run name (e.g. `US_2023`).
+To check techno-economic input data for selected sectors (power generation, hydrogen and e-kerosene production, CO2 capture) it is not necessarily needed to run the entire workflow and check input cost data files.
 
-### 5.2. State-wise validation
-To run state-wise validation, run:
+To generate Excel files reporting techno-economic input data (for the Moderate and the Advanced cost scenarios adopted in the model), navigate to the working directory (`.../efuels-supply-potentials/`) and use the following command:
 ```bash
-snakemake -call statewise_validate_all --configfile configs/calibration/config.base_AC.yaml
+python scripts/non_workflow/fetch_input_costs_multiyear.py
 ```
+
+The Excel files will be written to the `.../efuels-supply-potentials_emmanuel_fork/notebooks/data/input_costs/` folder.

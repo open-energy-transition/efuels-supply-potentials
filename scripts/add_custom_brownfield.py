@@ -4,13 +4,21 @@
 
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../submodules/pypsa-earth/scripts/")))
+
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
+sys.path.append(
+    os.path.abspath(os.path.join(__file__, "../../submodules/pypsa-earth/scripts/"))
+)
 import pandas as pd
 import numpy as np
 from types import SimpleNamespace
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            configure_logging, load_network
+from scripts._helper import (
+    mock_snakemake,
+    update_config_from_wildcards,
+    create_logger,
+    configure_logging,
+    load_network,
+)
 from add_custom_existing_baseyear import add_build_year_to_new_assets, set_lifetimes
 from _helpers import prepare_costs
 
@@ -54,15 +62,19 @@ def add_brownfield(n, n_p, year, planning_horizon_p):
     # reduce non-infinity p_nom_max for all extendable components of brownfield by p_nom of previous horizon
     for c in n.iterate_components(["Link", "Generator", "Store"]):
         attr = "e" if c.name == "Store" else "p"
-        extendable_assets = c.df[(c.df[f"{attr}_nom_extendable"]) & 
-                                 (c.df.build_year == year) &
-                                 (c.df[f"{attr}_nom_max"] != np.inf)]
+        extendable_assets = c.df[
+            (c.df[f"{attr}_nom_extendable"])
+            & (c.df.build_year == year)
+            & (c.df[f"{attr}_nom_max"] != np.inf)
+        ]
         # loop over extendable assets and reduce their p_nom_max by the p_nom of the previous horizon
         for idx in extendable_assets.index:
             # get common asset name (eg. US0 0 onwind)
             asset_name = idx.split(f"-{year}")[0]
             # get total p_nom_opt installed previously
-            asset_prev_p_nom_opt = c.df[c.df.index.str.contains(asset_name)]["p_nom_opt"].sum()
+            asset_prev_p_nom_opt = c.df[c.df.index.str.contains(asset_name)][
+                "p_nom_opt"
+            ].sum()
             # reduce p_nom_max of the extendable asset by installed capacity
             c.df.loc[idx, f"{attr}_nom_max"] -= asset_prev_p_nom_opt
             # clip p_nom_max by lower bound to 0
@@ -86,7 +98,7 @@ if __name__ == "__main__":
             discountrate=0.071,
             demand="AB",
             h2export="10",
-            configfile="configs/scenarios/config.myopic.yaml"
+            configfile="configs/scenarios/config.myopic.yaml",
         )
 
     configure_logging(snakemake)
@@ -112,6 +124,7 @@ if __name__ == "__main__":
         snakemake.params.costs["fill_values"],
         Nyears,
         snakemake.params.costs["default_USD_to_EUR"],
+        reference_year=snakemake.config["costs"].get("reference_year", 2020),
     )
 
     # set lifetime for nuclear, geothermal, and ror generators manually to non-infinity values

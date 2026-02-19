@@ -2,17 +2,17 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Scenario n. 10 - Sensitivity - Biogenic point-source CO2 only
+# Scenario n. 2 - Reference - ReFuel EU
 #
 # | Temporal matching        | Hourly matching                           | Yes                                   |
 # | Aviation sector          | Aviation demand                           | Central                               |
 # |                          | e-kerosene blending mandate               | ReFuel EU                             |
 # | Demand projections       | Electricity demand + EV share             | Medium                                |
 # | Costs                    | Electricity generation (NREL ATB)         | Moderate + tax credits                |
-# |                          | Electrolysis (ICCT IRA assumptions)       | Moderate + tax credits                |
-# |                          | DAC                                       | Moderate + tax credits                |
+# |                          | Electrolysis (ICCT IRA assumptions)       | Moderate (no tax credits)             |
+# |                          | DAC                                       | Moderate  + tax credits               |
 # |                          | Point-source CO₂ capture (NPC)            | Conservative + tax credits            |
-# | Supply constraint        | CO2 supply                                | Biogenic sources + DAC                |
+# | Supply constraint        | CO2 supply                                | Biogenic & non-biogenic sources + DAC |
 # | Power sector development | Transmission expansion                    | No new expansion *                    |
 # |                          | State policies for electricity generation | Current policies                      |
 # * Optimal transmission expansion if infeasible
@@ -64,7 +64,7 @@ policies:
   country: [] # "CES" to adopt country-wise clean electricity generation constraint (90% clean electricity by 2040), otherwise empty
 
 custom_industry:
-  biogenic_co2: true
+  CCS_retrofit: [ethanol, ammonia, steel, cement]
 
 cluster_options:
   alternative_clustering: false  # "False" use Voronoi shapes, "True" use GADM shapes
@@ -98,15 +98,13 @@ costs:
     electricity: "moderate"
     H2_electrolysis: "moderate"
     dac: "moderate"
-  marginal_cost:
-    Alkaline electrolyzer large size: -90.00 # USD/MWh - 45 V (max credit 3.00 $/kg_H2)
-    PEM electrolyzer small size: -90.00 # USD/MWh - 45 V (max credit 3.00 $/kg_H2)
-    SOEC: -90.00 # USD/MWh - 45 V (max credit 3.00 $/kg_H2)
+  VOM:
+    oil: 100.0
 
 policy_config:
   hydrogen:
-    temporal_matching: "hourly" # either "hourly", "monthly", "yearly", "no_temporal_matching"
-    additionality: true
+    temporal_matching: "no_temporal_matching" # either "hourly", "monthly", "yearly", "no_temporal_matching"
+    additionality: false
     temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro, nuclear]
 
 demand_data:

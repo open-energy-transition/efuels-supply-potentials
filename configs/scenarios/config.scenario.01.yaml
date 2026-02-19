@@ -98,11 +98,13 @@ costs:
     electricity: "moderate"
     H2_electrolysis: "moderate"
     dac: "moderate"
+  VOM:
+    oil: 100.0
 
 policy_config:
   hydrogen:
-    temporal_matching: "hourly" # either "hourly", "monthly", "yearly", "no_temporal_matching"
-    additionality: true
+    temporal_matching: "no_temporal_matching" # either "hourly", "monthly", "yearly", "no_temporal_matching"
+    additionality: false
     temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro, nuclear]
 
 demand_data:

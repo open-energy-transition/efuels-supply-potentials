@@ -61,6 +61,12 @@ demand_projection:
 policies:
   state: ["CES", "RES"] # "CES" to adopt State-wise clean electricity generation constraints from currently stated policies, "RES" to adopt State-wise renewable electricity generation constraints from currently stated policies, both to apply both kinds of constraintsAdd commentMore actions
   country: ["CES"] # "CES" to adopt country-wise clean electricity generation constraint (90% clean electricity by 2040), otherwise empty
+  pre_ob3_tax_credits: True
+
+line_expansion_limits: # from DOE NTL Study
+  2030: v1.087
+  2035: v1.153
+  2040: v1.227
 
 custom_industry:
   biogenic_co2: true
@@ -97,10 +103,8 @@ costs:
     electricity: "moderate"
     H2_electrolysis: "moderate"
     dac: "moderate"
-  marginal_cost:
-    Alkaline electrolyzer large size: -90.00 # USD/MWh - 45 V (max credit 3.00 $/kg_H2)
-    PEM electrolyzer small size: -90.00 # USD/MWh - 45 V (max credit 3.00 $/kg_H2)
-    SOEC: -90.00 # USD/MWh - 45 V (max credit 3.00 $/kg_H2)
+  VOM:
+    oil: 100.0
 
 policy_config:
   hydrogen:

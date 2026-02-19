@@ -1,5 +1,10 @@
+# SPDX-FileCopyrightText:  Open Energy Transition gGmbH
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 import os
 import sys
+
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 import pandas as pd
 from _helper import DATA_DIR, PYPSA_EARTH_DIR
@@ -13,7 +18,7 @@ NEW_PPL_PATH = "custom_powerplants.csv"
 def read_custom_powerplants():
     """
     Reads the custom power plants data from a CSV file.
-    
+
     Returns:
         pd.DataFrame: DataFrame containing the custom power plants data.
     """
@@ -25,7 +30,7 @@ def read_custom_powerplants():
 def read_costs():
     """
     Reads the costs data from a CSV file.
-    
+
     Returns:
         pd.DataFrame: DataFrame containing the costs data.
     """
@@ -40,24 +45,25 @@ if __name__ == "__main__":
     # read costs file to get lifetime of powerplants
     costs_df = read_costs()
     # filter only lifetime rows from costs_df
-    lifetime_df = costs_df[costs_df['parameter'] == 'lifetime']
-    lifetime_series = lifetime_df['value']
-    lifetime_series.rename(index={
-        'offwind':'offwind-ac',
-        'battery storage':'battery'
-    }, inplace=True)
-    # set lifetime to CCGT and OCGT manually to 35 years
-    lifetime_series['CCGT'] = 35
-    lifetime_series['OCGT'] = 35
-    lifetime_series['nuclear'] = 60
+    lifetime_df = costs_df[costs_df["parameter"] == "lifetime"]
+    lifetime_series = lifetime_df["value"]
+    lifetime_series.rename(
+        index={"offwind": "offwind-ac", "battery storage": "battery"}, inplace=True
+    )
+    # set lifetime to CCGT and OCGT manually to 45 years and nuclear to 60 years
+    lifetime_series["CCGT"] = 45
+    lifetime_series["OCGT"] = 45
+    lifetime_series["nuclear"] = 60
     # read lifetime from costs file
-    df['lifetime'] = df['Fueltype'].map(lifetime_series)
+    df["lifetime"] = df["Fueltype"].map(lifetime_series)
     # update DatOut to be by DateIn + lifetime where DateOut is NaN
-    df['DateOut'] = df.apply(
-        lambda row: row['DateIn'] + row['lifetime'] if pd.isna(row['DateOut']) else row['DateOut'],
-        axis=1
+    df["DateOut"] = df.apply(
+        lambda row: row["DateIn"] + row["lifetime"]
+        if pd.isna(row["DateOut"])
+        else row["DateOut"],
+        axis=1,
     )
     # drop lifetime column
-    df.drop(columns=['lifetime'], inplace=True)
+    df.drop(columns=["lifetime"], inplace=True)
     # save updated DataFrame to CSV
     df.to_csv(f"{DATA_DIR}/{NEW_PPL_PATH}", index=True)

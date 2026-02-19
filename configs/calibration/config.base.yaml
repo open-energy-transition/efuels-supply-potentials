@@ -35,9 +35,9 @@ policies:
   country: [] # "CES"
 
 electricity:
-  co2limit: 4.6e+9 #for calibration purposes
+  co2limit: 4.63e+9 #for calibration purposes
   co2base: 226.86e+6 #base_from_2020 Locations of the 250 MMmt of CO2 emissions from the WECC 2021.
-  
+
   extendable_carriers:
     Generator: []
     Store: [battery, H2]
@@ -60,11 +60,13 @@ renewable:
 costs:
   year: 2020
   efficiency:
-      coal: 0.3195
-      oil: 0.3005
-      CCGT: 0.4429
-      nuclear: 0.3254
-      biomass: 0.30
+    coal: 0.3195
+    oil: 0.3005
+    CCGT: 0.4429
+    nuclear: 0.3254
+    biomass: 0.30
+  VOM:
+    oil: 100.0
 
 policy_config:
   hydrogen:

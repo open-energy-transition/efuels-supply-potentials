@@ -16,6 +16,7 @@ retrieve_from_gdrive:
   renewable_profiles: true # if true, bypasses build_renewable_profiles rule
 
 costs:
+  discountrate: [0.07] # from the `fill_values` section
   output_currency: "USD"
   default_USD_to_EUR: 0.7532 # previously USD2013_to_EUR2013; should be sufficient as current data from `technology-data` are either in EUR or USD; [EUR/USD] ECB: https://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-usd.en.html
   year: 2030
@@ -27,7 +28,21 @@ costs:
     H2_electrolysis: "moderate"
     dac: "moderate"
   financial_case: "market" # only used if `country_specific_data: "US"`; can be "market" or "r&d"
-  discountrate: [0.071] #, 0.086, 0.111]
+  discount rate:
+    direct air capture: 0.10
+    Fischer-Tropsch: 0.10
+    Alkaline electrolyzer large size: 0.10
+    Alkaline electrolyzer medium size: 0.10
+    Alkaline electrolyzer small size: 0.10
+    PEM electrolyzer small size: 0.10
+    SOEC: 0.10
+  lifetime:
+    CCGT: 45
+    OCGT: 45
+
+export:
+  endogenous: false # If true, the export demand is endogenously determined by the model
+  h2export: [0] # Yearly export demand in TWh. Only considered, if ["export"]["endogenous"] is set to false
 
 # defining the aviation demand scenario
 aviation_demand_scenario:
@@ -61,6 +76,10 @@ policy_config:
     additionality: true
     temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro, nuclear]
 
+sector:
+  co2_sequestration_potential: 250 # MtCO2/a sequestration potential for US
+  co2_sequestration_cost: 8 # USD/tCO2 for sequestration of CO2
+
 custom_industry:
   enable: true
   ethanol: true
@@ -73,6 +92,12 @@ custom_industry:
   biogenic_co2: false # define output of ethanol from starch CC as biogenic CO2 to be used in Fischer-Tropsch
   grid_H2: true # mark output of electrolysis as grid H2 (which can be used in Fischer-Tropsch)
   other_electricity: true # add other electricity as a consumption
+  dac_inputs:
+    heat: false
+    electricity: 1.4 # in MWh per ton CO2
+  buffer_co2_stored: true # switch output to buffer co2 stored
+  co2_storage_tanks: true # add CO2 storage tanks
+
 
 custom_databundles:
   bundle_cutouts_USA:
@@ -141,4 +166,3 @@ custom_databundles:
     destination: "data"
     urls:
       gdrive: https://drive.google.com/file/d/15URN8vooJHqfAUEZjBGXoBuk5A0jPM7H/view?usp=sharing
-

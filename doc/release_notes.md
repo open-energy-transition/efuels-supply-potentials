@@ -8,6 +8,8 @@
 
 Please list contributions, add reference to PRs if present.
 
+* Back-up files needed in PyPSA-Earth workflow (inputs to `prepare_gas_network` and `build_industrial_database`) to allow retrieval if download fails. [PR #141](https://github.com/open-energy-transition/efuels-supply-potentials/pull/141)
+
 * Set **transmission expansion limits** for scenario 5 and 6 based on DOE NTL Study [PR #136](https://github.com/open-energy-transition/efuels-supply-potentials/pull/136)
 
 * Implement **pre-commit hooks** [PR #138](https://github.com/open-energy-transition/efuels-supply-potentials/pull/138)

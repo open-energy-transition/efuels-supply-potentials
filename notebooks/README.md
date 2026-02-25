@@ -155,7 +155,14 @@ when running via `run_single_scenario.py`.
 
 The notebook `multiple_scenario_analysis.ipynb` performs **cross-scenario comparisons** based on the solved PyPSA-Earth networks available in `results/scenarios/`.
 
-Unlike `scenario_analysis_single.ipynb`, this notebook is designed to load **multiple scenarios simultaneously**, aggregate results, and produce comparative analyses across scenarios. Consolidated results are also exported to Excel.
+Unlike `scenario_analysis_single.ipynb`, this notebook is designed to load **multiple scenarios simultaneously**, aggregate results, and produce comparative analyses across scenarios. Consolidated results are also exported to an Excel file.
+
+The Excel output filename includes a year tag based on the selected planning horizons:
+
+| Year selection | Output Excel file |
+|---|---|
+| Single year (e.g. 2030) | `efuels_supply_potentials_results_2030.xlsx` |
+| Multiple years | `efuels_supply_potentials_results_all_years.xlsx` |
 
 ---
 
@@ -207,10 +214,11 @@ python run_multiple_scenario.py \
   --mode all
 ```
 
-This generates a single output notebook:
+This generates a single output notebook and a consolidated Excel file:
 
 ```
 multiple_scenario_analysis_3H_2030_2035_2040.ipynb
+efuels_supply_potentials_results_all_years.xlsx
 ```
 
 #### Example 2: Run each year separately
@@ -224,12 +232,12 @@ python run_multiple_scenario.py \
   --mode each
 ```
 
-This generates one output notebook per year:
+This generates one output notebook and one Excel file per year:
 
 ```
-multiple_scenario_analysis_3H_2030.ipynb
-multiple_scenario_analysis_3H_2035.ipynb
-multiple_scenario_analysis_3H_2040.ipynb
+multiple_scenario_analysis_3H_2030.ipynb   efuels_supply_potentials_results_2030.xlsx
+multiple_scenario_analysis_3H_2035.ipynb   efuels_supply_potentials_results_2035.xlsx
+multiple_scenario_analysis_3H_2040.ipynb   efuels_supply_potentials_results_2040.xlsx
 ```
 
 #### Example 3: Custom year selection

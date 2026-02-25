@@ -371,6 +371,6 @@ This value is the default for interactive use only and is overridden when runnin
 
 ## Additional Resources
 
-* Main Project README: `../README.md`
+* Main Project README: [ README.md ](../README.md)
 * PyPSA documentation: [https://pypsa.readthedocs.io/](https://pypsa.readthedocs.io/)
 * PyPSA-Earth documentation: [https://pypsa-meets-earth.readthedocs.io/](https://pypsa-meets-earth.readthedocs.io/)

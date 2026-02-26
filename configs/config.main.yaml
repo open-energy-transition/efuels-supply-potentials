@@ -75,6 +75,7 @@ policy_config:
     temporal_matching: "hourly" # either "hourly", "monthly", "yearly", "no_temporal_matching"
     additionality: true
     temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro, nuclear]
+    h2_production_constraint: false
 
 sector:
   co2_sequestration_potential: 250 # MtCO2/a sequestration potential for US

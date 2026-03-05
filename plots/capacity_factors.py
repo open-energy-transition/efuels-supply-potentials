@@ -8,10 +8,18 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+
 sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
-from scripts._helper import mock_snakemake, update_config_from_wildcards, build_directory, \
-                            load_network, PLOTS_DIR, DATA_DIR
+from scripts._helper import (
+    mock_snakemake,
+    update_config_from_wildcards,
+    build_directory,
+    load_network,
+    PLOTS_DIR,
+    DATA_DIR,
+)
 from state_analysis import get_state_mapping
+
 warnings.filterwarnings("ignore")
 
 
@@ -24,7 +32,9 @@ def get_capacity_factor(n, alternative_clustering):
     for c in carriers:
         res_gens = n.generators.query("carrier in @c").index
         capacity_factor = n.generators_t.p_max_pu[res_gens]
-        capacity_factor.columns = capacity_factor.columns.map(lambda x: x.split("_AC")[0])
+        capacity_factor.columns = capacity_factor.columns.map(
+            lambda x: x.split("_AC")[0]
+        )
         if alternative_clustering:
             capacity_factor.columns = capacity_factor.columns.map(gadm_state)
         if np.any(pd.isna(capacity_factor.columns)):
@@ -49,8 +59,7 @@ if __name__ == "__main__":
             clusters="10",
         )
     # update config based on wildcards
-    config = update_config_from_wildcards(
-        snakemake.config, snakemake.wildcards)
+    config = update_config_from_wildcards(snakemake.config, snakemake.wildcards)
 
     # get alternative clustering
     alternative_clustering = snakemake.params.alternative_clustering
@@ -72,10 +81,8 @@ if __name__ == "__main__":
         for carrier, data in capacity_factors.items():
             # Add the average_CF as a new column to the DataFrame
             data["Average_CF"] = [average_CF[carrier]] + [None] * (data.shape[0] - 1)
-            
+
             # Write to a separate sheet named after the carrier
             data.to_excel(writer, sheet_name=carrier, index=True)
 
     logging.info(f"Data written to {snakemake.output.capacity_factors}")
-
-

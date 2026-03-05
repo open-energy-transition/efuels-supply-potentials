@@ -1,0 +1,28 @@
+Valid-License-Identifier: LicenseRef-NREL-Standard
+License-Text:
+This dataset is published by the National Renewable Energy Laboratory (NREL),
+operated by the Alliance for Sustainable Energy, LLC, for the U.S. Department
+of Energy.
+
+Usage Terms:
+- The data is made available free of charge.
+- You may use, copy, distribute, and create derivative works from the data.
+- You must include the entire license notice in all copies of the data or any
+  derivative works.
+- You must provide credit to DOE/NREL/Alliance in any publication or product
+  derived from the data, such as:
+    "Source: U.S. Department of Energy, National Renewable Energy Laboratory."
+
+Restrictions:
+- You may not use the name of DOE, NREL, or Alliance to imply endorsement of
+  any product or service without specific prior written permission.
+- No additional rights are granted beyond those expressly stated.
+
+Disclaimer:
+- THE DATA IS PROVIDED "AS IS." DOE/NREL/ALLIANCE MAKE NO WARRANTY,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF
+  MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+- DOE/NREL/ALLIANCE SHALL NOT BE LIABLE FOR ANY DAMAGES ARISING OUT OF
+  THE USE OF THIS DATA.
+
+SPDX-License-Identifier: LicenseRef-NREL-Standard

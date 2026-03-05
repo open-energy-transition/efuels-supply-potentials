@@ -1059,6 +1059,159 @@ def add_CCL_constraints(n, config):
                 )
 
 
+def add_h2_production_constraints(n, config):
+    """
+    Add annual aggregate H2 production min/max constraints for electrolysis.
+
+    CSV format:
+      - index: (country, carrier)
+      - columns: MultiIndex (year, {min, max})
+      - values: annual H2 production in MWh_H2
+    """
+
+    hcfg = config.get("policy_config", {}).get("hydrogen", {})
+
+    if not hcfg.get("h2_production_constraint", False):
+        return
+
+    csv_path = hcfg.get("h2_production_limits")
+    if csv_path is None:
+        raise ValueError(
+            "h2_production_constraint is enabled but no "
+            "'h2_production_limits' CSV is provided in config."
+        )
+
+    logger.info("Adding aggregate H2 production constraints")
+
+    try:
+        df_full = pd.read_csv(
+            csv_path,
+            index_col=[0, 1],
+            header=[0, 1],
+        )
+        df_y = df_full[snakemake.wildcards.planning_horizons]
+
+    except IOError:
+        logger.exception(
+            "Need to specify the path to a .csv file containing "
+            "aggregate H2 production limits."
+        )
+        return
+    except KeyError:
+        logger.warning(
+            "No H2 production limits found for year %s. Skipping.",
+            snakemake.wildcards.planning_horizons,
+        )
+        return
+
+    if df_y.empty:
+        logger.info("Empty H2 production cap table. Skipping.")
+        return
+
+    logical_carrier = "h2_electrolysis"
+
+    ELECTROLYSIS_CARRIERS = [
+        "Alkaline electrolyzer large",
+        "Alkaline electrolyzer medium",
+        "Alkaline electrolyzer small",
+        "PEM electrolyzer",
+        "SOEC",
+        "Flexible electrolyzer",
+    ]
+
+    el_links_all = n.links.index[n.links.carrier.isin(ELECTROLYSIS_CARRIERS)]
+
+    if el_links_all.empty:
+        raise ValueError(
+            "H2 production constraint enabled but no electrolyzer links found."
+        )
+
+    if ("Link", "p") not in n.variables.index:
+        raise ValueError("No Link.p variables found in network.")
+
+    p_vars = get_var(n, "Link", "p")
+    p_vars = p_vars.loc[:, ~p_vars.columns.duplicated(keep="first")]
+
+    el_links = el_links_all.intersection(p_vars.columns)
+
+    if el_links.empty:
+        raise ValueError("Electrolyzers exist but none have a dispatch variable 'p'.")
+
+    p_el = p_vars[el_links]
+
+    # Snapshot weights
+    w = pd.DataFrame(
+        np.outer(n.snapshot_weightings["generators"], np.ones(len(el_links))),
+        index=n.snapshots,
+        columns=el_links,
+    )
+
+    eff = n.links.loc[el_links, "efficiency"].astype(float)
+
+    # Annual H2 output per link
+    h2_out_links = linexpr((w * eff, p_el)).sum(axis=0)
+
+    el_country = n.buses.loc[n.links.loc[el_links, "bus0"], "country"].values
+
+    h2_out_per_cc = (
+        pd.DataFrame(
+            {
+                "expr": h2_out_links,
+                "country": el_country,
+                "carrier": logical_carrier,
+            },
+            index=el_links,
+        )
+        .groupby(["country", "carrier"])["expr"]
+        .apply(join_exprs)
+    )
+
+    # MIN constraint
+    if "min" in df_y.columns:
+        mins = df_y["min"].dropna()
+        idx = h2_out_per_cc.index.intersection(mins.index)
+        if not idx.empty:
+            logger.info(
+                "Applying H2 MIN caps (MWh) for year %s: %s",
+                snakemake.wildcards.planning_horizons,
+                {k: float(mins.loc[k]) for k in idx},
+            )
+
+            define_constraints(
+                n,
+                h2_out_per_cc.loc[idx],
+                ">=",
+                mins.loc[idx],
+                "h2_prod",
+                "min",
+            )
+
+    # MAX constraint
+    if "max" in df_y.columns:
+        maxs = df_y["max"].dropna()
+        idx = h2_out_per_cc.index.intersection(maxs.index)
+        if not idx.empty:
+            logger.info(
+                "Applying H2 MAX caps (MWh) for year %s: %s",
+                snakemake.wildcards.planning_horizons,
+                {k: float(maxs.loc[k]) for k in idx},
+            )
+
+            define_constraints(
+                n,
+                h2_out_per_cc.loc[idx],
+                "<=",
+                maxs.loc[idx],
+                "h2_prod",
+                "max",
+            )
+
+    logger.info(
+        "H2 production caps applied for year %s.",
+        snakemake.wildcards.planning_horizons,
+    )
+
+
 def add_EQ_constraints(n, o, scaling=1e-1):
     float_regex = "[0-9]*\.?[0-9]+"
     level = float(re.findall(float_regex, o)[0])
@@ -1996,6 +2149,8 @@ def extra_functionality(n, snapshots):
         add_SAFE_constraints(n, config)
     if "CCL" in opts and n.generators.p_nom_extendable.any():
         add_CCL_constraints(n, config)
+    # H2 production constraint
+    add_h2_production_constraints(n, config)
     reserve = config["electricity"].get("operational_reserve", {})
     if reserve.get("activate"):
         add_operational_reserve_margin(n, snapshots, config)

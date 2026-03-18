@@ -48,8 +48,8 @@ BASE_YEAR_FILENAME = (
     "elec_s_100_ec_lcopt_Co2L-{resolution}_{resolution}_2020_0.07_AB_0export.nc"
 )
 
+# Default links for 3H scenario runs.
 # Format: {scenario_id: {year: google_drive_url}}
-# Replace placeholder URLs with actual Google Drive sharing links
 NETWORK_FILES = {
     1: {
         # https://drive.google.com/file/d/YOUR_FILE_ID/view?usp=sharing
@@ -78,8 +78,8 @@ NETWORK_FILES = {
         2040: "https://drive.google.com/file/d/1iu0KBrZgFVU-hR7u8IaCYx20XuU7m15J/view?usp=drive_link",
     },
     6: {
-        2030: "PLACEHOLDER_URL_S06_2030",
-        2035: "PLACEHOLDER_URL_S06_2035",
+        2030: "https://drive.google.com/file/d/1aeXARxAJf3wYNgy8PWrRpN2-7S-Bn9T_/view?usp=drive_link",
+        2035: "https://drive.google.com/file/d/1h6EexrKMQzsC8sh2D9uD9J-HwqAzLARo/view?usp=drive_link",
         2040: "PLACEHOLDER_URL_S06_2040",
     },
     7: {
@@ -102,6 +102,18 @@ NETWORK_FILES = {
         2035: "https://drive.google.com/file/d/1dWvAiEdy-ya-qPVq0omdePtYYLnEqDCB/view?usp=drive_link",
         2040: "https://drive.google.com/file/d/1_HChV3SdxIE-kXMt3NqBx3cfwQVMva04/view?usp=drive_link",
     },
+}
+
+# Resolution-specific links for runs that differ from default 3H outputs.
+# Format: {resolution: {scenario_id: {year: google_drive_url}}}
+NETWORK_FILES_BY_RESOLUTION = {
+    "1H": {
+        2: {
+            2030: "https://drive.google.com/file/d/1nxwLDCORUUuCJ3GwWNer0x0r8egDjDZI/view?usp=drive_link",
+            2035: "https://drive.google.com/file/d/13tG8jZTVq2JQ35hCq_Jx6MpGDBFLLyB_/view?usp=drive_link",
+            2040: "PLACEHOLDER_URL_S02_1H_2040",
+        }
+    }
 }
 
 # Network file naming patterns
@@ -266,6 +278,20 @@ def download_base_year(
         return False
 
 
+def get_google_drive_url(scenario_id: int, year: int, resolution: str) -> Optional[str]:
+    """Return URL for scenario/year/resolution, if configured."""
+    resolution_links = NETWORK_FILES_BY_RESOLUTION.get(resolution, {})
+
+    if scenario_id in resolution_links and year in resolution_links[scenario_id]:
+        return resolution_links[scenario_id][year]
+
+    # Use default links only for default 3H downloads.
+    if resolution == "3H":
+        return NETWORK_FILES.get(scenario_id, {}).get(year)
+
+    return None
+
+
 def download_scenario_networks(
     scenario_ids: List[int],
     years: Optional[List[int]] = None,
@@ -335,15 +361,27 @@ def download_scenario_networks(
                 results[scenario_id][year] = True
                 continue
 
-            # Get Google Drive URL
-            gdrive_url = NETWORK_FILES[scenario_id][year]
+            # Get Google Drive URL for requested resolution
+            gdrive_url = get_google_drive_url(scenario_id, year, resolution)
+
+            if not gdrive_url:
+                print(
+                    f"  ⚠️  {year}: No URL configured for scenario {scenario_id} at {resolution}"
+                )
+                print(
+                    "      Please add links in NETWORK_FILES_BY_RESOLUTION before downloading"
+                )
+                results[scenario_id][year] = False
+                continue
 
             # Check for placeholder
             if "PLACEHOLDER" in gdrive_url:
                 print(
                     f"  ⚠️  {year}: No Google Drive URL configured (placeholder found)"
                 )
-                print(f"      Please update the URL in NETWORK_FILES dictionary")
+                print(
+                    "      Please update the URL in NETWORK_FILES or NETWORK_FILES_BY_RESOLUTION"
+                )
                 results[scenario_id][year] = False
                 continue
 

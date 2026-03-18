@@ -27,11 +27,15 @@ python download_scenario_networks.py --base-year --scenario-id 1 2
 # Download specific years only
 python download_scenario_networks.py --scenario-id 2 --years 2030 2040
 
+# Download scenario 2 hourly (1H) outputs
+python download_scenario_networks.py --scenario-id 2 --resolution 1H
+
 # Force re-download existing files
 python download_scenario_networks.py --scenario-id 2 --force
 ```
 
 Files are saved to `results/base_year/` (base year) and `results/scenarios/scenario_XX/` (scenarios). Existing files are skipped by default.
+For non-default resolutions (for example scenario 2 at `1H`), URLs are configured separately in `download_scenario_networks.py` under `NETWORK_FILES_BY_RESOLUTION`.
 This directory contains Jupyter notebooks for analyzing PyPSA-Earth-based scenarios for the **Grid modelling to assess electrofuels supply potential – The impact of electrofuels on the US electricity grid** study and for validating model results against historical data.
 
 Once you have cloned the `efuels-supply-potentials` repository, navigate to the `notebooks` directory.

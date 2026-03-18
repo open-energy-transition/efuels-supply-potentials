@@ -8,22 +8,22 @@ Download solved PyPSA network files for scenarios from Google Drive.
 Usage examples:
     # Download base year network
     python download_scenario_networks.py --base-year
-    
+
     # Download all files for scenario 2
     python download_scenario_networks.py --scenario-id 2
-    
+
     # Download all files for scenarios 1, 3, and 5
     python download_scenario_networks.py --scenario-id 1 3 5
-    
+
     # Download all scenarios
     python download_scenario_networks.py --all
-    
+
     # Download base year and scenarios
     python download_scenario_networks.py --base-year --scenario-id 1 2
-    
+
     # Download specific years for scenario 2
     python download_scenario_networks.py --scenario-id 2 --years 2030 2035
-    
+
     # Download with custom resolution (if different files exist)
     python download_scenario_networks.py --scenario-id 1 --resolution 1H
 """
@@ -41,8 +41,12 @@ from google_drive_downloader import GoogleDriveDownloader as gdd
 # -----------------------------
 
 # Base year network (2023 validation)
-BASE_YEAR_URL = "https://drive.google.com/file/d/1yhudhbgk_lTq7dJ4noDVxTXl37jhiCE2/view?usp=sharing"
-BASE_YEAR_FILENAME = "elec_s_100_ec_lcopt_Co2L-{resolution}_{resolution}_2020_0.07_AB_0export.nc"
+BASE_YEAR_URL = (
+    "https://drive.google.com/file/d/1yhudhbgk_lTq7dJ4noDVxTXl37jhiCE2/view?usp=sharing"
+)
+BASE_YEAR_FILENAME = (
+    "elec_s_100_ec_lcopt_Co2L-{resolution}_{resolution}_2020_0.07_AB_0export.nc"
+)
 
 # Format: {scenario_id: {year: google_drive_url}}
 # Replace placeholder URLs with actual Google Drive sharing links
@@ -153,7 +157,9 @@ def extract_file_id_from_url(url: str) -> Optional[str]:
         return None
 
 
-def download_file_from_google_drive(file_id: str, destination: Path, filename: str) -> bool:
+def download_file_from_google_drive(
+    file_id: str, destination: Path, filename: str
+) -> bool:
     """
     Download a file from Google Drive using file ID.
 
@@ -170,10 +176,7 @@ def download_file_from_google_drive(file_id: str, destination: Path, filename: s
 
         # Download using googledrivedownloader
         gdd.download_file_from_google_drive(
-            file_id=file_id,
-            dest_path=str(dest_path),
-            unzip=False,
-            showsize=True
+            file_id=file_id, dest_path=str(dest_path), unzip=False, showsize=True
         )
 
         # Verify the download was successful
@@ -181,11 +184,15 @@ def download_file_from_google_drive(file_id: str, destination: Path, filename: s
             file_size = dest_path.stat().st_size
             # Check if file is suspiciously small (likely an error page)
             if file_size < 10 * 1024 * 1024:  # Less than 10MB
-                with open(dest_path, 'rb') as f:
+                with open(dest_path, "rb") as f:
                     header = f.read(1024)
-                    if b'<html' in header.lower() or b'<!doctype html' in header.lower():
+                    if (
+                        b"<html" in header.lower()
+                        or b"<!doctype html" in header.lower()
+                    ):
                         print(
-                            f"      ❌ Downloaded file is HTML error page ({file_size / 1024:.1f} KB)")
+                            f"      ❌ Downloaded file is HTML error page ({file_size / 1024:.1f} KB)"
+                        )
                         print(f"         The file has restricted permissions.")
                         dest_path.unlink()  # Delete invalid file
                         return False
@@ -220,9 +227,9 @@ def download_base_year(
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"📦 Base Year Network (2023)")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
 
     # Generate filename
     filename = BASE_YEAR_FILENAME.format(resolution=resolution)
@@ -292,12 +299,13 @@ def download_scenario_networks(
     for scenario_id in scenario_ids:
         if scenario_id not in NETWORK_FILES:
             print(
-                f"⚠️  Warning: Scenario {scenario_id} not found in configuration. Skipping.")
+                f"⚠️  Warning: Scenario {scenario_id} not found in configuration. Skipping."
+            )
             continue
 
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(f"📦 Scenario {scenario_id:02d}: {SCENARIO_NAMES[scenario_id]}")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
 
         scenario_dir = output_dir / f"scenario_{scenario_id:02d}"
         scenario_dir.mkdir(parents=True, exist_ok=True)
@@ -307,7 +315,8 @@ def download_scenario_networks(
         for year in years:
             if year not in NETWORK_FILES[scenario_id]:
                 print(
-                    f"  ⚠️  Year {year} not available for scenario {scenario_id}. Skipping.")
+                    f"  ⚠️  Year {year} not available for scenario {scenario_id}. Skipping."
+                )
                 results[scenario_id][year] = False
                 continue
 
@@ -315,16 +324,14 @@ def download_scenario_networks(
             filename = FILENAME_PATTERNS[scenario_id].format(year=year)
             if resolution != "3H":
                 # Replace resolution in filename if different from default
-                filename = filename.replace(
-                    "3H_3H", f"{resolution}_{resolution}")
+                filename = filename.replace("3H_3H", f"{resolution}_{resolution}")
 
             destination = scenario_dir / filename
 
             # Check if file already exists
             if skip_existing and destination.exists():
                 file_size = destination.stat().st_size / (1024**3)  # Size in GB
-                print(
-                    f"  ✓ {year}: Already exists ({file_size:.2f} GB) - Skipping")
+                print(f"  ✓ {year}: Already exists ({file_size:.2f} GB) - Skipping")
                 results[scenario_id][year] = True
                 continue
 
@@ -334,7 +341,8 @@ def download_scenario_networks(
             # Check for placeholder
             if "PLACEHOLDER" in gdrive_url:
                 print(
-                    f"  ⚠️  {year}: No Google Drive URL configured (placeholder found)")
+                    f"  ⚠️  {year}: No Google Drive URL configured (placeholder found)"
+                )
                 print(f"      Please update the URL in NETWORK_FILES dictionary")
                 results[scenario_id][year] = False
                 continue
@@ -348,8 +356,7 @@ def download_scenario_networks(
 
             # Download file
             print(f"  ⬇️  {year}: Downloading {filename}...")
-            success = download_file_from_google_drive(
-                file_id, scenario_dir, filename)
+            success = download_file_from_google_drive(file_id, scenario_dir, filename)
 
             if success:
                 file_size = destination.stat().st_size / (1024**3)  # Size in GB
@@ -364,9 +371,9 @@ def download_scenario_networks(
 
 def print_summary(results: Dict[int, Dict[int, bool]]):
     """Print download summary statistics."""
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print("📊 Download Summary")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
 
     total_files = 0
     successful = 0
@@ -382,11 +389,12 @@ def print_summary(results: Dict[int, Dict[int, bool]]):
 
         status = "✓" if scenario_success == scenario_total else "⚠️"
         print(
-            f"{status} Scenario {scenario_id:02d}: {scenario_success}/{scenario_total} files downloaded")
+            f"{status} Scenario {scenario_id:02d}: {scenario_success}/{scenario_total} files downloaded"
+        )
 
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"Total: {successful}/{total_files} successful, {failed} failed")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
 
 
 # -----------------------------
@@ -400,28 +408,28 @@ def main():
 Examples:
   # Download base year network
   python download_scenario_networks.py --base-year
-  
+
   # Download all years for scenario 2
   python download_scenario_networks.py --scenario-id 2
-  
+
   # Download multiple scenarios
   python download_scenario_networks.py --scenario-id 1 3 5 10
-  
+
   # Download all scenarios
   python download_scenario_networks.py --all
-  
+
   # Download base year and scenarios
   python download_scenario_networks.py --base-year --scenario-id 1 2
-  
+
   # Download specific years only
   python download_scenario_networks.py --scenario-id 2 --years 2030 2035
-  
+
   # Download with custom resolution
   python download_scenario_networks.py --scenario-id 1 --resolution 1H
-  
+
   # Specify output directory
   python download_scenario_networks.py --scenario-id 2 --output-dir /path/to/output
-  
+
   # Force re-download existing files
   python download_scenario_networks.py --scenario-id 2 --force
         """,
@@ -496,7 +504,8 @@ Examples:
     # Check if at least base-year or scenario-id is provided
     if not args.base_year and not args.scenario_id and not args.all:
         parser.error(
-            "At least one of --base-year, --scenario-id, or --all must be specified")
+            "At least one of --base-year, --scenario-id, or --all must be specified"
+        )
 
     # Determine which scenarios to download
     scenario_ids = []
@@ -508,14 +517,14 @@ Examples:
         invalid_ids = [sid for sid in scenario_ids if sid not in range(1, 11)]
         if invalid_ids:
             parser.error(
-                f"Invalid scenario IDs: {invalid_ids}. Must be between 1 and 10.")
+                f"Invalid scenario IDs: {invalid_ids}. Must be between 1 and 10."
+            )
 
     # Validate years
     valid_years = [2030, 2035, 2040]
     invalid_years = [y for y in args.years if y not in valid_years]
     if invalid_years:
-        parser.error(
-            f"Invalid years: {invalid_years}. Must be one of {valid_years}.")
+        parser.error(f"Invalid years: {invalid_years}. Must be one of {valid_years}.")
 
     print("\n" + "=" * 80)
     print("🚀 E-Fuels Supply Potentials - Network File Downloader")
@@ -534,7 +543,7 @@ Examples:
         base_year_success = download_base_year(
             resolution=args.resolution,
             output_dir=args.output_dir / "base_year" if args.output_dir else None,
-            skip_existing=not args.force
+            skip_existing=not args.force,
         )
 
     # Download scenario files
@@ -545,25 +554,26 @@ Examples:
             years=args.years,
             resolution=args.resolution,
             output_dir=args.output_dir / "scenarios" if args.output_dir else None,
-            skip_existing=not args.force
+            skip_existing=not args.force,
         )
 
     # Print summary
     if base_year_success is not None or results:
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print("📊 Download Summary")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
 
         if base_year_success is not None:
             status = "✓" if base_year_success else "❌"
             print(
-                f"{status} Base year: {'Downloaded' if base_year_success else 'Failed'}")
+                f"{status} Base year: {'Downloaded' if base_year_success else 'Failed'}"
+            )
 
         if results:
             print()
             print_summary(results)
         else:
-            print(f"{'='*80}")
+            print(f"{'=' * 80}")
 
 
 if __name__ == "__main__":

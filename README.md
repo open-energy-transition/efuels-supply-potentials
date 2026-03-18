@@ -6,6 +6,7 @@
 
 # efuels-supply-potentials
 
+[![CI](https://github.com/open-energy-transition/efuels-supply-potentials/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/open-energy-transition/efuels-supply-potentials/actions/workflows/ci.yml)
 
 ## 1. Installation
 Clone the repository including its submodules:
@@ -23,6 +24,33 @@ Activate `pypsa-earth-efuels` environment:
     conda activate pypsa-earth-efuels
 
 * **Note!** At the moment, head of the PyPSA-Earth submodule points to latest stable commit (`0fa2e39`) of `efuels-supply-potential` branch of [open-energy-transition/pypsa-earth](https://github.com/open-energy-transition/pypsa-earth/tree/efuels-supply-potentials) repository. If OS-specific installation of conda environment does not succeed, it is recommended to install general pypsa-earth environment and activate as ` mamba env create -f submodules/pypsa-earth/envs/environment.yaml` and activate by `conda activate pypsa-earth`. The detailed instructions are provided in [PyPSA-Earth Documentation](https://pypsa-earth.readthedocs.io/en/latest/installation.html).
+
+### 1.1. Configure pre-commit
+
+To ensure that all team members can use the pre-commit hooks and maintain code quality across the project, follow these steps:
+
+1. Navigate to the root directory of the repository, where the .pre-commit-config.yaml file is located. Then, run the following command to install the hooks defined in the .pre-commit-config.yaml file:
+```bash
+pre-commit install
+```
+This command will set up the hooks in the `.git/hooks directory` (specifically the `pre-commit hook`), ensuring that the hooks are executed automatically before each commit.
+
+2. To ensure that all files comply with the defined hooks, users can run the following command manually to check and fix any issues with all files in the repository:
+```bash
+pre-commit run --a
+```
+This step is optional but recommended to make sure that any formatting or linting issues are fixed before starting to commit changes.
+
+3. Once the pre-commit hooks are installed and verified, you can proceed to make changes to the code, add them to your commit, and push them to the repository. From this point forward, pre-commit will automatically run checks on your files whenever you try to commit:
+```bash
+git add .
+git commit -m "Your commit message"
+```
+If any of the hooks (such as `black`, `isort`, or `reuse lint`) detect issues (for example, formatting issues or missing license headers), the commit will be blocked, and you'll be required to fix the issues before retrying.
+
+4. Some hooks, such as `black` and `isort`, will automatically fix code formatting issues during the commit process. If a file is not formatted correctly, the hook will fix it, and the user can reattempt the commit. If a hook fails (for example, the license linting hook or a formatting hook fails), the commit will not proceed. The user will see a message explaining the issue, and they will need to correct it before committing again.
+
+5. Every time a new hook is added, or changes to the configuration in the `.pre-commit-config.yaml` are performed, it is necessary to run `pre-commit install` again.
 
 ## 2. Running scenarios
 
@@ -72,31 +100,31 @@ snakemake -call solve_sector_networks_myopic --configfile configs/scenarios/conf
 |`validate_all`           |`config.base.yaml`, `config.base_AC.yaml`|Performs country-level validation comparing with EIA and Ember data|
 |`statewise_validate_all` |`config.base_AC.yaml`                    |Performs statewise validation comparing with EIA data|
 |`get_capacity_factors`   |Any base or scenario config file         |Estimates capacity factors for renewables|
-|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand| 
-|`generate_aviation_scenario` |Any base or scenario config file         |Generates aviation demand csv file with different future scenario| 
+|`process_airport_data`   | -                                       |Performs analysis on passengers and jet fuel consumption data per state and generates plots and table. Also generate custom airport data with state level based demand|
+|`generate_aviation_scenario` |Any base or scenario config file         |Generates aviation demand csv file with different future scenario|
 |`modify_aviation_demand` |Any base or scenario config file         |Switches aviation demand in energy_total to custom demand|
 |`preprocess_demand_data` |Any base or scenario config file         |Preprocess utlities demand data into geojson|
 |`build_demand_profiles_from_eia` |Any base or scenario config file         |Build custom demand data from eia and bypass build_demand_profiles|
-|`set_saf_mandate`        |Any base or scenario config file         |Adds e-kerosene buses to enable split of aviation demand and sets SAF mandate if enabled|
-|`build_custom_industry_demand` |Any base or scenario config file   |Estimates node level demands for selected custom industries (e.g. ammonia, ethanol, cement, and steel)|
-|`add_custom_industry`    |Any base or scenario config file         |Adds selected custom industries into the network|
-|`prepare_growth_rate_scenarios`  | Any base or scenario config file          | Allows automatic fetching of correct growth rate files according to the demand_projection scenario name                                                                |
-|`solve_custom_sector_network`  | Any base or scenario config file          | Allows state/country-wise clean/RES polices to be applied as constraints. The constraints is turned on by default.                                                                |
+|`set_saf_mandate`        |Any base or scenario config file         |Add e-kerosene buses to enable split of aviation demand and sets SAF mandate if enabled|
+|`build_custom_industry_demand` |Any base or scenario config file   |Estimate node-level demands for selected custom industries (e.g. ammonia, ethanol, cement, and steel)|
+|`add_custom_industry`    |Any base or scenario config file         |Add selected custom industries into the network|
+|`prepare_growth_rate_scenarios`  | Any base or scenario config file          | Allow automatic fetching of correct growth rate files according to the demand_projection scenario name                                                                |
+|`solve_custom_sector_network`  | Any base or scenario config file          | Allow application of state/country-wise clean/RES electricity generation polices and apply tax credits to selected sectors. The constraints are turned on by default.                                                                |
 
 
 ### Retrieve rules
 |Rule name                |Config file                              |Description        |
 |-------------------------|-----------------------------------------|-------------------|
-|`retrieve_cutouts`       |Any base or scenario config file         |Retrieves US cutouts from google drive|
-|`retrieve_osm_raw`       |Any base or scenario config file         |Retrieves `resources/{RDIR}/osm/raw/` data from google drive and bypasses `download_osm_data` rule|
-|`retrieve_osm_clean`     |Any base or scenario config file         |Retrieves `resources/{RDIR}/osm/clean/` data from google drive and bypasses `clean_osm_data` rule|
-|`retrieve_shapes`        |Any base or scenario config file         |Retrieves `resources/{RDIR}/shapes/` data from google drive and bypasses `build_shapes` rule|
-|`retrieve_osm_network`   |Any base or scenario config file         |Retrieves `resources/{RDIR}/base_network/` data from google drive and bypasses `build_osm_network` rule|
-|`retrieve_base_network`  |Any base or scenario config file         |Retrieves `base.nc` data from google drive and bypasses `base_network` rule|
-|`retrieve_renewable_profiles`  |Any base or scenario config file         |Retrieves `resources/{RDIR}/renewable_profiles/` data from google drive and bypasses `build_renewable_profiles` rule|
-|`retrieve_custom_powerplants`  |Any base or scenario config file         |Copies `data/custom_powerplants.csv` to `submodules/pypsa-earth/data/` folder|
-|`retrieve_ssp2`          |Any base or scenario config file         |Copies `data/NorthAmerica.csv` to `submodules/pypsa-earth/data/ssp2-2.6/.` directory|
-|`retrieve_demand_data`          |Any base or scenario config file         |Retrieves utility demand data from google drive to `data/demand_data/*`|
+|`retrieve_cutouts`       |Any base or scenario config file         |Retrieve US cutouts from google drive|
+|`retrieve_osm_raw`       |Any base or scenario config file         |Retrieve `resources/{RDIR}/osm/raw/` data from google drive and bypasses `download_osm_data` rule|
+|`retrieve_osm_clean`     |Any base or scenario config file         |Retrieve `resources/{RDIR}/osm/clean/` data from google drive and bypasses `clean_osm_data` rule|
+|`retrieve_shapes`        |Any base or scenario config file         |Retrieve `resources/{RDIR}/shapes/` data from google drive and bypasses `build_shapes` rule|
+|`retrieve_osm_network`   |Any base or scenario config file         |Retrieve `resources/{RDIR}/base_network/` data from google drive and bypasses `build_osm_network` rule|
+|`retrieve_base_network`  |Any base or scenario config file         |Retrieve `base.nc` data from google drive and bypasses `base_network` rule|
+|`retrieve_renewable_profiles`  |Any base or scenario config file         |Retrieve `resources/{RDIR}/renewable_profiles/` data from google drive and bypasses `build_renewable_profiles` rule|
+|`retrieve_custom_powerplants`  |Any base or scenario config file         |Copy `data/custom_powerplants.csv` to `submodules/pypsa-earth/data/` folder|
+|`retrieve_ssp2`          |Any base or scenario config file         |Copy `data/NorthAmerica.csv` to `submodules/pypsa-earth/data/ssp2-2.6/.` directory|
+|`retrieve_demand_data`          |Any base or scenario config file         |Retrieve utility demand data from google drive to `data/demand_data/*`|
 
 * `RDIR` - scenario folder
 
@@ -125,7 +153,7 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 1. [PR #32](https://github.com/open-energy-transition/pypsa-earth/pull/34): Disable implicit calculations and assigning of industry demands for steel and cement industries, because they are added explicitly.
 2. [PR #36](https://github.com/open-energy-transition/pypsa-earth/pull/36): Introduce custom H2 production technologies.
 2. [PR #38](https://github.com/open-energy-transition/pypsa-earth/pull/38): Enable correct functioning of myopic optimization.
-3. [PR #40](https://github.com/open-energy-transition/pypsa-earth/pull/40): Adjusts calculation of `no_years` to properly run 2023 scenario.
+3. [PR #40](https://github.com/open-energy-transition/pypsa-earth/pull/40): Adjust calculation of `no_years` to properly run 2023 scenario.
 4. [PR #50](https://github.com/open-energy-transition/pypsa-earth/pull/50): Introduce Universal Currency Conversion to use USD as reference currency.
 5. [PR #51](https://github.com/open-energy-transition/pypsa-earth/pull/51): Add US cost configurations and split scenarios per technology group.
 6. [PR #56](https://github.com/open-energy-transition/pypsa-earth/pull/56): Introduce currency conversion in `simplify_network`.
@@ -139,28 +167,85 @@ Please review [a short tutorial](https://www.atlassian.com/git/tutorials/cherry-
 14. [PR #86](https://github.com/open-energy-transition/pypsa-earth/pull/86): Use H2 Store Tank costs without compressor and add lifetime.
 15. [PR #89](https://github.com/open-energy-transition/pypsa-earth/pull/89): Align cost conversion with reference year for costs in input files.
 15. [PR #91](https://github.com/open-energy-transition/pypsa-earth/pull/91): Include existing batteries from `powerplants.csv`.
- 
-## 5. Validation
 
-### 5.1. Country-level validation for the base scenario
-To run country-level validation of the U.S. for the base scenario, navigate to the working directory (`.../efuels-supply-potentials/`) and use the following command:
-```bash
-snakemake -call validate_all --configfile configs/calibration/config.base.yaml
-```
-or base scenario with alternative clustering option (AC):
-```bash
-snakemake -call validate_all --configfile configs/calibration/config.base_AC.yaml
-```
-* **Note:** Ensure that `planning_horizon` in `configs/config.main.yaml` corresponds to a horizon of the base scenario. By default, `planning_horizon` is set to 2020, which means that results are benchmarked agains 2020's historical data.
+## 5. Checking techno-economic input data
 
-It is possible to run validation by specifying the output file with wildcards:
-``` bash
-snakemake -call plots/results/US_2023/demand_validation_s_10_ec_lcopt_Co2L-24H.png --configfile configs/calibration/config.base.yaml
-```
-Validation results are stored in `plots/results/` directory under scenario run name (e.g. `US_2023`).
+To check techno-economic input data for selected sectors (power generation, hydrogen and e-kerosene production, CO2 capture) it is not necessarily needed to run the entire workflow and check input cost data files.
 
-### 5.2. State-wise validation
-To run state-wise validation, run:
+To generate Excel files reporting techno-economic input data (for the Moderate and the Advanced cost scenarios adopted in the model), navigate to the working directory (`.../efuels-supply-potentials/`) and use the following command:
 ```bash
-snakemake -call statewise_validate_all --configfile configs/calibration/config.base_AC.yaml
+python scripts/non_workflow/fetch_input_costs_multiyear.py
 ```
+
+The Excel files will be written to the `.../efuels-supply-potentials_emmanuel_fork/notebooks/data/input_costs/` folder.
+
+
+## 5. Computational reproducibility
+
+The optimization problems generated by this project become extremely large when high spatial and temporal resolution are used.
+In such cases, the computational cost is primarily driven by memory-intensive linear algebra operations required during the barrier matrix factorization of the optimisation problem.
+
+### Hardware and solver setup
+
+All optimization runs were executed on homogeneous HPC nodes with the following configuration:
+
+- **CPU:** Intel Xeon Gold 6342 (2.80 GHz)
+- **Cores:** 48 physical cores (96 logical processors)
+- **Operating system:** Debian GNU/Linux 12 (bookworm)
+
+All optimization problems were solved using **Gurobi Optimizer 13.0.0**.
+
+The following solver parameters were used consistently across all runs:
+
+```
+Method = 2        # Barrier algorithm
+Crossover = 0     # Disable crossover to avoid additional memory and runtime overhead
+BarConvTol = 1e-4
+BarHomogeneous = 1
+Threads = 8
+```
+
+No solver parameters were tuned on a per-scenario basis.
+
+### Problem size
+
+The resulting linear optimisation problems are extremely large. Typical model sizes are:
+
+| Temporal resolution | Rows | Columns | Nonzeros |
+|---|---|---|---|
+| 3-hour | ~100–150 million | ~50–75 million | ~200–350 million |
+| 1-hour | ~280–440 million | ~135–220 million | ~630–1020 million |
+
+Although presolve procedures eliminate a large fraction of constraints and variables, the resulting presolved systems remain extremely large.
+
+### Memory requirements
+
+Memory requirements are characterized using the **Estimated Factorization Memory (EFM)** reported by the solver.
+EFM represents the memory required to store the numerical factorization of the linear system solved at each barrier iteration.
+
+Typical EFM values observed:
+
+| Temporal resolution | Estimated factorization memory |
+|---|---|
+| 3-hour | ~100–130 GB |
+| 1-hour | ~500 GB |
+
+While EFM does not correspond to total solver memory consumption, it provides a good proxy for peak memory requirements because matrix factorization dominates the memory footprint of barrier-based methods.
+
+### Runtime
+
+Typical wall-clock solution times observed in the experiments are:
+
+| Temporal resolution | Runtime (per time horizon)   |
+|---|------------------------------|
+| 3-hour | ~1–3 days (typically 2 days) |
+| 1-hour | ~7–12 days                   |
+
+Solver logs indicate that **85–95% of runtime is spent in repeated linear solves during barrier iterations**, while presolve, matrix ordering and other overheads account for only a small fraction of total runtime.
+
+### Implications for temporal resolution
+
+The **3-hour temporal resolution** used in the main analysis represents a trade-off between temporal detail and computational feasibility.
+
+At **1-hour resolution**, the base-year optimization alone requires approximately one week of runtime and around **500 GB of factorization memory**, making multi-scenario analyses computationally very expensive.
+The 3-hour resolution significantly reduces both runtime and memory requirements while preserving the main temporal dynamics relevant for the analysis.

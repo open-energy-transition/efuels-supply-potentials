@@ -1,0 +1,187 @@
+# SPDX-FileCopyrightText:  Open Energy Transition gGmbH
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+version = 1
+SPDX-PackageName = "efuels-supply-potentials"
+SPDX-PackageSupplier = "Open Energy Transition"
+SPDX-PackageDownloadLocation = "https://github.com/open-energy-transition/efuels-supply-potentials"
+
+[[annotations]]
+path = "data/*.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/airport_data/airports.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "OurAirports (public domain, https://ourairports.com/data/)"
+SPDX-License-Identifier = "Unlicense"
+
+[[annotations]]
+path = "data/airport_data/fuel_jf.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "U.S. Energy Information Administration"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = "data/airport_data/T100_Domestic_Market_and_Segment_Data_-3591723781169319541.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "U.S. Department of Transportation, Bureau of Transportation Statistics"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = "data/demand_projections/*.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "National Renewable Energy Laboratory (Alliance), U.S. Department of Energy"
+SPDX-License-Identifier = "LicenseRef-NREL-Standard"
+
+[[annotations]]
+path = "data/EIA_market_module_regions/EMM_regions.geojson"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "NETL_Admin"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/EIA_market_module_regions/regional_fees.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "EIA"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/EV_share/*"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "National Renewable Energy Laboratory (Alliance), U.S. Department of Energy"
+SPDX-License-Identifier = "LicenseRef-NREL-Standard"
+
+[[annotations]]
+path = "data/icct/*"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/current_electricity_state_policies/*"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/data_center_profiles/*"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/industry_data/ethanolcapacity.xlsx"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "U.S. Energy Information Administration"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = "data/industry_data/ammoniacapacity.xlsx"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/industry_data/uscities.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Simplemaps creators"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/original_custom_powerplants/original_custom_powerplants.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/override_component_attrs/*.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = "data/saf_blending_rates/saf_scenarios.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/tax_credits/tax_credits_calculations.xlsx"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/tax_credits/*_tax_credits.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/US_growth_rates/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "EIA"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/validation/EIA_*"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "EIA"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/validation/ember_yearly_full_release_long_format.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Ember"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "data/validation/gadm41_USA_1.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "GADM"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = ".github/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = ".gitmodules"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = ".gitignore"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = ".gitattributes"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = "notebooks/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+[[annotations]]
+path = "doc/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+[[annotations]]
+path = "data/temporal_matching/needs_grid_regions_aggregated.geojson"
+SPDX-FileCopyrightText = "Open Energy Transition gGmbH"
+SPDX-License-Identifier = "AGPL-3.0-or-later"

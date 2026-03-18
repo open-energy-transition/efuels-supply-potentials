@@ -1,3 +1,9 @@
+<!--
+# SPDX-FileCopyrightText:  Open Energy Transition gGmbH
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 | Technology                     | Type of credit | Applied in (Planning horizon)                        | Applied in (Construction year)                  | Value                     |
 |-------------------------------|----------------|------------------------------------------------------|------------------------------------------------|---------------------------|
 | Nuclear                       | PTC            | 2024 ≤ planning horizon ≤ 2032                       | Construction year ≤ 2024                       | 15 USD/MWh                |

@@ -4,11 +4,19 @@
 
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
+
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 import warnings
+
 warnings.filterwarnings("ignore")
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            download_and_unzip_gdrive, configure_logging, PYPSA_EARTH_DIR
+from scripts._helper import (
+    mock_snakemake,
+    update_config_from_wildcards,
+    create_logger,
+    download_and_unzip_gdrive,
+    configure_logging,
+    PYPSA_EARTH_DIR,
+)
 
 
 logger = create_logger(__name__)
@@ -19,7 +27,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "retrieve_cutouts",
             configfile="configs/calibration/config.base_AC.yaml",
-            countries=["US"]
+            countries=["US"],
         )
 
     configure_logging(snakemake)
@@ -34,6 +42,6 @@ if __name__ == "__main__":
     destination = os.path.join(PYPSA_EARTH_DIR, config_cutouts["destination"])
 
     # download cutouts
-    downloaded = download_and_unzip_gdrive(config_cutouts,
-                                           destination=destination,
-                                           logger=logger)
+    downloaded = download_and_unzip_gdrive(
+        config_cutouts, destination=destination, logger=logger
+    )

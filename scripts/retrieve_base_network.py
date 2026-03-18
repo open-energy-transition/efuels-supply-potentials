@@ -4,11 +4,18 @@
 
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
+
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
 import warnings
+
 warnings.filterwarnings("ignore")
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            download_and_unzip_gdrive, configure_logging
+from scripts._helper import (
+    mock_snakemake,
+    update_config_from_wildcards,
+    create_logger,
+    download_and_unzip_gdrive,
+    configure_logging,
+)
 
 
 logger = create_logger(__name__)
@@ -30,9 +37,9 @@ if __name__ == "__main__":
     config_base_network = config["custom_databundles"]["bundle_base_network_USA"]
 
     # destination for base.nc
-    destination=os.path.dirname(snakemake.output[0])
+    destination = os.path.dirname(snakemake.output[0])
 
     # download base.nc
-    downloaded = download_and_unzip_gdrive(config_base_network,
-                                           destination=destination,
-                                           logger=logger)
+    downloaded = download_and_unzip_gdrive(
+        config_base_network, destination=destination, logger=logger
+    )

@@ -4,13 +4,21 @@
 
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../")))
-sys.path.append(os.path.abspath(os.path.join(__file__ ,"../../submodules/pypsa-earth/scripts/")))
+
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../")))
+sys.path.append(
+    os.path.abspath(os.path.join(__file__, "../../submodules/pypsa-earth/scripts/"))
+)
 import pandas as pd
 import numpy as np
 from types import SimpleNamespace
-from scripts._helper import mock_snakemake, update_config_from_wildcards, create_logger, \
-                            configure_logging, load_network
+from scripts._helper import (
+    mock_snakemake,
+    update_config_from_wildcards,
+    create_logger,
+    configure_logging,
+    load_network,
+)
 from _helpers import prepare_costs
 from prepare_sector_network import define_spatial
 
@@ -45,38 +53,46 @@ def add_build_year_to_new_assets(n, baseyear):
         for attr in n.component_attrs[c.name].index[selection]:
             c.pnl[attr] = c.pnl[attr].rename(columns=rename)
 
-        logger.info(f"Added build_year {baseyear} to new assets in {c.name} for {len(new_assets)} assets.")
+        logger.info(
+            f"Added build_year {baseyear} to new assets in {c.name} for {len(new_assets)} assets."
+        )
 
 
 def remove_extra_powerplants(n):
     """
-    Remove capacities for non-extendable conventional and renewable powerplants with 
-    buid_year = baseyear as it was added previously year by year. This is done to avoid 
+    Remove capacities for non-extendable conventional and renewable powerplants with
+    buid_year = baseyear as it was added previously year by year. This is done to avoid
     double counting of existing capacities.
-    Extendable powerplants are not removed, but potential p_nom_max and p_nom_min 
+    Extendable powerplants are not removed, but potential p_nom_max and p_nom_min
     are reduced by the amount of already installed capacities and p_nom set to 0.
     """
     carriers_to_remove = {
         "Link": ["CCGT", "OCGT", "coal", "oil", "biomass"],
         "Generator": ["nuclear", "solar", "onwind", "offwind-ac", "geothermal", "ror"],
-        "Store": []
+        "Store": [],
     }
     for c in n.iterate_components(["Link", "Generator", "Store"]):
         attr = "e_nom_extendable" if c.name == "Store" else "p_nom_extendable"
         # assets to remove (non-extendable powerplants with build_year == base_year)
-        assets_to_remove = c.df[(c.df.carrier.isin(carriers_to_remove[c.name]))&
-                                (~c.df[attr])&
-                                (c.df.build_year == baseyear)].index
+        assets_to_remove = c.df[
+            (c.df.carrier.isin(carriers_to_remove[c.name]))
+            & (~c.df[attr])
+            & (c.df.build_year == baseyear)
+        ].index
         # remove assets
-        removed_carriers = c.df.loc[assets_to_remove,:].carrier.unique()
+        removed_carriers = c.df.loc[assets_to_remove, :].carrier.unique()
         n.mremove(c.name, assets_to_remove)
 
-        logger.info(f"Removed {len(assets_to_remove)} assets from {c.name} with carriers {removed_carriers}.")
+        logger.info(
+            f"Removed {len(assets_to_remove)} assets from {c.name} with carriers {removed_carriers}."
+        )
 
         # assets to set p_nom = 0 and reduce potential (extendable powerplants with build_year == 0)
-        assets_to_zero = c.df[(c.df.carrier.isin(carriers_to_remove[c.name]))&
-                              (c.df[attr])&
-                              (c.df.build_year == baseyear)].index
+        assets_to_zero = c.df[
+            (c.df.carrier.isin(carriers_to_remove[c.name]))
+            & (c.df[attr])
+            & (c.df.build_year == baseyear)
+        ].index
         if len(assets_to_zero) > 0:
             # reduce potential p_nom_max and p_nom_min by the amount of already installed capacities
             c.df.loc[assets_to_zero, "p_nom_max"] -= c.df.loc[assets_to_zero, "p_nom"]
@@ -84,9 +100,14 @@ def remove_extra_powerplants(n):
             # set p_nom = 0
             c.df.loc[assets_to_zero, "p_nom"] = 0
 
-            logger.info(f"Reduced p_nom_max and p_nom_min by p_nom and set p_nom = 0 for {len(assets_to_zero)} assets in {c.name} with carriers {c.df.loc[assets_to_zero, 'carrier'].unique()}.")
+            logger.info(
+                f"Reduced p_nom_max and p_nom_min by p_nom and set p_nom = 0 for {len(assets_to_zero)} assets in {c.name} with carriers {c.df.loc[assets_to_zero, 'carrier'].unique()}."
+            )
 
-def add_existing_battery_storage(n, costs, options, spatial, capacity, lifetime_assets, grouping_year):
+
+def add_existing_battery_storage(
+    n, costs, options, spatial, capacity, lifetime_assets, grouping_year
+):
     """
     Add existing battery storage as Store + Link components with minimum capacities.
     This function replicates the structure used in add_storage() from prepare_sector_network.py
@@ -134,15 +155,15 @@ def add_existing_battery_storage(n, costs, options, spatial, capacity, lifetime_
     # Add Store with existing energy capacity as minimum
     stores_to_add = []
     store_data = {
-        'bus': [],
-        'e_cyclic': [],
-        'e_nom_extendable': [],
-        'e_nom_min': [],
-        'e_nom': [],
-        'carrier': [],
-        'capital_cost': [],
-        'lifetime': [],
-        'build_year': []
+        "bus": [],
+        "e_cyclic": [],
+        "e_nom_extendable": [],
+        "e_nom_min": [],
+        "e_nom": [],
+        "carrier": [],
+        "capital_cost": [],
+        "lifetime": [],
+        "build_year": [],
     }
 
     for node in capacity.index:
@@ -151,31 +172,31 @@ def add_existing_battery_storage(n, costs, options, spatial, capacity, lifetime_
         store_name = f"{node} battery-{grouping_year}"
 
         stores_to_add.append(store_name)
-        store_data['bus'].append(node + " battery")
-        store_data['e_cyclic'].append(True)
-        store_data['e_nom_extendable'].append(True)
-        store_data['e_nom_min'].append(energy_capacity)
-        store_data['e_nom'].append(energy_capacity)
-        store_data['carrier'].append("battery")
-        store_data['capital_cost'].append(costs.at["battery storage", "fixed"])
-        store_data['lifetime'].append(lifetime_assets.get(node, 25))
-        store_data['build_year'].append(grouping_year)
+        store_data["bus"].append(node + " battery")
+        store_data["e_cyclic"].append(True)
+        store_data["e_nom_extendable"].append(True)
+        store_data["e_nom_min"].append(energy_capacity)
+        store_data["e_nom"].append(energy_capacity)
+        store_data["carrier"].append("battery")
+        store_data["capital_cost"].append(costs.at["battery storage", "fixed"])
+        store_data["lifetime"].append(lifetime_assets.get(node, 25))
+        store_data["build_year"].append(grouping_year)
 
     n.madd("Store", stores_to_add, **store_data)
 
     # Add Link Charger with existing power capacity as minimum
     chargers_to_add = []
     charger_data = {
-        'bus0': [],
-        'bus1': [],
-        'carrier': [],
-        'efficiency': [],
-        'capital_cost': [],
-        'p_nom_extendable': [],
-        'p_nom_min': [],
-        'p_nom': [],
-        'lifetime': [],
-        'build_year': []
+        "bus0": [],
+        "bus1": [],
+        "carrier": [],
+        "efficiency": [],
+        "capital_cost": [],
+        "p_nom_extendable": [],
+        "p_nom_min": [],
+        "p_nom": [],
+        "lifetime": [],
+        "build_year": [],
     }
 
     for node in capacity.index:
@@ -183,32 +204,34 @@ def add_existing_battery_storage(n, costs, options, spatial, capacity, lifetime_
         charger_name = f"{node} battery charger-{grouping_year}"
 
         chargers_to_add.append(charger_name)
-        charger_data['bus0'].append(node)
-        charger_data['bus1'].append(node + " battery")
-        charger_data['carrier'].append("battery charger")
-        charger_data['efficiency'].append(costs.at["battery inverter", "efficiency"] ** 0.5)
-        charger_data['capital_cost'].append(costs.at["battery inverter", "fixed"])
-        charger_data['p_nom_extendable'].append(True)
-        charger_data['p_nom_min'].append(power_capacity)
-        charger_data['p_nom'].append(power_capacity)
-        charger_data['lifetime'].append(costs.at["battery inverter", "lifetime"])
-        charger_data['build_year'].append(grouping_year)
+        charger_data["bus0"].append(node)
+        charger_data["bus1"].append(node + " battery")
+        charger_data["carrier"].append("battery charger")
+        charger_data["efficiency"].append(
+            costs.at["battery inverter", "efficiency"] ** 0.5
+        )
+        charger_data["capital_cost"].append(costs.at["battery inverter", "fixed"])
+        charger_data["p_nom_extendable"].append(True)
+        charger_data["p_nom_min"].append(power_capacity)
+        charger_data["p_nom"].append(power_capacity)
+        charger_data["lifetime"].append(costs.at["battery inverter", "lifetime"])
+        charger_data["build_year"].append(grouping_year)
 
     n.madd("Link", chargers_to_add, **charger_data)
 
     # Add Link Discharger with existing power capacity as minimum
     dischargers_to_add = []
     discharger_data = {
-        'bus0': [],
-        'bus1': [],
-        'carrier': [],
-        'efficiency': [],
-        'marginal_cost': [],
-        'p_nom_extendable': [],
-        'p_nom_min': [],
-        'p_nom': [],
-        'lifetime': [],
-        'build_year': []
+        "bus0": [],
+        "bus1": [],
+        "carrier": [],
+        "efficiency": [],
+        "marginal_cost": [],
+        "p_nom_extendable": [],
+        "p_nom_min": [],
+        "p_nom": [],
+        "lifetime": [],
+        "build_year": [],
     }
 
     for node in capacity.index:
@@ -216,23 +239,29 @@ def add_existing_battery_storage(n, costs, options, spatial, capacity, lifetime_
         discharger_name = f"{node} battery discharger-{grouping_year}"
 
         dischargers_to_add.append(discharger_name)
-        discharger_data['bus0'].append(node + " battery")
-        discharger_data['bus1'].append(node)
-        discharger_data['carrier'].append("battery discharger")
-        discharger_data['efficiency'].append(costs.at["battery inverter", "efficiency"] ** 0.5)
-        discharger_data['marginal_cost'].append(options.get("marginal_cost_storage", 0.01))
-        discharger_data['p_nom_extendable'].append(True)
-        discharger_data['p_nom_min'].append(power_capacity)
-        discharger_data['p_nom'].append(power_capacity)
-        discharger_data['lifetime'].append(costs.at["battery inverter", "lifetime"])
-        discharger_data['build_year'].append(grouping_year)
+        discharger_data["bus0"].append(node + " battery")
+        discharger_data["bus1"].append(node)
+        discharger_data["carrier"].append("battery discharger")
+        discharger_data["efficiency"].append(
+            costs.at["battery inverter", "efficiency"] ** 0.5
+        )
+        discharger_data["marginal_cost"].append(
+            options.get("marginal_cost_storage", 0.01)
+        )
+        discharger_data["p_nom_extendable"].append(True)
+        discharger_data["p_nom_min"].append(power_capacity)
+        discharger_data["p_nom"].append(power_capacity)
+        discharger_data["lifetime"].append(costs.at["battery inverter", "lifetime"])
+        discharger_data["build_year"].append(grouping_year)
 
     n.madd("Link", dischargers_to_add, **discharger_data)
 
     total_power = capacity.sum()
     total_energy = total_power * battery_duration
     logger.info(
-        f"Added existing battery storage for {grouping_year}: {total_power:.1f} MW / {total_energy:.1f} MWh with {len(capacity)} assets")
+        f"Added existing battery storage for {grouping_year}: {total_power:.1f} MW / {total_energy:.1f} MWh with {len(capacity)} assets"
+    )
+
 
 def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, baseyear):
     """
@@ -256,7 +285,10 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
     df_agg.drop(phased_out, inplace=True)
 
     # drop hydro storage_units (Reservior and Pumped Storage) and keep only Run-Of-River from hydro
-    drop_hydro_storages = df_agg[(df_agg.Fueltype == "hydro") & (df_agg.Technology.isin(["Reservoir", "Pumped Storage"]))].index
+    drop_hydro_storages = df_agg[
+        (df_agg.Fueltype == "hydro")
+        & (df_agg.Technology.isin(["Reservoir", "Pumped Storage"]))
+    ].index
     df_agg.drop(drop_hydro_storages, inplace=True)
     df_agg.Fueltype.replace({"hydro": "ror"}, inplace=True)
 
@@ -322,15 +354,23 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
         # Handle existing battery storage
         if generator == "battery":
             # Avoid KeyError if some clustered buses are missing in lifetime
-            raw_lt = lifetime.loc[grouping_year, "battery"] if (
-                        "battery" in lifetime.index.get_level_values(1)) else pd.Series(dtype=float)
+            raw_lt = (
+                lifetime.loc[grouping_year, "battery"]
+                if ("battery" in lifetime.index.get_level_values(1))
+                else pd.Series(dtype=float)
+            )
             present = raw_lt.index.intersection(capacity.index)
             if len(present) != len(capacity.index):
                 missing = capacity.index.difference(raw_lt.index)
                 logger.warning(
-                    f"[battery {grouping_year}] missing lifetime for {len(missing)} nodes, e.g. {missing[:5].tolist()}")
+                    f"[battery {grouping_year}] missing lifetime for {len(missing)} nodes, e.g. {missing[:5].tolist()}"
+                )
             # fallback default lifetime for missing nodes
-            default_lifetime = int(costs.at["battery storage", "lifetime"]) if "battery storage" in costs.index else 25
+            default_lifetime = (
+                int(costs.at["battery storage", "lifetime"])
+                if "battery storage" in costs.index
+                else 25
+            )
             lifetime_assets = pd.Series(default_lifetime, index=capacity.index)
             lifetime_assets.loc[present] = raw_lt.loc[present].fillna(default_lifetime)
 
@@ -341,10 +381,18 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                 spatial=spatial,
                 capacity=capacity,
                 lifetime_assets=lifetime_assets,
-                grouping_year=grouping_year
+                grouping_year=grouping_year,
             )
 
-        elif generator in ["solar", "onwind", "offwind-ac", "offwind-ac", "ror", "geothermal", "nuclear"]:
+        elif generator in [
+            "solar",
+            "onwind",
+            "offwind-ac",
+            "offwind-ac",
+            "ror",
+            "geothermal",
+            "nuclear",
+        ]:
             # to consider electricity grid connection costs or a split between
             # solar utility and rooftop as well, rather take cost assumptions
             # from existing network than from the cost database
@@ -357,7 +405,9 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
             # check if assets are already in network (e.g. for 2020)
             already_build = n.generators.index.intersection(asset_i)
             new_build = asset_i.difference(n.generators.index)
-            lifetime_assets = lifetime.loc[grouping_year, generator][capacity.index].dropna()
+            lifetime_assets = lifetime.loc[grouping_year, generator][
+                capacity.index
+            ].dropna()
 
             # set p_nom_min for already built assets
             if not already_build.empty:
@@ -416,7 +466,7 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                         # get p_max_pu from the existing network
                         p_max_pu = n.generators_t.p_max_pu[
                             capacity.index + f" {generator}{suffix}"
-                            ]
+                        ]
                     p_max_pu.rename(columns=n.generators.bus, inplace=True)
 
                 if not new_build.empty:
@@ -429,8 +479,9 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                         p_nom=new_capacity,
                         marginal_cost=marginal_cost,
                         capital_cost=capital_cost,
-                        efficiency=costs.at[generator, "efficiency"] 
-                        if "offwind" not in generator else costs.at["offwind", "efficiency"],
+                        efficiency=costs.at[generator, "efficiency"]
+                        if "offwind" not in generator
+                        else costs.at["offwind", "efficiency"],
                         p_max_pu=p_max_pu,
                         build_year=grouping_year,
                         lifetime=lifetime_assets.values,
@@ -439,13 +490,12 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                         f"Added {sum(new_capacity)} MW {generator} capacities for {grouping_year} with {len(new_capacity)} assets"
                     )
 
-
         else:
             # add capacities for conventional powerplants in links
             if carrier[generator] not in vars(spatial).keys():
                 logger.debug(f"Carrier type {generator} not in spatial data, skipping")
                 continue
-            
+
             # get bus0 for the link
             bus0 = vars(spatial)[carrier[generator]].nodes
             if "Earth" not in vars(spatial)[carrier[generator]].locations:
@@ -493,16 +543,18 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                         bus2="co2 atmosphere",
                         carrier=generator,
                         marginal_cost=costs.at[generator, "efficiency"]
-                                      * costs.at[generator, "VOM"],  # NB: VOM is per MWel
+                        * costs.at[generator, "VOM"],  # NB: VOM is per MWel
                         capital_cost=costs.at[generator, "efficiency"]
-                                     * costs.at[generator, "fixed"],  # NB: fixed cost is per MWel
+                        * costs.at[generator, "fixed"],  # NB: fixed cost is per MWel
                         p_nom=new_capacity / costs.at[generator, "efficiency"],
                         efficiency=costs.at[generator, "efficiency"],
                         efficiency2=costs.at[carrier[generator], "CO2 intensity"],
                         build_year=grouping_year,
                         # Avoid KeyError if some indices are missing
                         lifetime=lifetime_assets.reindex(new_capacity.index).fillna(
-                            int(costs.at[generator, "lifetime"]) if generator in costs.index else 25
+                            int(costs.at[generator, "lifetime"])
+                            if generator in costs.index
+                            else 25
                         ),
                     )
                 else:
@@ -524,7 +576,9 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                         efficiency2=costs.at[key, "efficiency-heat"],
                         # Avoid KeyError if some indices are missing
                         lifetime=lifetime_assets.reindex(new_capacity.index).fillna(
-                            int(costs.at[generator, "lifetime"]) if generator in costs.index else 25
+                            int(costs.at[generator, "lifetime"])
+                            if generator in costs.index
+                            else 25
                         ),
                     )
                 logger.info(
@@ -546,16 +600,24 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
 
 def set_lifetimes(n, costs):
     """
-        Sets non-infinity lifetimes for powerplants. However, to phase out DateOut from
-        powerplants.csv is used.
+    Sets non-infinity lifetimes for powerplants. However, to phase out DateOut from
+    powerplants.csv is used.
     """
     powerplant_carriers = {
         "Link": ["CCGT", "OCGT", "coal", "oil", "biomass"],
-        "Generator": ["nuclear", "solar", "onwind", "offwind-ac", "geothermal", "ror", "csp"],
+        "Generator": [
+            "nuclear",
+            "solar",
+            "onwind",
+            "offwind-ac",
+            "geothermal",
+            "ror",
+            "csp",
+        ],
     }
 
     # rename csp-tower to csp for properly reading lifetime
-    costs.rename(index={"csp-tower":"csp"}, inplace=True)
+    costs.rename(index={"csp-tower": "csp"}, inplace=True)
 
     for c in n.iterate_components(["Link", "Generator"]):
         # get powerplants with infinite lifetime
@@ -563,8 +625,12 @@ def set_lifetimes(n, costs):
 
         if mask.any():
             # fill infinite lifetime with lifetime from costs
-            c.df.loc[mask, "lifetime"] = c.df.loc[mask, "carrier"].map(costs["lifetime"])
-            logger.info(f"Lifetime for {c.df.loc[mask, 'carrier'].unique()} was filled from costs")
+            c.df.loc[mask, "lifetime"] = c.df.loc[mask, "carrier"].map(
+                costs["lifetime"]
+            )
+            logger.info(
+                f"Lifetime for {c.df.loc[mask, 'carrier'].unique()} was filled from costs"
+            )
 
 
 if __name__ == "__main__":
@@ -580,7 +646,7 @@ if __name__ == "__main__":
             discountrate=0.071,
             demand="AB",
             h2export="10",
-            configfile="configs/scenarios/config.myopic.yaml"
+            configfile="configs/scenarios/config.myopic.yaml",
         )
 
     configure_logging(snakemake)
@@ -620,7 +686,9 @@ if __name__ == "__main__":
     spatial = define_spatial(n.buses[n.buses.carrier == "AC"].index, options)
 
     # add power capacities installed before baseyear
-    add_power_capacities_installed_before_baseyear(n, grouping_years_power, costs, baseyear)
+    add_power_capacities_installed_before_baseyear(
+        n, grouping_years_power, costs, baseyear
+    )
 
     # remove non-extendable powerplants with no build_year from network and set p_nom = 0 for extendable powerplants
     remove_extra_powerplants(n)

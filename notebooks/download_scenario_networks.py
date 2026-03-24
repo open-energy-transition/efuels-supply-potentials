@@ -117,9 +117,9 @@ NETWORK_FILES_BY_RESOLUTION = {
 }
 
 # Network file naming patterns
-# Scenarios 1, 5, 6 use 'lcopt' wildcard; others use 'lv1'
+# Scenarios 5, 6 use 'lcopt' wildcard; others use 'lv1'
 FILENAME_PATTERNS = {
-    1: "elec_s_100_ec_lcopt_3H_3H_{year}_0.071_AB_10export.nc",
+    1: "elec_s_100_ec_lv1_CCL-3H_3H_{year}_0.07_AB_0export.nc",
     2: "elec_s_100_ec_lv1_CCL-3H_3H_{year}_0.07_AB_0export.nc",
     3: "elec_s_100_ec_lv1_CCL-3H_3H_{year}_0.07_AB_0export.nc",
     4: "elec_s_100_ec_lv1_CCL-3H_3H_{year}_0.07_AB_0export.nc",

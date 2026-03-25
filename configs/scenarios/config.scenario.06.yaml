@@ -111,6 +111,8 @@ policy_config:
     temporal_matching: "hourly" # either "hourly", "monthly", "yearly", "no_temporal_matching"
     additionality: true
     temporal_matching_carriers: [csp, solar, onwind, offwind-ac, offwind-dc, ror, hydro, nuclear]
+    h2_production_constraint: true
+    h2_production_limits: data/h2_prod_minmax.csv
 
 demand_data:
   base_year: 2021

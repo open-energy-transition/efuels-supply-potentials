@@ -6755,7 +6755,23 @@ def compute_LCO_ekerosene_by_region(
     lcoc_by_region: dict = None,  # required if co2_price="lcoc"
     verbose=True,
 ):
+    """
+    Levelized cost of e-kerosene by grid region (USD/gal or USD/MWh e-ker).
+
+    Convention:
+    - Input rates = consumed energy / MWh e-ker (production-weighted).
+    - Input prices = consumption-weighted marginal price (or LCOE/LCOH/LCOC if requested).
+    - Autodetects flow sign per port (robust to sign conventions).
+
+    IMPORTANT:
+    - If hydrogen_price == "marginal", we still ADD H2 transmission + baseload EX-POST,
+      using the SAME deltas as in calculate_lcoh_by_region, i.e. from lcoh_by_region:
+        (LCOH + Trans + Baseload) - (LCOH excl. T&D)  [USD/kg] -> [USD/MWh] via *1000/33
+    - No new arguments were added to the signature.
+    """
+
     def get_year(data_dict, scen_year: int, name=None) -> str:
+        """Return scen_year if available, otherwise fallback (only 2023→2020)."""
         if not data_dict:
             raise ValueError("Dataset is empty, cannot determine year.")
         if str(scen_year) in data_dict:
@@ -6770,12 +6786,14 @@ def compute_LCO_ekerosene_by_region(
             f"Keys: {list(data_dict.keys())}"
         )
 
+    # Conversion MWh ↔ gallon
     MWH_PER_GALLON = (34.0 / 3600.0) * 3.78541
     conv = MWH_PER_GALLON if unit == "gal" else 1.0
     suffix = f"USD/{unit} e-ker"
 
     results = {}
 
+    # VOM trajectory (EUR)
     vom_eur_points = {
         2020: 5.6360,
         2025: 5.0512,
@@ -6794,12 +6812,14 @@ def compute_LCO_ekerosene_by_region(
     for name, net in networks.items():
         scen_year = int(re.search(r"\d{4}", str(name)).group())
 
+        # Select Fischer-Tropsch links
         ft = net.links[
             net.links.carrier.str.contains("Fischer-Tropsch", case=False, na=False)
         ].copy()
         if ft.empty:
             continue
 
+        # Capacity filter
         cap_series = np.where(
             ft.get("p_nom_extendable", False),
             ft.get("p_nom_opt", 0.0),
@@ -6809,12 +6829,14 @@ def compute_LCO_ekerosene_by_region(
         if ft.empty:
             continue
 
+        # Snapshot duration [h]
         if len(net.snapshots) > 1:
             dt_h = (net.snapshots[1] - net.snapshots[0]).total_seconds() / 3600.0
         else:
             dt_h = 1.0
 
         def energy_in(series):
+            """MWh consumed at that port (sign-robust)."""
             e_pos = (series.clip(lower=0) * dt_h).sum()
             e_neg = ((-series).clip(lower=0) * dt_h).sum()
             return (
@@ -6844,9 +6866,9 @@ def compute_LCO_ekerosene_by_region(
             if out_MWh <= 0:
                 continue
 
-            elec_cons = energy_in(net.links_t.p3[link])
-            h2_cons = energy_in(net.links_t.p0[link])
-            co2_cons = energy_in(net.links_t.p2[link])
+            elec_cons = energy_in(net.links_t.p3[link])  # electricity
+            h2_cons = energy_in(net.links_t.p0[link])  # hydrogen
+            co2_cons = energy_in(net.links_t.p2[link])  # CO2
 
             r_elec = elec_cons.sum() / out_MWh
             r_h2 = h2_cons.sum() / out_MWh
@@ -6871,11 +6893,14 @@ def compute_LCO_ekerosene_by_region(
             else:
                 raise ValueError("electricity_price must be 'marginal' or 'lcoe'")
 
+            # --- hydrogen price ---
             if hydrogen_price == "marginal":
+                # Base marginal H2 price (USD/MWh_H2) EXCL. fees
                 p_h2 = net.buses_t.marginal_price[ft.at[link, "bus0"]]
                 avg_p_h2 = (
                     (h2_cons * p_h2).sum() / h2_cons.sum() if h2_cons.sum() > 0 else 0.0
                 )
+                # Add H2 fees EX-POST (transmission + baseload), same as LCOH accounting
                 if lcoh_by_region:
                     y = get_year(lcoh_by_region, scen_year, name)
                     lcoh_df = lcoh_by_region[y].set_index("Grid Region")
@@ -6913,6 +6938,7 @@ def compute_LCO_ekerosene_by_region(
             else:
                 raise ValueError("hydrogen_price must be 'marginal' or 'lcoh'")
 
+            # --- CO2 price ---
             if co2_price == "marginal":
                 p_co2 = net.buses_t.marginal_price[ft.at[link, "bus2"]]
                 avg_p_co2 = (
@@ -6945,6 +6971,7 @@ def compute_LCO_ekerosene_by_region(
             else:
                 raise ValueError("co2_price must be 'marginal' or 'lcoc'")
 
+            # --- cost components ---
             c_elec = avg_p_elec * r_elec * conv
             c_h2 = avg_p_h2 * r_h2 * conv
             c_co2 = avg_p_co2 * r_co2 * conv

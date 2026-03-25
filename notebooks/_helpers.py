@@ -6744,15 +6744,15 @@ def compute_LCO_ekerosene_by_region(
     fx_recent: float,
     regional_fees: pd.DataFrame,
     emm_mapping: dict,
-    unit: str = "gal",
+    unit: str = "gal",  # "gal" or "MWh"
     year_title: bool = True,
     p_nom_threshold: float = 1e-3,
-    electricity_price: str = "marginal",
-    hydrogen_price: str = "marginal",
-    co2_price: str = "marginal",
-    lcoe_by_region=None,
-    lcoh_by_region: dict = None,
-    lcoc_by_region: dict = None,
+    electricity_price: str = "marginal",  # "marginal" or "lcoe"
+    hydrogen_price: str = "marginal",  # "marginal" or "lcoh"
+    co2_price: str = "marginal",  # "marginal" or "lcoc"
+    lcoe_by_region=None,  # Series or dict
+    lcoh_by_region: dict = None,  # required if hydrogen_price in {"lcoh", "marginal"} for fees
+    lcoc_by_region: dict = None,  # required if co2_price="lcoc"
     verbose=True,
 ):
     def get_year(data_dict, scen_year: int, name=None) -> str:

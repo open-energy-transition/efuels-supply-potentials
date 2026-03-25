@@ -12107,7 +12107,6 @@ def plot_regional_dispatch(
 
 
 # State Dispatch Plot for Texas (State)
-# State Dispatch Plot for Texas (State)
 def plot_state_dispatch(
     network, tech_colors, nice_names, state="TX", year_str=None
 ):

@@ -12106,6 +12106,335 @@ def plot_regional_dispatch(
     showfig()
 
 
+# State Dispatch Plot for Texas (State)
+# State Dispatch Plot for Texas (State)
+def plot_state_dispatch(
+    network, tech_colors, nice_names, state="TX", year_str=None
+):
+    """
+    Plot electricity dispatch for a given state (default: Texas),
+    with total demand, data center demand, and cumulative
+    data center + electrolyzer demand.
+
+    Parameters
+    ----------
+    network : pypsa.Network
+    tech_colors : dict
+    nice_names : dict
+    state : str
+        State code/name (must match network.buses.state)
+    year_str : str, optional
+    """
+
+    # Filter buses by state
+    state_buses = network.buses[network.buses.state == state].index
+
+    if len(state_buses) == 0:
+        print(f"No buses found for state: {state}")
+        return
+
+    # --- GENERATION / SUPPLY ---
+
+    gen_and_sto_carriers = {
+        "csp",
+        "solar",
+        "onwind",
+        "offwind-dc",
+        "offwind-ac",
+        "nuclear",
+        "geothermal",
+        "ror",
+        "hydro",
+        "solar rooftop",
+    }
+
+    link_carriers = ["coal", "oil", "OCGT", "CCGT", "biomass", "biomass CHP", "gas CHP"]
+
+    # Generators
+    gen = network.generators[
+        network.generators.bus.isin(state_buses)
+        & network.generators.carrier.isin(gen_and_sto_carriers)
+    ]
+    gen_p = network.generators_t.p[gen.index].clip(lower=0)
+    gen_dispatch = gen_p.groupby(gen["carrier"], axis=1).sum()
+
+    # Storage
+    sto = network.storage_units[
+        network.storage_units.bus.isin(state_buses)
+        & network.storage_units.carrier.isin(gen_and_sto_carriers)
+    ]
+    sto_p = network.storage_units_t.p[sto.index].clip(lower=0)
+    sto_dispatch = sto_p.groupby(sto["carrier"], axis=1).sum()
+
+    # Links (thermal etc.)
+    link_frames = []
+    for carrier in link_carriers:
+        links = network.links[
+            (network.links.carrier == carrier)
+            & (network.links.bus1.isin(state_buses))
+        ]
+        if links.empty:
+            continue
+
+        p1 = network.links_t.p1[links.index].clip(upper=0)
+        df = (-p1).groupby(links["carrier"], axis=1).sum()
+        link_frames.append(df)
+
+    # Battery
+    battery_links = network.links[
+        (network.links.carrier == "battery discharger")
+        & (network.links.bus1.isin(state_buses))
+    ]
+    if not battery_links.empty:
+        p1 = network.links_t.p1[battery_links.index].clip(upper=0)
+        battery_dispatch = -p1.groupby(battery_links["carrier"], axis=1).sum()
+        battery_dispatch.columns = ["battery discharger"]
+        link_frames.append(battery_dispatch)
+
+    link_dispatch = (
+        pd.concat(link_frames, axis=1)
+        if link_frames
+        else pd.DataFrame(index=network.snapshots)
+    )
+
+    # Combine
+    supply_gw = pd.concat([gen_dispatch, sto_dispatch, link_dispatch], axis=1)
+    supply_gw = (
+        supply_gw.groupby(supply_gw.columns, axis=1).sum().clip(lower=0) / 1000
+    )
+
+    # --- DEMAND ---
+
+    state_loads = network.loads[network.loads.bus.isin(state_buses)]
+
+    # AC
+    ac_loads = state_loads[state_loads.carrier == "AC"]
+    ac_demand = network.loads_t.p_set[
+        ac_loads.index.intersection(network.loads_t.p_set.columns)
+    ].sum(axis=1)
+
+    # Flexible loads
+    def sum_if_exists(carrier):
+        idx = [
+            i
+            for i in state_loads[state_loads.carrier == carrier].index
+            if i in network.loads_t.p_set.columns
+        ]
+        return network.loads_t.p_set[idx].sum(axis=1) if idx else 0
+
+    serv_demand = sum_if_exists("services electricity")
+    ev_demand = sum_if_exists("land transport EV")
+    other_demand = sum_if_exists("other electricity")
+
+    # Data centers
+    dc_loads = state_loads[state_loads.carrier == "data center"]
+    dc_profile = pd.Series(dc_loads.p_set.sum(), index=network.snapshots)
+
+    # Static loads
+    static_loads = state_loads[
+        state_loads.carrier.isin(
+            ["rail transport electricity", "agriculture electricity", "industry electricity"]
+        )
+    ]
+    static_profile = pd.Series(static_loads.p_set.sum(), index=network.snapshots)
+
+    # Industrial links
+    target_processes = [
+        "SMR CC",
+        "Haber-Bosch",
+        "ethanol from starch",
+        "ethanol from starch CC",
+        "DRI",
+        "DRI CC",
+        "DRI H2",
+        "BF-BOF",
+        "BF-BOF CC",
+        "EAF",
+        "dry clinker",
+        "cement finishing",
+        "dry clinker CC",
+    ]
+
+    process_links = network.links[network.links.carrier.isin(target_processes)]
+    ac_input_links = process_links[process_links.bus0.isin(state_buses)].index
+
+    ind_ac_demand = (
+        network.links_t.p0[ac_input_links].sum(axis=1)
+        if len(ac_input_links) > 0 else 0
+    )
+
+    # Electrolyzers
+    electrolysis_carriers = [
+        "H2 Electrolysis",
+        "Alkaline electrolyzer large",
+        "Alkaline electrolyzer medium",
+        "Alkaline electrolyzer small",
+        "PEM electrolyzer",
+        "SOEC",
+    ]
+
+    electrolyzer_links = network.links[
+        network.links.carrier.isin(electrolysis_carriers)
+        & network.links.bus0.isin(state_buses)
+    ].index
+
+    electrolyzer_demand = (
+        network.links_t.p0[electrolyzer_links].sum(axis=1)
+        if len(electrolyzer_links) > 0 else pd.Series(0, index=network.snapshots)
+    )
+
+    # Total demand: include electrolyzer demand in addition to all other demand
+    total_demand = (
+        ac_demand
+        + serv_demand
+        + ev_demand
+        + other_demand
+        + dc_profile
+        + static_profile
+        + abs(ind_ac_demand)
+        + electrolyzer_demand
+    ) / 1000
+
+    dc_demand_gw = dc_profile / 1000
+    electrolyzer_demand_gw = electrolyzer_demand / 1000
+    dc_plus_electrolyzer_gw = dc_demand_gw + electrolyzer_demand_gw
+
+    # --- RESAMPLE ---
+
+    supply_daily = supply_gw.resample("24H").mean()
+    demand_daily = total_demand.resample("24H").mean()
+    dc_daily = dc_demand_gw.resample("24H").mean()
+    dc_plus_electrolyzer_daily = dc_plus_electrolyzer_gw.resample("24H").mean()
+
+    # Optional ordering
+    ordered_columns = [
+        "nuclear",
+        "coal",
+        "biomass",
+        "CCGT",
+        "OCGT",
+        "oil",
+        "hydro",
+        "ror",
+        "geothermal",
+        "gas CHP",
+        "biomass CHP",
+        "solar",
+        "solar rooftop",
+        "csp",
+        "onwind",
+        "offwind-ac",
+        "offwind-dc",
+        "battery discharger",
+    ]
+    supply_daily = supply_daily[
+        [c for c in ordered_columns if c in supply_daily.columns]
+    ]
+
+    # --- PLOT ---
+
+    fig, ax = plt.subplots(figsize=(22, 6))
+
+    supply_daily.plot.area(
+        ax=ax,
+        stacked=True,
+        linewidth=0,
+        color=[tech_colors.get(c, "gray") for c in supply_daily.columns],
+        legend=False,
+    )
+
+    demand_daily.plot(
+        ax=ax,
+        color="red",
+        linewidth=2.5,
+        linestyle="-",
+        label="Total Demand",
+        alpha=0.9,
+    )
+
+    dc_daily.plot(
+        ax=ax,
+        color="purple",
+        linewidth=2,
+        linestyle="--",
+        label="Data Center Demand",
+        alpha=0.8,
+    )
+
+    dc_plus_electrolyzer_daily.plot(
+        ax=ax,
+        color="lime",
+        linewidth=2.5,
+        linestyle=":",
+        label="Data Center + Electrolyzer Demand",
+        alpha=0.95,
+    )
+
+    ax.axhline(y=0, color="black", linewidth=1.2, linestyle="-", alpha=0.7)
+
+    if year_str is None:
+        year_match = re.search(r"\d{4}", str(network))
+        year_str = year_match.group() if year_match else ""
+
+    ax.set_title(f"{state} Electricity Dispatch & Demand – {year_str}")
+    ax.set_ylabel("Power (GW)")
+    ax.set_ylim(0, max(supply_daily.sum(axis=1).max(), demand_daily.max()) * 1.05)
+    ax.grid(True, alpha=0.3)
+
+    # X-axis formatting
+    start = supply_daily.index.min().replace(day=1)
+    end = supply_daily.index.max()
+    month_starts = pd.date_range(start=start, end=end, freq="MS")
+
+    ax.set_xlim(start, end)
+    ax.set_xticks(month_starts)
+    ax.set_xticklabels(month_starts.strftime("%b"))
+    ax.tick_params(axis="x", which="both", labelbottom=True)
+    ax.set_xlabel("Time (months)")
+
+    # Legend
+    handles, labels = ax.get_legend_handles_labels()
+    sums = supply_daily.sum()
+
+    filtered = [
+        (h, l)
+        for h, l in zip(handles, labels)
+        if sums.get(l, 0) > 0
+        or l in [
+            "Total Demand",
+            "Data Center Demand",
+            "Data Center + Electrolyzer Demand",
+        ]
+    ]
+
+    if filtered:
+        handles, labels = zip(*filtered)
+        pretty_labels = [
+            nice_names.get(label, label)
+            if label not in [
+                "Total Demand",
+                "Data Center Demand",
+                "Data Center + Electrolyzer Demand",
+            ]
+            else label
+            for label in labels
+        ]
+
+        ax.legend(
+            handles,
+            pretty_labels,
+            loc="center left",
+            bbox_to_anchor=(1.02, 0.5),
+            title="Technology",
+            fontsize=11,
+            title_fontsize=12,
+        )
+
+    plt.tight_layout(rect=[0, 0.05, 0.85, 1])
+    showfig()
+    
+
+
 def compute_regional_co2_production_capture_and_ft_price(
     networks: dict,
     ft_carrier: str = "Fischer-Tropsch",

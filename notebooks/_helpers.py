@@ -6846,6 +6846,7 @@ def compute_LCO_ekerosene_by_region(
             )
 
         def energy_out(series):
+            """MWh produced at that port (sign-robust)."""
             e_pos = (series.clip(lower=0) * dt_h).sum()
             e_neg = ((-series).clip(lower=0) * dt_h).sum()
             return (
@@ -6874,6 +6875,7 @@ def compute_LCO_ekerosene_by_region(
             r_h2 = h2_cons.sum() / out_MWh
             r_co2 = co2_cons.sum() / out_MWh
 
+            # --- electricity price ---
             if electricity_price == "marginal":
                 p_elec = net.buses_t.marginal_price[ft.at[link, "bus3"]]
                 avg_p_elec = (

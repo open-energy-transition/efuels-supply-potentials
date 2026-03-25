@@ -17,8 +17,9 @@ parser.add_argument(
 parser.add_argument(
     "--resolution",
     type=str,
+    nargs="+",
     required=True,
-    help="Temporal resolution (e.g. 1H, 3H, 24H, 196H)",
+    help="Temporal resolution(s) to include together (e.g. 1H 3H)",
 )
 parser.add_argument(
     "--years",
@@ -38,7 +39,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 SCENARIO_IDS = [f"{i:02d}" for i in args.scenario_id]
-RESOLUTION = args.resolution
+RESOLUTIONS = [res.upper() for res in args.resolution]
 YEARS = [str(year) for year in args.years]
 MODE = args.mode
 
@@ -46,12 +47,13 @@ INPUT_NOTEBOOK = "multiple_scenario_analysis.ipynb"
 
 if MODE == "all":
     # Run once with all years as a list
-    output_nb = f"multiple_scenario_analysis_{RESOLUTION}_{'_'.join(YEARS)}.ipynb"
+    resolution_tag = "-".join(RESOLUTIONS)
+    output_nb = f"multiple_scenario_analysis_{resolution_tag}_{'_'.join(YEARS)}.ipynb"
 
     print(
         f"[run] multiple scenarios {', '.join(SCENARIO_IDS)} "
         f"years={', '.join(YEARS)} "
-        f"resolution={RESOLUTION} "
+        f"resolutions={', '.join(RESOLUTIONS)} "
         f"mode=all"
     )
 
@@ -60,19 +62,22 @@ if MODE == "all":
         output_path=output_nb,
         parameters={
             "SCENARIO_IDS": SCENARIO_IDS,
-            "RESOLUTION": RESOLUTION,
+            # Backward compatibility with notebooks expecting a single RESOLUTION value.
+            "RESOLUTION": RESOLUTIONS[0],
+            "RESOLUTIONS": RESOLUTIONS,
             "YEARS": YEARS,
         },
     )
 else:  # MODE == "each"
     # Run separately for each year
     for year in YEARS:
-        output_nb = f"multiple_scenario_analysis_{RESOLUTION}_{year}.ipynb"
+        resolution_tag = "-".join(RESOLUTIONS)
+        output_nb = f"multiple_scenario_analysis_{resolution_tag}_{year}.ipynb"
 
         print(
             f"[run] multiple scenarios {', '.join(SCENARIO_IDS)} "
             f"year={year} "
-            f"resolution={RESOLUTION} "
+            f"resolutions={', '.join(RESOLUTIONS)} "
             f"mode=each"
         )
 
@@ -81,7 +86,9 @@ else:  # MODE == "each"
             output_path=output_nb,
             parameters={
                 "SCENARIO_IDS": SCENARIO_IDS,
-                "RESOLUTION": RESOLUTION,
+                # Backward compatibility with notebooks expecting a single RESOLUTION value.
+                "RESOLUTION": RESOLUTIONS[0],
+                "RESOLUTIONS": RESOLUTIONS,
                 "YEARS": [year],
             },
         )

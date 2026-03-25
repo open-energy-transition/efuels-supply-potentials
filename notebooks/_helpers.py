@@ -6770,12 +6770,14 @@ def compute_LCO_ekerosene_by_region(
     - No new arguments were added to the signature.
     """
 
-    def get_year(data_dict, scen_year: int) -> str:
+    def get_year(data_dict, scen_year: int, name=None) -> str:
         """Return scen_year if available, otherwise fallback (only 2023→2020)."""
         if not data_dict:
             raise ValueError("Dataset is empty, cannot determine year.")
         if str(scen_year) in data_dict:
             return str(scen_year)
+        if name is not None and str(name) in data_dict:
+            return str(name)
         if scen_year == 2023 and "2020" in data_dict:
             print("Year 2023 not found in dataset, using 2020 instead.")
             return "2020"
@@ -6886,7 +6888,7 @@ def compute_LCO_ekerosene_by_region(
                     if not lcoe_by_region:
                         avg_p_elec = 0.0
                     else:
-                        year = get_year(lcoe_by_region, scen_year)
+                        year = get_year(lcoe_by_region, scen_year, name)
                         avg_p_elec = lcoe_by_region[year].loc[region]
                 else:
                     avg_p_elec = lcoe_by_region.loc[region]
@@ -6900,15 +6902,12 @@ def compute_LCO_ekerosene_by_region(
                 avg_p_h2 = (
                     (h2_cons * p_h2).sum() / h2_cons.sum() if h2_cons.sum() > 0 else 0.0
                 )
-
                 # Add H2 fees EX-POST (transmission + baseload), same as LCOH accounting
                 if lcoh_by_region:
-                    y = get_year(lcoh_by_region, scen_year)
+                    y = get_year(lcoh_by_region, scen_year, name)
                     lcoh_df = lcoh_by_region[y].set_index("Grid Region")
-
                     col_excl = "LCOH (excl. T&D fees) (USD/kg H2)"
                     col_incl = "LCOH + Transmission fees + Baseload charges (USD/kg H2)"
-
                     if (
                         region in lcoh_df.index
                         and col_excl in lcoh_df.columns
@@ -6923,12 +6922,11 @@ def compute_LCO_ekerosene_by_region(
                             / 33.0
                         )
                         avg_p_h2 += delta_h2_fees_usd_per_mwh
-
             elif hydrogen_price == "lcoh":
                 if not lcoh_by_region:
                     avg_p_h2 = 0.0
                 else:
-                    year = get_year(lcoh_by_region, scen_year)
+                    year = get_year(lcoh_by_region, scen_year, name)
                     avg_p_h2 = (
                         lcoh_by_region[year]
                         .set_index("Grid Region")
@@ -6954,13 +6952,17 @@ def compute_LCO_ekerosene_by_region(
                 if not lcoc_by_region or scen_year == 2023:
                     avg_p_co2 = 0.0
                 else:
+                    # ── FIX: support both year_title=True ("2030") and year_title=False (full name) ──
+                    lcoc_key = (
+                        str(scen_year)
+                        if str(scen_year) in lcoc_by_region
+                        else str(name)
+                    )
                     try:
-                        lcoc_df = lcoc_by_region[str(scen_year)].set_index(
-                            "Grid Region"
-                        )
+                        lcoc_df = lcoc_by_region[lcoc_key].set_index("Grid Region")
                     except KeyError:
                         if verbose:
-                            print("Skipping scenario (no LCOC for year)")
+                            print(f"Skipping scenario (no LCOC for key '{lcoc_key}')")
                         rows = []
                         break
                     avg_p_co2 = (
@@ -7092,14 +7094,12 @@ def compute_LCO_ekerosene_by_region(
             wavg_cost = (
                 g[f"LCO e-kerosene (incl. T&D fees) ({suffix})"] * g["Production (TWh)"]
             ).sum() / tot_prod
-
             title = re.search(r"\d{4}", str(name)).group() if year_title else str(name)
             print(f"\n{title}:")
             print(
                 f"Weighted average LCO e-kerosene (incl. T&D): {wavg_cost:.2f} {suffix}"
             )
             print(f"Total production: {tot_prod:.2f} TWh\n")
-
             numeric_cols = g.select_dtypes(include="number").columns
             fmt = {col: "{:.2f}" for col in numeric_cols}
             display(g.style.format(fmt).hide(axis="index"))

@@ -12107,9 +12107,7 @@ def plot_regional_dispatch(
 
 
 # State Dispatch Plot for Texas (State)
-def plot_state_dispatch(
-    network, tech_colors, nice_names, state="TX", year_str=None
-):
+def plot_state_dispatch(network, tech_colors, nice_names, state="TX", year_str=None):
     """
     Plot electricity dispatch for a given state (default: Texas),
     with total demand, data center demand, and cumulative
@@ -12169,8 +12167,7 @@ def plot_state_dispatch(
     link_frames = []
     for carrier in link_carriers:
         links = network.links[
-            (network.links.carrier == carrier)
-            & (network.links.bus1.isin(state_buses))
+            (network.links.carrier == carrier) & (network.links.bus1.isin(state_buses))
         ]
         if links.empty:
             continue
@@ -12198,9 +12195,7 @@ def plot_state_dispatch(
 
     # Combine
     supply_gw = pd.concat([gen_dispatch, sto_dispatch, link_dispatch], axis=1)
-    supply_gw = (
-        supply_gw.groupby(supply_gw.columns, axis=1).sum().clip(lower=0) / 1000
-    )
+    supply_gw = supply_gw.groupby(supply_gw.columns, axis=1).sum().clip(lower=0) / 1000
 
     # --- DEMAND ---
 
@@ -12232,7 +12227,11 @@ def plot_state_dispatch(
     # Static loads
     static_loads = state_loads[
         state_loads.carrier.isin(
-            ["rail transport electricity", "agriculture electricity", "industry electricity"]
+            [
+                "rail transport electricity",
+                "agriculture electricity",
+                "industry electricity",
+            ]
         )
     ]
     static_profile = pd.Series(static_loads.p_set.sum(), index=network.snapshots)
@@ -12258,8 +12257,7 @@ def plot_state_dispatch(
     ac_input_links = process_links[process_links.bus0.isin(state_buses)].index
 
     ind_ac_demand = (
-        network.links_t.p0[ac_input_links].sum(axis=1)
-        if len(ac_input_links) > 0 else 0
+        network.links_t.p0[ac_input_links].sum(axis=1) if len(ac_input_links) > 0 else 0
     )
 
     # Electrolyzers
@@ -12279,7 +12277,8 @@ def plot_state_dispatch(
 
     electrolyzer_demand = (
         network.links_t.p0[electrolyzer_links].sum(axis=1)
-        if len(electrolyzer_links) > 0 else pd.Series(0, index=network.snapshots)
+        if len(electrolyzer_links) > 0
+        else pd.Series(0, index=network.snapshots)
     )
 
     # Total demand: include electrolyzer demand in addition to all other demand
@@ -12399,7 +12398,8 @@ def plot_state_dispatch(
         (h, l)
         for h, l in zip(handles, labels)
         if sums.get(l, 0) > 0
-        or l in [
+        or l
+        in [
             "Total Demand",
             "Data Center Demand",
             "Data Center + Electrolyzer Demand",
@@ -12410,7 +12410,8 @@ def plot_state_dispatch(
         handles, labels = zip(*filtered)
         pretty_labels = [
             nice_names.get(label, label)
-            if label not in [
+            if label
+            not in [
                 "Total Demand",
                 "Data Center Demand",
                 "Data Center + Electrolyzer Demand",
@@ -12431,7 +12432,6 @@ def plot_state_dispatch(
 
     plt.tight_layout(rect=[0, 0.05, 0.85, 1])
     showfig()
-    
 
 
 def compute_regional_co2_production_capture_and_ft_price(

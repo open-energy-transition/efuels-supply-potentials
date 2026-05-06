@@ -12609,3 +12609,234 @@ def compute_regional_co2_production_capture_and_ft_price(
             display(df_disp.style.format(fmt).hide(axis="index"))
 
     return results
+
+def compute_marginal_ekerosene_price_by_region(
+    networks,
+    regional_fees,
+    emm_mapping,
+    ft_carrier="Fischer-Tropsch",
+    year_title=True,
+    unit="gal",
+    p_nom_threshold=1.0,
+    production_threshold_mwh=1.0,
+    include_distribution=True,
+    verbose=True,
+):
+    """
+    Compute direct model-based marginal price of e-kerosene by grid region.
+
+    The base marginal price is read directly from the e-kerosene bus marginal price
+    (dual value), but only for Fischer-Tropsch units that are active and producing.
+    Aggregation by region is production-weighted, to make the result comparable with
+    the LCO e-kerosene calculation.
+
+    Parameters
+    ----------
+    networks : dict
+        Dictionary of PyPSA networks.
+    regional_fees : pd.DataFrame
+        Table with regional transmission/distribution fees by year.
+    emm_mapping : dict
+        Mapping from grid region to EMM region.
+    ft_carrier : str
+        Carrier name of Fischer-Tropsch links.
+    year_title : bool
+        If True, output keys are years. Otherwise scenario names.
+    unit : str
+        "MWh" or "gal".
+    p_nom_threshold : float
+        Minimum FT nominal capacity to keep a unit.
+    production_threshold_mwh : float
+        Minimum annual e-kerosene production to keep a unit.
+    include_distribution : bool
+        If True, include both transmission and distribution fees in the final price.
+        If False, include only transmission fees.
+    verbose : bool
+        If True, display the tables.
+
+    Returns
+    -------
+    dict
+        Dictionary {year_or_name: DataFrame}
+    """
+
+    MWH_PER_GALLON = (34.0 / 3600.0) * 3.78541
+    conv = MWH_PER_GALLON if unit == "gal" else 1.0
+    suffix = f"USD/{unit} e-ker"
+
+    results = {}
+
+    for name, n in networks.items():
+        year_match = re.search(r"\d{4}", str(name))
+        if not year_match:
+            continue
+
+        scen_year = int(year_match.group())
+        result_key = scen_year if year_title else str(name)
+
+        # -----------------------------
+        # Select Fischer-Tropsch links
+        # -----------------------------
+        ft = n.links[
+            n.links.carrier.str.contains(ft_carrier, case=False, na=False)
+        ].copy()
+
+        if ft.empty:
+            continue
+
+        # -----------------------------
+        # Keep only active FT units
+        # -----------------------------
+        ft["effective_capacity"] = np.where(
+            ft.get("p_nom_extendable", False),
+            ft.get("p_nom_opt", 0.0),
+            ft.get("p_nom", 0.0),
+        )
+
+        ft = ft[ft["effective_capacity"] > p_nom_threshold].copy()
+        if ft.empty:
+            continue
+
+        # Require bus1 to exist in marginal prices (product bus)
+        ft = ft[ft["bus1"].isin(n.buses_t.marginal_price.columns)].copy()
+        if ft.empty:
+            continue
+
+        # -----------------------------
+        # Annual production by FT unit
+        # -----------------------------
+        w = n.snapshot_weightings.objective
+
+        # In PyPSA FT product output is usually negative on p1, so flip sign
+        fuel_out = (-n.links_t.p1[ft.index]).clip(lower=0).multiply(w, axis=0)
+        annual_output_mwh = fuel_out.sum(axis=0)
+
+        ft["annual_output_mwh"] = annual_output_mwh.reindex(ft.index).fillna(0.0)
+
+        ft = ft[ft["annual_output_mwh"] > production_threshold_mwh].copy()
+        if ft.empty:
+            continue
+
+        # -----------------------------
+        # Production-weighted marginal price at each FT product bus
+        # -----------------------------
+        rows = []
+
+        for link in ft.index:
+            product_bus = ft.at[link, "bus1"]
+
+            # Time series of product output for this FT unit
+            prod_ts = fuel_out[link]
+            total_prod = prod_ts.sum()
+
+            if total_prod <= 0:
+                continue
+
+            # Direct model-based marginal price at the e-kerosene bus
+            mp_ts = n.buses_t.marginal_price[product_bus]
+
+            # Production-weighted average marginal price
+            avg_mp_mwh = (mp_ts * prod_ts).sum() / total_prod
+
+            # Region of the product bus
+            grid_region = n.buses.at[product_bus, "grid_region"]
+            if pd.isna(grid_region):
+                continue
+
+            rows.append(
+                {
+                    "ft_link": link,
+                    "product_bus": product_bus,
+                    "Grid Region": grid_region,
+                    "Production (TWh)": total_prod / 1e6,
+                    f"Marginal price e-kerosene (excl. T&D fees) ({suffix})": avg_mp_mwh * conv,
+                }
+            )
+
+        if not rows:
+            continue
+
+        df = pd.DataFrame(rows)
+
+        # -----------------------------
+        # Aggregate by region
+        # -----------------------------
+        grouped = (
+            df.groupby("Grid Region")
+            .apply(
+                lambda g: pd.Series(
+                    {
+                        "Production (TWh)": g["Production (TWh)"].sum(),
+                        f"Marginal price e-kerosene (excl. T&D fees) ({suffix})": (
+                            (
+                                g[f"Marginal price e-kerosene (excl. T&D fees) ({suffix})"]
+                                * g["Production (TWh)"]
+                            ).sum()
+                            / g["Production (TWh)"].sum()
+                        ),
+                    }
+                )
+            )
+            .reset_index()
+        )
+
+        # -----------------------------
+        # Add T&D fees ex post
+        # -----------------------------
+        fee_map = regional_fees.loc[
+            regional_fees["Year"] == scen_year,
+            ["region", "Transmission nom USD/MWh", "Distribution nom USD/MWh"],
+        ].set_index("region")
+
+        grouped["EMM"] = grouped["Grid Region"].map(emm_mapping)
+
+        grouped[f"Transmission fees ({suffix})"] = (
+            grouped["EMM"].map(fee_map["Transmission nom USD/MWh"]).fillna(0.0) * conv
+        )
+
+        grouped[f"Distribution fees ({suffix})"] = (
+            grouped["EMM"].map(fee_map["Distribution nom USD/MWh"]).fillna(0.0) * conv
+        )
+
+        if include_distribution:
+            grouped[f"Marginal price e-kerosene (incl. T&D fees) ({suffix})"] = (
+                grouped[f"Marginal price e-kerosene (excl. T&D fees) ({suffix})"]
+                + grouped[f"Transmission fees ({suffix})"]
+                + grouped[f"Distribution fees ({suffix})"]
+            )
+        else:
+            grouped[f"Marginal price e-kerosene (incl. T&D fees) ({suffix})"] = (
+                grouped[f"Marginal price e-kerosene (excl. T&D fees) ({suffix})"]
+                + grouped[f"Transmission fees ({suffix})"]
+            )
+
+        grouped = grouped[
+            [
+                "Grid Region",
+                "Production (TWh)",
+                f"Marginal price e-kerosene (excl. T&D fees) ({suffix})",
+                f"Transmission fees ({suffix})",
+                f"Distribution fees ({suffix})",
+                f"Marginal price e-kerosene (incl. T&D fees) ({suffix})",
+            ]
+        ].sort_values("Grid Region")
+
+        grouped = grouped.round(2)
+        results[result_key] = grouped
+
+    if verbose:
+        for key, df_out in results.items():
+            print(f"\nYear: {key}\n")
+            display(
+                df_out.style.hide(axis="index").format(
+                    {
+                        "Production (TWh)": "{:,.2f}",
+                        f"Marginal price e-kerosene (excl. T&D fees) ({suffix})": "{:,.2f}",
+                        f"Transmission fees ({suffix})": "{:,.2f}",
+                        f"Distribution fees ({suffix})": "{:,.2f}",
+                        f"Marginal price e-kerosene (incl. T&D fees) ({suffix})": "{:,.2f}",
+                    }
+                )
+            )
+
+    return results

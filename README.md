@@ -17,7 +17,7 @@ Install the necessary dependencies using `conda` or `mamba` based on the Operati
 
     mamba env create -f envs/environment.{os}-64-pinned.yaml
 
-* **Note!** Please check for `envs/` directory for names of pinned environment files. Supported OS list are `windows`, `linux` and `macos`.
+* **Note!** Please check for `envs/` directory for names of pinned environment files. Supported OSs are `windows`, `linux` and `macos`.
 
 Activate `pypsa-earth-efuels` environment:
 

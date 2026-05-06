@@ -30,18 +30,18 @@ notebooks/
 │   ├── EIA_market_module_regions/      # EIA Electricity Market Modules (EMM) regions definitions
 │   └── validation_data/                # EIA and Ember reference datasets
 │
-├── results/                            # Solved PyPSA networks and analysis outputs
-│   ├── base_year/                      # 2023 base year networks
-│   ├── scenarios/                      # Scenario results (01–10)
-│   │   ├── scenario_01/
-│   │   ├── scenario_02/
-│   │   ├── scenario_03/
-│   │   ├── scenario_04/
-│   │   └── scenario_05/ ... scenario_10/
-│   │       ├── *_2030_*.nc
-│   │       ├── *_2035_*.nc
-│   │       └── *_2040_*.nc
-│   └── tables/                         # Exported result tables (Excel / CSV)
+└── results/                            # Solved PyPSA networks and analysis outputs
+   ├── base_year/                      # 2023 base year networks
+   ├── scenarios/                      # Scenario results (01–10)
+   │   ├── scenario_01/
+   │   ├── scenario_02/
+   │   ├── scenario_03/
+   │   ├── scenario_04/
+   │   └── scenario_05/ ... scenario_10/
+   │       ├── *_2030_*.nc
+   │       ├── *_2035_*.nc
+   │       └── *_2040_*.nc
+   └── tables/                         # Exported result tables (Excel / CSV)
 ```
 
 ---
@@ -52,10 +52,12 @@ notebooks/
 ### Prerequisites
 
 1. **Conda environment** (from parent repository):
-   ```bash
-   mamba env create -f submodules/pypsa-earth/envs/environment.yaml
-   conda activate pypsa-earth
-   ```
+
+`mamba env create -f envs/environment.{os}-64-pinned.yaml`
+
+Note! Please check for envs/ directory for names of pinned environment files. Supported OSs are `windows`, `linux` and `macos`.
+
+`conda activate pypsa-earth-efuels`
 
 2. **Solved networks**:
 

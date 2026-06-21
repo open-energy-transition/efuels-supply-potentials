@@ -296,7 +296,7 @@ else:
     ruleorder: prepare_airports > process_airport_data
 
 
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
+if config["countries"] == ["US"] and config["retrieve_precomputed"].get(
     "cutouts", False
 ):
 
@@ -322,7 +322,7 @@ use rule retrieve_cost_data from pypsa_earth with:
 
 
 # retrieving precomputed osm/raw data and bypassing download_osm_data rule
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
+if config["countries"] == ["US"] and config["retrieve_precomputed"].get(
     "osm_raw", False
 ):
 
@@ -340,7 +340,7 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
 
 
 # retrieving precomputed osm/clean data and bypassing clean_osm_data rule
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
+if config["countries"] == ["US"] and config["retrieve_precomputed"].get(
     "osm_clean", False
 ):
 
@@ -358,7 +358,7 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
 
 
 # retrieving shapes data and bypassing build_shapes rule
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
+if config["countries"] == ["US"] and config["retrieve_precomputed"].get(
     "shapes", False
 ):
 
@@ -376,7 +376,7 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
 
 
 # retrieving base_network data and bypassing build_osm_network rule
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
+if config["countries"] == ["US"] and config["retrieve_precomputed"].get(
     "osm_network", False
 ):
 
@@ -394,7 +394,7 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
 
 
 # retrieving base.nc and bypassing base_network rule
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
+if config["countries"] == ["US"] and config["retrieve_precomputed"].get(
     "base_network", False
 ):
 
@@ -410,14 +410,13 @@ if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
 
 
 # retrieving renewable_profiles data and bypassing build_renewable_profiles rule
-if config["countries"] == ["US"] and config["retrieve_from_gdrive"].get(
+if config["countries"] == ["US"] and config["retrieve_precomputed"].get(
     "renewable_profiles", False
 ):
 
     rule retrieve_renewable_profiles:
         params:
             destination="resources/" + RDIR,
-            alternative_clustering=config["cluster_options"]["alternative_clustering"],
         output:
             expand(
                 "{PYPSA_EARTH_DIR}resources/{RDIR}{file}",

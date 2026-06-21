@@ -14,6 +14,7 @@ from scripts._helper import (
     update_config_from_wildcards,
     create_logger,
     download_and_unzip_gdrive,
+    download_and_unzip_zenodo,
     configure_logging,
     PYPSA_EARTH_DIR,
 )
@@ -41,6 +42,15 @@ if __name__ == "__main__":
     destination = os.path.join(PYPSA_EARTH_DIR, snakemake.params.destination, "osm")
 
     # download osm/clean
-    downloaded = download_and_unzip_gdrive(
-        config_osm_clean, destination=destination, logger=logger
-    )
+    if "zenodo" in config_osm_clean["urls"]:
+        downloaded = download_and_unzip_zenodo(
+            config_osm_clean,
+            destination,
+            logger,
+        )
+    else:
+        downloaded = download_and_unzip_gdrive(
+            config_osm_clean,
+            destination,
+            logger,
+        )

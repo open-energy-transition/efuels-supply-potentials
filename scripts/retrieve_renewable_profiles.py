@@ -14,6 +14,7 @@ from scripts._helper import (
     update_config_from_wildcards,
     create_logger,
     download_and_unzip_gdrive,
+    download_and_unzip_zenodo,
     configure_logging,
     PYPSA_EARTH_DIR,
 )
@@ -42,13 +43,26 @@ if __name__ == "__main__":
     # destination for renewable_profiles/
     destination = os.path.join(PYPSA_EARTH_DIR, snakemake.params.destination)
 
-    # url for alternative or voronoi clustering
-    if snakemake.params.alternative_clustering:
-        url = config_renewable_profiles["urls"]["alternative_clustering"]
-    else:
-        url = config_renewable_profiles["urls"]["voronoi_clustering"]
+    urls = config_renewable_profiles["urls"]
 
-    # download base_network/
-    downloaded = download_and_unzip_gdrive(
-        config_renewable_profiles, destination=destination, logger=logger, url=url
-    )
+    if "zenodo" in urls:
+        url = urls["zenodo"]
+        downloaded = download_and_unzip_zenodo(
+            config_renewable_profiles,
+            destination,
+            logger,
+            url=url,
+        )
+    elif "gdrive" in urls:
+        url = urls["gdrive"]
+        downloaded = download_and_unzip_gdrive(
+            config_renewable_profiles,
+            destination,
+            logger,
+            url=url,
+        )
+    else:
+        raise KeyError(
+            "No supported URL key found for bundle_renewable_profiles_USA. "
+            "Expected one of: zenodo, gdrive."
+        )

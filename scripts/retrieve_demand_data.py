@@ -14,6 +14,7 @@ from scripts._helper import (
     update_config_from_wildcards,
     create_logger,
     download_and_unzip_gdrive,
+    download_and_unzip_zenodo,
     configure_logging,
     PYPSA_EARTH_DIR,
 )
@@ -41,6 +42,15 @@ if __name__ == "__main__":
     destination = "data"
 
     # download demand data
-    downloaded = download_and_unzip_gdrive(
-        config_demand_data, destination=destination, logger=logger
-    )
+    if "zenodo" in config_demand_data["urls"]:
+        downloaded = download_and_unzip_zenodo(
+            config_demand_data,
+            destination,
+            logger,
+        )
+    else:
+        downloaded = download_and_unzip_gdrive(
+            config_demand_data,
+            destination,
+            logger,
+        )

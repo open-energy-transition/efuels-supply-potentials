@@ -5,9 +5,9 @@
 validation:
   planning_horizon: [2020]
 
-# retrieving precomputed files from google drive and bypassing re-execution
-retrieve_from_gdrive:
-  cutouts: false # if true, US cutouts are retrieved from google drive, else it is retrieved using retrieve_databundle_light if enable is true
+# retrieving precomputed files from Google Drive / Zenodo and bypassing re-execution
+retrieve_precomputed:
+  cutouts: false # if true, US cutouts are retrieved from Google Drive, else it is retrieved using retrieve_databundle_light if enable is true
   osm_raw: true # if true, bypasses download_osm_data rule
   osm_clean: true # if true, bypasses clean_osm_data rule
   shapes: true # if true, bypasses build_shapes rule
@@ -117,7 +117,7 @@ custom_databundles:
     category: resources_osm_raw
     destination: "resources"
     urls:
-      gdrive: https://drive.google.com/file/d/1OivnWzAC1RW47wBquqqrBY5Ti0S_9_7B/view?usp=sharing
+      zenodo: https://zenodo.org/api/records/20762977/files/osm_raw.zip/content
 
   # precomputed clean osm data
   bundle_osm_clean_USA:
@@ -125,7 +125,7 @@ custom_databundles:
     category: resources_osm_clean
     destination: "resources"
     urls:
-      gdrive: https://drive.google.com/file/d/15LNOikkfVfUdJ40y-58QwEwqNkiabL78/view?usp=sharing
+      zenodo: https://zenodo.org/api/records/20762977/files/osm_clean.zip/content
 
   # precomputed shapes data
   bundle_shapes_USA:
@@ -133,7 +133,7 @@ custom_databundles:
     category: resources_shapes
     destination: "resources"
     urls:
-      gdrive: https://drive.google.com/file/d/1Uql8Icsy5z02YRCenZ4S2TS0qqT8GY4W/view?usp=sharing
+      zenodo: https://zenodo.org/api/records/20762977/files/shapes.zip/content
 
   # precomputed osm network data
   bundle_osm_network_USA:
@@ -141,7 +141,7 @@ custom_databundles:
     category: resources_osm_network
     destination: "resources"
     urls:
-      gdrive: https://drive.google.com/file/d/1jeoZKwBPoJCKbXYks22dKF7r9Ju3oZqQ/view?usp=sharing
+      zenodo: https://zenodo.org/api/records/20762977/files/base_network_legacy_efuels.zip/content
 
   # precomputed base.nc
   bundle_base_network_USA:
@@ -149,7 +149,7 @@ custom_databundles:
     category: resources_base_network
     destination: "resources"
     urls:
-      gdrive: https://drive.google.com/file/d/1jblRngNeOuyRlXDb4miZjWXyyXvJCo5s/view?usp=sharing
+      zenodo: https://zenodo.org/api/records/20762977/files/base_legacy_efuels.nc.zip/content
 
   # precomputed renewable_profiles data
   bundle_renewable_profiles_USA:
@@ -157,8 +157,7 @@ custom_databundles:
     category: resources_renewable_profiles
     destination: "resources"
     urls:
-      alternative_clustering: https://drive.google.com/file/d/1Bt8NVxhe2-nrw2ZTg35sgUIQ-R8A57DN/view?usp=sharing
-      voronoi_clustering: https://drive.google.com/file/d/1ornHEC2Wey5w3XJ3bMT30DeJU2oDI0Gk/view?usp=sharing
+      zenodo: https://zenodo.org/api/records/20762977/files/renewable_profiles_voronoi_legacy_efuels.zip/content
 
   # demand data used for demand redistribution
   bundle_demand_data_USA:
@@ -166,4 +165,4 @@ custom_databundles:
     category: data_demand_data
     destination: "data"
     urls:
-      gdrive: https://drive.google.com/file/d/15URN8vooJHqfAUEZjBGXoBuk5A0jPM7H/view?usp=sharing
+      zenodo: https://zenodo.org/api/records/20762977/files/demand_data.zip/content

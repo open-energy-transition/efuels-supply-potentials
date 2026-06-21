@@ -12610,6 +12610,7 @@ def compute_regional_co2_production_capture_and_ft_price(
 
     return results
 
+
 def compute_marginal_ekerosene_price_by_region(
     networks,
     regional_fees,
@@ -12749,7 +12750,8 @@ def compute_marginal_ekerosene_price_by_region(
                     "product_bus": product_bus,
                     "Grid Region": grid_region,
                     "Production (TWh)": total_prod / 1e6,
-                    f"Marginal price e-kerosene (excl. T&D fees) ({suffix})": avg_mp_mwh * conv,
+                    f"Marginal price e-kerosene (excl. T&D fees) ({suffix})": avg_mp_mwh
+                    * conv,
                 }
             )
 
@@ -12769,7 +12771,9 @@ def compute_marginal_ekerosene_price_by_region(
                         "Production (TWh)": g["Production (TWh)"].sum(),
                         f"Marginal price e-kerosene (excl. T&D fees) ({suffix})": (
                             (
-                                g[f"Marginal price e-kerosene (excl. T&D fees) ({suffix})"]
+                                g[
+                                    f"Marginal price e-kerosene (excl. T&D fees) ({suffix})"
+                                ]
                                 * g["Production (TWh)"]
                             ).sum()
                             / g["Production (TWh)"].sum()
